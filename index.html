@@ -321,7 +321,14 @@ tr:hover td{background:var(--surface2)}
       <div id="obj-list"><div class="empty"><div class="empty-icon">&#127919;</div><div class="empty-msg">Sin objetivos</div><div class="empty-sub">Agrega tu primer objetivo del mes</div></div></div>
     </div>
     <div class="card">
-      <div class="card-title">Ranking por ROAS</div>
+      <div class="card-title">
+        Ranking por ROAS
+        <div style="display:flex;gap:4px" id="ranking-tabs">
+          <button class="btn btn-sm btn-accent" onclick="setRankingLevel('campaign',this)" id="rtab-campaign">Campanas</button>
+          <button class="btn btn-sm btn-outline" onclick="setRankingLevel('adset',this)" id="rtab-adset">Conjuntos</button>
+          <button class="btn btn-sm btn-outline" onclick="setRankingLevel('ad',this)" id="rtab-ad">Anuncios</button>
+        </div>
+      </div>
       <div id="ranking-list"><div class="empty"><div class="empty-icon">&#128200;</div><div class="empty-msg">Sin datos</div><div class="empty-sub">Carga tus primeras metricas</div></div></div>
     </div>
   </div>
@@ -1045,6 +1052,7 @@ function showPage(p){
   if(p==='contenido')renderCont();
   if(p==='crm')renderCRM();
   if(p==='config')loadConfigPage();
+  if(p==='dashboard'&&META_TOKEN&&META_ACCOUNT){syncDashDateSelector();if(!metaCampaigns.length)initDashboardMeta();}
 }
 
 // ── LOAD ALL ─────────────────────────────────────────────────────────────────
@@ -1685,19 +1693,7 @@ function renderDash(){
     const sr=document.getElementById('ds-sub-roas');  if(sr) sr.textContent='Campanas con gasto';
     const sc=document.getElementById('ds-sub-compras');if(sc) sc.textContent='Periodo: '+rl;
     const sk=document.getElementById('ds-sub-cpa');   if(sk) sk.textContent='Promedio del periodo';
-    // Ranking
-    const rankSrc=[...liveCamps].filter(c=>parseFloat(c.insights.roas)>0).sort((a,b)=>parseFloat(b.insights.roas)-parseFloat(a.insights.roas)).slice(0,5);
-    const rel=document.getElementById('ranking-list');
-    rel.innerHTML=rankSrc.length?rankSrc.map((c,i)=>`
-      <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:0.5px solid var(--border);${i===rankSrc.length-1?'border:none':''}">
-        <span style="font-size:13px;font-weight:700;color:var(--text2);width:18px">${i+1}</span>
-        <div style="flex:1;min-width:0">
-          <div style="font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${c.name}">${c.name}</div>
-          <div style="font-size:11px;color:var(--text2)">$${c.insights.spend} · ${Math.round(c.insights.purchases||0)} ventas</div>
-        </div>
-        <span style="font-size:14px;font-weight:700;color:${roasColor(c.insights.roas)};white-space:nowrap">${parseFloat(c.insights.roas).toFixed(1)}x</span>
-      </div>`).join('')
-    :'<div class="empty" style="padding:16px"><div class="empty-msg">Sin ROAS en el periodo</div></div>';
+    // Ranking — delegado a renderRanking() para soportar campana/conjunto/anuncio
     // Tabla
     const tbl=document.getElementById('dash-tbl');
     tbl.innerHTML=[...liveCamps].sort((a,b)=>parseFloat(b.insights.roas||0)-parseFloat(a.insights.roas||0)).map(camp=>{const ins=camp.insights||{};return`<tr>
@@ -1727,15 +1723,7 @@ function renderDash(){
     const sr=document.getElementById('ds-sub-roas');  if(sr) sr.textContent='Promedio snapshots';
     const sc=document.getElementById('ds-sub-compras');if(sc) sc.textContent='Total registradas';
     const sk=document.getElementById('ds-sub-cpa');   if(sk) sk.textContent='Costo por compra';
-    const sorted=[...metrics].filter(m=>+m.roas>0).sort((a,b)=>+b.roas-+a.roas).slice(0,5);
-    const rel=document.getElementById('ranking-list');
-    rel.innerHTML=sorted.length?sorted.map((m,i)=>`
-      <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:0.5px solid var(--border);${i===sorted.length-1?'border:none':''}">
-        <span style="font-size:13px;font-weight:700;color:var(--text2);width:18px">${i+1}</span>
-        <span style="flex:1;font-size:13px;font-weight:600">${m.name}</span>
-        <span style="font-size:13px;font-weight:700;color:${roasColor(m.roas)}">${(+m.roas).toFixed(1)}x</span>
-      </div>`).join('')
-    :'<div class="empty" style="padding:16px"><div class="empty-icon">&#128200;</div><div class="empty-msg">Sin datos</div><div class="empty-sub">Conecta Meta Ads para ver datos en vivo</div></div>';
+    // Ranking — delegado a renderRanking()
     const tbl=document.getElementById('dash-tbl');
     tbl.innerHTML=metrics.length?metrics.slice(0,15).map(m=>`<tr>
       <td style="font-weight:600">${m.name}</td><td>$${(+m.spend||0).toFixed(0)}</td>
@@ -1747,6 +1735,7 @@ function renderDash(){
     </tr>`).join('')
     :'<tr><td colspan="10" style="text-align:center;color:var(--text2);padding:24px">Sin datos — conecta Meta Ads o carga metricas manualmente</td></tr>';
   }
+  renderRanking();
   renderObjs();
   renderDashMetaWidget();
 }
@@ -1837,18 +1826,7 @@ async function initDashboardMeta(){
 // Auto-refresh cada 60 min
 setInterval(()=>{ if(META_TOKEN&&META_ACCOUNT&&metaCampaigns.length) loadMetaCampaigns().then(()=>renderDash()); }, 3600000);
 
-// ── HOOK: showPage actualiza dashboard ───────────────────────────────────────
-const _origShowPage = showPage;
-function showPage(p){
-  _origShowPage(p);
-  if(p==='meta-live') renderSnaps();
-  if(p==='biblioteca') renderBib();
-  if(p==='finanzas') renderFin();
-  if(p==='contenido') renderCont();
-  if(p==='crm') renderCRM();
-  if(p==='config') loadConfigPage();
-  if(p==='dashboard'&&META_TOKEN&&META_ACCOUNT){ syncDashDateSelector(); if(!metaCampaigns.length) initDashboardMeta(); }
-}
+// showPage ya tiene todo integrado directamente
 
 // ── DASHBOARD AUTO-SNAPSHOT ──────────────────────────────────────────────────
 async function dashAutoSnapshot(){
@@ -1856,6 +1834,76 @@ async function dashAutoSnapshot(){
   if(!metaCampaigns.length){ toast('Cargando campanas...'); await loadMetaCampaigns(); }
   if(!metaCampaigns.length){toast('No se pudieron cargar las campanas');return;}
   await autoSnapshot(); renderDashMetaWidget();
+}
+
+
+// ── RANKING POR NIVEL ────────────────────────────────────────────────────────
+let rankingLevel = 'campaign';
+
+function setRankingLevel(level, btn) {
+  rankingLevel = level;
+  // Actualizar tabs
+  ['campaign','adset','ad'].forEach(l => {
+    const t = document.getElementById('rtab-'+l);
+    if(t) {
+      t.className = l===level ? 'btn btn-sm btn-accent' : 'btn btn-sm btn-outline';
+    }
+  });
+  renderRanking();
+}
+
+function renderRanking() {
+  const el = document.getElementById('ranking-list');
+  if(!el) return;
+
+  let items = [];
+  const level = rankingLevel;
+
+  if(level === 'campaign') {
+    items = metaCampaigns
+      .filter(c => parseFloat(c.insights?.roas) > 0)
+      .map(c => ({ name: c.name, roas: parseFloat(c.insights.roas), spend: c.insights.spend, purchases: c.insights.purchases }));
+  } else if(level === 'adset') {
+    items = metaAdsets
+      .filter(s => parseFloat(s.insights?.roas) > 0)
+      .map(s => ({ name: s.name, roas: parseFloat(s.insights.roas), spend: s.insights.spend, purchases: s.insights.purchases }));
+    if(!items.length && !metaAdsets.length) {
+      el.innerHTML = '<div class="empty" style="padding:16px"><div class="empty-msg">Sin conjuntos cargados</div><div class="empty-sub">Entra a Campanas y hace click en una campana para cargar sus conjuntos</div></div>';
+      return;
+    }
+  } else if(level === 'ad') {
+    items = metaAds
+      .filter(a => parseFloat(a.insights?.roas) > 0)
+      .map(a => ({ name: a.name, roas: parseFloat(a.insights.roas), spend: a.insights.spend, purchases: a.insights.purchases }));
+    if(!items.length && !metaAds.length) {
+      el.innerHTML = '<div class="empty" style="padding:16px"><div class="empty-msg">Sin anuncios cargados</div><div class="empty-sub">Entra a Campanas → Conjunto → para ver los anuncios</div></div>';
+      return;
+    }
+  }
+
+  // Caer a snapshots si no hay datos live
+  if(!items.length && metrics.length > 0) {
+    items = metrics
+      .filter(m => +m.roas > 0)
+      .map(m => ({ name: m.name, roas: +m.roas, spend: m.spend, purchases: m.purchases }));
+  }
+
+  items = items.sort((a,b) => b.roas - a.roas).slice(0, 7);
+
+  if(!items.length) {
+    el.innerHTML = '<div class="empty" style="padding:16px"><div class="empty-icon">&#128200;</div><div class="empty-msg">Sin datos</div><div class="empty-sub">Conecta Meta Ads o carga metricas</div></div>';
+    return;
+  }
+
+  el.innerHTML = items.map((item, i) => `
+    <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:0.5px solid var(--border);${i===items.length-1?'border:none':''}">
+      <span style="font-size:13px;font-weight:700;color:var(--text2);width:18px;flex-shrink:0">${i+1}</span>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${item.name}">${item.name}</div>
+        <div style="font-size:11px;color:var(--text2)">$${item.spend||'—'} · ${item.purchases||0} ventas</div>
+      </div>
+      <span style="font-size:14px;font-weight:700;color:${roasColor(item.roas)};white-space:nowrap">${item.roas.toFixed(1)}x</span>
+    </div>`).join('');
 }
 
 
