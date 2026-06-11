@@ -338,15 +338,23 @@ tr:hover td{background:var(--surface2)}
   <div class="page-hdr">
     <div><div class="page-title">Campanas</div><div class="page-sub" id="meta-sub">Ultimos 30 dias — datos en tiempo real</div></div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-      <select id="meta-date-range" class="fg" style="margin:0;min-width:0" onchange="loadMetaCampaigns()">
+      <select id="meta-date-range" class="fg" style="margin:0;min-width:0" onchange="onDateRangeChange()">
+        <option value="today">Hoy</option>
+        <option value="yesterday">Ayer</option>
         <option value="last_7d">Ultimos 7 dias</option>
-        <option value="last_30d" selected>Ultimos 30 dias</option>
         <option value="last_14d">Ultimos 14 dias</option>
+        <option value="last_30d" selected>Ultimos 30 dias</option>
         <option value="last_90d">Ultimos 90 dias</option>
         <option value="this_month">Este mes</option>
         <option value="last_month">Mes pasado</option>
         <option value="maximum">Maximo historico</option>
+        <option value="custom">Personalizado...</option>
       </select>
+      <div id="custom-date-wrap" style="display:none;display:flex;gap:6px;align-items:center">
+        <input type="date" id="meta-date-since" class="fg" style="margin:0;max-width:140px" onchange="loadMetaCampaigns()">
+        <span style="font-size:12px;color:var(--text2)">→</span>
+        <input type="date" id="meta-date-until" class="fg" style="margin:0;max-width:140px" onchange="loadMetaCampaigns()">
+      </div>
       <button class="btn btn-outline" onclick="loadMetaCampaigns()">&#8635; Actualizar</button>
       <button class="btn btn-accent" onclick="autoSnapshot()">&#128248; Auto-snapshot</button>
     </div>
@@ -1563,12 +1571,28 @@ async function verifyMetaConnection() {
 }
 
 // ── LOAD CAMPAIGNS ───────────────────────────────────────────────────────────
+function onDateRangeChange() {
+  const val = document.getElementById('meta-date-range').value;
+  const wrap = document.getElementById('custom-date-wrap');
+  if(val === 'custom') {
+    wrap.style.display = 'flex';
+    // poner fechas por defecto: desde inicio del mes hasta hoy
+    const today = new Date().toISOString().split('T')[0];
+    const firstDay = today.substring(0,8)+'01';
+    document.getElementById('meta-date-since').value = firstDay;
+    document.getElementById('meta-date-until').value = today;
+  } else {
+    wrap.style.display = 'none';
+    loadMetaCampaigns();
+  }
+}
+
 async function loadMetaCampaigns() {
   if(!META_TOKEN||!META_ACCOUNT) {
     document.getElementById('meta-camp-empty-msg').textContent = 'Conecta tu cuenta en "Conectar Meta" primero';
     return;
   }
-  const days = document.getElementById('meta-date-range')?.value||'30';
+  const days = document.getElementById('meta-date-range')?.value||'last_30d';
   const tbody = document.getElementById('meta-camp-tbody');
   tbody.innerHTML = `<tr><td colspan="10" style="text-align:center;padding:32px;color:var(--text2)">
     <div style="display:flex;align-items:center;justify-content:center;gap:8px">
@@ -1579,10 +1603,22 @@ async function loadMetaCampaigns() {
   document.getElementById('meta-adsets-section').style.display='none';
   document.getElementById('meta-ads-section').style.display='none';
 
+  const isCustom = days === 'custom';
+  const since = document.getElementById('meta-date-since')?.value;
+  const until = document.getElementById('meta-date-until')?.value;
+  if(isCustom && (!since||!until)) { 
+    document.getElementById('meta-camp-tbody').innerHTML = '<tr><td colspan="10" style="text-align:center;padding:24px;color:var(--text2)">Seleccioná las fechas del rango personalizado</td></tr>';
+    return;
+  }
+
   try {
-    // Traer campañas con sus insights en un solo call
+    // Traer campañas con sus insights
+    const insightsParam = isCustom
+      ? `insights.time_range({"since":"${since}","until":"${until}"}){${AD_FIELDS}}`
+      : `insights.date_preset(${days}){${AD_FIELDS}}`;
+
     const data = await metaGet(`act_${META_ACCOUNT}/campaigns`, {
-      fields: `${CAMP_FIELDS},insights.date_preset(${days}){${AD_FIELDS}}`,
+      fields: `${CAMP_FIELDS},${insightsParam}`,
       limit: 50,
     });
 
@@ -1592,9 +1628,10 @@ async function loadMetaCampaigns() {
       insights: parseInsights(c.insights?.data)
     }));
 
-    const labelMap = {last_7d:'7 dias',last_14d:'14 dias',last_30d:'30 dias',last_90d:'90 dias',this_month:'este mes',last_month:'mes pasado',maximum:'historico'};
+    const labelMap = {today:'Hoy',yesterday:'Ayer',last_7d:'7 dias',last_14d:'14 dias',last_30d:'30 dias',last_90d:'90 dias',this_month:'este mes',last_month:'mes pasado',maximum:'historico'};
+    const rangeLabel = days==='custom' ? `${since} → ${until}` : (labelMap[days]||days);
     document.getElementById('meta-sub').textContent = 
-      `${metaCampaigns.length} campanas — ${labelMap[days]||days}`;
+      `${metaCampaigns.length} campanas — ${rangeLabel}`;
     renderCampaigns();
   } catch(e) {
     tbody.innerHTML = `<tr><td colspan="10" style="text-align:center;padding:24px;color:var(--red)">Error: ${e.message}</td></tr>`;
@@ -1640,7 +1677,9 @@ function renderCampaigns() {
 // ── LOAD ADSETS ──────────────────────────────────────────────────────────────
 async function loadAdsets(campaignId, campaignName) {
   currentCampaignId = campaignId;
-  const days = document.getElementById('meta-date-range')?.value||'30';
+  const days = document.getElementById('meta-date-range')?.value||'last_30d';
+  const since = document.getElementById('meta-date-since')?.value;
+  const until = document.getElementById('meta-date-until')?.value;
   const section = document.getElementById('meta-adsets-section');
   const tbody = document.getElementById('meta-adsets-tbody');
   document.getElementById('meta-ads-section').style.display='none';
@@ -1652,8 +1691,11 @@ async function loadAdsets(campaignId, campaignName) {
   section.scrollIntoView({behavior:'smooth',block:'start'});
 
   try {
+    const insParam = days==='custom'
+      ? `insights.time_range({"since":"${since}","until":"${until}"}){${AD_FIELDS}}`
+      : `insights.date_preset(${days}){${AD_FIELDS}}`;
     const data = await metaGet(`${campaignId}/adsets`, {
-      fields: `${ADSET_FIELDS},insights.date_preset(${days}){${AD_FIELDS}}`,
+      fields: `${ADSET_FIELDS},${insParam}`,
       limit: 50,
     });
     if(data.error) throw new Error(data.error.message);
@@ -1690,7 +1732,9 @@ function renderAdsets(campName) {
 // ── LOAD ADS ─────────────────────────────────────────────────────────────────
 async function loadAds(adsetId, adsetName) {
   currentAdsetId = adsetId;
-  const days = document.getElementById('meta-date-range')?.value||'30';
+  const days = document.getElementById('meta-date-range')?.value||'last_30d';
+  const since = document.getElementById('meta-date-since')?.value;
+  const until = document.getElementById('meta-date-until')?.value;
   const section = document.getElementById('meta-ads-section');
   const tbody = document.getElementById('meta-ads-tbody');
   section.style.display='block';
@@ -1701,8 +1745,11 @@ async function loadAds(adsetId, adsetName) {
   section.scrollIntoView({behavior:'smooth',block:'start'});
 
   try {
+    const insParamAds = days==='custom'
+      ? `insights.time_range({"since":"${since}","until":"${until}"}){${AD_FIELDS}}`
+      : `insights.date_preset(${days}){${AD_FIELDS}}`;
     const data = await metaGet(`${adsetId}/ads`, {
-      fields: `${AD_INFO_FIELDS},insights.date_preset(${days}){${AD_FIELDS}}`,
+      fields: `${AD_INFO_FIELDS},${insParamAds}`,
       limit: 50,
     });
     if(data.error) throw new Error(data.error.message);
