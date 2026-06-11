@@ -1838,7 +1838,7 @@ async function autoSnapshot() {
   const timeLabel = now.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'});
   const dateStr = now.toISOString().split('T')[0];
   
-  let saved = 0;
+  let saved = 0, lastErr = '';
   const activeCamps = metaCampaigns.filter(c => (c.effective_status||c.status)==='ACTIVE');
   const toSnap = activeCamps.length ? activeCamps : metaCampaigns.slice(0,10);
   
@@ -1846,12 +1846,13 @@ async function autoSnapshot() {
 
   for(const c of toSnap) {
     const ins = c.insights||{};
-    if(!ins.spend || +ins.spend===0) continue;
+    const spendVal = parseFloat(ins.spend)||0;
+    if(spendVal <= 0) continue; // saltar campanas sin gasto real
     try {
       const rec = {
         user_id: me.id,
         name: `[${timeLabel}] ${c.name}`,
-        spend: +ins.spend||0, roas: +ins.roas||0,
+        spend: spendVal, roas: parseFloat(ins.roas)||0,
         purchases: +ins.purchases||0, cpa: +ins.cpa||0,
         ctr: +ins.ctr||0, cpm: +ins.cpm||0, cpc: +ins.cpc||0,
         frequency: +ins.frequency||0, hook_rate: +ins.hook_rate||0,
@@ -1860,22 +1861,28 @@ async function autoSnapshot() {
         snap_type: 'campaign', meta_id: c.id, snap_time: now.toISOString()
       };
       let {data, error} = await db.from('metrics').insert([rec]).select();
-      // Si falla por columnas nuevas, reintentar sin ellas
-      if(error && error.message && (error.message.includes('snap_type') || error.message.includes('meta_id') || error.message.includes('snap_time'))) {
-        const recFallback = {...rec};
-        delete recFallback.snap_type; delete recFallback.meta_id; delete recFallback.snap_time;
+      // Si falla (por cualquier razon, no solo columnas), reintentar sin las columnas nuevas
+      if(error) {
+        lastErr = error.message;
+        const recFallback = {
+          user_id: rec.user_id, name: rec.name,
+          spend: rec.spend, roas: rec.roas, purchases: rec.purchases, cpa: rec.cpa,
+          ctr: rec.ctr, cpm: rec.cpm, cpc: rec.cpc, frequency: rec.frequency,
+          hook_rate: rec.hook_rate, snapshot_date: rec.snapshot_date, notes: rec.notes
+        };
         const res2 = await db.from('metrics').insert([recFallback]).select();
         data = res2.data; error = res2.error;
+        if(error) lastErr = error.message;
       }
-      if(error) { console.error('Snapshot error:', error.message); continue; }
-      if(data) { metrics.unshift(data[0]); saved++; }
-    } catch(e) { console.error('Snapshot exception:', e); }
+      if(error) { console.error('Snap error:', error.message); continue; }
+      if(data && data[0]) { metrics.unshift(data[0]); saved++; }
+    } catch(e) { lastErr = e.message; console.error('Snap exception:', e); }
   }
   
   if(saved > 0) {
     toast(`✓ ${saved} snapshot${saved>1?'s':''} guardado${saved>1?'s':''} a las ${timeLabel}`);
   } else {
-    toast('⚠ 0 guardados — verifica que las campanas tengan gasto en el periodo seleccionado');
+    toast('⚠ 0 guardados' + (lastErr ? ' — Error: ' + lastErr.slice(0,80) : ' — verifica que las campanas tengan gasto'), 5000);
   }
   renderDash(); renderSnaps();
   // renderSnaps ya fue llamado arriba — no se necesita nada extra aqui
@@ -1912,10 +1919,14 @@ async function saveMetricSnapshot(ins, name, snap_type, meta_id) {
   };
   try {
     let {data, error} = await db.from('metrics').insert([rec]).select();
-    // Fallback: si fallan columnas nuevas, reintenta sin ellas
-    if(error && error.message && (error.message.includes('snap_type') || error.message.includes('meta_id') || error.message.includes('snap_time'))) {
-      const recFallback = {...rec};
-      delete recFallback.snap_type; delete recFallback.meta_id; delete recFallback.snap_time;
+    // Fallback universal: si falla por cualquier razon, reintenta solo con columnas originales
+    if(error) {
+      const recFallback = {
+        user_id: rec.user_id, name: rec.name,
+        spend: rec.spend, roas: rec.roas, purchases: rec.purchases, cpa: rec.cpa,
+        ctr: rec.ctr, cpm: rec.cpm, cpc: rec.cpc, frequency: rec.frequency,
+        hook_rate: rec.hook_rate, snapshot_date: rec.snapshot_date, notes: rec.notes
+      };
       const res2 = await db.from('metrics').insert([recFallback]).select();
       data = res2.data; error = res2.error;
     }
@@ -1923,7 +1934,7 @@ async function saveMetricSnapshot(ins, name, snap_type, meta_id) {
     metrics.unshift(data[0]);
     renderDash(); renderSnaps();
     toast(`✓ Snapshot "${name}" guardado a las ${timeLabel}`);
-  } catch(e) { toast('Error guardando snapshot: ' + e.message); console.error(e); }
+  } catch(e) { toast('Error: ' + e.message.slice(0,100)); console.error(e); }
 }
 
 // ── RENDER SNAPSHOTS ─────────────────────────────────────────────────────────
