@@ -583,16 +583,27 @@ db.auth.onAuthStateChange(async(event,session)=>{
 
 // ── DATA ──────────────────────────────────────────────────────────────────
 async function loadAll(){
-  const[r1,r2,r3,r4]=await Promise.all([
+  const[r1,r2,r3,r4,r5,r6,r7,r8,r9]=await Promise.all([
     db.from('ads').select('*').order('updated_at',{ascending:false}),
     db.from('scripts').select('*').order('updated_at',{ascending:false}),
     db.from('tasks').select('*').order('updated_at',{ascending:false}),
-    db.from('objectives').select('*').order('updated_at',{ascending:false})
+    db.from('objectives').select('*').order('updated_at',{ascending:false}),
+    db.from('meta_connections').select('*'),
+    db.from('meta_snapshots').select('*').order('created_at',{ascending:false}).limit(50),
+    db.from('finances').select('*').order('date',{ascending:false}).limit(200),
+    db.from('contents').select('*').order('date',{ascending:false}).limit(200),
+    db.from('crm_contacts').select('*').order('updated_at',{ascending:false})
   ]);
   ads=(r1.data||[]).map(r=>({...r.data,id:r.id}));
   scripts=(r2.data||[]).map(r=>({...r.data,id:r.id}));
   tasks=(r3.data||[]).map(r=>({...r.data,id:r.id}));
   objectives=(r4.data||[]).map(r=>({...r.data,id:r.id}));
+  metaConns=r5.data||[];
+  metaSnaps=r6.data||[];
+  window.finances=r7.data||[];
+  window.contents=r8.data||[];
+  window.crm=r9.data||[];
+  if(metaConns.length>0){metaActiveId=metaConns[0].account_id;metaActiveConn=metaConns[0]}
 }
 async function saveAd(a){await db.from('ads').upsert({id:a.id,user_id:currentUser.id,data:a,updated_at:new Date().toISOString()})}
 async function saveScript(s){await db.from('scripts').upsert({id:s.id,user_id:currentUser.id,data:s,updated_at:new Date().toISOString()})}
@@ -609,8 +620,8 @@ function showPage(p){
   document.querySelectorAll('.nav-item[data-page]').forEach(el=>el.classList.toggle('active',el.dataset.page===p));
   document.getElementById('page-'+p).classList.add('active');
   if(p==='dashboard')renderDashboard();
-  if(p==='ads'&&!selectedAdId)renderAdList();
-  if(p==='scripts'&&!selectedScriptId)renderScriptList();
+  if(p==='ads'&&!selAdId)renderAdList();
+  if(p==='scripts'&&!selScriptId)renderScriptList();
   if(p==='calendar'){renderCalendar();renderTaskList()}
   if(p==='objectives')renderObjectives();
   document.getElementById('sidebar').classList.remove('open');
@@ -1571,54 +1582,16 @@ async function addMetaAccount(){
   }
 }
 
-// Extend showPage to init Meta Live on first visit
-const _origShowPage=showPage;
-window.showPage=function(p){
-  _origShowPage(p);
-  if(p==='metalive'&&metaConnections.length===0&&currentUser){
-    initMetaLive();
-  } else if(p==='metalive'){
-    metaRenderPills();
-    if(metaActiveConn)metaRenderMain();
-  }
-};
+// metalive init handled in showPage directly
 
-// Also init meta on app load if already connected
-const _origLoadAll=loadAll;
-window.loadAll=async function(){
-  await _origLoadAll();
-  await loadMetaConnections();
-  await loadMetaSnapshots();
-  if(metaConnections.length>0){
-    metaActiveId=metaConnections[0].account_id;
-    metaActiveConn=metaConnections[0];
-  }
-};
+
+// meta data loaded in unified loadAll
 
 
 
-// ── LOAD NEW DATA ─────────────────────────────────────────────────────────
-const _origLoadAll = window.loadAll;
-window.loadAll = async function(){
-  await _origLoadAll();
-  const[rf,rc2,rcrm]=await Promise.all([
-    db.from('finances').select('*').eq('user_id',currentUser.id).order('date',{ascending:false}).limit(200),
-    db.from('contents').select('*').eq('user_id',currentUser.id).order('date',{ascending:false}).limit(200),
-    db.from('crm_contacts').select('*').eq('user_id',currentUser.id).order('updated_at',{ascending:false})
-  ]);
-  window.finances=rf.data||[];
-  window.contents=rc2.data||[];
-  window.crm=rcrm.data||[];
-};
 
-// ── EXTEND showPage ────────────────────────────────────────────────────────
-const _origShowPage2 = window.showPage;
-window.showPage = function(p){
-  _origShowPage2(p);
-  if(p==='finanzas')renderFinanzas();
-  if(p==='contenido')renderContenido();
-  if(p==='crm')renderCRM();
-};
+// ── NEW DATA LOADED INLINE IN loadAll (patched below) ─────────────────────
+// Data vars initialized above, loaded via loadAllData patch
 
 window.finances=[];window.contents=[];window.crm=[];
 let finTab='resumen',contentTab='lista';
@@ -1925,10 +1898,7 @@ async function askIA(msg){
   document.getElementById('ia-input')?.focus();
 }
 
-// ── PERFORMANCE: Fix dashboard re-render on load ───────────────────────────
-const _origAuthChange = db.auth.onAuthStateChange.bind(db.auth);
-// Trigger renders after data loads
-const origOnLogin = window.loadAll;
+
 
 </script>
 </body>
