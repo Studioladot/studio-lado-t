@@ -966,6 +966,14 @@ function showPage(p){
   if(ni)ni.classList.add('active');
   document.getElementById('sidebar').classList.remove('open');
   if(p==='meta-live')renderSnaps();
+  if(p==='meta-campanas'){ if(META_TOKEN && META_ACCOUNT && !metaCampaigns.length) loadMetaCampaigns(); }
+  if(p==='meta-connect'){
+    const ti=document.getElementById('meta-token-input');
+    const ai=document.getElementById('meta-account-input');
+    if(ti && META_TOKEN) ti.value=META_TOKEN;
+    if(ai && META_ACCOUNT) ai.value=META_ACCOUNT;
+    if(META_TOKEN && META_ACCOUNT) verifyMetaConnection();
+  }
   if(p==='biblioteca')renderBib();
   if(p==='finanzas')renderFin();
   if(p==='contenido')renderCont();
@@ -1902,20 +1910,7 @@ function initMeta() {
   }
 }
 
-// showPage hook — agregar meta pages
-const _origShowPage = showPage;
-function showPage(p) {
-  _origShowPage(p);
-  if(p==='meta-campanas' && META_TOKEN && META_ACCOUNT && !metaCampaigns.length) loadMetaCampaigns();
-  if(p==='meta-connect') {
-    const ti = document.getElementById('meta-token-input');
-    const ai = document.getElementById('meta-account-input');
-    if(ti && META_TOKEN) ti.value = META_TOKEN;
-    if(ai && META_ACCOUNT) ai.value = META_ACCOUNT;
-    if(META_TOKEN && META_ACCOUNT) verifyMetaConnection();
-  }
-  if(p==='meta-live') renderSnaps();
-}
+// meta pages handled inside original showPage
 
 </script>
 </body>
