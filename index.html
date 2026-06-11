@@ -1146,12 +1146,14 @@ async function saveSnap(){
     notes:document.getElementById('ms-notes').value.trim(),
     snapshot_date:document.getElementById('ms-date').value||new Date().toISOString().split('T')[0]
   };
-  const {data,error}=await db.from('metrics').insert([rec]).select();
-  if(error){toast('Error: '+error.message);return;}
-  metrics.unshift(data[0]); renderDash(); renderSnaps(); renderBib(); closeModal('modal-snap');
-  ['ms-name','ms-spend','ms-roas','ms-purch','ms-cpa','ms-ctr','ms-cpm','ms-cpc','ms-freq','ms-hook','ms-p25','ms-p75','ms-p100','ms-notes'].forEach(id=>document.getElementById(id).value='');
-  document.getElementById('ms-date').value=new Date().toISOString().split('T')[0];
-  toast('Snapshot guardado');
+  try {
+    const row = await safeInsertMetric(rec);
+    if(row) { metrics.unshift(row); renderDash(); renderSnaps(); }
+    closeModal('modal-snap');
+    ['ms-name','ms-spend','ms-roas','ms-purch','ms-cpa','ms-ctr','ms-cpm','ms-cpc','ms-freq','ms-hook','ms-p25','ms-p75','ms-p100','ms-notes'].forEach(id=>document.getElementById(id).value='');
+    document.getElementById('ms-date').value=new Date().toISOString().split('T')[0];
+    toast('Snapshot guardado');
+  } catch(e) { toast('Error: '+e.message.slice(0,100)); console.error(e); }
 }
 function renderSnaps(){
   const el=document.getElementById('snaps-list');
@@ -1847,36 +1849,22 @@ async function autoSnapshot() {
   for(const c of toSnap) {
     const ins = c.insights||{};
     const spendVal = parseFloat(ins.spend)||0;
-    if(spendVal <= 0) continue; // saltar campanas sin gasto real
+    if(spendVal <= 0) continue;
+    const rec = {
+      user_id: me.id,
+      name: `[${timeLabel}] ${c.name}`,
+      spend: spendVal, roas: parseFloat(ins.roas)||0,
+      purchases: +ins.purchases||0, cpa: +ins.cpa||0,
+      ctr: +ins.ctr||0, cpm: +ins.cpm||0, cpc: +ins.cpc||0,
+      frequency: +ins.frequency||0, hook_rate: +ins.hook_rate||0,
+      snapshot_date: dateStr,
+      notes: `Auto-snapshot ${timeLabel} | Campana ID: ${c.id} | Estado: ${c.effective_status||c.status}`,
+      snap_type: 'campaign', meta_id: c.id, snap_time: now.toISOString()
+    };
     try {
-      const rec = {
-        user_id: me.id,
-        name: `[${timeLabel}] ${c.name}`,
-        spend: spendVal, roas: parseFloat(ins.roas)||0,
-        purchases: +ins.purchases||0, cpa: +ins.cpa||0,
-        ctr: +ins.ctr||0, cpm: +ins.cpm||0, cpc: +ins.cpc||0,
-        frequency: +ins.frequency||0, hook_rate: +ins.hook_rate||0,
-        snapshot_date: dateStr,
-        notes: `Auto-snapshot ${timeLabel} | Campana ID: ${c.id} | Estado: ${c.effective_status||c.status}`,
-        snap_type: 'campaign', meta_id: c.id, snap_time: now.toISOString()
-      };
-      let {data, error} = await db.from('metrics').insert([rec]).select();
-      // Si falla (por cualquier razon, no solo columnas), reintentar sin las columnas nuevas
-      if(error) {
-        lastErr = error.message;
-        const recFallback = {
-          user_id: rec.user_id, name: rec.name,
-          spend: rec.spend, roas: rec.roas, purchases: rec.purchases, cpa: rec.cpa,
-          ctr: rec.ctr, cpm: rec.cpm, cpc: rec.cpc, frequency: rec.frequency,
-          hook_rate: rec.hook_rate, snapshot_date: rec.snapshot_date, notes: rec.notes
-        };
-        const res2 = await db.from('metrics').insert([recFallback]).select();
-        data = res2.data; error = res2.error;
-        if(error) lastErr = error.message;
-      }
-      if(error) { console.error('Snap error:', error.message); continue; }
-      if(data && data[0]) { metrics.unshift(data[0]); saved++; }
-    } catch(e) { lastErr = e.message; console.error('Snap exception:', e); }
+      const row = await safeInsertMetric(rec);
+      if(row) { metrics.unshift(row); saved++; }
+    } catch(e) { lastErr = e.message; console.error('Snap error:', e.message); }
   }
   
   if(saved > 0) {
@@ -1918,23 +1906,10 @@ async function saveMetricSnapshot(ins, name, snap_type, meta_id) {
     snap_type, meta_id, snap_time: now.toISOString()
   };
   try {
-    let {data, error} = await db.from('metrics').insert([rec]).select();
-    // Fallback universal: si falla por cualquier razon, reintenta solo con columnas originales
-    if(error) {
-      const recFallback = {
-        user_id: rec.user_id, name: rec.name,
-        spend: rec.spend, roas: rec.roas, purchases: rec.purchases, cpa: rec.cpa,
-        ctr: rec.ctr, cpm: rec.cpm, cpc: rec.cpc, frequency: rec.frequency,
-        hook_rate: rec.hook_rate, snapshot_date: rec.snapshot_date, notes: rec.notes
-      };
-      const res2 = await db.from('metrics').insert([recFallback]).select();
-      data = res2.data; error = res2.error;
-    }
-    if(error) throw error;
-    metrics.unshift(data[0]);
-    renderDash(); renderSnaps();
+    const row = await safeInsertMetric(rec);
+    if(row) { metrics.unshift(row); renderDash(); renderSnaps(); }
     toast(`✓ Snapshot "${name}" guardado a las ${timeLabel}`);
-  } catch(e) { toast('Error: ' + e.message.slice(0,100)); console.error(e); }
+  } catch(e) { toast('Error: ' + e.message.slice(0,120)); console.error(e); }
 }
 
 // ── RENDER SNAPSHOTS ─────────────────────────────────────────────────────────
@@ -2001,6 +1976,48 @@ async function delSnap(id){
   metrics=metrics.filter(m=>m.id!==id);
   renderDash(); renderSnaps();
   toast('Eliminado');
+}
+
+
+// ── SAFE INSERT — elimina columnas inexistentes automaticamente ───────────────
+// Supabase devuelve: Could not find the "X" column of "metrics" in the schema cache
+const _metricsBadCols = new Set(); // columnas que ya sabemos que no existen
+
+async function safeInsertMetric(rec) {
+  // Empezar con el objeto sin las columnas que ya fallaron antes
+  let obj = {};
+  for(const [k,v] of Object.entries(rec)) {
+    if(!_metricsBadCols.has(k)) obj[k] = v;
+  }
+
+  for(let attempt = 0; attempt < 15; attempt++) {
+    const {data, error} = await db.from('metrics').insert([obj]).select();
+
+    if(!error && data && data[0]) return data[0]; // exito!
+
+    if(!error) return null; // insert sin error pero sin data
+
+    // Extraer nombre de la columna del error de Supabase/PostgREST
+    // Formatos posibles:
+    //   Could not find the "cpa" column of "metrics" in the schema cache
+    //   Could not find the 'cpa' column of 'metrics' in the schema cache
+    //   column "cpa" does not exist
+    const msg = error.message || '';
+    const match = msg.match(/[Cc]ould not find the ['""]?([a-z_A-Z0-9]+)['""]? column/)
+                || msg.match(/column ['""]([a-z_A-Z0-9]+)['""] does not exist/);
+
+    if(match && match[1] && match[1] !== 'user_id' && match[1] !== 'name') {
+      const badCol = match[1];
+      console.warn(`Columna "${badCol}" no existe en la tabla metrics — removiendo`);
+      _metricsBadCols.add(badCol);
+      delete obj[badCol];
+      continue; // reintentar sin esa columna
+    }
+
+    // Error que no es de columna faltante — lanzar
+    throw new Error(msg);
+  }
+  throw new Error('safeInsertMetric: max reintentos alcanzados');
 }
 
 // ── INIT META AL CARGAR ───────────────────────────────────────────────────────
