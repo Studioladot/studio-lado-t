@@ -394,6 +394,31 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
       <div class="obj-grid" id="obj-grid"></div>
     </div>
   </div>
+
+    <!-- META LIVE -->
+    <div class="page" id="page-metalive">
+      <div class="page-header">
+        <div><div class="page-title">Meta Ads — Live</div><div class="page-sub" id="meta-last-update">Conectá tu cuenta para ver datos en tiempo real</div></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+          <div id="meta-account-pills"></div>
+          <button class="btn sm" onclick="openAddMetaAccount()">+ Cuenta</button>
+          <button class="btn sm primary" onclick="metaFetchData(true)" id="meta-btn-refresh" disabled>↻ Actualizar</button>
+          <button class="btn sm" style="background:var(--green);color:#fff;border-color:var(--green)" onclick="metaSaveSnapshot()" id="meta-btn-snapshot" disabled>📸 Snapshot</button>
+        </div>
+      </div>
+      <div id="meta-alerts"></div>
+      <div id="meta-main">
+        <div style="display:flex;align-items:center;justify-content:center;padding:80px 20px">
+          <div style="text-align:center;max-width:400px">
+            <div style="font-size:40px;margin-bottom:16px">⚡</div>
+            <div style="font-size:16px;font-weight:500;margin-bottom:8px">Meta Ads en tiempo real</div>
+            <p style="font-size:13px;color:var(--text2);margin-bottom:24px;line-height:1.6">Conectá tu cuenta publicitaria para ver métricas en vivo, alertas automáticas y guardar snapshots históricos.</p>
+            <button class="btn primary" onclick="openAddMetaAccount()">Conectar cuenta de Meta →</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
 </div>
 
 <div class="toast" id="toast"></div>
