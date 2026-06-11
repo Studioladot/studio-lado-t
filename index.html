@@ -339,10 +339,13 @@ tr:hover td{background:var(--surface2)}
     <div><div class="page-title">Campanas</div><div class="page-sub" id="meta-sub">Ultimos 30 dias — datos en tiempo real</div></div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
       <select id="meta-date-range" class="fg" style="margin:0;min-width:0" onchange="loadMetaCampaigns()">
-        <option value="7">Ultimos 7 dias</option>
-        <option value="30" selected>Ultimos 30 dias</option>
-        <option value="14">Ultimos 14 dias</option>
-        <option value="90">Ultimos 90 dias</option>
+        <option value="last_7d">Ultimos 7 dias</option>
+        <option value="last_30d" selected>Ultimos 30 dias</option>
+        <option value="last_14d">Ultimos 14 dias</option>
+        <option value="last_90d">Ultimos 90 dias</option>
+        <option value="this_month">Este mes</option>
+        <option value="last_month">Mes pasado</option>
+        <option value="maximum">Maximo historico</option>
       </select>
       <button class="btn btn-outline" onclick="loadMetaCampaigns()">&#8635; Actualizar</button>
       <button class="btn btn-accent" onclick="autoSnapshot()">&#128248; Auto-snapshot</button>
@@ -1576,15 +1579,11 @@ async function loadMetaCampaigns() {
   document.getElementById('meta-adsets-section').style.display='none';
   document.getElementById('meta-ads-section').style.display='none';
 
-  const today = new Date().toISOString().split('T')[0];
-  const from = new Date(Date.now()-days*86400000).toISOString().split('T')[0];
-
   try {
     // Traer campañas con sus insights en un solo call
     const data = await metaGet(`act_${META_ACCOUNT}/campaigns`, {
-      fields: `${CAMP_FIELDS},insights.date_preset(last_${days}_d){${AD_FIELDS}}`,
+      fields: `${CAMP_FIELDS},insights.date_preset(${days}){${AD_FIELDS}}`,
       limit: 50,
-      date_preset: `last_${days}d`,
     });
 
     if(data.error) throw new Error(data.error.message);
@@ -1593,8 +1592,9 @@ async function loadMetaCampaigns() {
       insights: parseInsights(c.insights?.data)
     }));
 
+    const labelMap = {last_7d:'7 dias',last_14d:'14 dias',last_30d:'30 dias',last_90d:'90 dias',this_month:'este mes',last_month:'mes pasado',maximum:'historico'};
     document.getElementById('meta-sub').textContent = 
-      `${metaCampaigns.length} campanas — Ultimos ${days} dias (${from} → ${today})`;
+      `${metaCampaigns.length} campanas — ${labelMap[days]||days}`;
     renderCampaigns();
   } catch(e) {
     tbody.innerHTML = `<tr><td colspan="10" style="text-align:center;padding:24px;color:var(--red)">Error: ${e.message}</td></tr>`;
@@ -1653,7 +1653,7 @@ async function loadAdsets(campaignId, campaignName) {
 
   try {
     const data = await metaGet(`${campaignId}/adsets`, {
-      fields: `${ADSET_FIELDS},insights.date_preset(last_${days}_d){${AD_FIELDS}}`,
+      fields: `${ADSET_FIELDS},insights.date_preset(${days}){${AD_FIELDS}}`,
       limit: 50,
     });
     if(data.error) throw new Error(data.error.message);
@@ -1702,7 +1702,7 @@ async function loadAds(adsetId, adsetName) {
 
   try {
     const data = await metaGet(`${adsetId}/ads`, {
-      fields: `${AD_INFO_FIELDS},insights.date_preset(last_${days}_d){${AD_FIELDS}}`,
+      fields: `${AD_INFO_FIELDS},insights.date_preset(${days}){${AD_FIELDS}}`,
       limit: 50,
     });
     if(data.error) throw new Error(data.error.message);
