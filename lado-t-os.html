@@ -215,6 +215,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
   .cal-grid,.cal-header{grid-template-columns:repeat(7,1fr)}
   .cal-day{min-height:50px}
 }
+.account-pill{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:20px;border:0.5px solid var(--border);font-size:12px;cursor:pointer;transition:all .15s;background:transparent;color:var(--text2);font-family:inherit;margin-right:4px}
+.account-pill.active{background:var(--blue);color:#fff;border-color:var(--blue)}
+.btn.success{background:var(--green);color:#fff;border-color:var(--green)}
 .mobile-header{display:none;align-items:center;gap:12px;padding:12px 16px;background:var(--surface);border-bottom:0.5px solid var(--border);position:sticky;top:0;z-index:40}
 .hamburger{background:none;border:none;font-size:20px;cursor:pointer;color:var(--text)}
 </style>
@@ -258,6 +261,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
     <div class="sidebar-section">Publicidad</div>
     <div class="nav-item" onclick="showPage('ads')" data-page="ads"><span class="ni">◎</span>Meta Ads</div>
     <div class="nav-item" onclick="showPage('scripts')" data-page="scripts"><span class="ni">✎</span>Guiones</div>
+    <div class="nav-item" onclick="showPage('metalive')" data-page="metalive"><span class="ni">⚡</span>Meta Live</div>
     <div class="sidebar-section">Productividad</div>
     <div class="nav-item" onclick="showPage('calendar')" data-page="calendar"><span class="ni">◷</span>Calendario</div>
     <div class="nav-item" onclick="showPage('objectives')" data-page="objectives"><span class="ni">◎</span>Objetivos</div>
@@ -1166,6 +1170,334 @@ async function saveObjModal(id,isNew){
   await saveObjective(o);closeModal();renderObjectives();renderDashboard();
   toast(isNew?'Objetivo creado':'Objetivo actualizado');
 }
+
+
+// ══════════════════════════════════════════════════════════════════════════
+// META ADS LIVE MODULE
+// ══════════════════════════════════════════════════════════════════════════
+
+const META_BREAKEVEN_ROAS=2.5,META_TARGET_ROAS=3.5,META_BREAKEVEN_CPA=18.33;
+let metaConnections=[],metaActiveId=null,metaActiveConn=null;
+let metaLive={campaigns:[],adsets:[],ads:[]},metaPrev={campaigns:[],adsets:[],ads:[]};
+let metaSnapshots=[],metaTab='campaigns',metaPeriod='today',metaSortCol='spend',metaSortDir=-1;
+let metaAutoInterval=null;
+
+async function loadMetaConnections(){
+  const{data}=await db.from('meta_connections').select('*').eq('user_id',currentUser.id);
+  metaConnections=data||[];
+}
+async function loadMetaSnapshots(){
+  const{data}=await db.from('meta_snapshots').select('*').eq('user_id',currentUser.id).order('created_at',{ascending:false}).limit(50);
+  metaSnapshots=data||[];
+}
+
+async function initMetaLive(){
+  await loadMetaConnections();
+  await loadMetaSnapshots();
+  if(metaConnections.length>0){
+    metaActiveId=metaConnections[0].account_id;
+    metaActiveConn=metaConnections[0];
+    metaRenderPills();
+    metaEnableButtons();
+    await metaFetchData(false);
+    metaStartAuto();
+  } else {
+    metaRenderPills();
+  }
+}
+
+function metaEnableButtons(){
+  document.getElementById('meta-btn-refresh').disabled=false;
+  document.getElementById('meta-btn-snapshot').disabled=false;
+}
+
+function metaStartAuto(){
+  if(metaAutoInterval)clearInterval(metaAutoInterval);
+  metaAutoInterval=setInterval(()=>metaFetchData(false),3600000);
+}
+
+function metaRenderPills(){
+  const el=document.getElementById('meta-account-pills');
+  if(!el)return;
+  el.innerHTML=metaConnections.map(c=>`<button class="account-pill ${c.account_id===metaActiveId?'active':''}" onclick="metaSwitchAccount('${c.account_id}')">${esc(c.account_name||c.account_id)}</button>`).join('');
+}
+
+function metaSwitchAccount(id){
+  metaActiveId=id;metaActiveConn=metaConnections.find(c=>c.account_id===id);
+  metaRenderPills();metaFetchData(true);
+}
+
+function metaGetPeriod(){
+  const t=new Date(),f=d=>d.toISOString().slice(0,10);
+  if(metaPeriod==='today')return{since:f(t),until:f(t)};
+  if(metaPeriod==='yesterday'){const y=new Date(t);y.setDate(y.getDate()-1);return{since:f(y),until:f(y)}}
+  if(metaPeriod==='last_7d'){const s=new Date(t);s.setDate(s.getDate()-6);return{since:f(s),until:f(t)}}
+  if(metaPeriod==='last_30d'){const s=new Date(t);s.setDate(s.getDate()-29);return{since:f(s),until:f(t)}}
+  if(metaPeriod==='this_month'){const s=new Date(t.getFullYear(),t.getMonth(),1);return{since:f(s),until:f(t)}}
+  return{since:f(t),until:f(t)};
+}
+
+function metaPeriodLabel(){return{today:'Hoy',yesterday:'Ayer',last_7d:'7 días',last_30d:'30 días',this_month:'Este mes'}[metaPeriod]||metaPeriod}
+
+function metaExtractAction(actions,type){if(!actions||!Array.isArray(actions))return 0;const a=actions.find(x=>x.action_type===type);return a?parseFloat(a.value)||0:0}
+function metaExtractValue(vals,type){if(!vals||!Array.isArray(vals))return 0;const a=vals.find(x=>x.action_type===type);return a?parseFloat(a.value)||0:0}
+function metaExtractVideo(arr){if(!arr||!Array.isArray(arr))return 0;return arr.reduce((s,x)=>s+(parseFloat(x.value)||0),0)}
+
+function metaProcess(i,name,id,status){
+  const purchases=metaExtractAction(i.actions,'purchase')||metaExtractAction(i.actions,'offsite_conversion.fb_pixel_purchase');
+  const purchaseValue=metaExtractValue(i.action_values,'purchase')||metaExtractValue(i.action_values,'offsite_conversion.fb_pixel_purchase');
+  const atc=metaExtractAction(i.actions,'add_to_cart')||metaExtractAction(i.actions,'offsite_conversion.fb_pixel_add_to_cart');
+  const ic=metaExtractAction(i.actions,'initiate_checkout')||metaExtractAction(i.actions,'offsite_conversion.fb_pixel_initiate_checkout');
+  const spend=parseFloat(i.spend)||0;
+  const roas=spend>0&&purchaseValue>0?purchaseValue/spend:0;
+  const cpa=purchases>0?spend/purchases:0;
+  return{id,name,status:status||'ACTIVE',spend,
+    impressions:parseInt(i.impressions)||0,reach:parseInt(i.reach)||0,frequency:parseFloat(i.frequency)||0,
+    clicks:parseInt(i.clicks)||0,link_clicks:parseInt(i.inline_link_clicks)||0,
+    ctr:parseFloat(i.ctr)||0,cpm:parseFloat(i.cpm)||0,cpc:parseFloat(i.cost_per_inline_link_click)||0,
+    purchases,purchase_value:purchaseValue,atc,ic,roas,cpa,
+    p25:metaExtractVideo(i.video_p25_watched_actions),
+    p75:metaExtractVideo(i.video_p75_watched_actions),
+    p100:metaExtractVideo(i.video_p100_watched_actions)};
+}
+
+const META_FIELDS='impressions,reach,frequency,spend,clicks,inline_link_clicks,ctr,cpm,cost_per_inline_link_click,actions,action_values,cost_per_action_type,video_p25_watched_actions,video_p75_watched_actions,video_p100_watched_actions';
+
+async function metaFetchData(showToast=true){
+  if(!metaActiveConn){toast('Conectá una cuenta de Meta primero',2000);return}
+  const btn=document.getElementById('meta-btn-refresh');
+  if(btn){btn.disabled=true;btn.textContent='↻ Cargando...'}
+  document.getElementById('meta-main').innerHTML=`<div style="display:flex;align-items:center;gap:10px;padding:32px;color:var(--text2);font-size:13px"><div style="width:18px;height:18px;border:2px solid var(--border);border-top-color:var(--blue);border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0"></div>Trayendo datos de Meta Ads...</div>`;
+  try{
+    const{since,until}=metaGetPeriod();
+    const tr=encodeURIComponent(JSON.stringify({since,until}));
+    const token=metaActiveConn.token;
+    const aid=metaActiveId.startsWith('act_')?metaActiveId:`act_${metaActiveId}`;
+    metaPrev={campaigns:[...metaLive.campaigns],adsets:[...metaLive.adsets],ads:[...metaLive.ads]};
+
+    const [cr,ar,dr]=await Promise.all([
+      fetch(`https://graph.facebook.com/v19.0/${aid}/campaigns?fields=id,name,status,objective&insights.fields(${META_FIELDS})&insights.time_range=${tr}&limit=50&access_token=${token}`).then(r=>r.json()),
+      fetch(`https://graph.facebook.com/v19.0/${aid}/adsets?fields=id,name,status,campaign_id,daily_budget&insights.fields(${META_FIELDS})&insights.time_range=${tr}&limit=100&access_token=${token}`).then(r=>r.json()),
+      fetch(`https://graph.facebook.com/v19.0/${aid}/ads?fields=id,name,status,adset_id,campaign_id&insights.fields(${META_FIELDS})&insights.time_range=${tr}&limit=200&access_token=${token}`).then(r=>r.json())
+    ]);
+
+    if(cr.error)throw new Error(cr.error.message);
+    metaLive.campaigns=(cr.data||[]).map(c=>metaProcess(c.insights?.data?.[0]||{},c.name,c.id,c.status));
+    metaLive.adsets=(ar.data||[]).map(a=>{const o=metaProcess(a.insights?.data?.[0]||{},a.name,a.id,a.status);o.campaign_id=a.campaign_id;o.daily_budget=a.daily_budget;return o});
+    metaLive.ads=(dr.data||[]).map(a=>{const o=metaProcess(a.insights?.data?.[0]||{},a.name,a.id,a.status);o.adset_id=a.adset_id;o.campaign_id=a.campaign_id;return o});
+
+    const t=new Date().toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'});
+    const sub=document.getElementById('meta-last-update');
+    if(sub)sub.textContent=`Última actualización: ${t} · ${metaPeriodLabel()} · Auto-refresh cada 1h`;
+    metaRenderAlerts();
+    metaRenderMain();
+    if(showToast)toast('Meta Ads actualizado ✓');
+  }catch(e){
+    document.getElementById('meta-main').innerHTML=`<div style="text-align:center;padding:48px;color:var(--text3)"><div style="font-size:32px;margin-bottom:12px">⚠️</div><p style="color:var(--red);font-size:13px;margin-bottom:8px">Error: ${esc(e.message)}</p><p style="font-size:12px;margin-bottom:16px">Verificá que el token sea válido y que la cuenta tenga permisos.</p><button class="btn primary" onclick="metaFetchData(true)">Reintentar</button></div>`;
+    toast('Error al conectar con Meta',3000);
+  }
+  if(btn){btn.disabled=false;btn.textContent='↻ Actualizar'}
+}
+
+function metaRenderAlerts(){
+  const alerts=[];
+  const all=[...metaLive.campaigns,...metaLive.adsets,...metaLive.ads];
+  all.forEach(e=>{
+    if(!e.spend||e.spend<2)return;
+    const prev=[...metaPrev.campaigns,...metaPrev.adsets,...metaPrev.ads].find(x=>x.id===e.id);
+    if(prev&&prev.roas>0&&e.roas>0){const drop=(prev.roas-e.roas)/prev.roas;if(drop>=0.20)alerts.push({t:'red',i:'📉',title:`ROAS cayó ${Math.round(drop*100)}% — ${esc(e.name)}`,body:`Era ${prev.roas.toFixed(2)}× y ahora está en ${e.roas.toFixed(2)}×. Revisá frecuencia y creativo.`})}
+    if(e.cpa>0&&e.cpa>META_BREAKEVEN_CPA)alerts.push({t:'red',i:'💸',title:`CPA sobre el breakeven — ${esc(e.name)}`,body:`CPA actual: u$s ${e.cpa.toFixed(2)} (breakeven: u$s ${META_BREAKEVEN_CPA}). Estás perdiendo plata.`});
+    if(e.frequency>3.5)alerts.push({t:'amber',i:'🔁',title:`Frecuencia alta (${e.frequency.toFixed(1)}) — ${esc(e.name)}`,body:`La audiencia vio el ad ${e.frequency.toFixed(1)} veces. Saturación — sumá nuevos creativos.`});
+    if(prev&&prev.ctr>0&&e.ctr>0){const drop=(prev.ctr-e.ctr)/prev.ctr;if(drop>=0.30)alerts.push({t:'amber',i:'👆',title:`CTR cayó ${Math.round(drop*100)}% — ${esc(e.name)}`,body:`CTR bajó de ${prev.ctr.toFixed(2)}% a ${e.ctr.toFixed(2)}%.`})}
+    if(e.roas>=META_TARGET_ROAS&&e.purchases>=2&&e.spend>=5)alerts.push({t:'green',i:'🏆',title:`Winner — ${esc(e.name)}`,body:`ROAS ${e.roas.toFixed(2)}× con ${e.purchases} compras y u$s ${e.spend.toFixed(2)} de gasto. Candidato para escalar.`});
+    if(e.roas>0&&e.roas<META_BREAKEVEN_ROAS&&e.spend>5){const r=[];if(e.ctr<0.8)r.push('CTR bajo ('+e.ctr.toFixed(2)+'%) — el creativo no engancha');if(e.frequency>2.5)r.push('Frecuencia alta ('+e.frequency.toFixed(1)+') — audiencia saturada');if(e.cpm>6)r.push('CPM alto (u$s '+e.cpm.toFixed(2)+') — inventario caro');if(r.length)alerts.push({t:'red',i:'🔍',title:`¿Por qué bajó el ROAS de "${esc(e.name)}"?`,body:r.join(' · ')})}
+  });
+  const el=document.getElementById('meta-alerts');
+  if(!el)return;
+  el.innerHTML=alerts.length===0?'':`<div class="card" style="margin-bottom:20px"><div class="section-label">Alertas activas (${alerts.length})</div>${alerts.map(a=>`<div style="border-radius:var(--rl);padding:10px 14px;margin-bottom:8px;display:flex;align-items:flex-start;gap:12px;font-size:13px;line-height:1.5;background:var(--${a.t}-bg);border-left:3px solid var(--${a.t})"><div style="font-size:18px;flex-shrink:0">${a.i}</div><div><strong style="font-weight:500;display:block;margin-bottom:2px">${a.title}</strong>${a.body}</div></div>`).join('')}</div>`;
+}
+
+function metaRenderMain(){
+  const data=metaTab==='campaigns'?metaLive.campaigns:metaTab==='adsets'?metaLive.adsets:metaLive.ads;
+  const ts=data.reduce((s,x)=>s+x.spend,0),tp=data.reduce((s,x)=>s+x.purchases,0),tv=data.reduce((s,x)=>s+x.purchase_value,0);
+  const tr=ts>0?tv/ts:0,tc=tp>0?ts/tp:0;
+  const ti=data.reduce((s,x)=>s+x.impressions,0);
+  const avgCtr=ti>0?data.reduce((s,x)=>s+x.impressions*x.ctr,0)/ti:0;
+  const avgCpm=ti>0?data.reduce((s,x)=>s+x.impressions*x.cpm,0)/ti:0;
+  const freqData=data.filter(x=>x.frequency>0);
+  const avgFreq=freqData.length>0?freqData.reduce((s,x)=>s+x.frequency,0)/freqData.length:0;
+  const rc=v=>v>=META_TARGET_ROAS?'var(--green)':v>=META_BREAKEVEN_ROAS?'var(--amber)':'var(--red)';
+  const cc=v=>v>0?(v<=12?'var(--green)':v<=META_BREAKEVEN_CPA?'var(--amber)':'var(--red)'):'var(--text)';
+
+  const sorted=[...data].sort((a,b)=>(b[metaSortCol]??0)-(a[metaSortCol]??0)*metaSortDir);
+  const showV=metaTab==='ads';
+
+  document.getElementById('meta-main').innerHTML=`
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px">
+      ${['today','yesterday','last_7d','last_30d','this_month'].map(p=>`<button onclick="metaSetPeriod('${p}')" style="font-size:12px;padding:5px 12px;border-radius:20px;border:0.5px solid var(--border);background:${metaPeriod===p?'var(--blue)':'transparent'};color:${metaPeriod===p?'#fff':'var(--text2)'};cursor:pointer;font-family:inherit">${{today:'Hoy',yesterday:'Ayer',last_7d:'7 días',last_30d:'30 días',this_month:'Este mes'}[p]}</button>`).join('')}
+    </div>
+    <div class="stat-grid" style="margin-bottom:20px">
+      <div class="stat-card"><div class="stat-label">Gasto</div><div class="stat-value">u$s ${ts.toFixed(2)}</div><div class="stat-sub">${metaPeriodLabel()}</div></div>
+      <div class="stat-card"><div class="stat-label">ROAS</div><div class="stat-value" style="color:${rc(tr)}">${tr>0?tr.toFixed(2)+'×':'—'}</div><div class="stat-sub">breakeven ${META_BREAKEVEN_ROAS}×</div></div>
+      <div class="stat-card"><div class="stat-label">Compras</div><div class="stat-value">${tp||'—'}</div><div class="stat-sub">u$s ${tv.toFixed(2)} en ventas</div></div>
+      <div class="stat-card"><div class="stat-label">CPA</div><div class="stat-value" style="color:${cc(tc)}">${tc>0?'u$s '+tc.toFixed(2):'—'}</div><div class="stat-sub">máx u$s ${META_BREAKEVEN_CPA}</div></div>
+      <div class="stat-card"><div class="stat-label">CTR promedio</div><div class="stat-value" style="color:${avgCtr>=1.5?'var(--green)':avgCtr>=0.8?'var(--amber)':'var(--red)'}">${avgCtr>0?avgCtr.toFixed(2)+'%':'—'}</div><div class="stat-sub">bueno > 1.5%</div></div>
+      <div class="stat-card"><div class="stat-label">CPM promedio</div><div class="stat-value" style="color:${avgCpm<=3?'var(--green)':avgCpm<=6?'var(--amber)':'var(--red)'}">${avgCpm>0?'u$s '+avgCpm.toFixed(2):'—'}</div><div class="stat-sub">bueno < u$s 3</div></div>
+      <div class="stat-card"><div class="stat-label">Frecuencia</div><div class="stat-value" style="color:${avgFreq<=2.5?'var(--green)':avgFreq<=3.5?'var(--amber)':'var(--red)'}">${avgFreq>0?avgFreq.toFixed(2):'—'}</div><div class="stat-sub">máx 2.5</div></div>
+      <div class="stat-card"><div class="stat-label">Impresiones</div><div class="stat-value">${ti>0?ti.toLocaleString('es-AR'):'—'}</div><div class="stat-sub">total período</div></div>
+    </div>
+    <div style="display:flex;gap:4px;border-bottom:0.5px solid var(--border);margin-bottom:16px">
+      ${['campaigns','adsets','ads','snapshots'].map((t,i)=>`<button onclick="metaSetTab('${t}')" style="font-size:13px;padding:8px 16px;border:none;background:transparent;cursor:pointer;color:${metaTab===t?'var(--blue)':'var(--text2)'};font-family:inherit;border-bottom:2px solid ${metaTab===t?'var(--blue)':'transparent'};margin-bottom:-0.5px;font-weight:${metaTab===t?500:400}">${['Campañas','Conjuntos','Anuncios','Historial'][i]} (${[metaLive.campaigns.length,metaLive.adsets.length,metaLive.ads.length,metaSnapshots.length][i]})</button>`).join('')}
+    </div>
+    <div id="meta-tab-content">${metaRenderTab()}</div>
+  `;
+}
+
+function metaSetTab(t){metaTab=t;const el=document.getElementById('meta-tab-content');if(el)el.innerHTML=metaRenderTab()}
+function metaSetPeriod(p){metaPeriod=p;metaFetchData(false)}
+
+function metaRenderTab(){
+  if(metaTab==='snapshots')return metaRenderSnaps();
+  const data=metaTab==='campaigns'?metaLive.campaigns:metaTab==='adsets'?metaLive.adsets:metaLive.ads;
+  if(data.length===0)return`<div style="text-align:center;padding:48px;color:var(--text3)"><p>Sin datos para este período.</p></div>`;
+  const sorted=[...data].sort((a,b)=>((b[metaSortCol]??0)-(a[metaSortCol]??0))*metaSortDir);
+  const showV=metaTab==='ads';
+  const th=(col,label)=>`<th onclick="metaSort('${col}')" style="font-size:11px;font-weight:500;color:var(--text2);text-align:left;padding:8px 10px;border-bottom:0.5px solid var(--border);white-space:nowrap;cursor:pointer">${label}${metaSortCol===col?' ↕':''}</th>`;
+  return`<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:13px">
+    <thead><tr>${th('name','Nombre')}${th('status','Estado')}${th('spend','Gasto')}${th('roas','ROAS')}${th('cpa','CPA')}${th('purchases','Compras')}${th('ctr','CTR')}${th('cpm','CPM')}${th('cpc','CPC')}${th('frequency','Frec.')}${th('impressions','Impr.')}${th('reach','Alcance')}${th('atc','ATC')}${th('ic','IC')}${showV?th('p25','P25')+th('p75','P75')+th('p100','P100'):''}</tr></thead>
+    <tbody>${sorted.map(e=>{
+      const sb={ACTIVE:'green',PAUSED:'amber',DELETED:'red',ARCHIVED:'gray'}[e.status]||'gray';
+      const rc=e.roas>=META_TARGET_ROAS?'#3b6d11':e.roas>=META_BREAKEVEN_ROAS?'#854f0b':e.roas>0?'#a32d2d':'var(--text3)';
+      const cc=e.cpa>0?(e.cpa<=12?'#3b6d11':e.cpa<=META_BREAKEVEN_CPA?'#854f0b':'#a32d2d'):'var(--text3)';
+      const rp=Math.min(100,e.roas/6*100);
+      const rb=e.roas>=META_TARGET_ROAS?'var(--green)':e.roas>=META_BREAKEVEN_ROAS?'var(--amber)':'var(--red)';
+      return`<tr style="transition:background .1s" onmouseover="this.style.background='var(--surface2)'" onmouseout="this.style.background=''">
+        <td style="font-weight:500;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:9px 10px;border-bottom:0.5px solid var(--border)" title="${esc(e.name)}">${esc(e.name)}</td>
+        <td style="padding:9px 10px;border-bottom:0.5px solid var(--border)"><span class="badge ${sb}">${e.status}</span></td>
+        <td style="padding:9px 10px;border-bottom:0.5px solid var(--border)">u$s ${e.spend.toFixed(2)}</td>
+        <td style="padding:9px 10px;border-bottom:0.5px solid var(--border)">
+          <div style="display:flex;align-items:center;gap:6px">
+            <span style="color:${rc};font-weight:500">${e.roas>0?e.roas.toFixed(2)+'×':'—'}</span>
+            ${e.roas>0?`<div style="height:5px;width:50px;background:var(--surface2);border-radius:3px;overflow:hidden"><div style="height:100%;width:${rp}%;background:${rb};border-radius:3px"></div></div>`:''}
+          </div>
+        </td>
+        <td style="padding:9px 10px;border-bottom:0.5px solid var(--border);color:${cc};font-weight:500">${e.cpa>0?'u$s '+e.cpa.toFixed(2):'—'}</td>
+        <td style="padding:9px 10px;border-bottom:0.5px solid var(--border)">${e.purchases||'—'}</td>
+        <td style="padding:9px 10px;border-bottom:0.5px solid var(--border);color:${e.ctr>=1.5?'var(--green)':e.ctr>=0.8?'var(--text)':'var(--red)'}">${e.ctr>0?e.ctr.toFixed(2)+'%':'—'}</td>
+        <td style="padding:9px 10px;border-bottom:0.5px solid var(--border);color:${e.cpm<=3?'var(--green)':e.cpm<=6?'var(--text)':'var(--red)'}">${e.cpm>0?'u$s '+e.cpm.toFixed(2):'—'}</td>
+        <td style="padding:9px 10px;border-bottom:0.5px solid var(--border)">${e.cpc>0?'u$s '+e.cpc.toFixed(2):'—'}</td>
+        <td style="padding:9px 10px;border-bottom:0.5px solid var(--border);color:${e.frequency<=2.5?'var(--green)':e.frequency<=3.5?'var(--amber)':'var(--red)'}">${e.frequency>0?e.frequency.toFixed(2):'—'}</td>
+        <td style="padding:9px 10px;border-bottom:0.5px solid var(--border)">${e.impressions>0?e.impressions.toLocaleString('es-AR'):'—'}</td>
+        <td style="padding:9px 10px;border-bottom:0.5px solid var(--border)">${e.reach>0?e.reach.toLocaleString('es-AR'):'—'}</td>
+        <td style="padding:9px 10px;border-bottom:0.5px solid var(--border)">${e.atc||'—'}</td>
+        <td style="padding:9px 10px;border-bottom:0.5px solid var(--border)">${e.ic||'—'}</td>
+        ${showV?`<td style="padding:9px 10px;border-bottom:0.5px solid var(--border)">${e.p25>0?e.p25.toLocaleString('es-AR'):'—'}</td><td style="padding:9px 10px;border-bottom:0.5px solid var(--border)">${e.p75>0?e.p75.toLocaleString('es-AR'):'—'}</td><td style="padding:9px 10px;border-bottom:0.5px solid var(--border)">${e.p100>0?e.p100.toLocaleString('es-AR'):'—'}</td>`:''}
+      </tr>`;
+    }).join('')}</tbody></table></div>`;
+}
+
+function metaSort(col){if(metaSortCol===col)metaSortDir*=-1;else{metaSortCol=col;metaSortDir=-1}const el=document.getElementById('meta-tab-content');if(el)el.innerHTML=metaRenderTab()}
+
+function metaRenderSnaps(){
+  if(metaSnapshots.length===0)return`<div style="text-align:center;padding:48px;color:var(--text3)"><p>Sin snapshots. Apretá 📸 para guardar las métricas actuales.</p></div>`;
+  return`<div class="card">${metaSnapshots.map(s=>{
+    const d=s.data,dt=new Date(s.created_at).toLocaleString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+    const r=parseFloat(d.total_roas||0);
+    return`<div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:0.5px solid var(--border);font-size:12px">
+      <div style="flex:1"><strong style="font-size:13px">${dt}</strong> <span style="color:var(--text3)">· ${s.level} · ${s.date_start} → ${s.date_stop}</span></div>
+      ${r>0?`<span class="badge ${r>=META_TARGET_ROAS?'green':r>=META_BREAKEVEN_ROAS?'amber':'red'}">${r.toFixed(2)}×</span>`:''}
+      ${d.total_spend?`<span style="color:var(--text2)">u$s ${parseFloat(d.total_spend).toFixed(2)}</span>`:''}
+      ${d.total_purchases?`<span style="color:var(--text2)">${d.total_purchases} compras</span>`:''}
+      <button class="btn sm danger" onclick="metaDeleteSnap('${s.id}')">×</button>
+    </div>`;
+  }).join('')}</div>`;
+}
+
+async function metaSaveSnapshot(){
+  if(!metaActiveConn){toast('Conectá una cuenta primero',2000);return}
+  const{since,until}=metaGetPeriod();
+  const data=metaTab==='campaigns'?metaLive.campaigns:metaTab==='adsets'?metaLive.adsets:metaLive.ads;
+  const ts=data.reduce((s,x)=>s+x.spend,0),tp=data.reduce((s,x)=>s+x.purchases,0),tv=data.reduce((s,x)=>s+x.purchase_value,0);
+  const{error}=await db.from('meta_snapshots').insert({user_id:currentUser.id,account_id:metaActiveId,date_start:since,date_stop:until,level:metaTab,data:{total_spend:ts.toFixed(2),total_purchases:tp,total_roas:(ts>0?tv/ts:0).toFixed(2),total_value:tv.toFixed(2),rows:data,period:metaPeriod,saved_at:new Date().toISOString()}});
+  if(error){toast('Error: '+error.message,3000);return}
+  await loadMetaSnapshots();toast(`Snapshot guardado — ${data.length} ${metaTab}`);
+  if(metaTab==='snapshots'){const el=document.getElementById('meta-tab-content');if(el)el.innerHTML=metaRenderTab()}
+}
+
+async function metaDeleteSnap(id){
+  await db.from('meta_snapshots').delete().eq('id',id);
+  metaSnapshots=metaSnapshots.filter(s=>s.id!==id);
+  const el=document.getElementById('meta-tab-content');if(el)el.innerHTML=metaRenderTab();
+  toast('Snapshot eliminado');
+}
+
+function openAddMetaAccount(){
+  document.getElementById('modal-container').innerHTML=`<div class="modal-overlay" onclick="closeModal()">
+    <div class="modal-box" onclick="event.stopPropagation()">
+      <div class="modal-title">Conectar cuenta Meta Ads</div>
+      <p style="font-size:13px;color:var(--text2);margin-bottom:20px;line-height:1.6">El token se guarda en tu base de datos Supabase de forma segura.</p>
+      <div style="display:flex;flex-direction:column;gap:4px;margin-bottom:14px"><label style="font-size:11px;color:var(--text2);font-weight:500;text-transform:uppercase;letter-spacing:0.05em">ID de la cuenta publicitaria</label><input id="mac-id" style="border:0.5px solid var(--border);border-radius:var(--r);padding:9px 12px;font-size:13px;background:transparent;color:var(--text);outline:none;font-family:inherit" placeholder="Ej: 770215768688778"/></div>
+      <div style="display:flex;flex-direction:column;gap:4px;margin-bottom:14px"><label style="font-size:11px;color:var(--text2);font-weight:500;text-transform:uppercase;letter-spacing:0.05em">Nombre de la cuenta</label><input id="mac-name" style="border:0.5px solid var(--border);border-radius:var(--r);padding:9px 12px;font-size:13px;background:transparent;color:var(--text);outline:none;font-family:inherit" placeholder="Ej: KIRIZ Project"/></div>
+      <div style="display:flex;flex-direction:column;gap:4px;margin-bottom:14px"><label style="font-size:11px;color:var(--text2);font-weight:500;text-transform:uppercase;letter-spacing:0.05em">Access Token</label><input id="mac-token" type="password" style="border:0.5px solid var(--border);border-radius:var(--r);padding:9px 12px;font-size:13px;background:transparent;color:var(--text);outline:none;font-family:inherit" placeholder="EAAORHcjG368..."/></div>
+      <div class="modal-actions">
+        <button class="btn" onclick="closeModal()">Cancelar</button>
+        <button class="btn primary" id="mac-save-btn" onclick="addMetaAccount()">Conectar →</button>
+      </div>
+    </div></div>`;
+  setTimeout(()=>document.getElementById('mac-id')?.focus(),50);
+}
+
+async function addMetaAccount(){
+  let id=document.getElementById('mac-id').value.trim();
+  const name=document.getElementById('mac-name').value.trim();
+  const token=document.getElementById('mac-token').value.trim();
+  if(!id||!token){toast('Completá el ID y el token',2000);return}
+  if(!id.startsWith('act_'))id='act_'+id;
+  const btn=document.getElementById('mac-save-btn');
+  btn.disabled=true;btn.textContent='Verificando...';
+  try{
+    const res=await fetch(`https://graph.facebook.com/v19.0/${id}?fields=id,name,account_status&access_token=${token}`);
+    const json=await res.json();
+    if(json.error)throw new Error(json.error.message);
+    const{error}=await db.from('meta_connections').upsert({user_id:currentUser.id,account_id:id,account_name:name||json.name||id,token,app_id:'1003982038687663'});
+    if(error)throw new Error(error.message);
+    await loadMetaConnections();
+    metaActiveId=id;metaActiveConn=metaConnections.find(c=>c.account_id===id);
+    metaRenderPills();metaEnableButtons();closeModal();
+    toast('Cuenta conectada ✓');
+    await metaFetchData(false);
+    metaStartAuto();
+  }catch(e){
+    toast('Error: '+e.message,3000);
+    btn.disabled=false;btn.textContent='Conectar →';
+  }
+}
+
+// Extend showPage to init Meta Live on first visit
+const _origShowPage=showPage;
+window.showPage=function(p){
+  _origShowPage(p);
+  if(p==='metalive'&&metaConnections.length===0&&currentUser){
+    initMetaLive();
+  } else if(p==='metalive'){
+    metaRenderPills();
+    if(metaActiveConn)metaRenderMain();
+  }
+};
+
+// Also init meta on app load if already connected
+const _origLoadAll=loadAll;
+window.loadAll=async function(){
+  await _origLoadAll();
+  await loadMetaConnections();
+  await loadMetaSnapshots();
+  if(metaConnections.length>0){
+    metaActiveId=metaConnections[0].account_id;
+    metaActiveConn=metaConnections[0];
+  }
+};
+
+
 </script>
 </body>
 </html>
