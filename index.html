@@ -209,7 +209,7 @@ tr:hover td{background:var(--surface2)}
 <div id="toast"></div>
 
 <!-- SETUP -->
-<div id="setup-screen">
+<div id="setup-screen" style="display:none">
   <div class="setup-card">
     <div><span class="auth-brand-name">Lado T</span><span class="auth-brand-tag">OS</span></div>
     <div class="auth-sub">Configuracion inicial del sistema</div>
@@ -747,8 +747,8 @@ create policy "own" on contacts for all using (auth.uid()=user_id);</div>
 
 <script>
 // ── CONFIG ───────────────────────────────────────────────────────────────────
-let SBURL = localStorage.getItem('lt_sb_url')||'';
-let SBKEY = localStorage.getItem('lt_sb_key')||'';
+let SBURL = 'https://vluoynizpvckjqomojxx.supabase.co';
+let SBKEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZsdW95bml6cHZja2pxb21vanh4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwMzE4MTQsImV4cCI6MjA5NjYwNzgxNH0.ItNRCYNzKYvs_S_ToOSOwKesRGZvniq0-kFNKcqZFPM';
 let APIKEY = localStorage.getItem('lt_anthropic_key')||'';
 let db=null, me=null;
 let metrics=[], scripts=[], objectives=[], finances=[], posts=[], contacts=[];
@@ -760,7 +760,7 @@ const STS_BADGE={borrador:'b-gray',test:'b-blue',activo:'b-teal',ganador:'b-gree
 
 // ── INIT ─────────────────────────────────────────────────────────────────────
 function init(){
-  if(!SBURL||!SBKEY){ showSetup(); return; }
+  // credenciales hardcodeadas
   try{
     const {createClient}=supabase;
     db=createClient(SBURL,SBKEY);
