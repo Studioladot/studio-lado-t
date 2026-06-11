@@ -54,7 +54,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
 .logout-btn{font-size:11px;color:var(--text3);background:none;border:none;cursor:pointer;font-family:inherit;padding:2px 0}
 .logout-btn:hover{color:var(--red)}
 
-.main{margin-left:220px;padding:28px 32px;min-height:100vh}
+.main{margin-left:220px;padding:24px 28px;min-height:100vh;transition:margin-left .2s}
 .page{display:none}
 .page.active{display:block}
 .page-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:24px;flex-wrap:wrap;gap:12px}
@@ -262,7 +262,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
   <div class="sidebar" id="sidebar">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;padding:0 4px">
       <div class="sidebar-logo" style="margin-bottom:0">Lado T</div>
-      <button onclick="toggleSidebar()" id="sidebar-toggle" style="background:none;border:none;cursor:pointer;color:var(--text3);font-size:18px;line-height:1;padding:2px 4px" title="Minimizar">‹</button>
+      <button onclick="toggleSidebar()" id="sidebar-toggle" style="background:none;border:none;cursor:pointer;color:var(--text3);font-size:20px;line-height:1;padding:2px 6px;transition:transform .2s" title="Minimizar sidebar">‹</button>
     </div>
     <div class="sidebar-tagline">Sistema Operativo</div>
     <div class="sidebar-section">Principal</div>
@@ -292,7 +292,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
     </div>
   </div>
 
-  <div class="main">
+  <div class="main" id="main-content" style="margin-left:220px;transition:margin-left .2s">
     <!-- DASHBOARD -->
     <div class="page active" id="page-dashboard">
       <div class="page-header">
@@ -626,7 +626,18 @@ function showPage(p){
   if(p==='objectives')renderObjectives();
   document.getElementById('sidebar').classList.remove('open');
 }
-function toggleSidebar(){document.getElementById('sidebar').classList.toggle('open')}
+function toggleSidebar(){
+  const sb=document.getElementById('sidebar');
+  const main=document.querySelector('.main');
+  if(window.innerWidth<=768){
+    sb.classList.toggle('open');
+  } else {
+    sb.classList.toggle('collapsed');
+    if(main) main.style.marginLeft=sb.classList.contains('collapsed')?'52px':'220px';
+    const btn=document.getElementById('sidebar-toggle');
+    if(btn) btn.textContent=sb.classList.contains('collapsed')?'›':'‹';
+  }
+}
 
 // ── BADGES ────────────────────────────────────────────────────────────────
 function roasBadge(v){
