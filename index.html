@@ -1187,6 +1187,8 @@ function renderDash(){
   }
 
   renderObjs();
+  // Actualizar widget Meta en dashboard
+  if(typeof renderDashMetaWidget === 'function') renderDashMetaWidget();
 }
 // ── OBJECTIVES ────────────────────────────────────────────────────────────────
 function renderObjs(){
@@ -2228,12 +2230,7 @@ async function dashAutoSnapshot() {
   renderDashMetaWidget();
 }
 
-// Hook en renderDash para actualizar el widget
-const _origRenderDash = renderDash;
-function renderDash() {
-  _origRenderDash();
-  renderDashMetaWidget();
-}
+// renderDashMetaWidget() se llama dentro de renderDash directamente
 
 // Auto-cargar campanas en el dashboard si hay token
 async function initDashboardMeta() {
@@ -2241,11 +2238,14 @@ async function initDashboardMeta() {
   const widget = document.getElementById('dash-meta-widget');
   if(widget) widget.style.display = 'block';
   if(!metaCampaigns.length) {
-    const tbody = document.getElementById('dash-meta-tbody');
-    if(tbody) tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:var(--text2);padding:16px"><span class="ld"></span><span class="ld"></span><span class="ld"></span> Cargando campanas...</td></tr>';
+    // Mostrar loading en stats mientras carga
+    ['ds-gasto','ds-roas','ds-compras','ds-cpa'].forEach(id=>{
+      const el=document.getElementById(id);
+      if(el)el.innerHTML='<span class="ld"></span><span class="ld"></span><span class="ld"></span>';
+    });
     await loadMetaCampaigns();
   }
-  renderDashMetaWidget();
+  renderDash(); // Esto ya llama renderDashMetaWidget() internamente
 }
 
 
