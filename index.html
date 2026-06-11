@@ -281,20 +281,39 @@ tr:hover td{background:var(--surface2)}
       <div style="display:flex;align-items:center;gap:8px;margin-top:2px">
         <div class="page-sub" id="dash-date">—</div>
         <span id="dash-live-badge" style="display:none;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;background:var(--green-l);color:var(--green);text-transform:uppercase;letter-spacing:.06em">&#9679; En vivo</span>
-        <span id="dash-snap-badge" style="display:none;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;background:var(--surface2);color:var(--text2);text-transform:uppercase;letter-spacing:.06em">Historial guardado</span>
       </div>
     </div>
     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
       <span id="dash-last-update" style="font-size:11px;color:var(--text3)"></span>
-      <button class="btn btn-outline btn-sm" id="dash-refresh-btn" onclick="dashRefreshMeta()" style="display:none">&#8635; Actualizar</button>
+      <div id="dash-date-wrap" style="display:none;align-items:center;gap:6px">
+        <select id="dash-range-select" onchange="dashChangePeriod(this.value)"
+          style="border:0.5px solid var(--border);border-radius:var(--r);padding:6px 10px;font-size:13px;background:var(--surface);color:var(--text);outline:none;cursor:pointer">
+          <option value="today">Hoy</option>
+          <option value="yesterday">Ayer</option>
+          <option value="last_7d">7 dias</option>
+          <option value="last_14d">14 dias</option>
+          <option value="last_30d" selected>30 dias</option>
+          <option value="last_90d">90 dias</option>
+          <option value="this_month">Este mes</option>
+          <option value="last_month">Mes pasado</option>
+          <option value="maximum">Historico</option>
+          <option value="custom">Personalizado...</option>
+        </select>
+        <div id="dash-custom-dates" style="display:none;gap:5px;align-items:center">
+          <input type="date" id="dash-since" style="border:0.5px solid var(--border);border-radius:var(--r);padding:6px 8px;font-size:12px;background:var(--surface);color:var(--text);outline:none" onchange="dashApplyCustom()">
+          <span style="font-size:12px;color:var(--text2)">&#8594;</span>
+          <input type="date" id="dash-until" style="border:0.5px solid var(--border);border-radius:var(--r);padding:6px 8px;font-size:12px;background:var(--surface);color:var(--text);outline:none" onchange="dashApplyCustom()">
+        </div>
+        <button class="btn btn-outline btn-sm" onclick="dashRefreshMeta()">&#8635;</button>
+      </div>
       <button class="btn btn-accent" onclick="openModal('modal-snap')">+ Cargar metricas</button>
     </div>
   </div>
   <div class="stats-grid">
-    <div class="stat-card accent"><div class="stat-label" id="ds-label-gasto">Gasto total</div><div class="stat-value" id="ds-gasto">—</div><div class="stat-sub" id="ds-sub-gasto">USD acumulado</div></div>
-    <div class="stat-card"><div class="stat-label" id="ds-label-roas">ROAS promedio</div><div class="stat-value" id="ds-roas">—</div><div class="stat-sub" id="ds-sub-roas">Campanas activas</div></div>
-    <div class="stat-card"><div class="stat-label" id="ds-label-compras">Compras</div><div class="stat-value" id="ds-compras">—</div><div class="stat-sub" id="ds-sub-compras">Total periodo</div></div>
-    <div class="stat-card teal"><div class="stat-label" id="ds-label-cpa">CPA</div><div class="stat-value" id="ds-cpa">—</div><div class="stat-sub" id="ds-sub-cpa">Costo por compra</div></div>
+    <div class="stat-card accent"><div class="stat-label">Gasto total</div><div class="stat-value" id="ds-gasto">—</div><div class="stat-sub" id="ds-sub-gasto">USD acumulado</div></div>
+    <div class="stat-card"><div class="stat-label">ROAS promedio</div><div class="stat-value" id="ds-roas">—</div><div class="stat-sub" id="ds-sub-roas">Campanas activas</div></div>
+    <div class="stat-card"><div class="stat-label">Compras</div><div class="stat-value" id="ds-compras">—</div><div class="stat-sub" id="ds-sub-compras">Total periodo</div></div>
+    <div class="stat-card teal"><div class="stat-label">CPA</div><div class="stat-value" id="ds-cpa">—</div><div class="stat-sub" id="ds-sub-cpa">Costo por compra</div></div>
   </div>
   <div class="grid-2">
     <div class="card">
@@ -306,27 +325,25 @@ tr:hover td{background:var(--surface2)}
       <div id="ranking-list"><div class="empty"><div class="empty-icon">&#128200;</div><div class="empty-msg">Sin datos</div><div class="empty-sub">Carga tus primeras metricas</div></div></div>
     </div>
   </div>
-  <!-- META LIVE WIDGET en Dashboard -->
+  <!-- Widget Meta Live -->
   <div class="card" id="dash-meta-widget" style="display:none">
     <div class="card-title">
-      <span>&#128279; Meta Ads — Campanas activas ahora</span>
+      <span>&#128279; Meta Ads — Campanas activas</span>
       <div style="display:flex;gap:6px;align-items:center">
         <span id="dash-meta-range" style="font-size:11px;color:var(--text2);font-weight:400"></span>
         <button class="btn btn-sm btn-outline" onclick="showPage('meta-campanas');loadMetaCampaigns()">Ver todas &#8594;</button>
         <button class="btn btn-sm btn-accent" onclick="dashAutoSnapshot()">&#128248; Snapshot ahora</button>
       </div>
     </div>
-    <div class="tbl-wrap">
-      <table>
-        <thead><tr><th>Campana</th><th>Estado</th><th>Gasto</th><th>ROAS</th><th>Compras</th><th>CPA</th><th>CTR</th><th>CPM</th><th></th></tr></thead>
-        <tbody id="dash-meta-tbody"><tr><td colspan="9" style="text-align:center;color:var(--text2);padding:20px">Cargando...</td></tr></tbody>
-      </table>
-    </div>
+    <div class="tbl-wrap"><table>
+      <thead><tr><th>Campana</th><th>Estado</th><th>Gasto</th><th>ROAS</th><th>Compras</th><th>CPA</th><th>CTR</th><th>CPM</th><th></th></tr></thead>
+      <tbody id="dash-meta-tbody"><tr><td colspan="9" style="text-align:center;color:var(--text2);padding:16px">Cargando...</td></tr></tbody>
+    </table></div>
     <div id="dash-meta-last-update" style="font-size:11px;color:var(--text3);margin-top:8px;text-align:right"></div>
   </div>
 
   <div class="card">
-    <div class="card-title">Ultimas metricas guardadas <button class="btn btn-sm btn-outline" onclick="exportCSV()" style="margin-left:auto">&#8595; CSV</button></div>
+    <div class="card-title">Ultimas metricas <button class="btn btn-sm btn-outline" onclick="exportCSV()" style="margin-left:auto">&#8595; CSV</button></div>
     <div class="tbl-wrap"><table>
       <thead><tr><th>Campana / Anuncio</th><th>Gasto</th><th>ROAS</th><th>Compras</th><th>CPA</th><th>CTR</th><th>CPM</th><th>Frec.</th><th>Hook</th><th>Fecha</th></tr></thead>
       <tbody id="dash-tbl"><tr><td colspan="10" style="text-align:center;color:var(--text2);padding:24px">Sin registros — carga tus primeras metricas</td></tr></tbody>
@@ -465,17 +482,24 @@ tr:hover td{background:var(--surface2)}
   </div>
 
   <!-- FILTROS SNAPSHOT -->
-  <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;align-items:center">
-    <select id="snap-filter-type" class="fg" style="margin:0;min-width:0;max-width:160px" onchange="renderSnaps()">
-      <option value="all">Todos los niveles</option>
+  <div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap;align-items:center">
+    <div style="position:relative;flex:1;min-width:200px;max-width:380px">
+      <span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text3);pointer-events:none">&#128269;</span>
+      <input id="snap-search" type="text" placeholder="Buscar por nombre de anuncio o conjunto..."
+        style="width:100%;border:0.5px solid var(--border);border-radius:20px;padding:8px 12px 8px 32px;font-size:13px;background:var(--surface);color:var(--text);outline:none;transition:border-color .15s"
+        oninput="renderSnaps()" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'"/>
+    </div>
+    <select id="snap-filter-type" style="border:0.5px solid var(--border);border-radius:var(--r);padding:7px 10px;font-size:13px;background:var(--surface);color:var(--text);outline:none" onchange="renderSnaps()">
+      <option value="all">Todos</option>
       <option value="campaign">Campanas</option>
       <option value="adset">Conjuntos</option>
       <option value="ad">Anuncios</option>
       <option value="manual">Manuales</option>
     </select>
-    <input type="date" id="snap-filter-date" class="fg" style="margin:0;max-width:160px" onchange="renderSnaps()">
-    <button class="btn btn-ghost btn-sm" onclick="document.getElementById('snap-filter-date').value='';renderSnaps()">Limpiar filtro</button>
+    <input type="date" id="snap-filter-date" style="border:0.5px solid var(--border);border-radius:var(--r);padding:7px 10px;font-size:13px;background:var(--surface);color:var(--text);outline:none" onchange="renderSnaps()">
+    <button class="btn btn-ghost btn-sm" onclick="document.getElementById('snap-filter-date').value='';document.getElementById('snap-search').value='';renderSnaps()">&#10005; Limpiar</button>
   </div>
+  <div id="snap-name-pills" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px"></div>
 
   <div id="snaps-list"><div class="empty"><div class="empty-icon">&#128248;</div><div class="empty-msg">Sin snapshots</div><div class="empty-sub">Usa "Snapshot ahora" para capturar las metricas actuales de Meta</div></div></div>
 </div>
@@ -716,32 +740,8 @@ tr:hover td{background:var(--surface2)}
   p75 numeric default 0,
   p100 numeric default 0,
   notes text default '',
-  snapshot_date date default current_date,
-  snap_type text default 'manual',
-  meta_id text default '',
-  snap_time timestamptz
+  snapshot_date date default current_date
 );
--- Si la tabla ya existe y le faltan las columnas nuevas, ejecuta tambien:
--- Si la tabla YA EXISTE, ejecuta esto para agregar las columnas faltantes:
-ALTER TABLE metrics
-  ADD COLUMN IF NOT EXISTS name text default 'Snapshot',
-  ADD COLUMN IF NOT EXISTS spend numeric default 0,
-  ADD COLUMN IF NOT EXISTS roas numeric default 0,
-  ADD COLUMN IF NOT EXISTS purchases int default 0,
-  ADD COLUMN IF NOT EXISTS cpa numeric default 0,
-  ADD COLUMN IF NOT EXISTS ctr numeric default 0,
-  ADD COLUMN IF NOT EXISTS cpm numeric default 0,
-  ADD COLUMN IF NOT EXISTS cpc numeric default 0,
-  ADD COLUMN IF NOT EXISTS frequency numeric default 0,
-  ADD COLUMN IF NOT EXISTS hook_rate numeric default 0,
-  ADD COLUMN IF NOT EXISTS p25 numeric default 0,
-  ADD COLUMN IF NOT EXISTS p75 numeric default 0,
-  ADD COLUMN IF NOT EXISTS p100 numeric default 0,
-  ADD COLUMN IF NOT EXISTS notes text default '',
-  ADD COLUMN IF NOT EXISTS snapshot_date date default current_date,
-  ADD COLUMN IF NOT EXISTS snap_type text default 'manual',
-  ADD COLUMN IF NOT EXISTS meta_id text default '',
-  ADD COLUMN IF NOT EXISTS snap_time timestamptz;
 alter table metrics enable row level security;
 create policy "own" on metrics for all using (auth.uid()=user_id);
 
@@ -1002,8 +1002,7 @@ function showApp(){
   loadAll();
   loadBenchmarks();
   initMeta();
-  // Cargar campanas de Meta en el dashboard si hay token guardado
-  setTimeout(()=>initDashboardMeta(), 500);
+  setTimeout(()=>initDashboardMeta(), 400);
 }
 
 // ── AUTH ─────────────────────────────────────────────────────────────────────
@@ -1072,124 +1071,44 @@ async function loadAll(){
 
 // ── DASHBOARD ────────────────────────────────────────────────────────────────
 function renderDash(){
-  const liveCamps = metaCampaigns.filter(c => parseFloat(c.insights?.spend) > 0);
-  const useLive = liveCamps.length > 0;
-
-  const liveBadge = document.getElementById('dash-live-badge');
-  const snapBadge = document.getElementById('dash-snap-badge');
-  const refreshBtn = document.getElementById('dash-refresh-btn');
-  if(liveBadge) liveBadge.style.display = useLive ? 'inline-block' : 'none';
-  if(snapBadge) snapBadge.style.display = (!useLive && metrics.length) ? 'inline-block' : 'none';
-  if(refreshBtn) refreshBtn.style.display = META_TOKEN ? 'inline-flex' : 'none';
-
-  if(useLive) {
-    // DATOS EN VIVO DE META
-    const totalSpend = liveCamps.reduce((a,c)=>a+parseFloat(c.insights.spend||0),0);
-    const totalPurch = liveCamps.reduce((a,c)=>a+parseFloat(c.insights.purchases||0),0);
-    const totalRev   = liveCamps.reduce((a,c)=>a+parseFloat(c.insights.revenue||0),0);
-    const roas  = totalSpend>0&&totalRev>0 ? totalRev/totalSpend : 0;
-    const cpa   = totalPurch>0 ? totalSpend/totalPurch : 0;
-    const dateRange  = document.getElementById('meta-date-range')?.value||'last_30d';
-    const rangeLabel = {today:'Hoy',yesterday:'Ayer',last_7d:'7 dias',last_14d:'14 dias',last_30d:'30 dias',last_90d:'90 dias',this_month:'Este mes',last_month:'Mes pasado',maximum:'Historico'}[dateRange]||dateRange;
-
-    document.getElementById('ds-gasto').textContent   = '$'+totalSpend.toFixed(2);
-    document.getElementById('ds-roas').textContent    = roas>0 ? roas.toFixed(1)+'x' : '—';
-    document.getElementById('ds-compras').textContent = totalPurch>0 ? Math.round(totalPurch) : '—';
-    document.getElementById('ds-cpa').textContent     = cpa>0 ? '$'+cpa.toFixed(2) : '—';
-    const sg=document.getElementById('ds-sub-gasto');   if(sg)  sg.textContent  = rangeLabel+' — '+liveCamps.length+' campanas';
-    const sr=document.getElementById('ds-sub-roas');    if(sr)  sr.textContent  = 'Campanas con gasto';
-    const sc=document.getElementById('ds-sub-compras'); if(sc)  sc.textContent  = 'Periodo: '+rangeLabel;
-    const sk=document.getElementById('ds-sub-cpa');     if(sk)  sk.textContent  = 'Promedio del periodo';
-
-    // Ranking live por ROAS
-    const rankSrc = [...liveCamps].filter(c=>parseFloat(c.insights.roas)>0)
-      .sort((a,b)=>parseFloat(b.insights.roas)-parseFloat(a.insights.roas)).slice(0,5);
-    const rel = document.getElementById('ranking-list');
-    if(!rankSrc.length){
-      rel.innerHTML='<div class="empty" style="padding:16px"><div class="empty-msg">Sin ROAS en el periodo</div></div>';
-    } else {
-      rel.innerHTML = rankSrc.map((c,i)=>`
-        <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:0.5px solid var(--border);${i===rankSrc.length-1?'border:none':''}">
-          <span style="font-size:13px;font-weight:700;color:var(--text2);width:18px">${i+1}</span>
-          <div style="flex:1;min-width:0">
-            <div style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${c.name}">${c.name}</div>
-            <div style="font-size:11px;color:var(--text2)">Gasto $${c.insights.spend} · ${Math.round(c.insights.purchases||0)} ventas</div>
-          </div>
-          <span style="font-size:14px;font-weight:700;color:${roasColor(c.insights.roas)};white-space:nowrap">${parseFloat(c.insights.roas).toFixed(1)}x</span>
-        </div>`).join('');
-    }
-
-    // Tabla con todas las campanas ordenadas por ROAS
-    const allSorted = [...liveCamps].sort((a,b)=>parseFloat(b.insights.roas||0)-parseFloat(a.insights.roas||0));
-    const tbl = document.getElementById('dash-tbl');
-    tbl.innerHTML = allSorted.map(camp=>{const ins=camp.insights||{};return `<tr>
-      <td style="font-weight:600;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${camp.name}">${camp.name}</td>
-      <td>$${ins.spend||'—'}</td>
-      <td><span style="font-weight:700;color:${roasColor(ins.roas)}">${ins.roas?ins.roas+'x':'—'}</span></td>
-      <td>${ins.purchases||'—'}</td>
-      <td>${ins.cpa?'$'+ins.cpa:'—'}</td>
-      <td>${ins.ctr?ins.ctr+'%':'—'}</td>
-      <td>${ins.cpm?'$'+ins.cpm:'—'}</td>
-      <td>${ins.frequency||'—'}</td>
-      <td>${ins.hook_rate?ins.hook_rate+'%':'—'}</td>
-      <td style="color:var(--green);font-size:11px;font-weight:600">En vivo</td>
-    </tr>`}).join('');
-
-    const upd=document.getElementById('dash-last-update');
-    if(upd) upd.textContent='Act. '+new Date().toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'});
-
-  } else {
-    // DATOS DE SNAPSHOTS GUARDADOS
-    const tot    = metrics.reduce((a,m)=>a+(+m.spend||0),0);
-    const roasL  = metrics.filter(m=>+m.roas>0);
-    const avgR   = roasL.length?(roasL.reduce((a,m)=>a+(+m.roas),0)/roasL.length):0;
-    const totP   = metrics.reduce((a,m)=>a+(+m.purchases||0),0);
-    const cpaL   = metrics.filter(m=>+m.cpa>0);
-    const avgC   = cpaL.length?(cpaL.reduce((a,m)=>a+(+m.cpa),0)/cpaL.length):0;
-    document.getElementById('ds-gasto').textContent   = tot>0?'$'+tot.toFixed(0):'—';
-    document.getElementById('ds-roas').textContent    = avgR?avgR.toFixed(1)+'x':'—';
-    document.getElementById('ds-compras').textContent = totP||'—';
-    document.getElementById('ds-cpa').textContent     = avgC?'$'+fmt(avgC):'—';
-    const sg=document.getElementById('ds-sub-gasto');   if(sg)  sg.textContent  = 'USD acumulado';
-    const sr=document.getElementById('ds-sub-roas');    if(sr)  sr.textContent  = 'Promedio snapshots';
-    const sc=document.getElementById('ds-sub-compras'); if(sc)  sc.textContent  = 'Total registradas';
-    const sk=document.getElementById('ds-sub-cpa');     if(sk)  sk.textContent  = 'Costo por compra';
-
-    const sorted=[...metrics].filter(m=>+m.roas>0).sort((a,b)=>+b.roas-+a.roas).slice(0,5);
-    const rel=document.getElementById('ranking-list');
-    if(!sorted.length){
-      rel.innerHTML='<div class="empty" style="padding:16px"><div class="empty-icon">&#128200;</div><div class="empty-msg">Sin datos</div><div class="empty-sub">Conecta Meta Ads para ver datos en vivo</div></div>';
-    } else {
-      rel.innerHTML=sorted.map((m,i)=>`
-        <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:0.5px solid var(--border);${i===sorted.length-1?'border:none':''}">
-          <span style="font-size:13px;font-weight:700;color:var(--text2);width:18px">${i+1}</span>
-          <span style="flex:1;font-size:13px;font-weight:600">${m.name}</span>
-          <span style="font-size:13px;font-weight:700;color:${roasColor(m.roas)}">${(+m.roas).toFixed(1)}x</span>
-        </div>`).join('');
-    }
-    const tbl=document.getElementById('dash-tbl');
-    if(!metrics.length){
-      tbl.innerHTML='<tr><td colspan="10" style="text-align:center;color:var(--text2);padding:24px">Sin datos — conecta Meta Ads o carga metricas manualmente</td></tr>';
-    } else {
-      tbl.innerHTML=metrics.slice(0,15).map(m=>`<tr>
-        <td style="font-weight:600">${m.name}</td>
-        <td>$${(+m.spend||0).toFixed(0)}</td>
-        <td><span style="font-weight:700;color:${roasColor(m.roas)}">${m.roas||'—'}x</span></td>
-        <td>${m.purchases||'—'}</td>
-        <td>${m.cpa?'$'+fmt(m.cpa):'—'}</td>
-        <td>${m.ctr?m.ctr+'%':'—'}</td>
-        <td>${m.cpm?'$'+m.cpm:'—'}</td>
-        <td>${m.frequency||'—'}</td>
-        <td>${m.hook_rate?m.hook_rate+'%':'—'}</td>
-        <td style="color:var(--text2);font-size:12px">${fmtDate(m.created_at)}</td>
-      </tr>`).join('');
-    }
-  }
-
+  const tot=metrics.reduce((a,m)=>a+(+m.spend||0),0);
+  const roasList=metrics.filter(m=>+m.roas>0);
+  const avgRoas=roasList.length?(roasList.reduce((a,m)=>a+(+m.roas),0)/roasList.length):0;
+  const totP=metrics.reduce((a,m)=>a+(+m.purchases||0),0);
+  const cpaList=metrics.filter(m=>+m.cpa>0);
+  const avgCPA=cpaList.length?(cpaList.reduce((a,m)=>a+(+m.cpa),0)/cpaList.length):0;
+  document.getElementById('ds-gasto').textContent='$'+tot.toFixed(0);
+  document.getElementById('ds-roas').textContent=avgRoas?avgRoas.toFixed(1)+'x':'—';
+  document.getElementById('ds-compras').textContent=totP||'—';
+  document.getElementById('ds-cpa').textContent=avgCPA?'$'+fmt(avgCPA):'—';
   renderObjs();
-  // Actualizar widget Meta en dashboard
-  if(typeof renderDashMetaWidget === 'function') renderDashMetaWidget();
+  // Ranking
+  const sorted=[...metrics].filter(m=>+m.roas>0).sort((a,b)=>+b.roas-+a.roas).slice(0,5);
+  const rel=document.getElementById('ranking-list');
+  if(!sorted.length){rel.innerHTML='<div class="empty" style="padding:16px"><div class="empty-icon">&#128200;</div><div class="empty-msg">Sin datos</div></div>';return;}
+  rel.innerHTML=sorted.map((m,i)=>`
+    <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:0.5px solid var(--border);${i===sorted.length-1?'border:none':''}">
+      <span style="font-size:13px;font-weight:700;color:var(--text2);width:18px">${i+1}</span>
+      <span style="flex:1;font-size:13px;font-weight:600">${m.name}</span>
+      <span style="font-size:13px;font-weight:700;color:${+m.roas>=4?'var(--green)':+m.roas>=2?'var(--blue)':'var(--amber)'}">${(+m.roas).toFixed(1)}x</span>
+    </div>`).join('');
+  // Table
+  const tbl=document.getElementById('dash-tbl');
+  if(!metrics.length){tbl.innerHTML='<tr><td colspan="10" style="text-align:center;color:var(--text2);padding:24px">Sin registros</td></tr>';return;}
+  tbl.innerHTML=metrics.slice(0,15).map(m=>`<tr>
+    <td style="font-weight:600">${m.name}</td>
+    <td>$${(+m.spend||0).toFixed(0)}</td>
+    <td><span style="font-weight:700;color:${+m.roas>=4?'var(--green)':+m.roas>=2?'var(--blue)':+m.roas>=1.5?'var(--amber)':'var(--red)'}">${m.roas||'—'}x</span></td>
+    <td>${m.purchases||'—'}</td>
+    <td>${m.cpa?'$'+fmt(m.cpa):'—'}</td>
+    <td>${m.ctr?m.ctr+'%':'—'}</td>
+    <td>${m.cpm?'$'+m.cpm:'—'}</td>
+    <td>${m.frequency||'—'}</td>
+    <td>${m.hook_rate?m.hook_rate+'%':'—'}</td>
+    <td style="color:var(--text2);font-size:12px">${fmtDate(m.created_at)}</td>
+  </tr>`).join('');
 }
+
 // ── OBJECTIVES ────────────────────────────────────────────────────────────────
 function renderObjs(){
   const el=document.getElementById('obj-list');
@@ -1253,14 +1172,12 @@ async function saveSnap(){
     notes:document.getElementById('ms-notes').value.trim(),
     snapshot_date:document.getElementById('ms-date').value||new Date().toISOString().split('T')[0]
   };
-  try {
-    const row = await safeInsertMetric(rec);
-    if(row) { metrics.unshift(row); renderDash(); renderSnaps(); }
-    closeModal('modal-snap');
-    ['ms-name','ms-spend','ms-roas','ms-purch','ms-cpa','ms-ctr','ms-cpm','ms-cpc','ms-freq','ms-hook','ms-p25','ms-p75','ms-p100','ms-notes'].forEach(id=>document.getElementById(id).value='');
-    document.getElementById('ms-date').value=new Date().toISOString().split('T')[0];
-    toast('Snapshot guardado');
-  } catch(e) { toast('Error: '+e.message.slice(0,100)); console.error(e); }
+  const {data,error}=await db.from('metrics').insert([rec]).select();
+  if(error){toast('Error: '+error.message);return;}
+  metrics.unshift(data[0]); renderDash(); renderSnaps(); renderBib(); closeModal('modal-snap');
+  ['ms-name','ms-spend','ms-roas','ms-purch','ms-cpa','ms-ctr','ms-cpm','ms-cpc','ms-freq','ms-hook','ms-p25','ms-p75','ms-p100','ms-notes'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('ms-date').value=new Date().toISOString().split('T')[0];
+  toast('Snapshot guardado');
 }
 function renderSnaps(){
   const el=document.getElementById('snaps-list');
@@ -1604,6 +1521,344 @@ function toast(msg,t=2400){const el=document.getElementById('toast');el.textCont
 window.addEventListener('load',init);
 
 
+
+// ══════════════════════════════════════════════════════════════════════════════
+// SAFE INSERT
+// ══════════════════════════════════════════════════════════════════════════════
+const _metricsBadCols = new Set();
+async function safeInsertMetric(rec) {
+  let obj = {};
+  for(const [k,v] of Object.entries(rec)) { if(!_metricsBadCols.has(k)) obj[k]=v; }
+  for(let i=0;i<15;i++){
+    const {data,error} = await db.from('metrics').insert([obj]).select();
+    if(!error && data && data[0]) return data[0];
+    if(!error) return null;
+    const msg = error.message||'';
+    const m = msg.match(/[Cc]ould not find the ["']?([a-zA-Z0-9_]+)["']? column/)
+             || msg.match(/column ["']([a-zA-Z0-9_]+)["'] does not exist/);
+    if(m && m[1] && m[1]!=='user_id') { _metricsBadCols.add(m[1]); delete obj[m[1]]; continue; }
+    throw new Error(msg);
+  }
+  throw new Error('safeInsertMetric: max reintentos');
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// RENDER SNAPSHOTS — con buscador, agrupación por nombre y notas
+// ══════════════════════════════════════════════════════════════════════════════
+function renderSnaps(){
+  const el=document.getElementById('snaps-list'); if(!el)return;
+  let list=[...metrics];
+  const typeF=(document.getElementById('snap-filter-type')?.value)||'all';
+  const dateF=(document.getElementById('snap-filter-date')?.value)||'';
+  const search=((document.getElementById('snap-search')?.value)||'').trim().toLowerCase();
+  if(typeF!=='all'){ if(typeF==='manual') list=list.filter(m=>!m.snap_type||m.snap_type==='manual'); else list=list.filter(m=>m.snap_type===typeF); }
+  if(dateF) list=list.filter(m=>(m.snapshot_date||m.date||m.created_at||'').startsWith(dateF));
+  if(search) list=list.filter(m=>(m.name||'').toLowerCase().includes(search));
+
+  // Pills de nombres únicos cuando hay búsqueda
+  const pillsEl=document.getElementById('snap-name-pills');
+  if(pillsEl){
+    if(search){
+      const names=[...new Set(list.map(m=>(m.name||'').replace(/^\[[^\]]+\]\s*/,'')))].filter(Boolean).slice(0,6);
+      pillsEl.innerHTML=names.map(n=>`<span style="padding:3px 10px;background:var(--accent-l);color:var(--accent);border-radius:12px;font-size:11px;font-weight:600;cursor:pointer" onclick="document.getElementById('snap-search').value=this.dataset.n;renderSnaps()" data-n="${n.replace(/"/g,'&quot;')}">${n}</span>`).join('');
+    } else { pillsEl.innerHTML=''; }
+  }
+
+  if(!list.length){
+    el.innerHTML=search?'<div class="empty"><div class="empty-icon">&#128269;</div><div class="empty-msg">Sin resultados</div><div class="empty-sub">Intenta con otro termino</div></div>':'<div class="empty"><div class="empty-icon">&#128248;</div><div class="empty-msg">Sin snapshots</div><div class="empty-sub">Usa Snapshot ahora para capturar las metricas de Meta</div></div>';
+    return;
+  }
+
+  if(search){
+    // Agrupar por nombre base (sin el timestamp del inicio)
+    const byName={};
+    list.forEach(m=>{ const k=(m.name||'').replace(/^\[[^\]]+\]\s*/,''); if(!byName[k])byName[k]=[]; byName[k].push(m); });
+    el.innerHTML=Object.entries(byName).map(([name,snaps])=>{
+      const sorted=snaps.sort((a,b)=>new Date(b.snap_time||b.created_at)-new Date(a.snap_time||a.created_at));
+      const best=Math.max(...sorted.map(s=>parseFloat(s.roas)||0));
+      const typeLbl={campaign:'Campana',adset:'Conjunto',ad:'Anuncio',manual:'Manual'}[sorted[0]?.snap_type]||'';
+      const typeBdg={campaign:'b-blue',adset:'b-teal',ad:'b-accent',manual:'b-gray'}[sorted[0]?.snap_type]||'b-gray';
+      return `<div style="margin-bottom:24px">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;padding:10px 14px;background:var(--surface);border-radius:var(--r);border:0.5px solid var(--border)">
+          <div style="flex:1;min-width:0">
+            <div style="font-size:14px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${name}</div>
+            <div style="font-size:11px;color:var(--text2);margin-top:2px">${sorted.length} snapshot${sorted.length>1?'s':''} · Mejor ROAS: <span style="font-weight:700;color:${roasColor(best)}">${best>0?best+'x':'—'}</span></div>
+          </div>
+          ${typeLbl?`<span class="badge ${typeBdg}">${typeLbl}</span>`:''}
+        </div>
+        ${sorted.map(m=>snapCard(m)).join('')}
+      </div>`;
+    }).join('');
+  } else {
+    // Agrupar por fecha
+    const byDate={};
+    list.forEach(m=>{ const d=m.snapshot_date||m.date||m.created_at?.split('T')[0]||'—'; if(!byDate[d])byDate[d]=[]; byDate[d].push(m); });
+    el.innerHTML=Object.entries(byDate).sort((a,b)=>b[0].localeCompare(a[0])).map(([date,snaps])=>`
+      <div style="margin-bottom:20px">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text2);margin-bottom:8px;padding-bottom:6px;border-bottom:0.5px solid var(--border)">
+          &#128197; ${new Date(date+'T12:00:00').toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long'})} — ${snaps.length} snapshot${snaps.length>1?'s':''}
+        </div>
+        ${snaps.sort((a,b)=>new Date(b.snap_time||b.created_at)-new Date(a.snap_time||a.created_at)).map(m=>snapCard(m)).join('')}
+      </div>`).join('');
+  }
+}
+
+function snapCard(m){
+  const tl=m.snap_time?new Date(m.snap_time).toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'}):fmtDate(m.created_at);
+  const tLbl={campaign:'Campana',adset:'Conjunto',ad:'Anuncio',manual:'Manual'}[m.snap_type]||'';
+  const tBdg={campaign:'b-blue',adset:'b-teal',ad:'b-accent',manual:'b-gray'}[m.snap_type]||'b-gray';
+  return `<div class="snap-card" id="snap-${m.id}">
+    <div class="snap-hdr">
+      <div style="flex:1;min-width:0">
+        <div class="snap-name" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${m.name||''}">${m.name||'—'}</div>
+        <div class="snap-date">${tl}${tLbl?` · <span class="badge ${tBdg}" style="font-size:9px">${tLbl}</span>`:''}</div>
+      </div>
+      <div style="display:flex;gap:5px;flex-shrink:0">
+        <button class="btn btn-sm btn-ghost" onclick="toggleSnapNote('${m.id}')" title="Nota">&#128221;</button>
+        <button class="btn btn-sm btn-red btn-ghost" onclick="delSnap('${m.id}')">&#10005;</button>
+      </div>
+    </div>
+    <div class="snap-metrics">
+      ${m.spend?`<div class="sm-item"><div class="sm-label">Gasto</div><div class="sm-value">$${m.spend}</div></div>`:''}
+      ${m.roas?`<div class="sm-item"><div class="sm-label">ROAS</div><div class="sm-value" style="color:${roasColor(m.roas)}">${m.roas}x</div></div>`:''}
+      ${m.purchases?`<div class="sm-item"><div class="sm-label">Compras</div><div class="sm-value">${m.purchases}</div></div>`:''}
+      ${m.cpa?`<div class="sm-item"><div class="sm-label">CPA</div><div class="sm-value">$${m.cpa}</div></div>`:''}
+      ${m.ctr?`<div class="sm-item"><div class="sm-label">CTR</div><div class="sm-value">${m.ctr}%</div></div>`:''}
+      ${m.cpm?`<div class="sm-item"><div class="sm-label">CPM</div><div class="sm-value">$${m.cpm}</div></div>`:''}
+      ${m.hook_rate?`<div class="sm-item"><div class="sm-label">Hook</div><div class="sm-value">${m.hook_rate}%</div></div>`:''}
+    </div>
+    <div id="snap-note-${m.id}" style="margin-top:${m.notes?'8px':'0'};${m.notes?'':'display:none'}">
+      <textarea id="snap-txt-${m.id}" rows="2"
+        style="width:100%;border:0.5px solid var(--border);border-radius:var(--r);padding:7px 10px;font-size:12px;color:var(--text);background:var(--surface2);resize:none;outline:none;margin-top:8px"
+        placeholder="Escribe una nota para este snapshot..."
+        onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'"
+        onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();saveSnapNote('${m.id}')}"
+      >${m.notes||''}</textarea>
+      <div style="display:flex;justify-content:flex-end;gap:6px;margin-top:5px">
+        <button class="btn btn-sm btn-ghost" onclick="toggleSnapNote('${m.id}')">Cancelar</button>
+        <button class="btn btn-sm btn-accent" onclick="saveSnapNote('${m.id}')">Guardar</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function toggleSnapNote(id){
+  const area=document.getElementById('snap-note-'+id); if(!area)return;
+  const hidden=area.style.display==='none';
+  area.style.display=hidden?'block':'none';
+  if(hidden){const txt=document.getElementById('snap-txt-'+id);if(txt){txt.style.marginTop='8px';txt.focus();}}
+}
+
+async function saveSnapNote(id){
+  const txt=document.getElementById('snap-txt-'+id); if(!txt)return;
+  const note=txt.value.trim();
+  const {error}=await db.from('metrics').update({notes:note}).eq('id',id);
+  if(error){toast('Error: '+error.message);return;}
+  const m=metrics.find(x=>x.id===id); if(m)m.notes=note;
+  toggleSnapNote(id); toast('Nota guardada ✓');
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// DASHBOARD — renderDash con datos live de Meta
+// ══════════════════════════════════════════════════════════════════════════════
+function renderDash(){
+  const liveCamps=metaCampaigns.filter(c=>parseFloat(c.insights?.spend)>0);
+  const useLive=liveCamps.length>0;
+  const liveBadge=document.getElementById('dash-live-badge');
+  const dateWrap=document.getElementById('dash-date-wrap');
+  if(liveBadge) liveBadge.style.display=useLive?'inline-block':'none';
+  if(dateWrap) dateWrap.style.display=META_TOKEN?'flex':'none';
+
+  if(useLive){
+    const totalSpend=liveCamps.reduce((a,c)=>a+parseFloat(c.insights.spend||0),0);
+    const totalPurch=liveCamps.reduce((a,c)=>a+parseFloat(c.insights.purchases||0),0);
+    const totalRev=liveCamps.reduce((a,c)=>a+parseFloat(c.insights.revenue||0),0);
+    const roas=totalSpend>0&&totalRev>0?totalRev/totalSpend:0;
+    const cpa=totalPurch>0?totalSpend/totalPurch:0;
+    const rv=document.getElementById('meta-date-range')?.value||'last_30d';
+    const rl={today:'Hoy',yesterday:'Ayer',last_7d:'7 dias',last_14d:'14 dias',last_30d:'30 dias',last_90d:'90 dias',this_month:'Este mes',last_month:'Mes pasado',maximum:'Historico'}[rv]||rv;
+    document.getElementById('ds-gasto').textContent='$'+totalSpend.toFixed(2);
+    document.getElementById('ds-roas').textContent=roas>0?roas.toFixed(1)+'x':'—';
+    document.getElementById('ds-compras').textContent=totalPurch>0?Math.round(totalPurch):'—';
+    document.getElementById('ds-cpa').textContent=cpa>0?'$'+cpa.toFixed(2):'—';
+    const sg=document.getElementById('ds-sub-gasto'); if(sg) sg.textContent=rl+' · '+liveCamps.length+' campanas';
+    const sr=document.getElementById('ds-sub-roas');  if(sr) sr.textContent='Campanas con gasto';
+    const sc=document.getElementById('ds-sub-compras');if(sc) sc.textContent='Periodo: '+rl;
+    const sk=document.getElementById('ds-sub-cpa');   if(sk) sk.textContent='Promedio del periodo';
+    // Ranking
+    const rankSrc=[...liveCamps].filter(c=>parseFloat(c.insights.roas)>0).sort((a,b)=>parseFloat(b.insights.roas)-parseFloat(a.insights.roas)).slice(0,5);
+    const rel=document.getElementById('ranking-list');
+    rel.innerHTML=rankSrc.length?rankSrc.map((c,i)=>`
+      <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:0.5px solid var(--border);${i===rankSrc.length-1?'border:none':''}">
+        <span style="font-size:13px;font-weight:700;color:var(--text2);width:18px">${i+1}</span>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${c.name}">${c.name}</div>
+          <div style="font-size:11px;color:var(--text2)">$${c.insights.spend} · ${Math.round(c.insights.purchases||0)} ventas</div>
+        </div>
+        <span style="font-size:14px;font-weight:700;color:${roasColor(c.insights.roas)};white-space:nowrap">${parseFloat(c.insights.roas).toFixed(1)}x</span>
+      </div>`).join('')
+    :'<div class="empty" style="padding:16px"><div class="empty-msg">Sin ROAS en el periodo</div></div>';
+    // Tabla
+    const tbl=document.getElementById('dash-tbl');
+    tbl.innerHTML=[...liveCamps].sort((a,b)=>parseFloat(b.insights.roas||0)-parseFloat(a.insights.roas||0)).map(camp=>{const ins=camp.insights||{};return`<tr>
+      <td style="font-weight:600;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${camp.name}">${camp.name}</td>
+      <td>$${ins.spend||'—'}</td>
+      <td><span style="font-weight:700;color:${roasColor(ins.roas)}">${ins.roas?ins.roas+'x':'—'}</span></td>
+      <td>${ins.purchases||'—'}</td><td>${ins.cpa?'$'+ins.cpa:'—'}</td>
+      <td>${ins.ctr?ins.ctr+'%':'—'}</td><td>${ins.cpm?'$'+ins.cpm:'—'}</td>
+      <td>${ins.frequency||'—'}</td><td>${ins.hook_rate?ins.hook_rate+'%':'—'}</td>
+      <td style="color:var(--green);font-size:11px;font-weight:600">Live</td>
+    </tr>`}).join('');
+    const upd=document.getElementById('dash-last-update');
+    if(upd) upd.textContent='Act. '+new Date().toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'});
+  } else {
+    // Datos de snapshots guardados
+    const tot=metrics.reduce((a,m)=>a+(+m.spend||0),0);
+    const roasL=metrics.filter(m=>+m.roas>0);
+    const avgR=roasL.length?(roasL.reduce((a,m)=>a+(+m.roas),0)/roasL.length):0;
+    const totP=metrics.reduce((a,m)=>a+(+m.purchases||0),0);
+    const cpaL=metrics.filter(m=>+m.cpa>0);
+    const avgC=cpaL.length?(cpaL.reduce((a,m)=>a+(+m.cpa),0)/cpaL.length):0;
+    document.getElementById('ds-gasto').textContent=tot>0?'$'+tot.toFixed(0):'—';
+    document.getElementById('ds-roas').textContent=avgR?avgR.toFixed(1)+'x':'—';
+    document.getElementById('ds-compras').textContent=totP||'—';
+    document.getElementById('ds-cpa').textContent=avgC?'$'+fmt(avgC):'—';
+    const sg=document.getElementById('ds-sub-gasto'); if(sg) sg.textContent='USD acumulado';
+    const sr=document.getElementById('ds-sub-roas');  if(sr) sr.textContent='Promedio snapshots';
+    const sc=document.getElementById('ds-sub-compras');if(sc) sc.textContent='Total registradas';
+    const sk=document.getElementById('ds-sub-cpa');   if(sk) sk.textContent='Costo por compra';
+    const sorted=[...metrics].filter(m=>+m.roas>0).sort((a,b)=>+b.roas-+a.roas).slice(0,5);
+    const rel=document.getElementById('ranking-list');
+    rel.innerHTML=sorted.length?sorted.map((m,i)=>`
+      <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:0.5px solid var(--border);${i===sorted.length-1?'border:none':''}">
+        <span style="font-size:13px;font-weight:700;color:var(--text2);width:18px">${i+1}</span>
+        <span style="flex:1;font-size:13px;font-weight:600">${m.name}</span>
+        <span style="font-size:13px;font-weight:700;color:${roasColor(m.roas)}">${(+m.roas).toFixed(1)}x</span>
+      </div>`).join('')
+    :'<div class="empty" style="padding:16px"><div class="empty-icon">&#128200;</div><div class="empty-msg">Sin datos</div><div class="empty-sub">Conecta Meta Ads para ver datos en vivo</div></div>';
+    const tbl=document.getElementById('dash-tbl');
+    tbl.innerHTML=metrics.length?metrics.slice(0,15).map(m=>`<tr>
+      <td style="font-weight:600">${m.name}</td><td>$${(+m.spend||0).toFixed(0)}</td>
+      <td><span style="font-weight:700;color:${roasColor(m.roas)}">${m.roas||'—'}x</span></td>
+      <td>${m.purchases||'—'}</td><td>${m.cpa?'$'+fmt(m.cpa):'—'}</td>
+      <td>${m.ctr?m.ctr+'%':'—'}</td><td>${m.cpm?'$'+m.cpm:'—'}</td>
+      <td>${m.frequency||'—'}</td><td>${m.hook_rate?m.hook_rate+'%':'—'}</td>
+      <td style="color:var(--text2);font-size:12px">${fmtDate(m.created_at)}</td>
+    </tr>`).join('')
+    :'<tr><td colspan="10" style="text-align:center;color:var(--text2);padding:24px">Sin datos — conecta Meta Ads o carga metricas manualmente</td></tr>';
+  }
+  renderObjs();
+  renderDashMetaWidget();
+}
+
+// ── DASHBOARD META WIDGET ─────────────────────────────────────────────────────
+function renderDashMetaWidget(){
+  const widget=document.getElementById('dash-meta-widget');
+  const tbody=document.getElementById('dash-meta-tbody');
+  if(!widget||!tbody)return;
+  if(!META_TOKEN||!META_ACCOUNT){widget.style.display='none';return;}
+  widget.style.display='block';
+  if(!metaCampaigns.length){
+    tbody.innerHTML='<tr><td colspan="9" style="text-align:center;color:var(--text2);padding:14px">Sin campanas cargadas — <span onclick="initDashboardMeta()" style="cursor:pointer;color:var(--accent);font-weight:600">Cargar ahora</span></td></tr>';
+    return;
+  }
+  const rv=document.getElementById('meta-date-range')?.value||'last_30d';
+  const rl={today:'Hoy',yesterday:'Ayer',last_7d:'7 dias',last_14d:'14 dias',last_30d:'30 dias',last_90d:'90 dias',this_month:'Este mes',last_month:'Mes pasado',maximum:'Historico'}[rv]||rv;
+  const rangeEl=document.getElementById('dash-meta-range'); if(rangeEl) rangeEl.textContent=rl;
+  const actives=metaCampaigns.filter(c=>(c.effective_status||c.status)==='ACTIVE');
+  const list=actives.length?actives:metaCampaigns.slice(0,8);
+  tbody.innerHTML=list.map(c=>{const ins=c.insights||{};return`<tr>
+    <td style="font-weight:600;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${c.name}">${c.name}</td>
+    <td>${statusBadge(c.effective_status||c.status)}</td>
+    <td style="font-weight:700">${ins.spend?'$'+ins.spend:'—'}</td>
+    <td><span style="font-weight:700;color:${roasColor(ins.roas)}">${ins.roas?ins.roas+'x':'—'}</span></td>
+    <td>${ins.purchases||'—'}</td><td>${ins.cpa?'$'+ins.cpa:'—'}</td>
+    <td>${ins.ctr?ins.ctr+'%':'—'}</td><td>${ins.cpm?'$'+ins.cpm:'—'}</td>
+    <td><button class="btn btn-sm btn-outline" onclick="snapshotCampaign('${c.id}','${(c.name||'').replace(/'/g,"\\'")}')">&#128248;</button></td>
+  </tr>`}).join('');
+  const upd=document.getElementById('dash-meta-last-update');
+  if(upd) upd.textContent='Actualizado: '+new Date().toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'});
+}
+
+// ── DASHBOARD — fechas y refresh ─────────────────────────────────────────────
+async function dashRefreshMeta(){
+  if(!META_TOKEN||!META_ACCOUNT)return;
+  const btn=document.querySelector('[onclick="dashRefreshMeta()"]');
+  if(btn){btn.textContent='...';btn.disabled=true;}
+  await loadMetaCampaigns();
+  renderDash();
+  if(btn){btn.innerHTML='&#8635;';btn.disabled=false;}
+}
+function dashChangePeriod(val){
+  const cs=document.getElementById('meta-date-range'); if(cs) cs.value=val;
+  const ds=document.getElementById('dash-range-select'); if(ds) ds.value=val;
+  const cw=document.getElementById('dash-custom-dates');
+  if(val==='custom'){
+    if(cw) cw.style.display='flex';
+    const today=new Date().toISOString().split('T')[0];
+    const first=today.substring(0,8)+'01';
+    const s=document.getElementById('dash-since'); if(s&&!s.value) s.value=first;
+    const u=document.getElementById('dash-until'); if(u&&!u.value) u.value=today;
+    return;
+  }
+  if(cw) cw.style.display='none';
+  dashRefreshMeta();
+}
+function dashApplyCustom(){
+  const since=document.getElementById('dash-since')?.value;
+  const until=document.getElementById('dash-until')?.value;
+  if(!since||!until)return;
+  const cs=document.getElementById('meta-date-range'); if(cs) cs.value='custom';
+  const csince=document.getElementById('meta-date-since'); if(csince) csince.value=since;
+  const cuntil=document.getElementById('meta-date-until'); if(cuntil) cuntil.value=until;
+  dashRefreshMeta();
+}
+function syncDashDateSelector(){
+  const v=document.getElementById('meta-date-range')?.value||'last_30d';
+  const ds=document.getElementById('dash-range-select'); if(ds) ds.value=v;
+}
+
+// ── INIT DASHBOARD META ───────────────────────────────────────────────────────
+async function initDashboardMeta(){
+  if(!META_TOKEN||!META_ACCOUNT)return;
+  const widget=document.getElementById('dash-meta-widget');
+  if(widget) widget.style.display='block';
+  if(!metaCampaigns.length){
+    ['ds-gasto','ds-roas','ds-compras','ds-cpa'].forEach(id=>{
+      const el=document.getElementById(id);
+      if(el) el.innerHTML='<span class="ld"></span><span class="ld"></span><span class="ld"></span>';
+    });
+    await loadMetaCampaigns();
+  }
+  syncDashDateSelector();
+  renderDash();
+}
+
+// Auto-refresh cada 60 min
+setInterval(()=>{ if(META_TOKEN&&META_ACCOUNT&&metaCampaigns.length) loadMetaCampaigns().then(()=>renderDash()); }, 3600000);
+
+// ── HOOK: showPage actualiza dashboard ───────────────────────────────────────
+const _origShowPage = showPage;
+function showPage(p){
+  _origShowPage(p);
+  if(p==='meta-live') renderSnaps();
+  if(p==='biblioteca') renderBib();
+  if(p==='finanzas') renderFin();
+  if(p==='contenido') renderCont();
+  if(p==='crm') renderCRM();
+  if(p==='config') loadConfigPage();
+  if(p==='dashboard'&&META_TOKEN&&META_ACCOUNT){ syncDashDateSelector(); if(!metaCampaigns.length) initDashboardMeta(); }
+}
+
+// ── DASHBOARD AUTO-SNAPSHOT ──────────────────────────────────────────────────
+async function dashAutoSnapshot(){
+  if(!META_TOKEN||!META_ACCOUNT){toast('Conecta Meta primero');showPage('meta-connect');return;}
+  if(!metaCampaigns.length){ toast('Cargando campanas...'); await loadMetaCampaigns(); }
+  if(!metaCampaigns.length){toast('No se pudieron cargar las campanas');return;}
+  await autoSnapshot(); renderDashMetaWidget();
+}
+
+
 // ══════════════════════════════════════════════════════════════════════════════
 // META ADS INTEGRATION
 // ══════════════════════════════════════════════════════════════════════════════
@@ -1771,9 +2026,6 @@ async function loadMetaCampaigns() {
     document.getElementById('meta-sub').textContent = 
       `${metaCampaigns.length} campanas — ${rangeLabel}`;
     renderCampaigns();
-    // Actualizar dashboard con datos live
-    if(document.getElementById('page-dashboard').classList.contains('active')) renderDash();
-    renderDashMetaWidget();
   } catch(e) {
     tbody.innerHTML = `<tr><td colspan="10" style="text-align:center;padding:24px;color:var(--red)">Error: ${e.message}</td></tr>`;
   }
@@ -1958,12 +2210,11 @@ async function autoSnapshot() {
 
   for(const c of toSnap) {
     const ins = c.insights||{};
-    const spendVal = parseFloat(ins.spend)||0;
-    if(spendVal <= 0) continue;
+    if(!ins.spend || +ins.spend===0) continue;
     const rec = {
       user_id: me.id,
       name: `[${timeLabel}] ${c.name}`,
-      spend: spendVal, roas: parseFloat(ins.roas)||0,
+      spend: +ins.spend||0, roas: +ins.roas||0,
       purchases: +ins.purchases||0, cpa: +ins.cpa||0,
       ctr: +ins.ctr||0, cpm: +ins.cpm||0, cpc: +ins.cpc||0,
       frequency: +ins.frequency||0, hook_rate: +ins.hook_rate||0,
@@ -1974,16 +2225,12 @@ async function autoSnapshot() {
     try {
       const row = await safeInsertMetric(rec);
       if(row) { metrics.unshift(row); saved++; }
-    } catch(e) { lastErr = e.message; console.error('Snap error:', e.message); }
+    } catch(e2) { lastErr = e2.message; }
   }
   
-  if(saved > 0) {
-    toast(`✓ ${saved} snapshot${saved>1?'s':''} guardado${saved>1?'s':''} a las ${timeLabel}`);
-  } else {
-    toast('⚠ 0 guardados' + (lastErr ? ' — Error: ' + lastErr.slice(0,80) : ' — verifica que las campanas tengan gasto'), 5000);
-  }
+  if(saved>0) toast(`✓ ${saved} snapshot${saved>1?'s':''} guardado${saved>1?'s':''} a las ${timeLabel}`);
+  else toast('⚠ 0 guardados'+(lastErr?' — '+lastErr.slice(0,80):' — verifica gasto en el periodo'),5000);
   renderDash(); renderSnaps();
-  // renderSnaps ya fue llamado arriba — no se necesita nada extra aqui
 }
 
 async function snapshotCampaign(id, name) {
@@ -2019,11 +2266,11 @@ async function saveMetricSnapshot(ins, name, snap_type, meta_id) {
     const row = await safeInsertMetric(rec);
     if(row) { metrics.unshift(row); renderDash(); renderSnaps(); }
     toast(`✓ Snapshot "${name}" guardado a las ${timeLabel}`);
-  } catch(e) { toast('Error: ' + e.message.slice(0,120)); console.error(e); }
+  } catch(e) { toast('Error: '+e.message.slice(0,100)); }
 }
 
-// ── RENDER SNAPSHOTS ─────────────────────────────────────────────────────────
-function renderSnaps(){
+// ── RENDER SNAPSHOTS (reemplazada por la version mejorada de abajo) ──────────
+function _oldRenderSnaps_disabled(){
   const el=document.getElementById('snaps-list');
   if(!el) return;
   
@@ -2088,48 +2335,6 @@ async function delSnap(id){
   toast('Eliminado');
 }
 
-
-// ── SAFE INSERT — elimina columnas inexistentes automaticamente ───────────────
-// Supabase devuelve: Could not find the "X" column of "metrics" in the schema cache
-const _metricsBadCols = new Set(); // columnas que ya sabemos que no existen
-
-async function safeInsertMetric(rec) {
-  // Empezar con el objeto sin las columnas que ya fallaron antes
-  let obj = {};
-  for(const [k,v] of Object.entries(rec)) {
-    if(!_metricsBadCols.has(k)) obj[k] = v;
-  }
-
-  for(let attempt = 0; attempt < 15; attempt++) {
-    const {data, error} = await db.from('metrics').insert([obj]).select();
-
-    if(!error && data && data[0]) return data[0]; // exito!
-
-    if(!error) return null; // insert sin error pero sin data
-
-    // Extraer nombre de la columna del error de Supabase/PostgREST
-    // Formatos posibles:
-    //   Could not find the "cpa" column of "metrics" in the schema cache
-    //   Could not find the 'cpa' column of 'metrics' in the schema cache
-    //   column "cpa" does not exist
-    const msg = error.message || '';
-    const match = msg.match(/[Cc]ould not find the ['""]?([a-z_A-Z0-9]+)['""]? column/)
-                || msg.match(/column ['""]([a-z_A-Z0-9]+)['""] does not exist/);
-
-    if(match && match[1] && match[1] !== 'user_id') {  // solo user_id es intocable
-      const badCol = match[1];
-      console.warn(`Columna "${badCol}" no existe en la tabla metrics — removiendo`);
-      _metricsBadCols.add(badCol);
-      delete obj[badCol];
-      continue; // reintentar sin esa columna
-    }
-
-    // Error que no es de columna faltante — lanzar
-    throw new Error(msg);
-  }
-  throw new Error('safeInsertMetric: max reintentos alcanzados');
-}
-
 // ── INIT META AL CARGAR ───────────────────────────────────────────────────────
 function initMeta() {
   META_TOKEN = localStorage.getItem('lt_meta_token')||'';
@@ -2144,110 +2349,6 @@ function initMeta() {
 }
 
 // meta pages handled inside original showPage
-
-
-
-// ── AUTO REFRESH META ────────────────────────────────────────────────────────
-async function dashRefreshMeta() {
-  if(!META_TOKEN || !META_ACCOUNT) return;
-  const btn = document.getElementById('dash-refresh-btn');
-  if(btn) { btn.textContent = '...'; btn.disabled = true; }
-  await loadMetaCampaigns();
-  renderDash();
-  renderDashMetaWidget();
-  if(btn) { btn.innerHTML = '&#8635; Actualizar'; btn.disabled = false; }
-}
-
-// Auto-refresh cada 60 minutos si Meta está conectado
-setInterval(() => {
-  if(META_TOKEN && META_ACCOUNT && metaCampaigns.length) {
-    loadMetaCampaigns().then(() => { renderDash(); renderDashMetaWidget(); });
-  }
-}, 60 * 60 * 1000);
-
-// ── DASHBOARD META WIDGET ────────────────────────────────────────────────────
-function renderDashMetaWidget() {
-  const widget = document.getElementById('dash-meta-widget');
-  const tbody = document.getElementById('dash-meta-tbody');
-  const lastUpdate = document.getElementById('dash-meta-last-update');
-  const rangeEl = document.getElementById('dash-meta-range');
-  if(!widget || !tbody) return;
-
-  if(!META_TOKEN || !META_ACCOUNT) {
-    widget.style.display = 'none';
-    return;
-  }
-
-  // Mostrar widget
-  widget.style.display = 'block';
-
-  if(!metaCampaigns.length) {
-    tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;color:var(--text2);padding:16px">
-      <span>Sin campanas cargadas — </span>
-      <span onclick="showPage('meta-campanas');loadMetaCampaigns()" style="cursor:pointer;color:var(--accent);font-weight:600">Cargar ahora →</span>
-    </td></tr>`;
-    return;
-  }
-
-  // Mostrar el rango de fechas actual
-  const rangeVal = document.getElementById('meta-date-range')?.value || 'last_30d';
-  const labelMap = {today:'Hoy',yesterday:'Ayer',last_7d:'7 dias',last_14d:'14 dias',last_30d:'30 dias',last_90d:'90 dias',this_month:'Este mes',last_month:'Mes pasado',maximum:'Historico'};
-  if(rangeEl) rangeEl.textContent = labelMap[rangeVal] || rangeVal;
-
-  // Solo activas, o todas si no hay activas
-  const actives = metaCampaigns.filter(c => (c.effective_status||c.status)==='ACTIVE');
-  const list = actives.length ? actives : metaCampaigns.slice(0,8);
-
-  tbody.innerHTML = list.map(c => {
-    const ins = c.insights||{};
-    return `<tr>
-      <td style="font-weight:600;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${c.name}">${c.name}</td>
-      <td>${statusBadge(c.effective_status||c.status)}</td>
-      <td style="font-weight:700">${ins.spend?'$'+ins.spend:'—'}</td>
-      <td><span style="font-weight:700;color:${roasColor(ins.roas)}">${ins.roas?ins.roas+'x':'—'}</span></td>
-      <td>${ins.purchases||'—'}</td>
-      <td>${ins.cpa?'$'+ins.cpa:'—'}</td>
-      <td>${ins.ctr?ins.ctr+'%':'—'}</td>
-      <td>${ins.cpm?'$'+ins.cpm:'—'}</td>
-      <td>
-        <button class="btn btn-sm btn-outline" onclick="snapshotCampaign('${c.id}','${(c.name||'').replace(/'/g,"\'")}')">&#128248;</button>
-      </td>
-    </tr>`;
-  }).join('');
-
-  if(lastUpdate) lastUpdate.textContent = 'Actualizado: ' + new Date().toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'});
-}
-
-// Auto-snapshot desde el dashboard (carga campanas si no estan, luego snapshottea)
-async function dashAutoSnapshot() {
-  if(!META_TOKEN||!META_ACCOUNT) { toast('Conecta Meta primero'); showPage('meta-connect'); return; }
-  if(!metaCampaigns.length) {
-    toast('Cargando campanas de Meta...');
-    await loadMetaCampaigns();
-  }
-  if(!metaCampaigns.length) { toast('No se pudieron cargar las campanas'); return; }
-  await autoSnapshot();
-  renderDashMetaWidget();
-}
-
-// renderDashMetaWidget() se llama dentro de renderDash directamente
-
-// Auto-cargar campanas en el dashboard si hay token
-async function initDashboardMeta() {
-  if(!META_TOKEN || !META_ACCOUNT) return;
-  const widget = document.getElementById('dash-meta-widget');
-  if(widget) widget.style.display = 'block';
-  if(!metaCampaigns.length) {
-    // Mostrar loading en stats mientras carga
-    ['ds-gasto','ds-roas','ds-compras','ds-cpa'].forEach(id=>{
-      const el=document.getElementById(id);
-      if(el)el.innerHTML='<span class="ld"></span><span class="ld"></span><span class="ld"></span>';
-    });
-    await loadMetaCampaigns();
-  }
-  renderDash(); // Esto ya llama renderDashMetaWidget() internamente
-}
-
 
 </script>
 </body>
