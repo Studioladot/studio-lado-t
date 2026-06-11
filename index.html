@@ -1839,42 +1839,12 @@ function buildIAContext(){
   const tv=allM.reduce((s,m)=>s+(parseFloat(m.purchase_value||0)||0),0);
   const winners=ads.filter(a=>a.status==='Winner'||a.status==='Escalando');
   const recent=allM.sort((a,b)=>(b.date+b.time).localeCompare(a.date+a.time)).slice(0,6);
-  return `Sos un experto en Meta Ads, ecommerce de moda y negocios digitales. Respondé en español rioplatense, de forma directa y práctica.
-
-NEGOCIO: KIRIZ — marca de indumentaria streetwear argentina. Venden por TiendaNube y Meta Ads. Basados en Laferrere, Buenos Aires.
-
-MÉTRICAS GENERALES:
-- Activos: ${ads.filter(a=>a.status==='Activo').length} | Winners: ${winners.length} | Total ads: ${ads.length}
-- Gasto acumulado: u$s ${ts.toFixed(2)} | Compras: ${tp} | ROAS promedio: ${tp>0&&ts>0?(tv/ts).toFixed(2)+'×':'sin datos'}
-- Breakeven ROAS: 2.5× | Target: 3.5× | CPA breakeven: u$s 18.33
-
-ÚLTIMAS MEDICIONES:
-${recent.map(m=>`- ${m.adName||'Ad'} (${m.angle||''}): ROAS ${m.roas||'—'}× | CPA u$s ${m.cpa||'—'} | CTR ${m.ctr||'—'}% | Gasto u$s ${m.spend||'—'} | Compras: ${m.purchases||0} | ${m.date}`).join('
-')||'Sin mediciones cargadas.'}
-
-WINNERS:
-${winners.map(a=>{const m=(a.metrics||[]).slice(-1)[0];return`- ${a.adName||'—'} (${a.angle||''}): ROAS ${m?.roas||'—'}× | CPA u$s ${m?.cpa||'—'}`}).join('
-')||'Sin winners confirmados.'}
-
-OBJETIVOS DEL MES:
-${objectives.filter(o=>o.period==='mensual').map(o=>{const pct=o.target>0?Math.round((o.current||0)/o.target*100):0;return`- ${o.name}: ${o.current||0}/${o.target} ${o.unit||''} (${pct}%)`}).join('
-')||'Sin objetivos.'}
-
-Cuando analices métricas, usá los datos de contexto. Sé específico y accionable.`;
+  const recentLines=recent.map(function(m){return '- '+(m.adName||'Ad')+' ('+(m.angle||'')+'): ROAS '+(m.roas||'-')+'x | CPA u$s '+(m.cpa||'-')+' | CTR '+(m.ctr||'-')+'% | Gasto u$s '+(m.spend||'-')+' | Compras: '+(m.purchases||0)+' | '+m.date}).join('\n')||'Sin mediciones.';
+  const winnerLines=winners.map(function(a){var m=(a.metrics||[]).slice(-1)[0];return '- '+(a.adName||'-')+' ('+(a.angle||'')+'): ROAS '+(m&&m.roas||'-')+'x | CPA u$s '+(m&&m.cpa||'-')}).join('\n')||'Sin winners confirmados.';
+  const objLines=objectives.filter(function(o){return o.period==='mensual'}).map(function(o){var pct=o.target>0?Math.round((o.current||0)/o.target*100):0;return '- '+o.name+': '+(o.current||0)+'/'+o.target+' '+(o.unit||'')+' ('+pct+'%)'}).join('\n')||'Sin objetivos.';
+  return 'Sos un experto en Meta Ads, ecommerce de moda y negocios digitales. Respondé en español rioplatense, directo y practico.\n\nNEGOCIO: KIRIZ - marca de indumentaria streetwear argentina. Venden por TiendaNube y Meta Ads. Laferrere, Buenos Aires.\n\nMETRICAS GENERALES:\n- Activos: '+ads.filter(function(a){return a.status==='Activo'}).length+' | Winners: '+winners.length+' | Total ads: '+ads.length+'\n- Gasto: u$s '+ts.toFixed(2)+' | Compras: '+tp+' | ROAS promedio: '+(tp>0&&ts>0?(tv/ts).toFixed(2)+'x':'sin datos')+'\n- Breakeven ROAS: 2.5x | Target: 3.5x | CPA breakeven: u$s 18.33\n\nULTIMAS MEDICIONES:\n'+recentLines+'\n\nWINNERS:\n'+winnerLines+'\n\nOBJETIVOS DEL MES:\n'+objLines+'\n\nSe especifico y accionable. Usa los datos de contexto cuando analices.';
 }
 
-function iaAppend(role,text){
-  const box=document.getElementById('ia-messages');if(!box)return;
-  const d=document.createElement('div');
-  d.style.cssText=`padding:12px 14px;border-radius:12px;font-size:13px;line-height:1.6;margin-bottom:8px;${role==='user'?'background:var(--blue);color:#fff;margin-left:15%':'background:var(--surface);border:0.5px solid var(--border);margin-right:15%'}`;
-  if(role==='assistant')d.innerHTML=`<strong style="display:block;margin-bottom:4px;color:var(--blue)">✦ Lado T IA</strong>${text.replace(/
-/g,'<br>')}`;
-  else d.textContent=text;
-  box.appendChild(d);box.scrollTop=box.scrollHeight;
-}
-
-function iaShowTyping(){const box=document.getElementById('ia-messages');if(!box)return;const d=document.createElement('div');d.id='ia-typing';d.style.cssText='padding:10px 14px;border-radius:12px;background:var(--surface);border:0.5px solid var(--border);margin-right:15%;margin-bottom:8px';d.innerHTML='<div style="display:flex;gap:4px;align-items:center"><div style="width:6px;height:6px;border-radius:50%;background:var(--text3);animation:bounce .8s infinite"></div><div style="width:6px;height:6px;border-radius:50%;background:var(--text3);animation:bounce .8s .15s infinite"></div><div style="width:6px;height:6px;border-radius:50%;background:var(--text3);animation:bounce .8s .3s infinite"></div></div>';box.appendChild(d);box.scrollTop=box.scrollHeight}
-function iaHideTyping(){const el=document.getElementById('ia-typing');if(el)el.remove()}
 
 async function sendIA(){
   const inp=document.getElementById('ia-input');const msg=inp?.value?.trim();if(!msg)return;
