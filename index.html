@@ -711,10 +711,26 @@ tr:hover td{background:var(--surface2)}
   snap_time timestamptz
 );
 -- Si la tabla ya existe y le faltan las columnas nuevas, ejecuta tambien:
-alter table metrics add column if not exists snap_type text default 'manual';
-alter table metrics add column if not exists meta_id text default '';
-alter table metrics add column if not exists snap_time timestamptz;
-alter table metrics add column if not exists date date;
+-- Si la tabla YA EXISTE, ejecuta esto para agregar las columnas faltantes:
+ALTER TABLE metrics
+  ADD COLUMN IF NOT EXISTS name text default 'Snapshot',
+  ADD COLUMN IF NOT EXISTS spend numeric default 0,
+  ADD COLUMN IF NOT EXISTS roas numeric default 0,
+  ADD COLUMN IF NOT EXISTS purchases int default 0,
+  ADD COLUMN IF NOT EXISTS cpa numeric default 0,
+  ADD COLUMN IF NOT EXISTS ctr numeric default 0,
+  ADD COLUMN IF NOT EXISTS cpm numeric default 0,
+  ADD COLUMN IF NOT EXISTS cpc numeric default 0,
+  ADD COLUMN IF NOT EXISTS frequency numeric default 0,
+  ADD COLUMN IF NOT EXISTS hook_rate numeric default 0,
+  ADD COLUMN IF NOT EXISTS p25 numeric default 0,
+  ADD COLUMN IF NOT EXISTS p75 numeric default 0,
+  ADD COLUMN IF NOT EXISTS p100 numeric default 0,
+  ADD COLUMN IF NOT EXISTS notes text default '',
+  ADD COLUMN IF NOT EXISTS snapshot_date date default current_date,
+  ADD COLUMN IF NOT EXISTS snap_type text default 'manual',
+  ADD COLUMN IF NOT EXISTS meta_id text default '',
+  ADD COLUMN IF NOT EXISTS snap_time timestamptz;
 alter table metrics enable row level security;
 create policy "own" on metrics for all using (auth.uid()=user_id);
 
@@ -2006,7 +2022,7 @@ async function safeInsertMetric(rec) {
     const match = msg.match(/[Cc]ould not find the ['""]?([a-z_A-Z0-9]+)['""]? column/)
                 || msg.match(/column ['""]([a-z_A-Z0-9]+)['""] does not exist/);
 
-    if(match && match[1] && match[1] !== 'user_id' && match[1] !== 'name') {
+    if(match && match[1] && match[1] !== 'user_id') {  // solo user_id es intocable
       const badCol = match[1];
       console.warn(`Columna "${badCol}" no existe en la tabla metrics — removiendo`);
       _metricsBadCols.add(badCol);
