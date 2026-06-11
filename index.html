@@ -295,8 +295,27 @@ tr:hover td{background:var(--surface2)}
       <div id="ranking-list"><div class="empty"><div class="empty-icon">&#128200;</div><div class="empty-msg">Sin datos</div><div class="empty-sub">Carga tus primeras metricas</div></div></div>
     </div>
   </div>
+  <!-- META LIVE WIDGET en Dashboard -->
+  <div class="card" id="dash-meta-widget" style="display:none">
+    <div class="card-title">
+      <span>&#128279; Meta Ads — Campanas activas ahora</span>
+      <div style="display:flex;gap:6px;align-items:center">
+        <span id="dash-meta-range" style="font-size:11px;color:var(--text2);font-weight:400"></span>
+        <button class="btn btn-sm btn-outline" onclick="showPage('meta-campanas');loadMetaCampaigns()">Ver todas &#8594;</button>
+        <button class="btn btn-sm btn-accent" onclick="dashAutoSnapshot()">&#128248; Snapshot ahora</button>
+      </div>
+    </div>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Campana</th><th>Estado</th><th>Gasto</th><th>ROAS</th><th>Compras</th><th>CPA</th><th>CTR</th><th>CPM</th><th></th></tr></thead>
+        <tbody id="dash-meta-tbody"><tr><td colspan="9" style="text-align:center;color:var(--text2);padding:20px">Cargando...</td></tr></tbody>
+      </table>
+    </div>
+    <div id="dash-meta-last-update" style="font-size:11px;color:var(--text3);margin-top:8px;text-align:right"></div>
+  </div>
+
   <div class="card">
-    <div class="card-title">Ultimas metricas <button class="btn btn-sm btn-outline" onclick="exportCSV()" style="margin-left:auto">&#8595; CSV</button></div>
+    <div class="card-title">Ultimas metricas guardadas <button class="btn btn-sm btn-outline" onclick="exportCSV()" style="margin-left:auto">&#8595; CSV</button></div>
     <div class="tbl-wrap"><table>
       <thead><tr><th>Campana / Anuncio</th><th>Gasto</th><th>ROAS</th><th>Compras</th><th>CPA</th><th>CTR</th><th>CPM</th><th>Frec.</th><th>Hook</th><th>Fecha</th></tr></thead>
       <tbody id="dash-tbl"><tr><td colspan="10" style="text-align:center;color:var(--text2);padding:24px">Sin registros — carga tus primeras metricas</td></tr></tbody>
@@ -686,8 +705,16 @@ tr:hover td{background:var(--surface2)}
   p75 numeric default 0,
   p100 numeric default 0,
   notes text default '',
-  snapshot_date date default current_date
+  snapshot_date date default current_date,
+  snap_type text default 'manual',
+  meta_id text default '',
+  snap_time timestamptz
 );
+-- Si la tabla ya existe y le faltan las columnas nuevas, ejecuta tambien:
+alter table metrics add column if not exists snap_type text default 'manual';
+alter table metrics add column if not exists meta_id text default '';
+alter table metrics add column if not exists snap_time timestamptz;
+alter table metrics add column if not exists date date;
 alter table metrics enable row level security;
 create policy "own" on metrics for all using (auth.uid()=user_id);
 
@@ -948,6 +975,8 @@ function showApp(){
   loadAll();
   loadBenchmarks();
   initMeta();
+  // Cargar campanas de Meta en el dashboard si hay token guardado
+  setTimeout(()=>initDashboardMeta(), 500);
 }
 
 // ── AUTH ─────────────────────────────────────────────────────────────────────
@@ -1826,18 +1855,30 @@ async function autoSnapshot() {
         purchases: +ins.purchases||0, cpa: +ins.cpa||0,
         ctr: +ins.ctr||0, cpm: +ins.cpm||0, cpc: +ins.cpc||0,
         frequency: +ins.frequency||0, hook_rate: +ins.hook_rate||0,
-        date: dateStr,
+        snapshot_date: dateStr,
         notes: `Auto-snapshot ${timeLabel} | Campana ID: ${c.id} | Estado: ${c.effective_status||c.status}`,
         snap_type: 'campaign', meta_id: c.id, snap_time: now.toISOString()
       };
-      const {data,error} = await db.from('metrics').insert([rec]).select();
-      if(!error && data) { metrics.unshift(data[0]); saved++; }
-    } catch(e) {}
+      let {data, error} = await db.from('metrics').insert([rec]).select();
+      // Si falla por columnas nuevas, reintentar sin ellas
+      if(error && error.message && (error.message.includes('snap_type') || error.message.includes('meta_id') || error.message.includes('snap_time'))) {
+        const recFallback = {...rec};
+        delete recFallback.snap_type; delete recFallback.meta_id; delete recFallback.snap_time;
+        const res2 = await db.from('metrics').insert([recFallback]).select();
+        data = res2.data; error = res2.error;
+      }
+      if(error) { console.error('Snapshot error:', error.message); continue; }
+      if(data) { metrics.unshift(data[0]); saved++; }
+    } catch(e) { console.error('Snapshot exception:', e); }
   }
   
-  toast(`✓ ${saved} snapshots guardados a las ${timeLabel}`);
+  if(saved > 0) {
+    toast(`✓ ${saved} snapshot${saved>1?'s':''} guardado${saved>1?'s':''} a las ${timeLabel}`);
+  } else {
+    toast('⚠ 0 guardados — verifica que las campanas tengan gasto en el periodo seleccionado');
+  }
   renderDash(); renderSnaps();
-  if(state.currentPage==='meta-live') showPage('meta-live');
+  // renderSnaps ya fue llamado arriba — no se necesita nada extra aqui
 }
 
 async function snapshotCampaign(id, name) {
@@ -1865,17 +1906,24 @@ async function saveMetricSnapshot(ins, name, snap_type, meta_id) {
     purchases: +ins.purchases||0, cpa: +ins.cpa||0,
     ctr: +ins.ctr||0, cpm: +ins.cpm||0, cpc: +ins.cpc||0,
     frequency: +ins.frequency||0, hook_rate: +ins.hook_rate||0,
-    date: now.toISOString().split('T')[0],
+    snapshot_date: now.toISOString().split('T')[0],
     notes: `Snapshot ${timeLabel} | Tipo: ${snap_type} | ID: ${meta_id}`,
     snap_type, meta_id, snap_time: now.toISOString()
   };
   try {
-    const {data,error} = await db.from('metrics').insert([rec]).select();
+    let {data, error} = await db.from('metrics').insert([rec]).select();
+    // Fallback: si fallan columnas nuevas, reintenta sin ellas
+    if(error && error.message && (error.message.includes('snap_type') || error.message.includes('meta_id') || error.message.includes('snap_time'))) {
+      const recFallback = {...rec};
+      delete recFallback.snap_type; delete recFallback.meta_id; delete recFallback.snap_time;
+      const res2 = await db.from('metrics').insert([recFallback]).select();
+      data = res2.data; error = res2.error;
+    }
     if(error) throw error;
     metrics.unshift(data[0]);
     renderDash(); renderSnaps();
     toast(`✓ Snapshot "${name}" guardado a las ${timeLabel}`);
-  } catch(e) { toast('Error guardando snapshot'); }
+  } catch(e) { toast('Error guardando snapshot: ' + e.message); console.error(e); }
 }
 
 // ── RENDER SNAPSHOTS ─────────────────────────────────────────────────────────
@@ -1958,6 +2006,93 @@ function initMeta() {
 }
 
 // meta pages handled inside original showPage
+
+
+// ── DASHBOARD META WIDGET ────────────────────────────────────────────────────
+function renderDashMetaWidget() {
+  const widget = document.getElementById('dash-meta-widget');
+  const tbody = document.getElementById('dash-meta-tbody');
+  const lastUpdate = document.getElementById('dash-meta-last-update');
+  const rangeEl = document.getElementById('dash-meta-range');
+  if(!widget || !tbody) return;
+
+  if(!META_TOKEN || !META_ACCOUNT) {
+    widget.style.display = 'none';
+    return;
+  }
+
+  // Mostrar widget
+  widget.style.display = 'block';
+
+  if(!metaCampaigns.length) {
+    tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;color:var(--text2);padding:16px">
+      <span>Sin campanas cargadas — </span>
+      <span onclick="showPage('meta-campanas');loadMetaCampaigns()" style="cursor:pointer;color:var(--accent);font-weight:600">Cargar ahora →</span>
+    </td></tr>`;
+    return;
+  }
+
+  // Mostrar el rango de fechas actual
+  const rangeVal = document.getElementById('meta-date-range')?.value || 'last_30d';
+  const labelMap = {today:'Hoy',yesterday:'Ayer',last_7d:'7 dias',last_14d:'14 dias',last_30d:'30 dias',last_90d:'90 dias',this_month:'Este mes',last_month:'Mes pasado',maximum:'Historico'};
+  if(rangeEl) rangeEl.textContent = labelMap[rangeVal] || rangeVal;
+
+  // Solo activas, o todas si no hay activas
+  const actives = metaCampaigns.filter(c => (c.effective_status||c.status)==='ACTIVE');
+  const list = actives.length ? actives : metaCampaigns.slice(0,8);
+
+  tbody.innerHTML = list.map(c => {
+    const ins = c.insights||{};
+    return `<tr>
+      <td style="font-weight:600;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${c.name}">${c.name}</td>
+      <td>${statusBadge(c.effective_status||c.status)}</td>
+      <td style="font-weight:700">${ins.spend?'$'+ins.spend:'—'}</td>
+      <td><span style="font-weight:700;color:${roasColor(ins.roas)}">${ins.roas?ins.roas+'x':'—'}</span></td>
+      <td>${ins.purchases||'—'}</td>
+      <td>${ins.cpa?'$'+ins.cpa:'—'}</td>
+      <td>${ins.ctr?ins.ctr+'%':'—'}</td>
+      <td>${ins.cpm?'$'+ins.cpm:'—'}</td>
+      <td>
+        <button class="btn btn-sm btn-outline" onclick="snapshotCampaign('${c.id}','${(c.name||'').replace(/'/g,"\'")}')">&#128248;</button>
+      </td>
+    </tr>`;
+  }).join('');
+
+  if(lastUpdate) lastUpdate.textContent = 'Actualizado: ' + new Date().toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'});
+}
+
+// Auto-snapshot desde el dashboard (carga campanas si no estan, luego snapshottea)
+async function dashAutoSnapshot() {
+  if(!META_TOKEN||!META_ACCOUNT) { toast('Conecta Meta primero'); showPage('meta-connect'); return; }
+  if(!metaCampaigns.length) {
+    toast('Cargando campanas de Meta...');
+    await loadMetaCampaigns();
+  }
+  if(!metaCampaigns.length) { toast('No se pudieron cargar las campanas'); return; }
+  await autoSnapshot();
+  renderDashMetaWidget();
+}
+
+// Hook en renderDash para actualizar el widget
+const _origRenderDash = renderDash;
+function renderDash() {
+  _origRenderDash();
+  renderDashMetaWidget();
+}
+
+// Auto-cargar campanas en el dashboard si hay token
+async function initDashboardMeta() {
+  if(!META_TOKEN || !META_ACCOUNT) return;
+  const widget = document.getElementById('dash-meta-widget');
+  if(widget) widget.style.display = 'block';
+  if(!metaCampaigns.length) {
+    const tbody = document.getElementById('dash-meta-tbody');
+    if(tbody) tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:var(--text2);padding:16px"><span class="ld"></span><span class="ld"></span><span class="ld"></span> Cargando campanas...</td></tr>';
+    await loadMetaCampaigns();
+  }
+  renderDashMetaWidget();
+}
+
 
 </script>
 </body>
