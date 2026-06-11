@@ -1300,10 +1300,11 @@ async function metaFetchData(showToast=true){
     const aid=metaActiveId.startsWith('act_')?metaActiveId:`act_${metaActiveId}`;
     metaPrev={campaigns:[...metaLive.campaigns],adsets:[...metaLive.adsets],ads:[...metaLive.ads]};
 
+    const metaProxy=(ep)=>fetch(`/api/meta?endpoint=${encodeURIComponent(ep)}&token=${encodeURIComponent(token)}`).then(r=>r.json());
     const [cr,ar,dr]=await Promise.all([
-      fetch(`https://graph.facebook.com/v19.0/${aid}/campaigns?fields=id,name,status,objective&insights.fields(${META_FIELDS})&insights.time_range=${tr}&limit=50&access_token=${token}`).then(r=>r.json()),
-      fetch(`https://graph.facebook.com/v19.0/${aid}/adsets?fields=id,name,status,campaign_id,daily_budget&insights.fields(${META_FIELDS})&insights.time_range=${tr}&limit=100&access_token=${token}`).then(r=>r.json()),
-      fetch(`https://graph.facebook.com/v19.0/${aid}/ads?fields=id,name,status,adset_id,campaign_id&insights.fields(${META_FIELDS})&insights.time_range=${tr}&limit=200&access_token=${token}`).then(r=>r.json())
+      metaProxy(`${aid}/campaigns?fields=id,name,status,objective&insights.fields(${META_FIELDS})&insights.time_range=${tr}&limit=50`),
+      metaProxy(`${aid}/adsets?fields=id,name,status,campaign_id,daily_budget&insights.fields(${META_FIELDS})&insights.time_range=${tr}&limit=100`),
+      metaProxy(`${aid}/ads?fields=id,name,status,adset_id,campaign_id&insights.fields(${META_FIELDS})&insights.time_range=${tr}&limit=200`)
     ]);
 
     if(cr.error)throw new Error(cr.error.message);
@@ -1481,7 +1482,7 @@ async function addMetaAccount(){
   const btn=document.getElementById('mac-save-btn');
   btn.disabled=true;btn.textContent='Verificando...';
   try{
-    const res=await fetch(`https://graph.facebook.com/v19.0/${id}?fields=id,name,account_status&access_token=${token}`);
+    const res=await fetch(`/api/meta?endpoint=${encodeURIComponent(id+'?fields=id,name,account_status')}&token=${encodeURIComponent(token)}`);
     const json=await res.json();
     if(json.error)throw new Error(json.error.message);
     const{error}=await db.from('meta_connections').upsert({user_id:currentUser.id,account_id:id,account_name:name||json.name||id,token,app_id:'1003982038687663'});
