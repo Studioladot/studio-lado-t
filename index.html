@@ -276,14 +276,25 @@ tr:hover td{background:var(--surface2)}
 <!-- DASHBOARD -->
 <div id="page-dashboard" class="page active">
   <div class="page-hdr">
-    <div><div class="page-title">Dashboard</div><div class="page-sub" id="dash-date">—</div></div>
-    <button class="btn btn-accent" onclick="openModal('modal-snap')">+ Cargar metricas</button>
+    <div>
+      <div class="page-title">Dashboard</div>
+      <div style="display:flex;align-items:center;gap:8px;margin-top:2px">
+        <div class="page-sub" id="dash-date">—</div>
+        <span id="dash-live-badge" style="display:none;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;background:var(--green-l);color:var(--green);text-transform:uppercase;letter-spacing:.06em">&#9679; En vivo</span>
+        <span id="dash-snap-badge" style="display:none;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;background:var(--surface2);color:var(--text2);text-transform:uppercase;letter-spacing:.06em">Historial guardado</span>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+      <span id="dash-last-update" style="font-size:11px;color:var(--text3)"></span>
+      <button class="btn btn-outline btn-sm" id="dash-refresh-btn" onclick="dashRefreshMeta()" style="display:none">&#8635; Actualizar</button>
+      <button class="btn btn-accent" onclick="openModal('modal-snap')">+ Cargar metricas</button>
+    </div>
   </div>
   <div class="stats-grid">
-    <div class="stat-card accent"><div class="stat-label">Gasto total</div><div class="stat-value" id="ds-gasto">—</div><div class="stat-sub">USD acumulado</div></div>
-    <div class="stat-card"><div class="stat-label">ROAS promedio</div><div class="stat-value" id="ds-roas">—</div><div class="stat-sub">Todas las campanas</div></div>
-    <div class="stat-card"><div class="stat-label">Compras</div><div class="stat-value" id="ds-compras">—</div><div class="stat-sub">Total registradas</div></div>
-    <div class="stat-card teal"><div class="stat-label">CPA</div><div class="stat-value" id="ds-cpa">—</div><div class="stat-sub">Costo por compra</div></div>
+    <div class="stat-card accent"><div class="stat-label" id="ds-label-gasto">Gasto total</div><div class="stat-value" id="ds-gasto">—</div><div class="stat-sub" id="ds-sub-gasto">USD acumulado</div></div>
+    <div class="stat-card"><div class="stat-label" id="ds-label-roas">ROAS promedio</div><div class="stat-value" id="ds-roas">—</div><div class="stat-sub" id="ds-sub-roas">Campanas activas</div></div>
+    <div class="stat-card"><div class="stat-label" id="ds-label-compras">Compras</div><div class="stat-value" id="ds-compras">—</div><div class="stat-sub" id="ds-sub-compras">Total periodo</div></div>
+    <div class="stat-card teal"><div class="stat-label" id="ds-label-cpa">CPA</div><div class="stat-value" id="ds-cpa">—</div><div class="stat-sub" id="ds-sub-cpa">Costo por compra</div></div>
   </div>
   <div class="grid-2">
     <div class="card">
@@ -1061,44 +1072,122 @@ async function loadAll(){
 
 // ── DASHBOARD ────────────────────────────────────────────────────────────────
 function renderDash(){
-  const tot=metrics.reduce((a,m)=>a+(+m.spend||0),0);
-  const roasList=metrics.filter(m=>+m.roas>0);
-  const avgRoas=roasList.length?(roasList.reduce((a,m)=>a+(+m.roas),0)/roasList.length):0;
-  const totP=metrics.reduce((a,m)=>a+(+m.purchases||0),0);
-  const cpaList=metrics.filter(m=>+m.cpa>0);
-  const avgCPA=cpaList.length?(cpaList.reduce((a,m)=>a+(+m.cpa),0)/cpaList.length):0;
-  document.getElementById('ds-gasto').textContent='$'+tot.toFixed(0);
-  document.getElementById('ds-roas').textContent=avgRoas?avgRoas.toFixed(1)+'x':'—';
-  document.getElementById('ds-compras').textContent=totP||'—';
-  document.getElementById('ds-cpa').textContent=avgCPA?'$'+fmt(avgCPA):'—';
-  renderObjs();
-  // Ranking
-  const sorted=[...metrics].filter(m=>+m.roas>0).sort((a,b)=>+b.roas-+a.roas).slice(0,5);
-  const rel=document.getElementById('ranking-list');
-  if(!sorted.length){rel.innerHTML='<div class="empty" style="padding:16px"><div class="empty-icon">&#128200;</div><div class="empty-msg">Sin datos</div></div>';return;}
-  rel.innerHTML=sorted.map((m,i)=>`
-    <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:0.5px solid var(--border);${i===sorted.length-1?'border:none':''}">
-      <span style="font-size:13px;font-weight:700;color:var(--text2);width:18px">${i+1}</span>
-      <span style="flex:1;font-size:13px;font-weight:600">${m.name}</span>
-      <span style="font-size:13px;font-weight:700;color:${+m.roas>=4?'var(--green)':+m.roas>=2?'var(--blue)':'var(--amber)'}">${(+m.roas).toFixed(1)}x</span>
-    </div>`).join('');
-  // Table
-  const tbl=document.getElementById('dash-tbl');
-  if(!metrics.length){tbl.innerHTML='<tr><td colspan="10" style="text-align:center;color:var(--text2);padding:24px">Sin registros</td></tr>';return;}
-  tbl.innerHTML=metrics.slice(0,15).map(m=>`<tr>
-    <td style="font-weight:600">${m.name}</td>
-    <td>$${(+m.spend||0).toFixed(0)}</td>
-    <td><span style="font-weight:700;color:${+m.roas>=4?'var(--green)':+m.roas>=2?'var(--blue)':+m.roas>=1.5?'var(--amber)':'var(--red)'}">${m.roas||'—'}x</span></td>
-    <td>${m.purchases||'—'}</td>
-    <td>${m.cpa?'$'+fmt(m.cpa):'—'}</td>
-    <td>${m.ctr?m.ctr+'%':'—'}</td>
-    <td>${m.cpm?'$'+m.cpm:'—'}</td>
-    <td>${m.frequency||'—'}</td>
-    <td>${m.hook_rate?m.hook_rate+'%':'—'}</td>
-    <td style="color:var(--text2);font-size:12px">${fmtDate(m.created_at)}</td>
-  </tr>`).join('');
-}
+  const liveCamps = metaCampaigns.filter(c => parseFloat(c.insights?.spend) > 0);
+  const useLive = liveCamps.length > 0;
 
+  const liveBadge = document.getElementById('dash-live-badge');
+  const snapBadge = document.getElementById('dash-snap-badge');
+  const refreshBtn = document.getElementById('dash-refresh-btn');
+  if(liveBadge) liveBadge.style.display = useLive ? 'inline-block' : 'none';
+  if(snapBadge) snapBadge.style.display = (!useLive && metrics.length) ? 'inline-block' : 'none';
+  if(refreshBtn) refreshBtn.style.display = META_TOKEN ? 'inline-flex' : 'none';
+
+  if(useLive) {
+    // DATOS EN VIVO DE META
+    const totalSpend = liveCamps.reduce((a,c)=>a+parseFloat(c.insights.spend||0),0);
+    const totalPurch = liveCamps.reduce((a,c)=>a+parseFloat(c.insights.purchases||0),0);
+    const totalRev   = liveCamps.reduce((a,c)=>a+parseFloat(c.insights.revenue||0),0);
+    const roas  = totalSpend>0&&totalRev>0 ? totalRev/totalSpend : 0;
+    const cpa   = totalPurch>0 ? totalSpend/totalPurch : 0;
+    const dateRange  = document.getElementById('meta-date-range')?.value||'last_30d';
+    const rangeLabel = {today:'Hoy',yesterday:'Ayer',last_7d:'7 dias',last_14d:'14 dias',last_30d:'30 dias',last_90d:'90 dias',this_month:'Este mes',last_month:'Mes pasado',maximum:'Historico'}[dateRange]||dateRange;
+
+    document.getElementById('ds-gasto').textContent   = '$'+totalSpend.toFixed(2);
+    document.getElementById('ds-roas').textContent    = roas>0 ? roas.toFixed(1)+'x' : '—';
+    document.getElementById('ds-compras').textContent = totalPurch>0 ? Math.round(totalPurch) : '—';
+    document.getElementById('ds-cpa').textContent     = cpa>0 ? '$'+cpa.toFixed(2) : '—';
+    const sg=document.getElementById('ds-sub-gasto');   if(sg)  sg.textContent  = rangeLabel+' — '+liveCamps.length+' campanas';
+    const sr=document.getElementById('ds-sub-roas');    if(sr)  sr.textContent  = 'Campanas con gasto';
+    const sc=document.getElementById('ds-sub-compras'); if(sc)  sc.textContent  = 'Periodo: '+rangeLabel;
+    const sk=document.getElementById('ds-sub-cpa');     if(sk)  sk.textContent  = 'Promedio del periodo';
+
+    // Ranking live por ROAS
+    const rankSrc = [...liveCamps].filter(c=>parseFloat(c.insights.roas)>0)
+      .sort((a,b)=>parseFloat(b.insights.roas)-parseFloat(a.insights.roas)).slice(0,5);
+    const rel = document.getElementById('ranking-list');
+    if(!rankSrc.length){
+      rel.innerHTML='<div class="empty" style="padding:16px"><div class="empty-msg">Sin ROAS en el periodo</div></div>';
+    } else {
+      rel.innerHTML = rankSrc.map((c,i)=>`
+        <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:0.5px solid var(--border);${i===rankSrc.length-1?'border:none':''}">
+          <span style="font-size:13px;font-weight:700;color:var(--text2);width:18px">${i+1}</span>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${c.name}">${c.name}</div>
+            <div style="font-size:11px;color:var(--text2)">Gasto $${c.insights.spend} · ${Math.round(c.insights.purchases||0)} ventas</div>
+          </div>
+          <span style="font-size:14px;font-weight:700;color:${roasColor(c.insights.roas)};white-space:nowrap">${parseFloat(c.insights.roas).toFixed(1)}x</span>
+        </div>`).join('');
+    }
+
+    // Tabla con todas las campanas ordenadas por ROAS
+    const allSorted = [...liveCamps].sort((a,b)=>parseFloat(b.insights.roas||0)-parseFloat(a.insights.roas||0));
+    const tbl = document.getElementById('dash-tbl');
+    tbl.innerHTML = allSorted.map(camp=>{const ins=camp.insights||{};return `<tr>
+      <td style="font-weight:600;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${camp.name}">${camp.name}</td>
+      <td>$${ins.spend||'—'}</td>
+      <td><span style="font-weight:700;color:${roasColor(ins.roas)}">${ins.roas?ins.roas+'x':'—'}</span></td>
+      <td>${ins.purchases||'—'}</td>
+      <td>${ins.cpa?'$'+ins.cpa:'—'}</td>
+      <td>${ins.ctr?ins.ctr+'%':'—'}</td>
+      <td>${ins.cpm?'$'+ins.cpm:'—'}</td>
+      <td>${ins.frequency||'—'}</td>
+      <td>${ins.hook_rate?ins.hook_rate+'%':'—'}</td>
+      <td style="color:var(--green);font-size:11px;font-weight:600">En vivo</td>
+    </tr>`}).join('');
+
+    const upd=document.getElementById('dash-last-update');
+    if(upd) upd.textContent='Act. '+new Date().toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'});
+
+  } else {
+    // DATOS DE SNAPSHOTS GUARDADOS
+    const tot    = metrics.reduce((a,m)=>a+(+m.spend||0),0);
+    const roasL  = metrics.filter(m=>+m.roas>0);
+    const avgR   = roasL.length?(roasL.reduce((a,m)=>a+(+m.roas),0)/roasL.length):0;
+    const totP   = metrics.reduce((a,m)=>a+(+m.purchases||0),0);
+    const cpaL   = metrics.filter(m=>+m.cpa>0);
+    const avgC   = cpaL.length?(cpaL.reduce((a,m)=>a+(+m.cpa),0)/cpaL.length):0;
+    document.getElementById('ds-gasto').textContent   = tot>0?'$'+tot.toFixed(0):'—';
+    document.getElementById('ds-roas').textContent    = avgR?avgR.toFixed(1)+'x':'—';
+    document.getElementById('ds-compras').textContent = totP||'—';
+    document.getElementById('ds-cpa').textContent     = avgC?'$'+fmt(avgC):'—';
+    const sg=document.getElementById('ds-sub-gasto');   if(sg)  sg.textContent  = 'USD acumulado';
+    const sr=document.getElementById('ds-sub-roas');    if(sr)  sr.textContent  = 'Promedio snapshots';
+    const sc=document.getElementById('ds-sub-compras'); if(sc)  sc.textContent  = 'Total registradas';
+    const sk=document.getElementById('ds-sub-cpa');     if(sk)  sk.textContent  = 'Costo por compra';
+
+    const sorted=[...metrics].filter(m=>+m.roas>0).sort((a,b)=>+b.roas-+a.roas).slice(0,5);
+    const rel=document.getElementById('ranking-list');
+    if(!sorted.length){
+      rel.innerHTML='<div class="empty" style="padding:16px"><div class="empty-icon">&#128200;</div><div class="empty-msg">Sin datos</div><div class="empty-sub">Conecta Meta Ads para ver datos en vivo</div></div>';
+    } else {
+      rel.innerHTML=sorted.map((m,i)=>`
+        <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:0.5px solid var(--border);${i===sorted.length-1?'border:none':''}">
+          <span style="font-size:13px;font-weight:700;color:var(--text2);width:18px">${i+1}</span>
+          <span style="flex:1;font-size:13px;font-weight:600">${m.name}</span>
+          <span style="font-size:13px;font-weight:700;color:${roasColor(m.roas)}">${(+m.roas).toFixed(1)}x</span>
+        </div>`).join('');
+    }
+    const tbl=document.getElementById('dash-tbl');
+    if(!metrics.length){
+      tbl.innerHTML='<tr><td colspan="10" style="text-align:center;color:var(--text2);padding:24px">Sin datos — conecta Meta Ads o carga metricas manualmente</td></tr>';
+    } else {
+      tbl.innerHTML=metrics.slice(0,15).map(m=>`<tr>
+        <td style="font-weight:600">${m.name}</td>
+        <td>$${(+m.spend||0).toFixed(0)}</td>
+        <td><span style="font-weight:700;color:${roasColor(m.roas)}">${m.roas||'—'}x</span></td>
+        <td>${m.purchases||'—'}</td>
+        <td>${m.cpa?'$'+fmt(m.cpa):'—'}</td>
+        <td>${m.ctr?m.ctr+'%':'—'}</td>
+        <td>${m.cpm?'$'+m.cpm:'—'}</td>
+        <td>${m.frequency||'—'}</td>
+        <td>${m.hook_rate?m.hook_rate+'%':'—'}</td>
+        <td style="color:var(--text2);font-size:12px">${fmtDate(m.created_at)}</td>
+      </tr>`).join('');
+    }
+  }
+
+  renderObjs();
+}
 // ── OBJECTIVES ────────────────────────────────────────────────────────────────
 function renderObjs(){
   const el=document.getElementById('obj-list');
@@ -1680,6 +1769,9 @@ async function loadMetaCampaigns() {
     document.getElementById('meta-sub').textContent = 
       `${metaCampaigns.length} campanas — ${rangeLabel}`;
     renderCampaigns();
+    // Actualizar dashboard con datos live
+    if(document.getElementById('page-dashboard').classList.contains('active')) renderDash();
+    renderDashMetaWidget();
   } catch(e) {
     tbody.innerHTML = `<tr><td colspan="10" style="text-align:center;padding:24px;color:var(--red)">Error: ${e.message}</td></tr>`;
   }
@@ -2051,6 +2143,25 @@ function initMeta() {
 
 // meta pages handled inside original showPage
 
+
+
+// ── AUTO REFRESH META ────────────────────────────────────────────────────────
+async function dashRefreshMeta() {
+  if(!META_TOKEN || !META_ACCOUNT) return;
+  const btn = document.getElementById('dash-refresh-btn');
+  if(btn) { btn.textContent = '...'; btn.disabled = true; }
+  await loadMetaCampaigns();
+  renderDash();
+  renderDashMetaWidget();
+  if(btn) { btn.innerHTML = '&#8635; Actualizar'; btn.disabled = false; }
+}
+
+// Auto-refresh cada 60 minutos si Meta está conectado
+setInterval(() => {
+  if(META_TOKEN && META_ACCOUNT && metaCampaigns.length) {
+    loadMetaCampaigns().then(() => { renderDash(); renderDashMetaWidget(); });
+  }
+}, 60 * 60 * 1000);
 
 // ── DASHBOARD META WIDGET ────────────────────────────────────────────────────
 function renderDashMetaWidget() {
