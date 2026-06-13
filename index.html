@@ -1022,31 +1022,107 @@ tr:hover td{background:var(--surface2)}
   </div>
   <!-- CAMPAÑAS TAB -->
   <div id="cont-tab-campanas" style="display:none">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px">
-      <div>
-        <div style="font-size:13px;color:var(--text2)">Cada campana tiene su concepto, sus piezas y su desarrollo. Todo en un lugar.</div>
+
+    <!-- Selector de campaña activa -->
+    <div style="display:flex;gap:10px;margin-bottom:16px;align-items:flex-start;flex-wrap:wrap">
+      <div style="flex:1;min-width:200px">
+        <select id="camp-selector" onchange="selectCampana(this.value)"
+          style="width:100%;border:0.5px solid var(--border);border-radius:var(--r);padding:9px 12px;font-size:14px;font-weight:600;background:var(--surface);color:var(--text);outline:none">
+          <option value="">— Selecciona una campana —</option>
+        </select>
       </div>
+      <button class="btn btn-outline" onclick="openModal('modal-campana')">+ Nueva campana</button>
+    </div>
+
+    <!-- DOCUMENTO DE CAMPAÑA -->
+    <div id="camp-doc" style="display:none">
+
+      <!-- Header de la campaña -->
+      <div id="camp-doc-header" style="border-radius:var(--rl);padding:20px 24px;margin-bottom:14px;color:#fff;background:var(--accent)">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap">
+          <div>
+            <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;opacity:.7;margin-bottom:4px" id="camp-doc-periodo"></div>
+            <div style="font-size:22px;font-weight:800;letter-spacing:-.02em" id="camp-doc-nombre">—</div>
+          </div>
+          <div style="display:flex;gap:7px">
+            <span id="camp-doc-badge" class="badge" style="background:rgba(255,255,255,.2);color:#fff"></span>
+            <button class="btn btn-sm" style="background:rgba(255,255,255,.2);color:#fff;border:none" onclick="openEditCampana(currentCampId)">Editar campana</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid-2" style="margin-bottom:14px">
+
+        <!-- Objetivo -->
+        <div class="card" style="margin:0">
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--blue);margin-bottom:8px">&#127919; Objetivo de la campana</div>
+          <div id="camp-doc-objetivo" style="font-size:14px;line-height:1.65;color:var(--text)"></div>
+        </div>
+
+        <!-- Formatos -->
+        <div class="card" style="margin:0">
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--teal-d);margin-bottom:10px">&#127909; Formatos a utilizar</div>
+          <div id="camp-doc-formatos" style="display:flex;flex-wrap:wrap;gap:6px"></div>
+        </div>
+
+      </div>
+
+      <!-- Concepto estratégico + creativo -->
+      <div class="grid-2" style="margin-bottom:14px">
+        <div class="card" style="margin:0;border-left:3px solid var(--blue)">
+          <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--blue);margin-bottom:6px">Concepto estrategico</div>
+          <div id="camp-doc-estrategico" style="font-size:13px;line-height:1.6;color:var(--text)"></div>
+        </div>
+        <div class="card" style="margin:0;border-left:3px solid var(--accent)">
+          <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--accent);margin-bottom:6px">Concepto creativo</div>
+          <div id="camp-doc-creativo" style="font-size:16px;font-weight:700;font-style:italic;line-height:1.4;color:var(--text)"></div>
+        </div>
+      </div>
+
+      <!-- Desarrollo / Fases -->
+      <div class="card" style="margin-bottom:14px">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text2);margin-bottom:10px">&#128196; Desarrollo y fases</div>
+        <div id="camp-doc-desarrollo" style="font-size:13px;line-height:1.75;color:var(--text);white-space:pre-wrap"></div>
+      </div>
+
+      <!-- Notas libres -->
+      <div class="card" style="margin-bottom:14px">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text2);margin-bottom:8px">&#128221; Notas e ideas libres</div>
+        <div id="camp-doc-notas" style="font-size:13px;line-height:1.75;color:var(--text2);white-space:pre-wrap"></div>
+      </div>
+
+      <!-- Piezas de la campaña -->
+      <div class="card">
+        <div class="card-title">
+          Piezas planificadas
+          <button class="btn btn-sm btn-accent" onclick="openAddPieza(currentCampId)">+ Agregar pieza</button>
+        </div>
+        <!-- Progress bar -->
+        <div style="margin-bottom:12px">
+          <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text2);margin-bottom:4px">
+            <span id="camp-piezas-label">0 piezas</span>
+            <span id="camp-piezas-pct">0% publicadas</span>
+          </div>
+          <div class="progress-bar"><div id="camp-piezas-bar" class="progress-fill" style="background:var(--accent)"></div></div>
+        </div>
+        <div id="camp-doc-piezas"></div>
+      </div>
+
+    </div>
+
+    <!-- Placeholder cuando no hay campaña seleccionada -->
+    <div id="camp-empty-state" style="text-align:center;padding:48px 20px;color:var(--text2)">
+      <div style="font-size:36px;margin-bottom:12px">&#127775;</div>
+      <div style="font-size:16px;font-weight:600;color:var(--text);margin-bottom:6px">Selecciona una campana</div>
+      <div style="font-size:13px;margin-bottom:16px">o crea una nueva para empezar a planificar</div>
       <button class="btn btn-accent" onclick="openModal('modal-campana')">+ Nueva campana</button>
     </div>
 
-    <!-- Planificacion mensual -->
-    <div class="card" style="margin-bottom:14px">
-      <div class="card-title">
-        Planificacion mensual
-        <input type="month" id="camp-mes-plan" style="border:0.5px solid var(--border);border-radius:var(--r);padding:5px 9px;font-size:12px;background:var(--surface);color:var(--text);outline:none;font-weight:400" onchange="renderPlanMensual()"/>
-      </div>
-      <div id="camp-plan-grid"></div>
-    </div>
-
-    <!-- Lista de campanas -->
-    <div id="campanas-list">
-      <div class="empty">
-        <div class="empty-icon">&#127775;</div>
-        <div class="empty-msg">Sin campanas creadas</div>
-        <div class="empty-sub">Cada campana tiene su concepto, piezas y planificacion</div>
-      </div>
-    </div>
   </div>
+
+
+</div>
+
 
 </div>
 
@@ -1382,10 +1458,22 @@ create policy "own" on contacts for all using (auth.uid()=user_id);</div>
 <!-- Modal Nueva Campana -->
 <div class="modal-backdrop" id="modal-campana">
   <div class="modal" style="max-width:600px">
-    <div class="modal-title">&#127775; Nueva campana de contenido</div>
-
+    <div class="modal-title">&#127775; Nueva campana</div>
     <div class="form-row">
-      <div class="fg wide"><label>Nombre de la campana</label><input id="camp-nombre" type="text" placeholder="Ej: Lanzamiento Campera Reversible, Drop Invierno..."/></div>
+      <div class="fg wide"><label>Nombre de la campana</label><input id="camp-nombre" type="text" placeholder="Ej: Campana Mundial, Drop Invierno 2026..."/></div>
+      <div class="fg"><label>Color en calendario</label>
+        <select id="camp-color" style="border:0.5px solid var(--border);border-radius:var(--r);padding:9px 11px;background:var(--surface);color:var(--text);outline:none">
+          <option value="#b03311">Rojo Lado T</option>
+          <option value="#1a5fa5">Azul</option>
+          <option value="#2d7a3a">Verde</option>
+          <option value="#8a5c0a">Dorado</option>
+          <option value="#6fa398">Teal</option>
+          <option value="#7a3fa5">Violeta</option>
+          <option value="#c45c00">Naranja</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
       <div class="fg"><label>Estado</label>
         <select id="camp-status">
           <option value="planificacion">En planificacion</option>
@@ -1393,45 +1481,39 @@ create policy "own" on contacts for all using (auth.uid()=user_id);</div>
           <option value="terminada">Terminada</option>
         </select>
       </div>
-    </div>
-
-    <div class="form-row">
       <div class="fg"><label>Fecha inicio</label><input id="camp-inicio" type="date"/></div>
       <div class="fg"><label>Fecha fin</label><input id="camp-fin" type="date"/></div>
-      <div class="fg"><label>Periodo</label><input id="camp-periodo" type="text" placeholder="Ej: Semana 1 Junio, Julio 2026..."/></div>
+      <div class="fg"><label>Periodo</label><input id="camp-periodo" type="text" placeholder="Ej: Julio 2026..."/></div>
     </div>
-
     <div class="divider"></div>
-
-    <div class="fg" style="margin-bottom:12px">
-      <label>
-        Concepto estrategico
-        <span style="font-size:10px;color:var(--text3);font-weight:400;margin-left:6px">La promesa funcional, corta y literal</span>
-      </label>
-      <textarea id="camp-estrategico" rows="2" placeholder="Ej: Campera reversible de abrigo maximo al precio mas bajo de Argentina"></textarea>
+    <div class="fg" style="margin-bottom:10px"><label>Objetivo de la campana</label><textarea id="camp-objetivo" rows="2" placeholder="Que queres lograr con esta campana? Ej: Posicionar el producto antes del invierno, generar 50 ventas en 2 semanas..."></textarea></div>
+    <div class="fg" style="margin-bottom:10px">
+      <label>Concepto estrategico <span style="font-size:10px;color:var(--text3);font-weight:400">— La promesa funcional, corta y literal</span></label>
+      <textarea id="camp-estrategico" rows="2" placeholder="Ej: Campera reversible al precio mas bajo de Argentina"></textarea>
     </div>
-
-    <div class="fg" style="margin-bottom:12px">
-      <label>
-        Concepto creativo
-        <span style="font-size:10px;color:var(--text3);font-weight:400;margin-left:6px">La frase evocadora que atraviesa todos los formatos</span>
-      </label>
+    <div class="fg" style="margin-bottom:10px">
+      <label>Concepto creativo <span style="font-size:10px;color:var(--text3);font-weight:400">— La frase evocadora que atraviesa todos los formatos</span></label>
       <textarea id="camp-creativo" rows="2" placeholder="Ej: Dos camperas, una historia"></textarea>
     </div>
-
-    <div class="fg" style="margin-bottom:12px">
-      <label>Desarrollo de la campana</label>
-      <textarea id="camp-desarrollo" rows="4" placeholder="Que vamos a hacer, como lo vamos a contar, la idea general de ejecucion..."></textarea>
+    <div class="fg" style="margin-bottom:10px">
+      <label>Desarrollo y fases <span style="font-size:10px;color:var(--text3);font-weight:400">— Escribi libremente: Fase 1, Fase 2, lo que sea</span></label>
+      <textarea id="camp-desarrollo" rows="5" placeholder="Fase 1 (semana 1): Teaser en historias mostrando el producto sin revelar...&#10;Fase 2 (semana 2): Lanzamiento con reel principal + carrusel de outfits...&#10;Fase 3 (semana 3): UGC y prueba social, stories con clientes..."></textarea>
     </div>
-
-    <div class="fg" style="margin-bottom:4px">
-      <label>Notas</label>
-      <textarea id="camp-notas" rows="2" placeholder="Referencias, ideas sueltas, observaciones..."></textarea>
+    <div class="fg" style="margin-bottom:10px">
+      <label>Formatos a utilizar</label>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:4px">
+        <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:13px"><input type="checkbox" name="camp-fmt" value="Reel" style="accent-color:var(--accent)"> Reel</label>
+        <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:13px"><input type="checkbox" name="camp-fmt" value="TikTok" style="accent-color:var(--accent)"> TikTok</label>
+        <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:13px"><input type="checkbox" name="camp-fmt" value="Carrusel" style="accent-color:var(--accent)"> Carrusel</label>
+        <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:13px"><input type="checkbox" name="camp-fmt" value="Historia" style="accent-color:var(--accent)"> Historia</label>
+        <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:13px"><input type="checkbox" name="camp-fmt" value="Post" style="accent-color:var(--accent)"> Post</label>
+        <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:13px"><input type="checkbox" name="camp-fmt" value="Live" style="accent-color:var(--accent)"> Live</label>
+      </div>
     </div>
-
+    <div class="fg"><label>Notas e ideas libres</label><textarea id="camp-notas" rows="3" placeholder="Ideas sueltas, referencias, inspiracion... todo lo que se te ocurra"></textarea></div>
     <div class="modal-footer">
       <button class="btn btn-outline" onclick="closeModal('modal-campana')">Cancelar</button>
-      <button class="btn btn-accent" onclick="saveCampana()">Guardar campana</button>
+      <button class="btn btn-accent" onclick="saveCampana()">Crear campana</button>
     </div>
   </div>
 </div>
@@ -1484,6 +1566,17 @@ create policy "own" on contacts for all using (auth.uid()=user_id);</div>
     <input type="hidden" id="camp-edit-id"/>
     <div class="form-row">
       <div class="fg wide"><label>Nombre</label><input id="camp-edit-nombre" type="text"/></div>
+      <div class="fg"><label>Color</label>
+        <select id="camp-edit-color">
+          <option value="#b03311">Rojo Lado T</option>
+          <option value="#1a5fa5">Azul</option>
+          <option value="#2d7a3a">Verde</option>
+          <option value="#8a5c0a">Dorado</option>
+          <option value="#6fa398">Teal</option>
+          <option value="#7a3fa5">Violeta</option>
+          <option value="#c45c00">Naranja</option>
+        </select>
+      </div>
       <div class="fg"><label>Estado</label>
         <select id="camp-edit-status">
           <option value="planificacion">En planificacion</option>
@@ -1498,10 +1591,22 @@ create policy "own" on contacts for all using (auth.uid()=user_id);</div>
       <div class="fg"><label>Periodo</label><input id="camp-edit-periodo" type="text"/></div>
     </div>
     <div class="divider"></div>
+    <div class="fg" style="margin-bottom:10px"><label>Objetivo</label><textarea id="camp-edit-objetivo" rows="2"></textarea></div>
     <div class="fg" style="margin-bottom:10px"><label>Concepto estrategico</label><textarea id="camp-edit-estrategico" rows="2"></textarea></div>
     <div class="fg" style="margin-bottom:10px"><label>Concepto creativo</label><textarea id="camp-edit-creativo" rows="2"></textarea></div>
-    <div class="fg" style="margin-bottom:10px"><label>Desarrollo</label><textarea id="camp-edit-desarrollo" rows="4"></textarea></div>
-    <div class="fg" style="margin-bottom:4px"><label>Notas</label><textarea id="camp-edit-notas" rows="2"></textarea></div>
+    <div class="fg" style="margin-bottom:10px"><label>Desarrollo y fases</label><textarea id="camp-edit-desarrollo" rows="5"></textarea></div>
+    <div class="fg" style="margin-bottom:10px">
+      <label>Formatos</label>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:4px">
+        <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:13px"><input type="checkbox" name="camp-edit-fmt" value="Reel" style="accent-color:var(--accent)"> Reel</label>
+        <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:13px"><input type="checkbox" name="camp-edit-fmt" value="TikTok" style="accent-color:var(--accent)"> TikTok</label>
+        <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:13px"><input type="checkbox" name="camp-edit-fmt" value="Carrusel" style="accent-color:var(--accent)"> Carrusel</label>
+        <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:13px"><input type="checkbox" name="camp-edit-fmt" value="Historia" style="accent-color:var(--accent)"> Historia</label>
+        <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:13px"><input type="checkbox" name="camp-edit-fmt" value="Post" style="accent-color:var(--accent)"> Post</label>
+        <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:13px"><input type="checkbox" name="camp-edit-fmt" value="Live" style="accent-color:var(--accent)"> Live</label>
+      </div>
+    </div>
+    <div class="fg"><label>Notas e ideas libres</label><textarea id="camp-edit-notas" rows="3"></textarea></div>
     <div class="modal-footer">
       <button class="btn btn-outline" onclick="closeModal('modal-camp-edit')">Cancelar</button>
       <button class="btn btn-red" onclick="delCampana(document.getElementById('camp-edit-id').value)">Eliminar</button>
@@ -3923,56 +4028,7 @@ function renderControlContenido() {
 }
 
 // ── CALENDARIO CONTENIDO ─────────────────────────────────────────────────────
-function renderCalCont() {
-  const mesVal = document.getElementById('cont-cal-mes')?.value || new Date().toISOString().substring(0,7);
-  const [year,month] = mesVal.split('-').map(Number);
-  const hoy = new Date();
 
-  // Agrupar posts por fecha
-  const porDia = {};
-  posts.filter(p=>(p.date||'').startsWith(mesVal)).forEach(p=>{
-    const d=parseInt(p.date.split('-')[2]);
-    if(!porDia[d]) porDia[d]=[];
-    porDia[d].push(p);
-  });
-
-  const diasSem=['Lu','Ma','Mi','Ju','Vi','Sa','Do'];
-  const primerDia=new Date(year,month-1,1).getDay();
-  const primerLunes=primerDia===0?6:primerDia-1;
-  const diasEnMes=new Date(year,month,0).getDate();
-
-  let html=`<div style="font-size:13px;font-weight:700;text-align:center;margin-bottom:12px">${new Date(year,month-1,1).toLocaleDateString('es-AR',{month:'long',year:'numeric'}).toUpperCase()}</div>`;
-  html+='<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px">';
-  diasSem.forEach(d=>{ html+=`<div style="font-size:10px;font-weight:700;text-align:center;color:var(--text2);padding:3px">${d}</div>`; });
-  for(let i=0;i<primerLunes;i++) html+='<div></div>';
-  for(let d=1;d<=diasEnMes;d++){
-    const pdia=porDia[d]||[];
-    const esHoy=d===hoy.getDate()&&month===hoy.getMonth()+1&&year===hoy.getFullYear();
-    const esFuturo=new Date(year,month-1,d)>hoy;
-    const platColors={Instagram:'var(--accent)',TikTok:'var(--red)',Ambas:'var(--blue)',Otro:'var(--teal)'};
-    let inner='';
-    if(pdia.length>0){
-      inner=pdia.slice(0,3).map(p=>`<div style="width:6px;height:6px;border-radius:50%;background:${platColors[p.platform]||'var(--accent)'}"></div>`).join('');
-      if(pdia.length>3) inner+=`<span style="font-size:8px;color:var(--text2)">+${pdia.length-3}</span>`;
-    }
-    html+=`<div style="border-radius:6px;padding:5px 3px;text-align:center;min-height:52px;border:0.5px solid ${esHoy?'var(--accent)':pdia.length?'var(--border)':'var(--border)'};background:${pdia.length?'var(--accent-l)':'var(--surface2)'};${esHoy?'box-shadow:0 0 0 2px var(--accent);':''}">
-      <div style="font-size:11px;font-weight:${esHoy?'800':'600'};color:${esHoy?'var(--accent)':esFuturo?'var(--text3)':'var(--text)'};margin-bottom:4px">${d}</div>
-      <div style="display:flex;flex-wrap:wrap;justify-content:center;gap:2px">${inner}</div>
-    </div>`;
-  }
-  html+='</div>';
-
-  // Leyenda
-  const total=posts.filter(p=>(p.date||'').startsWith(mesVal)&&p.status==='publicado').length;
-  html+=`<div style="margin-top:12px;padding-top:12px;border-top:0.5px solid var(--border);display:flex;gap:14px;flex-wrap:wrap;align-items:center;font-size:12px">
-    <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--accent);margin-right:4px"></span>Instagram</span>
-    <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--red);margin-right:4px"></span>TikTok</span>
-    <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--blue);margin-right:4px"></span>Ambas</span>
-    <span style="margin-left:auto;color:var(--text2)">${total} publicadas este mes</span>
-  </div>`;
-
-  const grid=document.getElementById('cont-cal-grid'); if(grid) grid.innerHTML=html;
-}
 
 // ── PUBLICACIONES ─────────────────────────────────────────────────────────────
 function filterCont2(f,el){
@@ -4136,309 +4192,370 @@ async function delNota(id) {
 
 
 // ══════════════════════════════════════════════════════════════════════════════
-// CAMPANAS DE CONTENIDO
+// CAMPANAS DE CONTENIDO — Planificacion creativa profesional
 // ══════════════════════════════════════════════════════════════════════════════
-let campanas = [], piezas = [];
+let campanas = [], piezas = [], currentCampId = null;
+
+const CAMP_STATUS_LBL = {planificacion:'En planificacion', activa:'Activa', terminada:'Terminada'};
+const CAMP_STATUS_BADGE = {planificacion:'b-amber', activa:'b-green', terminada:'b-gray'};
+const PIEZA_CYCLE = ['pendiente','en_produccion','filmado','editado','publicado'];
+const PIEZA_ICONS = {pendiente:'◌',en_produccion:'▶',filmado:'◉',editado:'◐',publicado:'✓'};
+const PIEZA_COLORS = {pendiente:'var(--text3)',en_produccion:'var(--blue)',filmado:'var(--amber)',editado:'var(--accent)',publicado:'var(--green)'};
+const PIEZA_LABELS = {pendiente:'Pendiente',en_produccion:'En produccion',filmado:'Filmado',editado:'Editado',publicado:'Publicado'};
 
 async function loadCampanas() {
   if(!me) return;
   const [cRes, pRes] = await Promise.all([
-    db.from('content_campaigns').select('*').eq('user_id',me.id).order('fecha_inicio',{ascending:false}),
+    db.from('content_campaigns').select('*').eq('user_id',me.id).order('created_at',{ascending:false}),
     db.from('content_piezas').select('*').eq('user_id',me.id).order('fecha_planificada',{ascending:true}),
   ]);
   campanas = cRes.data || [];
   piezas   = pRes.data || [];
-  renderCampanas();
-  renderPlanMensual();
+  updateCampSelector();
+  renderCalCont();
 }
 
-// ── SWITCH TAB (actualizar para incluir campanas) ─────────────────────────────
-const _origSwitchContTab = switchContTab;
+function updateCampSelector() {
+  const sel = document.getElementById('camp-selector'); if(!sel) return;
+  sel.innerHTML = '<option value="">— Selecciona una campana —</option>' +
+    campanas.map(c=>`<option value="${c.id}">${c.nombre}${c.periodo?' ('+c.periodo+')':''}</option>`).join('');
+  if(currentCampId) sel.value = currentCampId;
+}
 
+function selectCampana(id) {
+  currentCampId = id;
+  const doc     = document.getElementById('camp-doc');
+  const empty   = document.getElementById('camp-empty-state');
+  if(!id){ if(doc)doc.style.display='none'; if(empty)empty.style.display='block'; return; }
+  if(doc)   doc.style.display='block';
+  if(empty) empty.style.display='none';
+  renderCampDoc(id);
+}
+
+function renderCampDoc(id) {
+  const camp = campanas.find(x=>x.id===id); if(!camp) return;
+  // Header
+  const hdr = document.getElementById('camp-doc-header');
+  if(hdr) hdr.style.background = camp.color||'var(--accent)';
+  setText('camp-doc-nombre', camp.nombre||'—');
+  setText('camp-doc-periodo', camp.periodo||'');
+  const badge = document.getElementById('camp-doc-badge');
+  if(badge){ badge.textContent=CAMP_STATUS_LBL[camp.status]||camp.status; badge.className='badge'; }
+
+  // Objetivo
+  const objEl = document.getElementById('camp-doc-objetivo');
+  if(objEl) objEl.textContent = camp.objetivo||'Sin objetivo definido.';
+  objEl.style.color = camp.objetivo ? 'var(--text)' : 'var(--text3)';
+  objEl.style.fontStyle = camp.objetivo ? 'normal' : 'italic';
+
+  // Formatos
+  const fmtsEl = document.getElementById('camp-doc-formatos');
+  if(fmtsEl){
+    const fmts = Array.isArray(camp.formatos) ? camp.formatos : (camp.formatos ? JSON.parse(camp.formatos) : []);
+    if(fmts.length){
+      fmtsEl.innerHTML = fmts.map(f=>`<span class="badge b-teal" style="font-size:11px">${f}</span>`).join('');
+    } else {
+      fmtsEl.innerHTML = '<span style="font-size:13px;color:var(--text3);font-style:italic">Sin formatos definidos</span>';
+    }
+  }
+
+  // Conceptos
+  const estEl = document.getElementById('camp-doc-estrategico');
+  if(estEl){ estEl.textContent=camp.concepto_estrategico||'—'; estEl.style.color=camp.concepto_estrategico?'var(--text)':'var(--text3)'; }
+  const creEl = document.getElementById('camp-doc-creativo');
+  if(creEl){ creEl.textContent=camp.concepto_creativo?('"'+camp.concepto_creativo+'"'):'—'; creEl.style.color=camp.concepto_creativo?'var(--text)':'var(--text3)'; }
+
+  // Desarrollo
+  const devEl = document.getElementById('camp-doc-desarrollo');
+  if(devEl){ devEl.textContent=camp.desarrollo||'Sin desarrollo escrito todavia.'; devEl.style.color=camp.desarrollo?'var(--text)':'var(--text3)'; devEl.style.fontStyle=camp.desarrollo?'normal':'italic'; }
+
+  // Notas
+  const notEl = document.getElementById('camp-doc-notas');
+  if(notEl){ notEl.textContent=camp.notas||'Sin notas.'; notEl.style.color=camp.notas?'var(--text2)':'var(--text3)'; notEl.style.fontStyle=camp.notas?'normal':'italic'; }
+
+  // Piezas
+  renderCampPiezas(id, camp.color||'var(--accent)');
+}
+
+function renderCampPiezas(campId, color) {
+  const campPiezas = piezas.filter(p=>p.campaign_id===campId);
+  const done  = campPiezas.filter(p=>p.status==='publicado').length;
+  const total = campPiezas.length;
+  const pct   = total>0?Math.round((done/total)*100):0;
+
+  setText('camp-piezas-label',  total+' pieza'+( total!==1?'s':''));
+  setText('camp-piezas-pct',    pct+'% publicadas');
+  const bar = document.getElementById('camp-piezas-bar');
+  if(bar){ bar.style.width=pct+'%'; bar.style.background=color; }
+
+  const el = document.getElementById('camp-doc-piezas'); if(!el) return;
+  if(!campPiezas.length){
+    el.innerHTML='<div style="color:var(--text3);font-size:13px;font-style:italic;padding:8px 0">Sin piezas todavia. Agrega las publicaciones que vas a hacer para esta campana.</div>';
+    return;
+  }
+
+  // Agrupar por fecha
+  const byDate = {};
+  campPiezas.forEach(p=>{
+    const d=p.fecha_planificada||'sin-fecha';
+    if(!byDate[d]) byDate[d]=[];
+    byDate[d].push(p);
+  });
+
+  el.innerHTML = Object.entries(byDate).sort((a,b)=>a[0].localeCompare(b[0])).map(([date,ps])=>{
+    const dateLabel = date==='sin-fecha'?'Sin fecha asignada':
+      new Date(date+'T12:00:00').toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long'});
+    return `<div style="margin-bottom:12px">
+      <div style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;padding-bottom:4px;border-bottom:0.5px solid var(--border)">${dateLabel}</div>
+      ${ps.map(p=>`
+      <div style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:var(--r);margin-bottom:4px;background:${p.status==='publicado'?'var(--green-l)':'var(--surface2)'}">
+        <button onclick="cyclePiezaStatus('${p.id}')" title="Click para cambiar estado"
+          style="width:28px;height:28px;border-radius:50%;border:2px solid ${PIEZA_COLORS[p.status]};background:${p.status==='publicado'?PIEZA_COLORS[p.status]:'transparent'};color:${p.status==='publicado'?'#fff':PIEZA_COLORS[p.status]};font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:700">
+          ${PIEZA_ICONS[p.status]||'◌'}
+        </button>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:13px;font-weight:${p.status==='publicado'?'400':'600'};color:${p.status==='publicado'?'var(--text2)':'var(--text)'};${p.status==='publicado'?'text-decoration:line-through':''}">${p.titulo}</div>
+          <div style="font-size:11px;color:var(--text2);margin-top:1px">
+            <span class="badge b-gray" style="font-size:9px">${p.formato}</span>
+            <span class="badge b-gray" style="font-size:9px;margin-left:3px">${p.plataforma}</span>
+            <span style="margin-left:5px;color:${PIEZA_COLORS[p.status]};font-weight:600">${PIEZA_LABELS[p.status]}</span>
+          </div>
+          ${p.notas?`<div style="font-size:11px;color:var(--text2);margin-top:2px">${p.notas}</div>`:''}
+        </div>
+        <button onclick="delPieza('${p.id}')" style="border:none;background:transparent;cursor:pointer;opacity:.3;font-size:13px;transition:opacity .15s" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.3'">&#10005;</button>
+      </div>`).join('')}
+    </div>`;
+  }).join('');
+}
+
+function setText(id, txt){ const e=document.getElementById(id); if(e) e.textContent=txt; }
 
 // ── CRUD CAMPANAS ─────────────────────────────────────────────────────────────
 async function saveCampana() {
   const nombre = document.getElementById('camp-nombre').value.trim();
   if(!nombre){ toast('Ponele un nombre a la campana'); return; }
+  const formatos = [...document.querySelectorAll('input[name="camp-fmt"]:checked')].map(el=>el.value);
   const rec = {
-    user_id: me.id,
-    nombre,
-    status:               document.getElementById('camp-status').value,
-    fecha_inicio:         document.getElementById('camp-inicio').value||null,
-    fecha_fin:            document.getElementById('camp-fin').value||null,
-    periodo:              document.getElementById('camp-periodo').value.trim(),
-    concepto_estrategico: document.getElementById('camp-estrategico').value.trim(),
-    concepto_creativo:    document.getElementById('camp-creativo').value.trim(),
-    desarrollo:           document.getElementById('camp-desarrollo').value.trim(),
-    notas:                document.getElementById('camp-notas').value.trim(),
+    user_id:me.id, nombre,
+    color:               document.getElementById('camp-color').value,
+    status:              document.getElementById('camp-status').value,
+    fecha_inicio:        document.getElementById('camp-inicio').value||null,
+    fecha_fin:           document.getElementById('camp-fin').value||null,
+    periodo:             document.getElementById('camp-periodo').value.trim(),
+    objetivo:            document.getElementById('camp-objetivo').value.trim(),
+    concepto_estrategico:document.getElementById('camp-estrategico').value.trim(),
+    concepto_creativo:   document.getElementById('camp-creativo').value.trim(),
+    desarrollo:          document.getElementById('camp-desarrollo').value.trim(),
+    notas:               document.getElementById('camp-notas').value.trim(),
+    formatos:            formatos,
   };
-  const {data,error} = await db.from('content_campaigns').insert([rec]).select();
-  if(error){ toast('Error: '+error.message); return; }
+  const {data,error}=await db.from('content_campaigns').insert([rec]).select();
+  if(error){toast('Error: '+error.message);return;}
   campanas.unshift(data[0]);
-  renderCampanas(); renderPlanMensual(); closeModal('modal-campana');
-  ['camp-nombre','camp-inicio','camp-fin','camp-periodo','camp-estrategico','camp-creativo','camp-desarrollo','camp-notas'].forEach(id=>document.getElementById(id).value='');
+  updateCampSelector();
+  renderCalCont();
+  closeModal('modal-campana');
+  document.getElementById('camp-selector').value=data[0].id;
+  selectCampana(data[0].id);
+  // Reset form
+  ['camp-nombre','camp-inicio','camp-fin','camp-periodo','camp-objetivo','camp-estrategico','camp-creativo','camp-desarrollo','camp-notas'].forEach(id=>document.getElementById(id).value='');
+  document.querySelectorAll('input[name="camp-fmt"]').forEach(cb=>cb.checked=false);
   toast('Campana creada ✓');
 }
 
 function openEditCampana(id) {
-  const camp = campanas.find(x=>x.id===id); if(!camp) return;
-  document.getElementById('camp-edit-id').value         = id;
-  document.getElementById('camp-edit-nombre').value     = camp.nombre||'';
-  document.getElementById('camp-edit-status').value     = camp.status||'planificacion';
-  document.getElementById('camp-edit-inicio').value     = camp.fecha_inicio||'';
-  document.getElementById('camp-edit-fin').value        = camp.fecha_fin||'';
-  document.getElementById('camp-edit-periodo').value    = camp.periodo||'';
-  document.getElementById('camp-edit-estrategico').value= camp.concepto_estrategico||'';
-  document.getElementById('camp-edit-creativo').value   = camp.concepto_creativo||'';
-  document.getElementById('camp-edit-desarrollo').value = camp.desarrollo||'';
-  document.getElementById('camp-edit-notas').value      = camp.notas||'';
+  const camp=campanas.find(x=>x.id===id); if(!camp)return;
+  document.getElementById('camp-edit-id').value          = id;
+  document.getElementById('camp-edit-nombre').value      = camp.nombre||'';
+  document.getElementById('camp-edit-color').value       = camp.color||'#b03311';
+  document.getElementById('camp-edit-status').value      = camp.status||'planificacion';
+  document.getElementById('camp-edit-inicio').value      = camp.fecha_inicio||'';
+  document.getElementById('camp-edit-fin').value         = camp.fecha_fin||'';
+  document.getElementById('camp-edit-periodo').value     = camp.periodo||'';
+  document.getElementById('camp-edit-objetivo').value    = camp.objetivo||'';
+  document.getElementById('camp-edit-estrategico').value = camp.concepto_estrategico||'';
+  document.getElementById('camp-edit-creativo').value    = camp.concepto_creativo||'';
+  document.getElementById('camp-edit-desarrollo').value  = camp.desarrollo||'';
+  document.getElementById('camp-edit-notas').value       = camp.notas||'';
+  // Formatos
+  const fmts=Array.isArray(camp.formatos)?camp.formatos:(camp.formatos?JSON.parse(camp.formatos):[]);
+  document.querySelectorAll('input[name="camp-edit-fmt"]').forEach(cb=>cb.checked=fmts.includes(cb.value));
   openModal('modal-camp-edit');
 }
 
 async function updateCampana() {
-  const id = document.getElementById('camp-edit-id').value;
-  const upd = {
-    nombre:               document.getElementById('camp-edit-nombre').value.trim(),
-    status:               document.getElementById('camp-edit-status').value,
-    fecha_inicio:         document.getElementById('camp-edit-inicio').value||null,
-    fecha_fin:            document.getElementById('camp-edit-fin').value||null,
-    periodo:              document.getElementById('camp-edit-periodo').value.trim(),
-    concepto_estrategico: document.getElementById('camp-edit-estrategico').value.trim(),
-    concepto_creativo:    document.getElementById('camp-edit-creativo').value.trim(),
-    desarrollo:           document.getElementById('camp-edit-desarrollo').value.trim(),
-    notas:                document.getElementById('camp-edit-notas').value.trim(),
+  const id=document.getElementById('camp-edit-id').value;
+  const formatos=[...document.querySelectorAll('input[name="camp-edit-fmt"]:checked')].map(el=>el.value);
+  const upd={
+    nombre:              document.getElementById('camp-edit-nombre').value.trim(),
+    color:               document.getElementById('camp-edit-color').value,
+    status:              document.getElementById('camp-edit-status').value,
+    fecha_inicio:        document.getElementById('camp-edit-inicio').value||null,
+    fecha_fin:           document.getElementById('camp-edit-fin').value||null,
+    periodo:             document.getElementById('camp-edit-periodo').value.trim(),
+    objetivo:            document.getElementById('camp-edit-objetivo').value.trim(),
+    concepto_estrategico:document.getElementById('camp-edit-estrategico').value.trim(),
+    concepto_creativo:   document.getElementById('camp-edit-creativo').value.trim(),
+    desarrollo:          document.getElementById('camp-edit-desarrollo').value.trim(),
+    notas:               document.getElementById('camp-edit-notas').value.trim(),
+    formatos,
   };
-  const {error} = await db.from('content_campaigns').update(upd).eq('id',id);
-  if(error){ toast('Error: '+error.message); return; }
-  const camp = campanas.find(x=>x.id===id);
-  if(camp) Object.assign(camp,upd);
-  renderCampanas(); renderPlanMensual(); closeModal('modal-camp-edit'); toast('Campana actualizada ✓');
+  const {error}=await db.from('content_campaigns').update(upd).eq('id',id);
+  if(error){toast('Error: '+error.message);return;}
+  const camp=campanas.find(x=>x.id===id); if(camp)Object.assign(camp,upd);
+  updateCampSelector();
+  renderCampDoc(id);
+  renderCalCont();
+  closeModal('modal-camp-edit');
+  toast('Campana actualizada ✓');
 }
 
 async function delCampana(id) {
-  if(!confirm('Eliminar esta campana y todas sus piezas?')) return;
+  if(!confirm('Eliminar esta campana y todas sus piezas?'))return;
   await db.from('content_piezas').delete().eq('campaign_id',id);
   await db.from('content_campaigns').delete().eq('id',id);
-  campanas = campanas.filter(x=>x.id!==id);
-  piezas   = piezas.filter(x=>x.campaign_id!==id);
-  renderCampanas(); renderPlanMensual(); closeModal('modal-camp-edit'); toast('Campana eliminada');
-}
-
-// ── RENDER CAMPANAS ───────────────────────────────────────────────────────────
-function renderCampanas() {
-  const el = document.getElementById('campanas-list'); if(!el) return;
-  if(!campanas.length) {
-    el.innerHTML='<div class="empty"><div class="empty-icon">&#127775;</div><div class="empty-msg">Sin campanas</div><div class="empty-sub">Crea tu primera campana de contenido</div></div>';
-    return;
-  }
-  const stBadge  = {planificacion:'b-amber',activa:'b-green',terminada:'b-gray'};
-  const stLabel  = {planificacion:'En planificacion',activa:'Activa',terminada:'Terminada'};
-  const stColors = {planificacion:'var(--amber)',activa:'var(--green)',terminada:'var(--text3)'};
-
-  el.innerHTML = campanas.map(camp => {
-    const campPiezas = piezas.filter(p=>p.campaign_id===camp.id);
-    const pzDone  = campPiezas.filter(p=>p.status==='publicado').length;
-    const pzTotal = campPiezas.length;
-    const pzPct   = pzTotal>0 ? Math.round((pzDone/pzTotal)*100) : 0;
-
-    const piezaStatus = {
-      pendiente:     {icon:'◌',color:'var(--text3)'},
-      en_produccion: {icon:'▶',color:'var(--blue)'},
-      filmado:       {icon:'◉',color:'var(--amber)'},
-      editado:       {icon:'◐',color:'var(--accent)'},
-      publicado:     {icon:'✓',color:'var(--green)'},
-    };
-
-    return `
-    <div style="background:var(--surface);border:0.5px solid var(--border);border-radius:var(--rl);margin-bottom:14px;overflow:hidden">
-
-      <!-- Header de la campana -->
-      <div style="padding:18px 20px;border-bottom:0.5px solid var(--border);background:var(--surface2);display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap">
-        <div style="flex:1;min-width:0">
-          <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap">
-            <span style="font-size:15px;font-weight:700;color:var(--text)">${camp.nombre}</span>
-            <span class="badge ${stBadge[camp.status]||'b-gray'}">${stLabel[camp.status]||camp.status}</span>
-            ${camp.periodo?`<span style="font-size:11px;color:var(--text2)">${camp.periodo}</span>`:''}
-          </div>
-          ${camp.fecha_inicio||camp.fecha_fin?`<div style="font-size:11px;color:var(--text3)">${camp.fecha_inicio||''} ${camp.fecha_fin?'→ '+camp.fecha_fin:''}</div>`:''}
-        </div>
-        <div style="display:flex;gap:6px;align-items:center">
-          ${pzTotal>0?`<span style="font-size:12px;color:${stColors[camp.status]};font-weight:600">${pzDone}/${pzTotal} piezas</span>`:''}
-          <button class="btn btn-sm btn-outline" onclick="openEditCampana('${camp.id}')">Editar</button>
-        </div>
-      </div>
-
-      <div style="padding:18px 20px">
-
-        <!-- Conceptos -->
-        ${camp.concepto_estrategico||camp.concepto_creativo?`
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
-          ${camp.concepto_estrategico?`
-          <div style="background:var(--blue-l);border-radius:var(--r);padding:12px;border-left:3px solid var(--blue)">
-            <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--blue);margin-bottom:5px">Concepto estrategico</div>
-            <div style="font-size:13px;color:var(--text);line-height:1.5">${camp.concepto_estrategico}</div>
-          </div>`:''}
-          ${camp.concepto_creativo?`
-          <div style="background:var(--accent-l);border-radius:var(--r);padding:12px;border-left:3px solid var(--accent)">
-            <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--accent);margin-bottom:5px">Concepto creativo</div>
-            <div style="font-size:15px;font-weight:700;color:var(--text);line-height:1.4;font-style:italic">"${camp.concepto_creativo}"</div>
-          </div>`:''}
-        </div>`:''}
-
-        <!-- Desarrollo -->
-        ${camp.desarrollo?`
-        <div style="margin-bottom:16px">
-          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text2);margin-bottom:6px">Desarrollo</div>
-          <div style="font-size:13px;color:var(--text);line-height:1.65;white-space:pre-wrap">${camp.desarrollo}</div>
-        </div>`:''}
-
-        <!-- Piezas -->
-        <div>
-          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text2);margin-bottom:8px;display:flex;align-items:center;justify-content:space-between">
-            <span>Piezas${pzTotal>0?` (${pzTotal})`:''}
-              ${pzTotal>0?`<div style="display:inline-block;width:60px;height:3px;background:var(--surface2);border-radius:2px;margin-left:8px;vertical-align:middle"><div style="height:100%;width:${pzPct}%;background:var(--green);border-radius:2px"></div></div>`:''}</span>
-            <button class="btn btn-sm btn-outline" onclick="openAddPieza('${camp.id}')">+ Pieza</button>
-          </div>
-          ${campPiezas.length?`
-          <div style="display:flex;flex-direction:column;gap:6px">
-            ${campPiezas.map(p=>{
-              const ps = piezaStatus[p.status]||{icon:'◌',color:'var(--text3)'};
-              return `<div style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:var(--surface2);border-radius:var(--r)">
-                <span style="font-size:14px;color:${ps.color};flex-shrink:0;cursor:pointer" onclick="cyclePiezaStatus('${p.id}')" title="Click para cambiar estado">${ps.icon}</span>
-                <div style="flex:1;min-width:0">
-                  <span style="font-size:13px;font-weight:${p.status==='publicado'?'400':'600'};color:${p.status==='publicado'?'var(--text2)':'var(--text)'};${p.status==='publicado'?'text-decoration:line-through':''}">${p.titulo}</span>
-                  <span class="badge b-gray" style="font-size:9px;margin-left:5px">${p.formato}</span>
-                  <span class="badge b-gray" style="font-size:9px;margin-left:3px">${p.plataforma}</span>
-                </div>
-                ${p.fecha_planificada?`<span style="font-size:11px;color:var(--text3);flex-shrink:0">${new Date(p.fecha_planificada+'T12:00:00').toLocaleDateString('es-AR',{day:'numeric',month:'short'})}</span>`:''}
-                <button onclick="delPieza('${p.id}')" style="border:none;background:transparent;cursor:pointer;opacity:.35;font-size:13px;transition:opacity .15s;flex-shrink:0" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.35'">&#10005;</button>
-              </div>`;
-            }).join('')}
-          </div>`:`<div style="font-size:13px;color:var(--text2);padding:8px 0">Sin piezas todavia — agrega las piezas que vas a producir</div>`}
-        </div>
-
-        <!-- Notas -->
-        ${camp.notas?`
-        <div style="margin-top:14px;padding-top:14px;border-top:0.5px solid var(--border)">
-          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text2);margin-bottom:5px">Notas</div>
-          <div style="font-size:13px;color:var(--text2);line-height:1.6;white-space:pre-wrap">${camp.notas}</div>
-        </div>`:''}
-
-      </div>
-    </div>`;
-  }).join('');
+  campanas=campanas.filter(x=>x.id!==id);
+  piezas=piezas.filter(x=>x.campaign_id!==id);
+  currentCampId=null;
+  updateCampSelector();
+  document.getElementById('camp-selector').value='';
+  selectCampana('');
+  renderCalCont();
+  closeModal('modal-camp-edit');
+  toast('Campana eliminada');
 }
 
 // ── CRUD PIEZAS ───────────────────────────────────────────────────────────────
 function openAddPieza(campId) {
-  document.getElementById('pieza-camp-id').value = campId;
-  document.getElementById('pieza-fecha').value   = new Date().toISOString().split('T')[0];
+  document.getElementById('pieza-camp-id').value=campId;
+  document.getElementById('pieza-fecha').value=new Date().toISOString().split('T')[0];
+  ['pieza-titulo','pieza-notas'].forEach(id=>document.getElementById(id).value='');
+  openModal('modal-pieza');
+}
+
+function openAddPiezaForDate(date) {
+  // Abrir modal de pieza con la campaña actual y fecha pre-llenada
+  if(campanas.length===0){toast('Primero crea una campana');return;}
+  document.getElementById('pieza-camp-id').value=currentCampId||campanas[0].id;
+  document.getElementById('pieza-fecha').value=date;
   ['pieza-titulo','pieza-notas'].forEach(id=>document.getElementById(id).value='');
   openModal('modal-pieza');
 }
 
 async function savePieza() {
-  const titulo   = document.getElementById('pieza-titulo').value.trim();
-  const campId   = document.getElementById('pieza-camp-id').value;
-  if(!titulo){ toast('Ponele un titulo a la pieza'); return; }
-  const rec = {
-    user_id:          me.id,
-    campaign_id:      campId,
-    titulo,
+  const titulo=document.getElementById('pieza-titulo').value.trim();
+  const campId=document.getElementById('pieza-camp-id').value;
+  if(!titulo){toast('Ponele un titulo a la pieza');return;}
+  const rec={
+    user_id:me.id, campaign_id:campId, titulo,
     formato:          document.getElementById('pieza-formato').value,
     plataforma:       document.getElementById('pieza-plataforma').value,
     fecha_planificada:document.getElementById('pieza-fecha').value||null,
     status:           document.getElementById('pieza-status').value,
     notas:            document.getElementById('pieza-notas').value.trim(),
   };
-  const {data,error} = await db.from('content_piezas').insert([rec]).select();
-  if(error){ toast('Error: '+error.message); return; }
+  const {data,error}=await db.from('content_piezas').insert([rec]).select();
+  if(error){toast('Error: '+error.message);return;}
   piezas.push(data[0]);
-  renderCampanas(); closeModal('modal-pieza'); toast('Pieza agregada ✓');
+  if(currentCampId){
+    const camp=campanas.find(x=>x.id===currentCampId);
+    renderCampPiezas(currentCampId,camp?.color||'var(--accent)');
+  }
+  renderCalCont();
+  closeModal('modal-pieza');
+  toast('Pieza agregada ✓');
 }
 
-const PIEZA_CYCLE = ['pendiente','en_produccion','filmado','editado','publicado'];
 async function cyclePiezaStatus(id) {
-  const p = piezas.find(x=>x.id===id); if(!p) return;
-  const idx  = PIEZA_CYCLE.indexOf(p.status);
-  const next = PIEZA_CYCLE[(idx+1)%PIEZA_CYCLE.length];
+  const p=piezas.find(x=>x.id===id); if(!p) return;
+  const next=PIEZA_CYCLE[(PIEZA_CYCLE.indexOf(p.status)+1)%PIEZA_CYCLE.length];
   await db.from('content_piezas').update({status:next}).eq('id',id);
-  p.status = next; renderCampanas();
-  const labels={pendiente:'Pendiente',en_produccion:'En produccion',filmado:'Filmado',editado:'Editado',publicado:'Publicado'};
-  toast('Pieza → '+labels[next]);
+  p.status=next;
+  if(currentCampId){const camp=campanas.find(x=>x.id===currentCampId);renderCampPiezas(currentCampId,camp?.color||'var(--accent)');}
+  renderCalCont();
+  toast(next==='publicado'?'✓ Publicado!':'Estado → '+PIEZA_LABELS[next]);
 }
 
 async function delPieza(id) {
   await db.from('content_piezas').delete().eq('id',id);
-  piezas = piezas.filter(x=>x.id!==id); renderCampanas(); toast('Pieza eliminada');
+  piezas=piezas.filter(x=>x.id!==id);
+  if(currentCampId){const camp=campanas.find(x=>x.id===currentCampId);renderCampPiezas(currentCampId,camp?.color||'var(--accent)');}
+  renderCalCont();
+  toast('Pieza eliminada');
 }
 
-// ── PLANIFICACION MENSUAL ─────────────────────────────────────────────────────
-function renderPlanMensual() {
-  const mesEl  = document.getElementById('camp-mes-plan');
-  const grid   = document.getElementById('camp-plan-grid');
-  if(!mesEl||!grid) return;
-  const mesVal = mesEl.value || new Date().toISOString().substring(0,7);
-  const [year,month] = mesVal.split('-').map(Number);
+// ── CALENDARIO INTERACTIVO ─────────────────────────────────────────────────────
+function renderCalCont() {
+  const mesEl=document.getElementById('cont-cal-mes'); if(!mesEl) return;
+  const mesVal=mesEl.value||new Date().toISOString().substring(0,7);
+  const [year,month]=mesVal.split('-').map(Number);
+  const hoy=new Date();
+  const diasEnMes=new Date(year,month,0).getDate();
+  const primerDia=new Date(year,month-1,1).getDay();
+  const primerLunes=primerDia===0?6:primerDia-1;
 
-  // Filtrar campanas que se superponen con este mes
-  const mesInicio = mesVal+'-01';
-  const mesFin    = mesVal+'-'+(new Date(year,month,0).getDate()).toString().padStart(2,'0');
-  const campsMes  = campanas.filter(c=>{
-    if(!c.fecha_inicio && !c.fecha_fin) return false;
-    const fi = c.fecha_inicio||mesInicio;
-    const ff = c.fecha_fin||mesFin;
-    return fi<=mesFin && ff>=mesInicio;
+  // Agrupar piezas por fecha con color de campaña
+  const porDia={};
+  piezas.filter(p=>(p.fecha_planificada||'').startsWith(mesVal)).forEach(p=>{
+    const d=parseInt(p.fecha_planificada.split('-')[2]);
+    const camp=campanas.find(c=>c.id===p.campaign_id);
+    if(!porDia[d]) porDia[d]=[];
+    porDia[d].push({...p, campColor: camp?.color||'var(--accent)', campName: camp?.nombre||''});
   });
 
-  if(!campsMes.length && !campanas.length) {
-    grid.innerHTML='<div style="color:var(--text2);font-size:13px;padding:8px 0">Sin campanas para este periodo. Crea una campana con fechas para verla aqui.</div>';
-    return;
+  const diasSem=['Lu','Ma','Mi','Ju','Vi','Sa','Do'];
+  const grid=document.getElementById('cont-cal-grid'); if(!grid) return;
+
+  let html=`<div style="font-size:13px;font-weight:700;text-align:center;margin-bottom:10px">${new Date(year,month-1,1).toLocaleDateString('es-AR',{month:'long',year:'numeric'}).toUpperCase()}</div>`;
+  html+='<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px">';
+  diasSem.forEach(d=>{ html+=`<div style="font-size:10px;font-weight:700;text-align:center;color:var(--text2);padding:3px">${d}</div>`; });
+  for(let i=0;i<primerLunes;i++) html+='<div></div>';
+
+  for(let d=1;d<=diasEnMes;d++){
+    const pd=porDia[d]||[];
+    const fd=`${year}-${String(month).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const esHoy=d===hoy.getDate()&&month===hoy.getMonth()+1&&year===hoy.getFullYear();
+    const esFuturo=new Date(year,month-1,d)>hoy;
+
+    const hasPub=pd.some(p=>p.status==='publicado');
+    const allPub=pd.length>0&&pd.every(p=>p.status==='publicado');
+    const bgCell=allPub?'var(--green-l)':pd.length>0?'var(--accent-l)':'var(--surface2)';
+
+    const piezaChips=pd.slice(0,3).map(p=>`
+      <div onclick="event.stopPropagation();cyclePiezaStatus('${p.id}')"
+        title="${p.titulo} — Click para cambiar estado"
+        style="display:flex;align-items:center;gap:2px;padding:1px 5px;border-radius:8px;background:${p.campColor}20;border:0.5px solid ${p.campColor};cursor:pointer;margin-top:2px;max-width:100%;overflow:hidden">
+        <span style="font-size:9px;color:${p.campColor};font-weight:700">${PIEZA_ICONS[p.status]}</span>
+        <span style="font-size:9px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:60px">${p.titulo}</span>
+      </div>`).join('');
+    const masChip=pd.length>3?`<div style="font-size:9px;color:var(--text2);margin-top:2px">+${pd.length-3} mas</div>`:'';
+
+    html+=`<div onclick="openAddPiezaForDate('${fd}')"
+      title="Click para agregar pieza el ${d}/${month}"
+      style="border-radius:6px;padding:5px 4px;min-height:60px;border:0.5px solid ${esHoy?'var(--accent)':pd.length?'var(--border)':'var(--border)'};background:${bgCell};cursor:pointer;transition:all .12s;${esHoy?'box-shadow:0 0 0 2px var(--accent);':''}"
+      onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='${esHoy?'var(--accent)':pd.length?'var(--border)':'var(--border)'}'">
+      <div style="font-size:11px;font-weight:${esHoy?'800':'600'};color:${esHoy?'var(--accent)':esFuturo?'var(--text3)':'var(--text)'};text-align:center;margin-bottom:2px">${d}</div>
+      ${piezaChips}${masChip}
+      ${!esFuturo&&pd.length===0&&!esHoy?`<div style="font-size:9px;color:var(--text3);text-align:center;margin-top:8px">+</div>`:''}
+    </div>`;
   }
-  if(!campsMes.length) {
-    grid.innerHTML='<div style="color:var(--text2);font-size:13px;padding:8px 0">Sin campanas con fechas en este mes. Edita una campana y agregale fecha de inicio y fin.</div>';
-    return;
+  html+='</div>';
+
+  // Leyenda de campañas
+  const campsConPiezas=[...new Set(piezas.filter(p=>(p.fecha_planificada||'').startsWith(mesVal)).map(p=>p.campaign_id))].map(id=>campanas.find(c=>c.id===id)).filter(Boolean);
+  if(campsConPiezas.length){
+    html+=`<div style="margin-top:12px;padding-top:10px;border-top:0.5px solid var(--border);display:flex;gap:10px;flex-wrap:wrap;font-size:11px">
+      ${campsConPiezas.map(c=>`<span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${c.color};margin-right:4px"></span>${c.nombre}</span>`).join('')}
+      <span style="margin-left:auto;color:var(--text2)">${piezas.filter(p=>(p.fecha_planificada||'').startsWith(mesVal)).length} piezas planificadas</span>
+    </div>`;
   }
 
-  const diasEnMes = new Date(year,month,0).getDate();
-  const stColors = {planificacion:'var(--amber)',activa:'var(--green)',terminada:'var(--text3)'};
+  grid.innerHTML=html;
+}
 
-  // Generar semanas
-  const semanas = [];
-  for(let d=1;d<=diasEnMes;d+=7){
-    semanas.push({inicio:d, fin:Math.min(d+6,diasEnMes)});
-  }
-
-  grid.innerHTML = `
-  <div style="margin-bottom:8px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text2)">
-    ${new Date(year,month-1,1).toLocaleDateString('es-AR',{month:'long',year:'numeric'}).toUpperCase()}
-  </div>
-  <div style="display:flex;flex-direction:column;gap:0">
-    ${semanas.map(sem=>{
-      const campsSem = campsMes.filter(c=>{
-        const fi = parseInt((c.fecha_inicio||mesInicio).split('-')[2]);
-        const ff = parseInt((c.fecha_fin||mesFin).split('-')[2]);
-        return fi<=sem.fin && ff>=sem.inicio;
-      });
-      return `
-      <div style="display:grid;grid-template-columns:80px 1fr;border-bottom:0.5px solid var(--border);min-height:40px">
-        <div style="padding:8px 10px;font-size:11px;font-weight:700;color:var(--text2);border-right:0.5px solid var(--border);background:var(--surface2)">
-          <div>Sem. ${semanas.indexOf(sem)+1}</div>
-          <div style="font-weight:400;color:var(--text3)">${sem.inicio}–${sem.fin}</div>
-        </div>
-        <div style="padding:6px 10px;display:flex;flex-wrap:wrap;gap:5px;align-items:center">
-          ${campsSem.length?campsSem.map(c=>`
-          <span style="padding:3px 10px;background:${stColors[c.status]||'var(--text2)'}20;border:0.5px solid ${stColors[c.status]||'var(--text2)'};border-radius:12px;font-size:12px;font-weight:600;color:${stColors[c.status]};cursor:pointer" onclick="openEditCampana('${c.id}')">${c.nombre}</span>`).join('')
-          :'<span style="font-size:12px;color:var(--text3)">Sin campanas esta semana</span>'}
-        </div>
-      </div>`;
-    }).join('')}
-  </div>
-  <div style="margin-top:10px;display:flex;gap:10px;font-size:11px;flex-wrap:wrap">
-    <span style="color:var(--amber)">&#9632; En planificacion</span>
-    <span style="color:var(--green)">&#9632; Activa</span>
-    <span style="color:var(--text3)">&#9632; Terminada</span>
-  </div>`;
+// ── PLANIFICACION MENSUAL (para el sub-tab de campanas) ──────────────────────
+function renderPlanMensual() {
+  // Implementada dentro de renderCampDoc si se necesita
 }
 
 
