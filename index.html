@@ -2708,7 +2708,7 @@ async function initDashboardMeta(){
 }
 
 // Auto-refresh cada 60 min
-setInterval(()=>{ if(META_TOKEN&&META_ACCOUNT&&metaCampaigns.length) loadMetaCampaigns().then(()=>renderDash()); }, 3600000);
+setInterval(()=>{ if(META_TOKEN&&META_ACCOUNT&&metaCampaigns.length) { loadMetaCampaigns().then(()=>renderDash()).catch(e=>console.warn('Auto-refresh Meta skipped:',e.message)); } }, 3600000);
 
 // showPage ya tiene todo integrado directamente
 
@@ -2890,7 +2890,12 @@ async function verifyMetaConnection() {
       </div>`;
     toast('Meta Ads conectado ✓');
   } catch(e) {
-    statusEl.innerHTML = `<span style="color:var(--red)">Error: ${e.message}</span>`;
+    // Si 400 = token expirado, pausar reintentos automáticos
+    if(e.message && (e.message.includes('400') || e.message.includes('token'))) {
+      META_TOKEN = '';
+      localStorage.removeItem('lt_meta_token');
+    }
+    statusEl.innerHTML = `<span style="color:var(--red)">Token expirado — ve a Conectar Meta y pega uno nuevo</span>`;
     infoEl.innerHTML = `<div class="empty"><div class="empty-icon">⚠️</div><div class="empty-msg">Error de conexion</div><div class="empty-sub">${e.message}</div></div>`;
   }
 }
@@ -3918,7 +3923,9 @@ function switchContTab(tab, btn) {
       bt.style.fontWeight=t===tab?'600':'500';
     }
   });
-  if(tab==='campanas'){if(!campanas.length)loadCampanas();else updateCampSelector();}
+  if(tab==='campanas'){
+    loadCampanas();
+  }
 }
 
 // ── CONTROL ───────────────────────────────────────────────────────────────────
@@ -4205,6 +4212,7 @@ const PIEZA_LABELS = {pendiente:'Pendiente',en_produccion:'En produccion',filmad
 
 async function loadCampanas() {
   if(!me) return;
+  try {
   const [cRes, pRes] = await Promise.all([
     db.from('content_campaigns').select('*').eq('user_id',me.id).order('created_at',{ascending:false}),
     db.from('content_piezas').select('*').eq('user_id',me.id).order('fecha_planificada',{ascending:true}),
@@ -4213,16 +4221,17 @@ async function loadCampanas() {
   piezas   = pRes.data || [];
   updateCampSelector();
   renderCalCont();
-  // Si ya hay una campana seleccionada, mostrarla; si no, mostrar empty state
-  if(currentCampId && campanas.find(x=>x.id===currentCampId)){
-    selectCampana(currentCampId);
-  } else if(campanas.length>0 && !currentCampId){
-    // Auto-seleccionar la primera
-    document.getElementById('camp-selector').value = campanas[0].id;
-    selectCampana(campanas[0].id);
+  updateCampSelector();
+  // Mostrar la primera campaña o el empty state
+  if(campanas.length > 0) {
+    const keepId = currentCampId && campanas.find(x=>x.id===currentCampId) ? currentCampId : campanas[0].id;
+    const sel = document.getElementById('camp-selector');
+    if(sel) sel.value = keepId;
+    selectCampana(keepId);
   } else {
     selectCampana('');
   }
+  } catch(e2) { console.error('loadCampanas post error:', e2); }
 }
 
 function updateCampSelector() {
@@ -4234,11 +4243,15 @@ function updateCampSelector() {
 
 function selectCampana(id) {
   currentCampId = id;
-  const doc     = document.getElementById('camp-doc');
-  const empty   = document.getElementById('camp-empty-state');
-  if(!id){ if(doc)doc.style.display='none'; if(empty)empty.style.display='block'; return; }
-  if(doc)   doc.style.display='block';
-  if(empty) empty.style.display='none';
+  const doc   = document.getElementById('camp-doc');
+  const empty = document.getElementById('camp-empty-state');
+  if(!id || !id.length) {
+    if(doc)   { doc.style.display='none'; }
+    if(empty) { empty.style.display='block'; }
+    return;
+  }
+  if(doc)   { doc.style.display='block'; }
+  if(empty) { empty.style.display='none'; }
   renderCampDoc(id);
 }
 
