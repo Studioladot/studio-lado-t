@@ -248,21 +248,21 @@ tr:hover td{background:var(--surface2)}
   <div class="sb-brand"><div class="sb-brand-name">Lado T</div><div class="sb-brand-sub">Sistema Operativo</div></div>
   <nav>
     <div class="sb-section">Principal</div>
-    <div class="nav-item active" onclick="showPage('dashboard')" data-page="dashboard"><span class="ni">&#9672;</span><span>Dashboard</span></div>
+    <div class="nav-item active" onclick="showPage('dashboard')" data-page="dashboard" data-section="dashboard"><span class="ni">&#9672;</span><span>Dashboard</span></div>
     <div class="sb-section">Meta Ads</div>
-    <div class="nav-item" onclick="showPage('meta-connect')" data-page="meta-connect"><span class="ni">&#128279;</span><span>Conectar Meta</span></div>
-    <div class="nav-item" onclick="showPage('meta-campanas')" data-page="meta-campanas"><span class="ni">&#128202;</span><span>Campanas</span></div>
-    <div class="nav-item" onclick="showPage('meta-live')" data-page="meta-live"><span class="ni">&#9673;</span><span>Snapshots</span></div>
-    <div class="nav-item" onclick="showPage('guiones')" data-page="guiones"><span class="ni">&#9681;</span><span>Guiones</span></div>
-    <div class="nav-item" onclick="showPage('biblioteca')" data-page="biblioteca"><span class="ni">&#9678;</span><span>Biblioteca</span></div>
-    <div class="nav-item" onclick="showPage('benchmarks')" data-page="benchmarks"><span class="ni">&#9680;</span><span>Benchmarks</span></div>
+    <div class="nav-item" onclick="showPage('meta-connect')" data-page="meta-connect" data-section="meta"><span class="ni">&#128279;</span><span>Conectar Meta</span></div>
+    <div class="nav-item" onclick="showPage('meta-campanas')" data-page="meta-campanas" data-section="meta"><span class="ni">&#128202;</span><span>Campanas</span></div>
+    <div class="nav-item" onclick="showPage('meta-live')" data-page="meta-live" data-section="meta"><span class="ni">&#9673;</span><span>Snapshots</span></div>
+    <div class="nav-item" onclick="showPage('guiones')" data-page="guiones" data-section="meta"><span class="ni">&#9681;</span><span>Guiones</span></div>
+    <div class="nav-item" onclick="showPage('biblioteca')" data-page="biblioteca" data-section="meta"><span class="ni">&#9678;</span><span>Biblioteca</span></div>
+    <div class="nav-item" onclick="showPage('benchmarks')" data-page="benchmarks" data-section="meta"><span class="ni">&#9680;</span><span>Benchmarks</span></div>
     <div class="sb-section">Negocio</div>
-    <div class="nav-item" onclick="showPage('finanzas')" data-page="finanzas"><span class="ni">&#9672;</span><span>Finanzas</span></div>
-    <div class="nav-item" onclick="showPage('contenido')" data-page="contenido"><span class="ni">&#9681;</span><span>Contenido</span></div>
-    <div class="nav-item" onclick="showPage('crm')" data-page="crm"><span class="ni">&#9678;</span><span>CRM</span></div>
-    <div class="nav-item" onclick="showPage('notas')" data-page="notas"><span class="ni">&#128221;</span><span>Notas</span></div>
+    <div class="nav-item" onclick="showPage('finanzas')" data-page="finanzas" data-section="finanzas"><span class="ni">&#9672;</span><span>Finanzas</span></div>
+    <div class="nav-item" onclick="showPage('contenido')" data-page="contenido" data-section="contenido"><span class="ni">&#9681;</span><span>Contenido</span></div>
+    <div class="nav-item" onclick="showPage('crm')" data-page="crm" data-section="crm"><span class="ni">&#9678;</span><span>CRM</span></div>
+    <div class="nav-item" onclick="showPage('notas')" data-page="notas" data-section="notas"><span class="ni">&#128221;</span><span>Notas</span></div>
     <div class="sb-section">Inteligencia</div>
-    <div class="nav-item" onclick="showPage('ia')" data-page="ia"><span class="ni">&#10022;</span><span>IA Estrategica</span></div>
+    <div class="nav-item" onclick="showPage('ia')" data-page="ia" data-section="ia"><span class="ni">&#10022;</span><span>IA Estrategica</span></div>
     <div class="sb-section">Sistema</div>
     <div class="nav-item" onclick="showPage('config')" data-page="config"><span class="ni">&#9881;</span><span>Configuracion</span></div>
     <div class="nav-item" id="nav-admin" style="display:none" onclick="showPage('admin')" data-page="admin"><span class="ni">&#128737;</span><span>Admin</span></div>
@@ -870,6 +870,7 @@ tr:hover td{background:var(--surface2)}
     <button onclick="switchContTab('calendario',this)" id="ctab-calendario" style="padding:9px 18px;border:none;background:transparent;font-size:13px;font-weight:500;color:var(--text2);border-bottom:2px solid transparent;cursor:pointer">&#128197; Calendario</button>
     <button onclick="switchContTab('publicaciones',this)" id="ctab-publicaciones" style="padding:9px 18px;border:none;background:transparent;font-size:13px;font-weight:500;color:var(--text2);border-bottom:2px solid transparent;cursor:pointer">&#128247; Publicaciones</button>
     <button onclick="switchContTab('ideas',this)" id="ctab-ideas" style="padding:9px 18px;border:none;background:transparent;font-size:13px;font-weight:500;color:var(--text2);border-bottom:2px solid transparent;cursor:pointer">&#128161; Ideas</button>
+    <button onclick="switchContTab('campanas',this)" id="ctab-campanas" style="padding:9px 18px;border:none;background:transparent;font-size:13px;font-weight:500;color:var(--text2);border-bottom:2px solid transparent;cursor:pointer">&#127775; Campanas</button>
   </div>
 
   <!-- CONTROL TAB -->
@@ -1019,6 +1020,34 @@ tr:hover td{background:var(--surface2)}
       <button class="btn btn-accent" onclick="saveNota()">Guardar nota</button>
     </div>
   </div>
+  <!-- CAMPAÑAS TAB -->
+  <div id="cont-tab-campanas" style="display:none">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px">
+      <div>
+        <div style="font-size:13px;color:var(--text2)">Cada campana tiene su concepto, sus piezas y su desarrollo. Todo en un lugar.</div>
+      </div>
+      <button class="btn btn-accent" onclick="openModal('modal-campana')">+ Nueva campana</button>
+    </div>
+
+    <!-- Planificacion mensual -->
+    <div class="card" style="margin-bottom:14px">
+      <div class="card-title">
+        Planificacion mensual
+        <input type="month" id="camp-mes-plan" style="border:0.5px solid var(--border);border-radius:var(--r);padding:5px 9px;font-size:12px;background:var(--surface);color:var(--text);outline:none;font-weight:400" onchange="renderPlanMensual()"/>
+      </div>
+      <div id="camp-plan-grid"></div>
+    </div>
+
+    <!-- Lista de campanas -->
+    <div id="campanas-list">
+      <div class="empty">
+        <div class="empty-icon">&#127775;</div>
+        <div class="empty-msg">Sin campanas creadas</div>
+        <div class="empty-sub">Cada campana tiene su concepto, piezas y planificacion</div>
+      </div>
+    </div>
+  </div>
+
 </div>
 
 <!-- CRM -->
@@ -1349,6 +1378,138 @@ create policy "own" on contacts for all using (auth.uid()=user_id);</div>
   </div>
 </div>
 
+
+<!-- Modal Nueva Campana -->
+<div class="modal-backdrop" id="modal-campana">
+  <div class="modal" style="max-width:600px">
+    <div class="modal-title">&#127775; Nueva campana de contenido</div>
+
+    <div class="form-row">
+      <div class="fg wide"><label>Nombre de la campana</label><input id="camp-nombre" type="text" placeholder="Ej: Lanzamiento Campera Reversible, Drop Invierno..."/></div>
+      <div class="fg"><label>Estado</label>
+        <select id="camp-status">
+          <option value="planificacion">En planificacion</option>
+          <option value="activa">Activa</option>
+          <option value="terminada">Terminada</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="fg"><label>Fecha inicio</label><input id="camp-inicio" type="date"/></div>
+      <div class="fg"><label>Fecha fin</label><input id="camp-fin" type="date"/></div>
+      <div class="fg"><label>Periodo</label><input id="camp-periodo" type="text" placeholder="Ej: Semana 1 Junio, Julio 2026..."/></div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="fg" style="margin-bottom:12px">
+      <label>
+        Concepto estrategico
+        <span style="font-size:10px;color:var(--text3);font-weight:400;margin-left:6px">La promesa funcional, corta y literal</span>
+      </label>
+      <textarea id="camp-estrategico" rows="2" placeholder="Ej: Campera reversible de abrigo maximo al precio mas bajo de Argentina"></textarea>
+    </div>
+
+    <div class="fg" style="margin-bottom:12px">
+      <label>
+        Concepto creativo
+        <span style="font-size:10px;color:var(--text3);font-weight:400;margin-left:6px">La frase evocadora que atraviesa todos los formatos</span>
+      </label>
+      <textarea id="camp-creativo" rows="2" placeholder="Ej: Dos camperas, una historia"></textarea>
+    </div>
+
+    <div class="fg" style="margin-bottom:12px">
+      <label>Desarrollo de la campana</label>
+      <textarea id="camp-desarrollo" rows="4" placeholder="Que vamos a hacer, como lo vamos a contar, la idea general de ejecucion..."></textarea>
+    </div>
+
+    <div class="fg" style="margin-bottom:4px">
+      <label>Notas</label>
+      <textarea id="camp-notas" rows="2" placeholder="Referencias, ideas sueltas, observaciones..."></textarea>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-campana')">Cancelar</button>
+      <button class="btn btn-accent" onclick="saveCampana()">Guardar campana</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Nueva Pieza -->
+<div class="modal-backdrop" id="modal-pieza">
+  <div class="modal" style="max-width:440px">
+    <div class="modal-title">Agregar pieza</div>
+    <input type="hidden" id="pieza-camp-id"/>
+    <div class="form-row">
+      <div class="fg wide"><label>Titulo</label><input id="pieza-titulo" type="text" placeholder="Ej: Reel unboxing, Carrusel 5 outfits..."/></div>
+    </div>
+    <div class="form-row">
+      <div class="fg"><label>Formato</label>
+        <select id="pieza-formato">
+          <option>Reel</option><option>TikTok</option><option>Carrusel</option>
+          <option>Historia</option><option>Post</option><option>Video largo</option><option>Otro</option>
+        </select>
+      </div>
+      <div class="fg"><label>Plataforma</label>
+        <select id="pieza-plataforma">
+          <option>Instagram</option><option>TikTok</option><option>Ambas</option><option>YouTube</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="fg"><label>Fecha planificada</label><input id="pieza-fecha" type="date"/></div>
+      <div class="fg"><label>Estado</label>
+        <select id="pieza-status">
+          <option value="pendiente">Pendiente</option>
+          <option value="en_produccion">En produccion</option>
+          <option value="filmado">Filmado</option>
+          <option value="editado">Editado</option>
+          <option value="publicado">Publicado</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row"><div class="fg full"><label>Notas</label><input id="pieza-notas" type="text" placeholder="Hook, referencia, idea..."/></div></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-pieza')">Cancelar</button>
+      <button class="btn btn-accent" onclick="savePieza()">Agregar pieza</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Editar Campana -->
+<div class="modal-backdrop" id="modal-camp-edit">
+  <div class="modal" style="max-width:600px">
+    <div class="modal-title">Editar campana</div>
+    <input type="hidden" id="camp-edit-id"/>
+    <div class="form-row">
+      <div class="fg wide"><label>Nombre</label><input id="camp-edit-nombre" type="text"/></div>
+      <div class="fg"><label>Estado</label>
+        <select id="camp-edit-status">
+          <option value="planificacion">En planificacion</option>
+          <option value="activa">Activa</option>
+          <option value="terminada">Terminada</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="fg"><label>Fecha inicio</label><input id="camp-edit-inicio" type="date"/></div>
+      <div class="fg"><label>Fecha fin</label><input id="camp-edit-fin" type="date"/></div>
+      <div class="fg"><label>Periodo</label><input id="camp-edit-periodo" type="text"/></div>
+    </div>
+    <div class="divider"></div>
+    <div class="fg" style="margin-bottom:10px"><label>Concepto estrategico</label><textarea id="camp-edit-estrategico" rows="2"></textarea></div>
+    <div class="fg" style="margin-bottom:10px"><label>Concepto creativo</label><textarea id="camp-edit-creativo" rows="2"></textarea></div>
+    <div class="fg" style="margin-bottom:10px"><label>Desarrollo</label><textarea id="camp-edit-desarrollo" rows="4"></textarea></div>
+    <div class="fg" style="margin-bottom:4px"><label>Notas</label><textarea id="camp-edit-notas" rows="2"></textarea></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-camp-edit')">Cancelar</button>
+      <button class="btn btn-red" onclick="delCampana(document.getElementById('camp-edit-id').value)">Eliminar</button>
+      <button class="btn btn-accent" onclick="updateCampana()">Guardar cambios</button>
+    </div>
+  </div>
+</div>
+
 <!-- Modal Nueva Idea -->
 <div class="modal-backdrop" id="modal-idea">
   <div class="modal" style="max-width:460px">
@@ -1379,8 +1540,8 @@ create policy "own" on contacts for all using (auth.uid()=user_id);</div>
 
 <!-- Modal Editar perfil de usuario (admin) -->
 <div class="modal-backdrop" id="modal-adm-user">
-  <div class="modal" style="max-width:440px">
-    <div class="modal-title">Editar usuario</div>
+  <div class="modal" style="max-width:500px">
+    <div class="modal-title">&#128737; Editar usuario</div>
     <input type="hidden" id="adm-uid"/>
     <div class="form-row">
       <div class="fg"><label>Estado</label>
@@ -1392,7 +1553,46 @@ create policy "own" on contacts for all using (auth.uid()=user_id);</div>
       </div>
       <div class="fg"><label>Expira el</label><input id="adm-expires" type="date"/></div>
     </div>
-    <div class="form-row"><div class="fg full"><label>Notas internas</label><textarea id="adm-notas" rows="2" placeholder="Paquete, fecha de contratacion, etc."></textarea></div></div>
+    <div class="form-row"><div class="fg full"><label>Notas internas</label><textarea id="adm-notas" rows="2" placeholder="Paquete, servicio contratado, fecha..."></textarea></div></div>
+
+    <div class="divider"></div>
+
+    <!-- PERMISOS -->
+    <div style="margin-bottom:4px">
+      <div style="font-size:13px;font-weight:700;margin-bottom:4px">Secciones habilitadas</div>
+      <div style="font-size:12px;color:var(--text2);margin-bottom:12px">Destilda las secciones que NO queres que vea. Si todo esta tildado = acceso completo.</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px" id="adm-perms-grid">
+
+        <label style="display:flex;align-items:center;gap:8px;padding:9px 12px;background:var(--surface2);border-radius:var(--r);cursor:pointer;font-size:13px">
+          <input type="checkbox" id="perm-dashboard" checked style="accent-color:var(--accent)"/> Dashboard
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;padding:9px 12px;background:var(--surface2);border-radius:var(--r);cursor:pointer;font-size:13px">
+          <input type="checkbox" id="perm-meta" checked style="accent-color:var(--accent)"/> Meta Ads (completo)
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;padding:9px 12px;background:var(--surface2);border-radius:var(--r);cursor:pointer;font-size:13px">
+          <input type="checkbox" id="perm-finanzas" checked style="accent-color:var(--accent)"/> Finanzas
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;padding:9px 12px;background:var(--surface2);border-radius:var(--r);cursor:pointer;font-size:13px">
+          <input type="checkbox" id="perm-contenido" checked style="accent-color:var(--accent)"/> Contenido + Campanas
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;padding:9px 12px;background:var(--surface2);border-radius:var(--r);cursor:pointer;font-size:13px">
+          <input type="checkbox" id="perm-crm" checked style="accent-color:var(--accent)"/> CRM
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;padding:9px 12px;background:var(--surface2);border-radius:var(--r);cursor:pointer;font-size:13px">
+          <input type="checkbox" id="perm-notas" checked style="accent-color:var(--accent)"/> Notas
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;padding:9px 12px;background:var(--surface2);border-radius:var(--r);cursor:pointer;font-size:13px">
+          <input type="checkbox" id="perm-ia" checked style="accent-color:var(--accent)"/> IA Estrategica
+        </label>
+
+      </div>
+      <div style="margin-top:8px;display:flex;gap:8px">
+        <button class="btn btn-sm btn-outline" onclick="['dashboard','meta','finanzas','contenido','crm','notas','ia'].forEach(s=>document.getElementById('perm-'+s).checked=true)">Todo habilitado</button>
+        <button class="btn btn-sm btn-outline" onclick="['meta','finanzas','crm','ia'].forEach(s=>document.getElementById('perm-'+s).checked=false);['dashboard','contenido','notas'].forEach(s=>document.getElementById('perm-'+s).checked=true)" style="font-size:11px">Solo Creativo</button>
+        <button class="btn btn-sm btn-outline" onclick="['dashboard','contenido','notas','ia'].forEach(s=>document.getElementById('perm-'+s).checked=false);['meta','finanzas','crm'].forEach(s=>document.getElementById('perm-'+s).checked=true)" style="font-size:11px">Solo Meta+Fin</button>
+      </div>
+    </div>
+
     <div class="modal-footer">
       <button class="btn btn-outline" onclick="closeModal('modal-adm-user')">Cancelar</button>
       <button class="btn btn-red" onclick="suspendUser()">Suspender</button>
@@ -1623,7 +1823,7 @@ function showPage(p){
   if(p==='finanzas')loadFinanzas();
   if(p==='admin')loadAdmin();
   if(p==='notas')loadNotas();
-  if(p==='contenido'){loadContenido();const cm=document.getElementById('cont-cal-mes');if(cm&&!cm.value)cm.value=new Date().toISOString().substring(0,7);}
+  if(p==='contenido'){loadContenido();const cm=document.getElementById('cont-cal-mes');if(cm&&!cm.value)cm.value=new Date().toISOString().substring(0,7);const cmp=document.getElementById('camp-mes-plan');if(cmp&&!cmp.value)cmp.value=new Date().toISOString().substring(0,7);}
 }
 
 // ── LOAD ALL ─────────────────────────────────────────────────────────────────
@@ -3576,6 +3776,7 @@ async function loadContenido() {
   renderCalCont();
   renderPublicaciones();
   renderIdeas();
+  // Campanas se cargan cuando el usuario abre ese tab
 }
 
 // ── TABS CONTENIDO ────────────────────────────────────────────────────────────
@@ -3908,6 +4109,519 @@ async function delNota(id) {
   notas = notas.filter(n => n.id !== id);
   renderNotas();
   toast('Nota eliminada');
+}
+
+
+// ══════════════════════════════════════════════════════════════════════════════
+// CAMPANAS DE CONTENIDO
+// ══════════════════════════════════════════════════════════════════════════════
+let campanas = [], piezas = [];
+
+async function loadCampanas() {
+  if(!me) return;
+  const [cRes, pRes] = await Promise.all([
+    db.from('content_campaigns').select('*').eq('user_id',me.id).order('fecha_inicio',{ascending:false}),
+    db.from('content_piezas').select('*').eq('user_id',me.id).order('fecha_planificada',{ascending:true}),
+  ]);
+  campanas = cRes.data || [];
+  piezas   = pRes.data || [];
+  renderCampanas();
+  renderPlanMensual();
+}
+
+// ── SWITCH TAB (actualizar para incluir campanas) ─────────────────────────────
+const _origSwitchContTab = switchContTab;
+function switchContTab(tab, btn) {
+  finActiveTab = tab;
+  ['control','calendario','publicaciones','ideas','campanas'].forEach(t => {
+    const el = document.getElementById('cont-tab-'+t);
+    const bt = document.getElementById('ctab-'+t);
+    if(el) el.style.display = t===tab ? 'block' : 'none';
+    if(bt){
+      bt.style.color = t===tab?'var(--accent)':'var(--text2)';
+      bt.style.borderBottomColor = t===tab?'var(--accent)':'transparent';
+      bt.style.fontWeight = t===tab?'600':'500';
+    }
+  });
+  if(tab==='campanas') {
+    if(!campanas.length) loadCampanas();
+    else { renderCampanas(); renderPlanMensual(); }
+  }
+}
+
+// ── CRUD CAMPANAS ─────────────────────────────────────────────────────────────
+async function saveCampana() {
+  const nombre = document.getElementById('camp-nombre').value.trim();
+  if(!nombre){ toast('Ponele un nombre a la campana'); return; }
+  const rec = {
+    user_id: me.id,
+    nombre,
+    status:               document.getElementById('camp-status').value,
+    fecha_inicio:         document.getElementById('camp-inicio').value||null,
+    fecha_fin:            document.getElementById('camp-fin').value||null,
+    periodo:              document.getElementById('camp-periodo').value.trim(),
+    concepto_estrategico: document.getElementById('camp-estrategico').value.trim(),
+    concepto_creativo:    document.getElementById('camp-creativo').value.trim(),
+    desarrollo:           document.getElementById('camp-desarrollo').value.trim(),
+    notas:                document.getElementById('camp-notas').value.trim(),
+  };
+  const {data,error} = await db.from('content_campaigns').insert([rec]).select();
+  if(error){ toast('Error: '+error.message); return; }
+  campanas.unshift(data[0]);
+  renderCampanas(); renderPlanMensual(); closeModal('modal-campana');
+  ['camp-nombre','camp-inicio','camp-fin','camp-periodo','camp-estrategico','camp-creativo','camp-desarrollo','camp-notas'].forEach(id=>document.getElementById(id).value='');
+  toast('Campana creada ✓');
+}
+
+function openEditCampana(id) {
+  const camp = campanas.find(x=>x.id===id); if(!camp) return;
+  document.getElementById('camp-edit-id').value         = id;
+  document.getElementById('camp-edit-nombre').value     = camp.nombre||'';
+  document.getElementById('camp-edit-status').value     = camp.status||'planificacion';
+  document.getElementById('camp-edit-inicio').value     = camp.fecha_inicio||'';
+  document.getElementById('camp-edit-fin').value        = camp.fecha_fin||'';
+  document.getElementById('camp-edit-periodo').value    = camp.periodo||'';
+  document.getElementById('camp-edit-estrategico').value= camp.concepto_estrategico||'';
+  document.getElementById('camp-edit-creativo').value   = camp.concepto_creativo||'';
+  document.getElementById('camp-edit-desarrollo').value = camp.desarrollo||'';
+  document.getElementById('camp-edit-notas').value      = camp.notas||'';
+  openModal('modal-camp-edit');
+}
+
+async function updateCampana() {
+  const id = document.getElementById('camp-edit-id').value;
+  const upd = {
+    nombre:               document.getElementById('camp-edit-nombre').value.trim(),
+    status:               document.getElementById('camp-edit-status').value,
+    fecha_inicio:         document.getElementById('camp-edit-inicio').value||null,
+    fecha_fin:            document.getElementById('camp-edit-fin').value||null,
+    periodo:              document.getElementById('camp-edit-periodo').value.trim(),
+    concepto_estrategico: document.getElementById('camp-edit-estrategico').value.trim(),
+    concepto_creativo:    document.getElementById('camp-edit-creativo').value.trim(),
+    desarrollo:           document.getElementById('camp-edit-desarrollo').value.trim(),
+    notas:                document.getElementById('camp-edit-notas').value.trim(),
+  };
+  const {error} = await db.from('content_campaigns').update(upd).eq('id',id);
+  if(error){ toast('Error: '+error.message); return; }
+  const camp = campanas.find(x=>x.id===id);
+  if(camp) Object.assign(camp,upd);
+  renderCampanas(); renderPlanMensual(); closeModal('modal-camp-edit'); toast('Campana actualizada ✓');
+}
+
+async function delCampana(id) {
+  if(!confirm('Eliminar esta campana y todas sus piezas?')) return;
+  await db.from('content_piezas').delete().eq('campaign_id',id);
+  await db.from('content_campaigns').delete().eq('id',id);
+  campanas = campanas.filter(x=>x.id!==id);
+  piezas   = piezas.filter(x=>x.campaign_id!==id);
+  renderCampanas(); renderPlanMensual(); closeModal('modal-camp-edit'); toast('Campana eliminada');
+}
+
+// ── RENDER CAMPANAS ───────────────────────────────────────────────────────────
+function renderCampanas() {
+  const el = document.getElementById('campanas-list'); if(!el) return;
+  if(!campanas.length) {
+    el.innerHTML='<div class="empty"><div class="empty-icon">&#127775;</div><div class="empty-msg">Sin campanas</div><div class="empty-sub">Crea tu primera campana de contenido</div></div>';
+    return;
+  }
+  const stBadge  = {planificacion:'b-amber',activa:'b-green',terminada:'b-gray'};
+  const stLabel  = {planificacion:'En planificacion',activa:'Activa',terminada:'Terminada'};
+  const stColors = {planificacion:'var(--amber)',activa:'var(--green)',terminada:'var(--text3)'};
+
+  el.innerHTML = campanas.map(camp => {
+    const campPiezas = piezas.filter(p=>p.campaign_id===camp.id);
+    const pzDone  = campPiezas.filter(p=>p.status==='publicado').length;
+    const pzTotal = campPiezas.length;
+    const pzPct   = pzTotal>0 ? Math.round((pzDone/pzTotal)*100) : 0;
+
+    const piezaStatus = {
+      pendiente:     {icon:'◌',color:'var(--text3)'},
+      en_produccion: {icon:'▶',color:'var(--blue)'},
+      filmado:       {icon:'◉',color:'var(--amber)'},
+      editado:       {icon:'◐',color:'var(--accent)'},
+      publicado:     {icon:'✓',color:'var(--green)'},
+    };
+
+    return `
+    <div style="background:var(--surface);border:0.5px solid var(--border);border-radius:var(--rl);margin-bottom:14px;overflow:hidden">
+
+      <!-- Header de la campana -->
+      <div style="padding:18px 20px;border-bottom:0.5px solid var(--border);background:var(--surface2);display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap">
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap">
+            <span style="font-size:15px;font-weight:700;color:var(--text)">${camp.nombre}</span>
+            <span class="badge ${stBadge[camp.status]||'b-gray'}">${stLabel[camp.status]||camp.status}</span>
+            ${camp.periodo?`<span style="font-size:11px;color:var(--text2)">${camp.periodo}</span>`:''}
+          </div>
+          ${camp.fecha_inicio||camp.fecha_fin?`<div style="font-size:11px;color:var(--text3)">${camp.fecha_inicio||''} ${camp.fecha_fin?'→ '+camp.fecha_fin:''}</div>`:''}
+        </div>
+        <div style="display:flex;gap:6px;align-items:center">
+          ${pzTotal>0?`<span style="font-size:12px;color:${stColors[camp.status]};font-weight:600">${pzDone}/${pzTotal} piezas</span>`:''}
+          <button class="btn btn-sm btn-outline" onclick="openEditCampana('${camp.id}')">Editar</button>
+        </div>
+      </div>
+
+      <div style="padding:18px 20px">
+
+        <!-- Conceptos -->
+        ${camp.concepto_estrategico||camp.concepto_creativo?`
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+          ${camp.concepto_estrategico?`
+          <div style="background:var(--blue-l);border-radius:var(--r);padding:12px;border-left:3px solid var(--blue)">
+            <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--blue);margin-bottom:5px">Concepto estrategico</div>
+            <div style="font-size:13px;color:var(--text);line-height:1.5">${camp.concepto_estrategico}</div>
+          </div>`:''}
+          ${camp.concepto_creativo?`
+          <div style="background:var(--accent-l);border-radius:var(--r);padding:12px;border-left:3px solid var(--accent)">
+            <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--accent);margin-bottom:5px">Concepto creativo</div>
+            <div style="font-size:15px;font-weight:700;color:var(--text);line-height:1.4;font-style:italic">"${camp.concepto_creativo}"</div>
+          </div>`:''}
+        </div>`:''}
+
+        <!-- Desarrollo -->
+        ${camp.desarrollo?`
+        <div style="margin-bottom:16px">
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text2);margin-bottom:6px">Desarrollo</div>
+          <div style="font-size:13px;color:var(--text);line-height:1.65;white-space:pre-wrap">${camp.desarrollo}</div>
+        </div>`:''}
+
+        <!-- Piezas -->
+        <div>
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text2);margin-bottom:8px;display:flex;align-items:center;justify-content:space-between">
+            <span>Piezas${pzTotal>0?` (${pzTotal})`:''}
+              ${pzTotal>0?`<div style="display:inline-block;width:60px;height:3px;background:var(--surface2);border-radius:2px;margin-left:8px;vertical-align:middle"><div style="height:100%;width:${pzPct}%;background:var(--green);border-radius:2px"></div></div>`:''}</span>
+            <button class="btn btn-sm btn-outline" onclick="openAddPieza('${camp.id}')">+ Pieza</button>
+          </div>
+          ${campPiezas.length?`
+          <div style="display:flex;flex-direction:column;gap:6px">
+            ${campPiezas.map(p=>{
+              const ps = piezaStatus[p.status]||{icon:'◌',color:'var(--text3)'};
+              return `<div style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:var(--surface2);border-radius:var(--r)">
+                <span style="font-size:14px;color:${ps.color};flex-shrink:0;cursor:pointer" onclick="cyclePiezaStatus('${p.id}')" title="Click para cambiar estado">${ps.icon}</span>
+                <div style="flex:1;min-width:0">
+                  <span style="font-size:13px;font-weight:${p.status==='publicado'?'400':'600'};color:${p.status==='publicado'?'var(--text2)':'var(--text)'};${p.status==='publicado'?'text-decoration:line-through':''}">${p.titulo}</span>
+                  <span class="badge b-gray" style="font-size:9px;margin-left:5px">${p.formato}</span>
+                  <span class="badge b-gray" style="font-size:9px;margin-left:3px">${p.plataforma}</span>
+                </div>
+                ${p.fecha_planificada?`<span style="font-size:11px;color:var(--text3);flex-shrink:0">${new Date(p.fecha_planificada+'T12:00:00').toLocaleDateString('es-AR',{day:'numeric',month:'short'})}</span>`:''}
+                <button onclick="delPieza('${p.id}')" style="border:none;background:transparent;cursor:pointer;opacity:.35;font-size:13px;transition:opacity .15s;flex-shrink:0" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.35'">&#10005;</button>
+              </div>`;
+            }).join('')}
+          </div>`:`<div style="font-size:13px;color:var(--text2);padding:8px 0">Sin piezas todavia — agrega las piezas que vas a producir</div>`}
+        </div>
+
+        <!-- Notas -->
+        ${camp.notas?`
+        <div style="margin-top:14px;padding-top:14px;border-top:0.5px solid var(--border)">
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text2);margin-bottom:5px">Notas</div>
+          <div style="font-size:13px;color:var(--text2);line-height:1.6;white-space:pre-wrap">${camp.notas}</div>
+        </div>`:''}
+
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── CRUD PIEZAS ───────────────────────────────────────────────────────────────
+function openAddPieza(campId) {
+  document.getElementById('pieza-camp-id').value = campId;
+  document.getElementById('pieza-fecha').value   = new Date().toISOString().split('T')[0];
+  ['pieza-titulo','pieza-notas'].forEach(id=>document.getElementById(id).value='');
+  openModal('modal-pieza');
+}
+
+async function savePieza() {
+  const titulo   = document.getElementById('pieza-titulo').value.trim();
+  const campId   = document.getElementById('pieza-camp-id').value;
+  if(!titulo){ toast('Ponele un titulo a la pieza'); return; }
+  const rec = {
+    user_id:          me.id,
+    campaign_id:      campId,
+    titulo,
+    formato:          document.getElementById('pieza-formato').value,
+    plataforma:       document.getElementById('pieza-plataforma').value,
+    fecha_planificada:document.getElementById('pieza-fecha').value||null,
+    status:           document.getElementById('pieza-status').value,
+    notas:            document.getElementById('pieza-notas').value.trim(),
+  };
+  const {data,error} = await db.from('content_piezas').insert([rec]).select();
+  if(error){ toast('Error: '+error.message); return; }
+  piezas.push(data[0]);
+  renderCampanas(); closeModal('modal-pieza'); toast('Pieza agregada ✓');
+}
+
+const PIEZA_CYCLE = ['pendiente','en_produccion','filmado','editado','publicado'];
+async function cyclePiezaStatus(id) {
+  const p = piezas.find(x=>x.id===id); if(!p) return;
+  const idx  = PIEZA_CYCLE.indexOf(p.status);
+  const next = PIEZA_CYCLE[(idx+1)%PIEZA_CYCLE.length];
+  await db.from('content_piezas').update({status:next}).eq('id',id);
+  p.status = next; renderCampanas();
+  const labels={pendiente:'Pendiente',en_produccion:'En produccion',filmado:'Filmado',editado:'Editado',publicado:'Publicado'};
+  toast('Pieza → '+labels[next]);
+}
+
+async function delPieza(id) {
+  await db.from('content_piezas').delete().eq('id',id);
+  piezas = piezas.filter(x=>x.id!==id); renderCampanas(); toast('Pieza eliminada');
+}
+
+// ── PLANIFICACION MENSUAL ─────────────────────────────────────────────────────
+function renderPlanMensual() {
+  const mesEl  = document.getElementById('camp-mes-plan');
+  const grid   = document.getElementById('camp-plan-grid');
+  if(!mesEl||!grid) return;
+  const mesVal = mesEl.value || new Date().toISOString().substring(0,7);
+  const [year,month] = mesVal.split('-').map(Number);
+
+  // Filtrar campanas que se superponen con este mes
+  const mesInicio = mesVal+'-01';
+  const mesFin    = mesVal+'-'+(new Date(year,month,0).getDate()).toString().padStart(2,'0');
+  const campsMes  = campanas.filter(c=>{
+    if(!c.fecha_inicio && !c.fecha_fin) return false;
+    const fi = c.fecha_inicio||mesInicio;
+    const ff = c.fecha_fin||mesFin;
+    return fi<=mesFin && ff>=mesInicio;
+  });
+
+  if(!campsMes.length && !campanas.length) {
+    grid.innerHTML='<div style="color:var(--text2);font-size:13px;padding:8px 0">Sin campanas para este periodo. Crea una campana con fechas para verla aqui.</div>';
+    return;
+  }
+  if(!campsMes.length) {
+    grid.innerHTML='<div style="color:var(--text2);font-size:13px;padding:8px 0">Sin campanas con fechas en este mes. Edita una campana y agregale fecha de inicio y fin.</div>';
+    return;
+  }
+
+  const diasEnMes = new Date(year,month,0).getDate();
+  const stColors = {planificacion:'var(--amber)',activa:'var(--green)',terminada:'var(--text3)'};
+
+  // Generar semanas
+  const semanas = [];
+  for(let d=1;d<=diasEnMes;d+=7){
+    semanas.push({inicio:d, fin:Math.min(d+6,diasEnMes)});
+  }
+
+  grid.innerHTML = `
+  <div style="margin-bottom:8px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text2)">
+    ${new Date(year,month-1,1).toLocaleDateString('es-AR',{month:'long',year:'numeric'}).toUpperCase()}
+  </div>
+  <div style="display:flex;flex-direction:column;gap:0">
+    ${semanas.map(sem=>{
+      const campsSem = campsMes.filter(c=>{
+        const fi = parseInt((c.fecha_inicio||mesInicio).split('-')[2]);
+        const ff = parseInt((c.fecha_fin||mesFin).split('-')[2]);
+        return fi<=sem.fin && ff>=sem.inicio;
+      });
+      return `
+      <div style="display:grid;grid-template-columns:80px 1fr;border-bottom:0.5px solid var(--border);min-height:40px">
+        <div style="padding:8px 10px;font-size:11px;font-weight:700;color:var(--text2);border-right:0.5px solid var(--border);background:var(--surface2)">
+          <div>Sem. ${semanas.indexOf(sem)+1}</div>
+          <div style="font-weight:400;color:var(--text3)">${sem.inicio}–${sem.fin}</div>
+        </div>
+        <div style="padding:6px 10px;display:flex;flex-wrap:wrap;gap:5px;align-items:center">
+          ${campsSem.length?campsSem.map(c=>`
+          <span style="padding:3px 10px;background:${stColors[c.status]||'var(--text2)'}20;border:0.5px solid ${stColors[c.status]||'var(--text2)'};border-radius:12px;font-size:12px;font-weight:600;color:${stColors[c.status]};cursor:pointer" onclick="openEditCampana('${c.id}')">${c.nombre}</span>`).join('')
+          :'<span style="font-size:12px;color:var(--text3)">Sin campanas esta semana</span>'}
+        </div>
+      </div>`;
+    }).join('')}
+  </div>
+  <div style="margin-top:10px;display:flex;gap:10px;font-size:11px;flex-wrap:wrap">
+    <span style="color:var(--amber)">&#9632; En planificacion</span>
+    <span style="color:var(--green)">&#9632; Activa</span>
+    <span style="color:var(--text3)">&#9632; Terminada</span>
+  </div>`;
+}
+
+
+// ══════════════════════════════════════════════════════════════════════════════
+// SISTEMA DE PERMISOS
+// ══════════════════════════════════════════════════════════════════════════════
+const ALL_SECTIONS = ['dashboard','meta','finanzas','contenido','crm','notas','ia'];
+
+function applyPermissions(permissions) {
+  // null = acceso completo (admin)
+  if(!permissions || isAdmin) return;
+
+  const allowed = Array.isArray(permissions) ? permissions : ALL_SECTIONS;
+
+  // Ocultar nav items bloqueados
+  document.querySelectorAll('.nav-item[data-section]').forEach(el => {
+    const sec = el.getAttribute('data-section');
+    if(sec && !allowed.includes(sec)) {
+      el.style.display = 'none';
+    }
+  });
+
+  // Si la página actual no está permitida, redirigir a la primera permitida
+  const currentPage = document.querySelector('.nav-item.active')?.getAttribute('data-page');
+  const currentSection = document.querySelector('.nav-item.active')?.getAttribute('data-section');
+  if(currentSection && !allowed.includes(currentSection)) {
+    // Ir al primer ítem permitido
+    const firstAllowed = document.querySelector(`.nav-item[data-section]`);
+    if(firstAllowed) firstAllowed.click();
+  }
+}
+
+// Mostrar mensaje de acceso denegado si navegan a sección bloqueada
+const _permOrigShowPage = showPage;
+function showPage(p) {
+  // Si no es admin y tiene permisos restringidos, verificar
+  if(!isAdmin && userProfile?.permissions) {
+    const perms = userProfile.permissions;
+    const el = document.querySelector(`[data-page="${p}"]`);
+    const sec = el?.getAttribute('data-section');
+    if(sec && !perms.includes(sec)) {
+      // Mostrar pantalla de acceso denegado
+      document.querySelectorAll('.page').forEach(pg=>pg.classList.remove('active'));
+      document.querySelectorAll('.nav-item').forEach(ni=>ni.classList.remove('active'));
+      const main = document.getElementById('main');
+      // Buscar si ya hay div de acceso denegado
+      let denied = document.getElementById('access-denied-page');
+      if(!denied) {
+        denied = document.createElement('div');
+        denied.id = 'access-denied-page';
+        denied.className = 'page';
+        denied.innerHTML = `<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:60vh;text-align:center">
+          <div style="font-size:40px;margin-bottom:16px">&#128274;</div>
+          <div style="font-size:20px;font-weight:700;margin-bottom:8px">Seccion no disponible</div>
+          <div style="font-size:14px;color:var(--text2);max-width:340px">Esta seccion no esta incluida en tu plan. Contacta a Lado T para mas informacion.</div>
+        </div>`;
+        main.appendChild(denied);
+      }
+      denied.classList.add('active');
+      return;
+    }
+  }
+  // Ocultar access-denied si existía
+  const denied = document.getElementById('access-denied-page');
+  if(denied) denied.classList.remove('active');
+  _permOrigShowPage(p);
+}
+
+// ── ACTUALIZAR checkUserAccess para aplicar permisos ─────────────────────────
+// (patch en el resultado de checkUserAccess)
+const _origCheckUserAccess = checkUserAccess;
+async function checkUserAccess() {
+  const result = await _origCheckUserAccess();
+  if(result && userProfile?.permissions) {
+    applyPermissions(userProfile.permissions);
+  }
+  return result;
+}
+
+// ── ACTUALIZAR saveUserAdmin para guardar permisos ────────────────────────────
+async function saveUserAdmin() {
+  const uid    = document.getElementById('adm-uid').value;
+  const status = document.getElementById('adm-status').value;
+  const exp    = document.getElementById('adm-expires').value;
+  const notas  = document.getElementById('adm-notas').value;
+
+  // Leer permisos seleccionados
+  const permsChecked = ALL_SECTIONS.filter(s => {
+    const el = document.getElementById('perm-'+s);
+    return el && el.checked;
+  });
+  // Si todo está habilitado → null (acceso completo)
+  const permissions = permsChecked.length === ALL_SECTIONS.length ? null : permsChecked;
+
+  const upd = { is_approved: status === 'active', notas, permissions };
+  if(exp) upd.expires_at = exp;
+  await db.from('user_profiles').update(upd).eq('id', uid);
+  closeModal('modal-adm-user');
+  toast('Usuario actualizado ✓');
+  loadAdmin();
+}
+
+// ── ACTUALIZAR editUser para cargar permisos actuales ────────────────────────
+// Parchamos editUser para que cargue los permisos al abrir el modal
+const _origEditUser = editUser;
+function editUser(uid) {
+  // Resetear permisos al máximo primero
+  ALL_SECTIONS.forEach(s => {
+    const el = document.getElementById('perm-'+s);
+    if(el) el.checked = true;
+  });
+  // Buscar el usuario en la lista cargada para ver sus permisos actuales
+  // Los datos están en la tabla, los pedimos de nuevo
+  db.from('user_profiles').select('*').eq('id', uid).single().then(({data}) => {
+    if(data) {
+      document.getElementById('adm-uid').value = uid;
+      document.getElementById('adm-status').value = data.is_approved ? 'active' : 'pending';
+      document.getElementById('adm-expires').value = data.expires_at || '';
+      document.getElementById('adm-notas').value = data.notas || '';
+      // Aplicar permisos guardados
+      if(data.permissions && Array.isArray(data.permissions)) {
+        ALL_SECTIONS.forEach(s => {
+          const el = document.getElementById('perm-'+s);
+          if(el) el.checked = data.permissions.includes(s);
+        });
+      }
+    }
+  });
+  openModal('modal-adm-user');
+}
+
+// ── MOSTRAR permisos en la tabla de admin ─────────────────────────────────────
+// Parchamos loadAdmin para mostrar las secciones activas de cada usuario
+const _origLoadAdmin = loadAdmin;
+async function loadAdmin() {
+  if(!isAdmin) return;
+  const { data } = await db.from('user_profiles').select('*').order('created_at',{ascending:false});
+  const users = data || [];
+  const now = new Date();
+  const activos    = users.filter(u=>u.is_approved&&(!u.expires_at||new Date(u.expires_at)>now));
+  const pendientes = users.filter(u=>!u.is_approved&&!u.is_admin);
+  const expirados  = users.filter(u=>u.expires_at&&new Date(u.expires_at)<=now);
+
+  const el = id => document.getElementById(id);
+  if(el('adm-total'))     el('adm-total').textContent     = users.length;
+  if(el('adm-activos'))   el('adm-activos').textContent   = activos.length;
+  if(el('adm-pendientes'))el('adm-pendientes').textContent= pendientes.length;
+  if(el('adm-expirados')) el('adm-expirados').textContent = expirados.length;
+
+  const tbl = document.getElementById('adm-users-tbl');
+  if(!tbl) return;
+  if(!users.length){ tbl.innerHTML='<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--text2)">Sin usuarios</td></tr>'; return; }
+
+  const secLabels = {dashboard:'Dashboard',meta:'Meta',finanzas:'Finanzas',contenido:'Contenido',crm:'CRM',notas:'Notas',ia:'IA'};
+  tbl.innerHTML = users.map(u => {
+    const expired = u.expires_at && new Date(u.expires_at) <= now;
+    const badge = u.is_admin    ? '<span class="badge b-accent">Admin</span>'
+      : expired                 ? '<span class="badge b-red">Expirado</span>'
+      : u.is_approved           ? '<span class="badge b-green">Activo</span>'
+      :                           '<span class="badge b-amber">Pendiente</span>';
+
+    // Mostrar permisos
+    let permsBadges = '';
+    if(!u.is_admin && u.is_approved) {
+      if(!u.permissions) {
+        permsBadges = '<span style="font-size:11px;color:var(--green)">&#10003; Acceso completo</span>';
+      } else if(Array.isArray(u.permissions)) {
+        permsBadges = u.permissions.map(s=>`<span style="font-size:10px;padding:1px 5px;background:var(--blue-l);color:var(--blue);border-radius:4px;font-weight:600">${secLabels[s]||s}</span>`).join(' ');
+      }
+    }
+
+    return `<tr>
+      <td>
+        <div style="font-weight:600;font-size:13px">${u.nombre||u.email||'—'}</div>
+        <div style="font-size:11px;color:var(--text2)">${u.email||''}</div>
+        <div style="margin-top:4px;display:flex;gap:3px;flex-wrap:wrap">${permsBadges}</div>
+      </td>
+      <td style="font-size:13px">${u.whatsapp||'—'}</td>
+      <td style="font-size:13px">${u.negocio||'—'}</td>
+      <td>${badge}</td>
+      <td style="font-size:12px;color:var(--text2)">${u.expires_at||'Sin vencimiento'}</td>
+      <td style="font-size:12px;color:var(--text2)">${u.created_at?new Date(u.created_at).toLocaleDateString('es-AR'):''}</td>
+      <td>
+        <div style="display:flex;gap:5px;flex-wrap:wrap">
+          ${!u.is_approved&&!u.is_admin?`<button class="btn btn-sm btn-accent" onclick="quickApprove('${u.id}')">Aprobar</button>`:''}
+          <button class="btn btn-sm btn-outline" onclick="editUser('${u.id}')">&#9881; Editar</button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
 }
 
 
