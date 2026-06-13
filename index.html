@@ -261,6 +261,7 @@ tr:hover td{background:var(--surface2)}
     <div class="nav-item" onclick="showPage('contenido')" data-page="contenido" data-section="contenido"><span class="ni">&#9681;</span><span>Contenido</span></div>
     <div class="nav-item" onclick="showPage('crm')" data-page="crm" data-section="crm"><span class="ni">&#9678;</span><span>CRM</span></div>
     <div class="nav-item" onclick="showPage('notas')" data-page="notas" data-section="notas"><span class="ni">&#128221;</span><span>Notas</span></div>
+    <div class="nav-item" onclick="showPage('campanas-contenido')" data-page="campanas-contenido" data-section="contenido"><span class="ni">&#127775;</span><span>Campanas</span></div>
     <div class="sb-section">Inteligencia</div>
     <div class="nav-item" onclick="showPage('ia')" data-page="ia" data-section="ia"><span class="ni">&#10022;</span><span>IA Estrategica</span></div>
     <div class="sb-section">Sistema</div>
@@ -870,7 +871,6 @@ tr:hover td{background:var(--surface2)}
     <button onclick="switchContTab('calendario',this)" id="ctab-calendario" style="padding:9px 18px;border:none;background:transparent;font-size:13px;font-weight:500;color:var(--text2);border-bottom:2px solid transparent;cursor:pointer">&#128197; Calendario</button>
     <button onclick="switchContTab('publicaciones',this)" id="ctab-publicaciones" style="padding:9px 18px;border:none;background:transparent;font-size:13px;font-weight:500;color:var(--text2);border-bottom:2px solid transparent;cursor:pointer">&#128247; Publicaciones</button>
     <button onclick="switchContTab('ideas',this)" id="ctab-ideas" style="padding:9px 18px;border:none;background:transparent;font-size:13px;font-weight:500;color:var(--text2);border-bottom:2px solid transparent;cursor:pointer">&#128161; Ideas</button>
-    <button onclick="switchContTab('campanas',this)" id="ctab-campanas" style="padding:9px 18px;border:none;background:transparent;font-size:13px;font-weight:500;color:var(--text2);border-bottom:2px solid transparent;cursor:pointer">&#127775; Campanas</button>
   </div>
 
   <!-- CONTROL TAB -->
@@ -1020,10 +1020,6 @@ tr:hover td{background:var(--surface2)}
       <button class="btn btn-accent" onclick="saveNota()">Guardar nota</button>
     </div>
   </div>
-  <!-- CAMPANAS TAB -->
-  <div id="cont-tab-campanas" style="display:none">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px">
-      <div style="font-size:13px;color:var(--text2)">Cada campana tiene su objetivo, concepto, piezas y planificacion.</div>
       <button class="btn btn-accent" onclick="openModal('modal-campana')">+ Nueva campana</button>
     </div>
     <div id="contentCamps-list">
@@ -1041,6 +1037,24 @@ tr:hover td{background:var(--surface2)}
 </div>
 
 
+</div>
+
+
+<!-- CAMPANAS DE CONTENIDO -->
+<div id="page-campanas-contenido" class="page">
+  <div class="page-hdr">
+    <div><div class="page-title">&#127775; Campanas de Contenido</div>
+    <div class="page-sub">Planificacion creativa — objetivo, concepto, piezas y calendario</div></div>
+    <button class="btn btn-accent" onclick="openModal('modal-campana')">+ Nueva campana</button>
+  </div>
+  <div id="contentCamps-list">
+    <div class="empty">
+      <div class="empty-icon">&#127775;</div>
+      <div class="empty-msg">Sin campanas todavia</div>
+      <div class="empty-sub" style="margin-bottom:16px">Crea tu primera campana de contenido creativo</div>
+      <button class="btn btn-accent" onclick="openModal('modal-campana')">+ Nueva campana</button>
+    </div>
+  </div>
 </div>
 
 <!-- CRM -->
@@ -1862,6 +1876,7 @@ function showPage(p){
   if(p==='biblioteca')renderBib();
   if(p==='finanzas')loadFinanzas();
   if(p==='notas')loadNotas();
+  if(p==='campanas-contenido')loadCampanas();
   if(p==='admin')loadAdmin();
   if(p==='config')loadConfigPage();
   if(p==='dashboard'&&META_TOKEN&&META_ACCOUNT){syncDashDateSelector();if(!metaCampaigns.length)initDashboardMeta();}
@@ -3830,7 +3845,7 @@ async function loadContenido() {
 // ── TABS CONTENIDO ────────────────────────────────────────────────────────────
 function switchContTab(tab, btn) {
   finActiveTab = tab;
-  ['control','calendario','publicaciones','ideas','campanas'].forEach(t => {
+  ['control','calendario','publicaciones','ideas'].forEach(t => {
     const el=document.getElementById('cont-tab-'+t);
     const bt=document.getElementById('ctab-'+t);
     if(el) el.style.display=t===tab?'block':'none';
@@ -3840,7 +3855,7 @@ function switchContTab(tab, btn) {
       bt.style.fontWeight=t===tab?'600':'500';
     }
   });
-  if(tab==='campanas') loadCampanas();
+
 }
 
 // ── CONTROL ───────────────────────────────────────────────────────────────────
