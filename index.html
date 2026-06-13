@@ -1020,105 +1020,22 @@ tr:hover td{background:var(--surface2)}
       <button class="btn btn-accent" onclick="saveNota()">Guardar nota</button>
     </div>
   </div>
-  <!-- CAMPAÑAS TAB -->
+  <!-- CAMPANAS TAB -->
   <div id="cont-tab-campanas" style="display:none">
-
-    <!-- Selector de campaña activa -->
-    <div style="display:flex;gap:10px;margin-bottom:16px;align-items:flex-start;flex-wrap:wrap">
-      <div style="flex:1;min-width:200px">
-        <select id="camp-selector" onchange="selectCampana(this.value)"
-          style="width:100%;border:0.5px solid var(--border);border-radius:var(--r);padding:9px 12px;font-size:14px;font-weight:600;background:var(--surface);color:var(--text);outline:none">
-          <option value="">— Selecciona una campana —</option>
-        </select>
-      </div>
-      <button class="btn btn-outline" onclick="openModal('modal-campana')">+ Nueva campana</button>
-    </div>
-
-    <!-- DOCUMENTO DE CAMPAÑA -->
-    <div id="camp-doc" style="display:none">
-
-      <!-- Header de la campaña -->
-      <div id="camp-doc-header" style="border-radius:var(--rl);padding:20px 24px;margin-bottom:14px;color:#fff;background:var(--accent)">
-        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap">
-          <div>
-            <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;opacity:.7;margin-bottom:4px" id="camp-doc-periodo"></div>
-            <div style="font-size:22px;font-weight:800;letter-spacing:-.02em" id="camp-doc-nombre">—</div>
-          </div>
-          <div style="display:flex;gap:7px">
-            <span id="camp-doc-badge" class="badge" style="background:rgba(255,255,255,.2);color:#fff"></span>
-            <button class="btn btn-sm" style="background:rgba(255,255,255,.2);color:#fff;border:none" onclick="openEditCampana(currentCampId)">Editar campana</button>
-          </div>
-        </div>
-      </div>
-
-      <div class="grid-2" style="margin-bottom:14px">
-
-        <!-- Objetivo -->
-        <div class="card" style="margin:0">
-          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--blue);margin-bottom:8px">&#127919; Objetivo de la campana</div>
-          <div id="camp-doc-objetivo" style="font-size:14px;line-height:1.65;color:var(--text)"></div>
-        </div>
-
-        <!-- Formatos -->
-        <div class="card" style="margin:0">
-          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--teal-d);margin-bottom:10px">&#127909; Formatos a utilizar</div>
-          <div id="camp-doc-formatos" style="display:flex;flex-wrap:wrap;gap:6px"></div>
-        </div>
-
-      </div>
-
-      <!-- Concepto estratégico + creativo -->
-      <div class="grid-2" style="margin-bottom:14px">
-        <div class="card" style="margin:0;border-left:3px solid var(--blue)">
-          <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--blue);margin-bottom:6px">Concepto estrategico</div>
-          <div id="camp-doc-estrategico" style="font-size:13px;line-height:1.6;color:var(--text)"></div>
-        </div>
-        <div class="card" style="margin:0;border-left:3px solid var(--accent)">
-          <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--accent);margin-bottom:6px">Concepto creativo</div>
-          <div id="camp-doc-creativo" style="font-size:16px;font-weight:700;font-style:italic;line-height:1.4;color:var(--text)"></div>
-        </div>
-      </div>
-
-      <!-- Desarrollo / Fases -->
-      <div class="card" style="margin-bottom:14px">
-        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text2);margin-bottom:10px">&#128196; Desarrollo y fases</div>
-        <div id="camp-doc-desarrollo" style="font-size:13px;line-height:1.75;color:var(--text);white-space:pre-wrap"></div>
-      </div>
-
-      <!-- Notas libres -->
-      <div class="card" style="margin-bottom:14px">
-        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text2);margin-bottom:8px">&#128221; Notas e ideas libres</div>
-        <div id="camp-doc-notas" style="font-size:13px;line-height:1.75;color:var(--text2);white-space:pre-wrap"></div>
-      </div>
-
-      <!-- Piezas de la campaña -->
-      <div class="card">
-        <div class="card-title">
-          Piezas planificadas
-          <button class="btn btn-sm btn-accent" onclick="openAddPieza(currentCampId)">+ Agregar pieza</button>
-        </div>
-        <!-- Progress bar -->
-        <div style="margin-bottom:12px">
-          <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text2);margin-bottom:4px">
-            <span id="camp-piezas-label">0 piezas</span>
-            <span id="camp-piezas-pct">0% publicadas</span>
-          </div>
-          <div class="progress-bar"><div id="camp-piezas-bar" class="progress-fill" style="background:var(--accent)"></div></div>
-        </div>
-        <div id="camp-doc-piezas"></div>
-      </div>
-
-    </div>
-
-    <!-- Placeholder cuando no hay campaña seleccionada -->
-    <div id="camp-empty-state" style="text-align:center;padding:48px 20px;color:var(--text2)">
-      <div style="font-size:36px;margin-bottom:12px">&#127775;</div>
-      <div style="font-size:16px;font-weight:600;color:var(--text);margin-bottom:6px">Selecciona una campana</div>
-      <div style="font-size:13px;margin-bottom:16px">o crea una nueva para empezar a planificar</div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px">
+      <div style="font-size:13px;color:var(--text2)">Cada campana tiene su objetivo, concepto, piezas y planificacion.</div>
       <button class="btn btn-accent" onclick="openModal('modal-campana')">+ Nueva campana</button>
     </div>
-
+    <div id="contentCamps-list">
+      <div class="empty"><div class="empty-icon">&#127775;</div>
+        <div class="empty-msg">Sin campanas todavia</div>
+        <div class="empty-sub" style="margin-bottom:16px">Crea tu primera campana de contenido</div>
+        <button class="btn btn-accent" onclick="openModal('modal-campana')">+ Nueva campana</button>
+      </div>
+    </div>
   </div>
+
+
 
 
 </div>
@@ -3923,9 +3840,7 @@ function switchContTab(tab, btn) {
       bt.style.fontWeight=t===tab?'600':'500';
     }
   });
-  if(tab==='campanas'){
-    loadCampanas();
-  }
+  if(tab==='campanas') loadCampanas();
 }
 
 // ── CONTROL ───────────────────────────────────────────────────────────────────
@@ -4199,317 +4114,217 @@ async function delNota(id) {
 
 
 // ══════════════════════════════════════════════════════════════════════════════
-// CAMPANAS DE CONTENIDO — Planificacion creativa profesional
+// CAMPANAS DE CONTENIDO
 // ══════════════════════════════════════════════════════════════════════════════
-let campanas = [], piezas = [], currentCampId = null;
-
-const CAMP_STATUS_LBL = {planificacion:'En planificacion', activa:'Activa', terminada:'Terminada'};
-const CAMP_STATUS_BADGE = {planificacion:'b-amber', activa:'b-green', terminada:'b-gray'};
-const PIEZA_CYCLE = ['pendiente','en_produccion','filmado','editado','publicado'];
-const PIEZA_ICONS = {pendiente:'◌',en_produccion:'▶',filmado:'◉',editado:'◐',publicado:'✓'};
-const PIEZA_COLORS = {pendiente:'var(--text3)',en_produccion:'var(--blue)',filmado:'var(--amber)',editado:'var(--accent)',publicado:'var(--green)'};
-const PIEZA_LABELS = {pendiente:'Pendiente',en_produccion:'En produccion',filmado:'Filmado',editado:'Editado',publicado:'Publicado'};
+let contentCamps = [], contentPiezas = [], currentCampId = null;
+const ST_LBL = {planificacion:'En planificacion',activa:'Activa',terminada:'Terminada'};
+const ST_BADGE = {planificacion:'b-amber',activa:'b-green',terminada:'b-gray'};
+const PZ_CYCLE = ['pendiente','en_produccion','filmado','editado','publicado'];
+const PZ_ICON = {pendiente:'◌',en_produccion:'▶',filmado:'◉',editado:'◐',publicado:'✓'};
+const PZ_COLOR = {pendiente:'var(--text3)',en_produccion:'var(--blue)',filmado:'var(--amber)',editado:'var(--accent)',publicado:'var(--green)'};
+const PZ_LABEL = {pendiente:'Pendiente',en_produccion:'En produccion',filmado:'Filmado',editado:'Editado',publicado:'Publicado'};
 
 async function loadCampanas() {
   if(!me) return;
   try {
-  const [cRes, pRes] = await Promise.all([
-    db.from('content_campaigns').select('*').eq('user_id',me.id).order('created_at',{ascending:false}),
-    db.from('content_piezas').select('*').eq('user_id',me.id).order('fecha_planificada',{ascending:true}),
-  ]);
-  campanas = cRes.data || [];
-  piezas   = pRes.data || [];
-  updateCampSelector();
-  renderCalCont();
-  updateCampSelector();
-  // Mostrar la primera campaña o el empty state
-  if(campanas.length > 0) {
-    const keepId = currentCampId && campanas.find(x=>x.id===currentCampId) ? currentCampId : campanas[0].id;
-    const sel = document.getElementById('camp-selector');
-    if(sel) sel.value = keepId;
-    selectCampana(keepId);
-  } else {
-    selectCampana('');
+    const [cRes, pRes] = await Promise.all([
+      db.from('content_campaigns').select('*').eq('user_id',me.id).order('created_at',{ascending:false}),
+      db.from('content_piezas').select('*').eq('user_id',me.id).order('fecha_planificada',{ascending:true}),
+    ]);
+    contentCamps  = cRes.data || [];
+    contentPiezas = pRes.data || [];
+    renderCampsList();
+    renderCalCont();
+  } catch(e) {
+    toast('Error cargando campanas: '+e.message);
+    console.error('loadCampanas:', e);
   }
-  } catch(e2) { console.error('loadCampanas post error:', e2); }
 }
 
-function updateCampSelector() {
-  const sel = document.getElementById('camp-selector'); if(!sel) return;
-  sel.innerHTML = '<option value="">— Selecciona una campana —</option>' +
-    campanas.map(c=>`<option value="${c.id}">${c.nombre}${c.periodo?' ('+c.periodo+')':''}</option>`).join('');
-  if(currentCampId) sel.value = currentCampId;
-}
-
-function selectCampana(id) {
-  currentCampId = id;
-  const doc   = document.getElementById('camp-doc');
-  const empty = document.getElementById('camp-empty-state');
-  if(!id || !id.length) {
-    if(doc)   { doc.style.display='none'; }
-    if(empty) { empty.style.display='block'; }
+// ── RENDER LISTA DE CAMPANAS ──────────────────────────────────────────────────
+function renderCampsList() {
+  const el = document.getElementById('contentCamps-list'); if(!el) return;
+  if(!contentCamps.length) {
+    el.innerHTML = '<div class="empty"><div class="empty-icon">&#127775;</div><div class="empty-msg">Sin campanas todavia</div><div class="empty-sub" style="margin-bottom:16px">Crea tu primera campana de contenido</div><button class="btn btn-accent" onclick="openModal(\'modal-campana\')">+ Nueva campana</button></div>';
     return;
   }
-  if(doc)   { doc.style.display='block'; }
-  if(empty) { empty.style.display='none'; }
-  renderCampDoc(id);
-}
+  el.innerHTML = contentCamps.map(camp => {
+    const pz = contentPiezas.filter(p=>p.campaign_id===camp.id);
+    const done = pz.filter(p=>p.status==='publicado').length;
+    const pct  = pz.length>0?Math.round((done/pz.length)*100):0;
+    const fmts = Array.isArray(camp.formatos)?camp.formatos:[];
+    return `
+    <div style="background:var(--surface);border:0.5px solid var(--border);border-radius:var(--rl);margin-bottom:14px;overflow:hidden">
 
-function renderCampDoc(id) {
-  const camp = campanas.find(x=>x.id===id); if(!camp) return;
-  // Header
-  const hdr = document.getElementById('camp-doc-header');
-  if(hdr) hdr.style.background = camp.color||'var(--accent)';
-  setText('camp-doc-nombre', camp.nombre||'—');
-  setText('camp-doc-periodo', camp.periodo||'');
-  const badge = document.getElementById('camp-doc-badge');
-  if(badge){ badge.textContent=CAMP_STATUS_LBL[camp.status]||camp.status; badge.className='badge'; }
-
-  // Objetivo
-  const objEl = document.getElementById('camp-doc-objetivo');
-  if(objEl) objEl.textContent = camp.objetivo||'Sin objetivo definido.';
-  objEl.style.color = camp.objetivo ? 'var(--text)' : 'var(--text3)';
-  objEl.style.fontStyle = camp.objetivo ? 'normal' : 'italic';
-
-  // Formatos
-  const fmtsEl = document.getElementById('camp-doc-formatos');
-  if(fmtsEl){
-    const fmts = Array.isArray(camp.formatos) ? camp.formatos : (camp.formatos ? JSON.parse(camp.formatos) : []);
-    if(fmts.length){
-      fmtsEl.innerHTML = fmts.map(f=>`<span class="badge b-teal" style="font-size:11px">${f}</span>`).join('');
-    } else {
-      fmtsEl.innerHTML = '<span style="font-size:13px;color:var(--text3);font-style:italic">Sin formatos definidos</span>';
-    }
-  }
-
-  // Conceptos
-  const estEl = document.getElementById('camp-doc-estrategico');
-  if(estEl){ estEl.textContent=camp.concepto_estrategico||'—'; estEl.style.color=camp.concepto_estrategico?'var(--text)':'var(--text3)'; }
-  const creEl = document.getElementById('camp-doc-creativo');
-  if(creEl){ creEl.textContent=camp.concepto_creativo?('"'+camp.concepto_creativo+'"'):'—'; creEl.style.color=camp.concepto_creativo?'var(--text)':'var(--text3)'; }
-
-  // Desarrollo
-  const devEl = document.getElementById('camp-doc-desarrollo');
-  if(devEl){ devEl.textContent=camp.desarrollo||'Sin desarrollo escrito todavia.'; devEl.style.color=camp.desarrollo?'var(--text)':'var(--text3)'; devEl.style.fontStyle=camp.desarrollo?'normal':'italic'; }
-
-  // Notas
-  const notEl = document.getElementById('camp-doc-notas');
-  if(notEl){ notEl.textContent=camp.notas||'Sin notas.'; notEl.style.color=camp.notas?'var(--text2)':'var(--text3)'; notEl.style.fontStyle=camp.notas?'normal':'italic'; }
-
-  // Piezas
-  renderCampPiezas(id, camp.color||'var(--accent)');
-}
-
-function renderCampPiezas(campId, color) {
-  const campPiezas = piezas.filter(p=>p.campaign_id===campId);
-  const done  = campPiezas.filter(p=>p.status==='publicado').length;
-  const total = campPiezas.length;
-  const pct   = total>0?Math.round((done/total)*100):0;
-
-  setText('camp-piezas-label',  total+' pieza'+( total!==1?'s':''));
-  setText('camp-piezas-pct',    pct+'% publicadas');
-  const bar = document.getElementById('camp-piezas-bar');
-  if(bar){ bar.style.width=pct+'%'; bar.style.background=color; }
-
-  const el = document.getElementById('camp-doc-piezas'); if(!el) return;
-  if(!campPiezas.length){
-    el.innerHTML='<div style="color:var(--text3);font-size:13px;font-style:italic;padding:8px 0">Sin piezas todavia. Agrega las publicaciones que vas a hacer para esta campana.</div>';
-    return;
-  }
-
-  // Agrupar por fecha
-  const byDate = {};
-  campPiezas.forEach(p=>{
-    const d=p.fecha_planificada||'sin-fecha';
-    if(!byDate[d]) byDate[d]=[];
-    byDate[d].push(p);
-  });
-
-  el.innerHTML = Object.entries(byDate).sort((a,b)=>a[0].localeCompare(b[0])).map(([date,ps])=>{
-    const dateLabel = date==='sin-fecha'?'Sin fecha asignada':
-      new Date(date+'T12:00:00').toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long'});
-    return `<div style="margin-bottom:12px">
-      <div style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;padding-bottom:4px;border-bottom:0.5px solid var(--border)">${dateLabel}</div>
-      ${ps.map(p=>`
-      <div style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:var(--r);margin-bottom:4px;background:${p.status==='publicado'?'var(--green-l)':'var(--surface2)'}">
-        <button onclick="cyclePiezaStatus('${p.id}')" title="Click para cambiar estado"
-          style="width:28px;height:28px;border-radius:50%;border:2px solid ${PIEZA_COLORS[p.status]};background:${p.status==='publicado'?PIEZA_COLORS[p.status]:'transparent'};color:${p.status==='publicado'?'#fff':PIEZA_COLORS[p.status]};font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:700">
-          ${PIEZA_ICONS[p.status]||'◌'}
-        </button>
-        <div style="flex:1;min-width:0">
-          <div style="font-size:13px;font-weight:${p.status==='publicado'?'400':'600'};color:${p.status==='publicado'?'var(--text2)':'var(--text)'};${p.status==='publicado'?'text-decoration:line-through':''}">${p.titulo}</div>
-          <div style="font-size:11px;color:var(--text2);margin-top:1px">
-            <span class="badge b-gray" style="font-size:9px">${p.formato}</span>
-            <span class="badge b-gray" style="font-size:9px;margin-left:3px">${p.plataforma}</span>
-            <span style="margin-left:5px;color:${PIEZA_COLORS[p.status]};font-weight:600">${PIEZA_LABELS[p.status]}</span>
-          </div>
-          ${p.notas?`<div style="font-size:11px;color:var(--text2);margin-top:2px">${p.notas}</div>`:''}
+      <!-- Header -->
+      <div style="background:${camp.color||'var(--accent)'};padding:16px 20px;color:#fff;display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap">
+        <div>
+          <div style="font-size:12px;opacity:.7;margin-bottom:3px">${camp.periodo||''}</div>
+          <div style="font-size:18px;font-weight:800;letter-spacing:-.02em">${camp.nombre}</div>
+          ${pz.length>0?`<div style="font-size:12px;opacity:.8;margin-top:4px">${done}/${pz.length} piezas publicadas</div>`:''}
         </div>
-        <button onclick="delPieza('${p.id}')" style="border:none;background:transparent;cursor:pointer;opacity:.3;font-size:13px;transition:opacity .15s" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.3'">&#10005;</button>
-      </div>`).join('')}
+        <div style="display:flex;gap:7px;align-items:center">
+          <span class="badge ${ST_BADGE[camp.status]||'b-gray'}" style="background:rgba(255,255,255,.25);color:#fff">${ST_LBL[camp.status]||camp.status}</span>
+          <button class="btn btn-sm" style="background:rgba(255,255,255,.2);color:#fff;border:none" onclick="openEditCampana('${camp.id}')">Editar</button>
+        </div>
+      </div>
+
+      ${pz.length>0?`<div style="height:3px;background:rgba(0,0,0,.1)"><div style="height:100%;width:${pct}%;background:${camp.color||'var(--accent)'}99;transition:width .4s"></div></div>`:''}
+
+      <div style="padding:18px 20px">
+
+        <!-- Objetivo + Conceptos -->
+        ${camp.objetivo?`<div style="margin-bottom:14px"><div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text2);margin-bottom:5px">Objetivo</div><div style="font-size:13px;line-height:1.6">${camp.objetivo}</div></div>`:''}
+
+        ${camp.concepto_estrategico||camp.concepto_creativo?`
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+          ${camp.concepto_estrategico?`<div style="background:var(--blue-l);border-radius:var(--r);padding:11px;border-left:3px solid var(--blue)"><div style="font-size:10px;font-weight:700;color:var(--blue);margin-bottom:4px;text-transform:uppercase;letter-spacing:.06em">Concepto estrategico</div><div style="font-size:13px;line-height:1.5">${camp.concepto_estrategico}</div></div>`:''}
+          ${camp.concepto_creativo?`<div style="background:var(--accent-l);border-radius:var(--r);padding:11px;border-left:3px solid var(--accent)"><div style="font-size:10px;font-weight:700;color:var(--accent);margin-bottom:4px;text-transform:uppercase;letter-spacing:.06em">Concepto creativo</div><div style="font-size:15px;font-weight:700;font-style:italic;line-height:1.4">"${camp.concepto_creativo}"</div></div>`:''}
+        </div>`:''}
+
+        <!-- Desarrollo -->
+        ${camp.desarrollo?`<div style="margin-bottom:14px"><div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text2);margin-bottom:6px">Desarrollo y fases</div><div style="font-size:13px;line-height:1.7;white-space:pre-wrap;color:var(--text)">${camp.desarrollo}</div></div>`:''}
+
+        <!-- Formatos -->
+        ${fmts.length?`<div style="margin-bottom:14px;display:flex;gap:5px;flex-wrap:wrap">${fmts.map(f=>`<span class="badge b-teal">${f}</span>`).join('')}</div>`:''}
+
+        <!-- Piezas -->
+        <div>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+            <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text2)">Piezas${pz.length?` (${pz.length})`:''}</div>
+            <button class="btn btn-sm btn-outline" onclick="openAddPieza('${camp.id}')">+ Agregar pieza</button>
+          </div>
+          ${pz.length?pz.map(p=>`
+          <div style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:${p.status==='publicado'?'var(--green-l)':'var(--surface2)'};border-radius:var(--r);margin-bottom:4px">
+            <button onclick="cyclePiezaStatus('${p.id}')" title="Click para cambiar estado"
+              style="width:26px;height:26px;border-radius:50%;border:2px solid ${PZ_COLOR[p.status]};background:${p.status==='publicado'?PZ_COLOR[p.status]:'transparent'};color:${p.status==='publicado'?'#fff':PZ_COLOR[p.status]};font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:700">
+              ${PZ_ICON[p.status]||'◌'}
+            </button>
+            <div style="flex:1;min-width:0">
+              <span style="font-size:13px;font-weight:${p.status==='publicado'?'400':'600'};${p.status==='publicado'?'text-decoration:line-through;color:var(--text2)':''}">${p.titulo}</span>
+              <span class="badge b-gray" style="font-size:9px;margin-left:5px">${p.formato}</span>
+              <span class="badge b-gray" style="font-size:9px;margin-left:3px">${p.plataforma}</span>
+              ${p.fecha_planificada?`<span style="font-size:11px;color:var(--text3);margin-left:5px">${new Date(p.fecha_planificada+'T12:00:00').toLocaleDateString('es-AR',{day:'numeric',month:'short'})}</span>`:''}
+            </div>
+            <button onclick="delPieza('${p.id}')" style="border:none;background:transparent;cursor:pointer;opacity:.3;font-size:13px" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.3'">&#10005;</button>
+          </div>`).join(''):`<div style="font-size:13px;color:var(--text3);font-style:italic;padding:4px 0">Sin piezas — agrega las publicaciones de esta campana</div>`}
+        </div>
+
+        <!-- Notas -->
+        ${camp.notas?`<div style="margin-top:14px;padding-top:12px;border-top:0.5px solid var(--border)"><div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text2);margin-bottom:5px">Notas</div><div style="font-size:13px;color:var(--text2);white-space:pre-wrap;line-height:1.6">${camp.notas}</div></div>`:''}
+      </div>
     </div>`;
   }).join('');
 }
 
-function setText(id, txt){ const e=document.getElementById(id); if(e) e.textContent=txt; }
-
 // ── CRUD CAMPANAS ─────────────────────────────────────────────────────────────
 async function saveCampana() {
-  const nombre = document.getElementById('camp-nombre').value.trim();
-  if(!nombre){ toast('Ponele un nombre a la campana'); return; }
-  const formatos = [...document.querySelectorAll('input[name="camp-fmt"]:checked')].map(el=>el.value);
-  const rec = {
-    user_id:me.id, nombre,
-    color:               document.getElementById('camp-color').value,
-    status:              document.getElementById('camp-status').value,
-    fecha_inicio:        document.getElementById('camp-inicio').value||null,
-    fecha_fin:           document.getElementById('camp-fin').value||null,
-    periodo:             document.getElementById('camp-periodo').value.trim(),
-    objetivo:            document.getElementById('camp-objetivo').value.trim(),
-    concepto_estrategico:document.getElementById('camp-estrategico').value.trim(),
-    concepto_creativo:   document.getElementById('camp-creativo').value.trim(),
-    desarrollo:          document.getElementById('camp-desarrollo').value.trim(),
-    notas:               document.getElementById('camp-notas').value.trim(),
-    formatos:            formatos,
+  const nombre=document.getElementById('camp-nombre')?.value.trim();
+  if(!nombre){toast('Ponele un nombre');return;}
+  const fmts=[...document.querySelectorAll('input[name="camp-fmt"]:checked')].map(e=>e.value);
+  const rec={user_id:me.id,nombre,
+    color:document.getElementById('camp-color')?.value||'#b03311',
+    status:document.getElementById('camp-status')?.value||'planificacion',
+    fecha_inicio:document.getElementById('camp-inicio')?.value||null,
+    fecha_fin:document.getElementById('camp-fin')?.value||null,
+    periodo:document.getElementById('camp-periodo')?.value.trim()||'',
+    objetivo:document.getElementById('camp-objetivo')?.value.trim()||'',
+    concepto_estrategico:document.getElementById('camp-estrategico')?.value.trim()||'',
+    concepto_creativo:document.getElementById('camp-creativo')?.value.trim()||'',
+    desarrollo:document.getElementById('camp-desarrollo')?.value.trim()||'',
+    notas:document.getElementById('camp-notas')?.value.trim()||'',
+    formatos:fmts,
   };
   const {data,error}=await db.from('content_campaigns').insert([rec]).select();
   if(error){toast('Error: '+error.message);return;}
-  campanas.unshift(data[0]);
-  updateCampSelector();
-  renderCalCont();
-  closeModal('modal-campana');
-  document.getElementById('camp-selector').value=data[0].id;
-  selectCampana(data[0].id);
-  // Reset form
-  ['camp-nombre','camp-inicio','camp-fin','camp-periodo','camp-objetivo','camp-estrategico','camp-creativo','camp-desarrollo','camp-notas'].forEach(id=>document.getElementById(id).value='');
+  contentCamps.unshift(data[0]);
+  renderCampsList(); renderCalCont(); closeModal('modal-campana');
+  ['camp-nombre','camp-inicio','camp-fin','camp-periodo','camp-objetivo','camp-estrategico','camp-creativo','camp-desarrollo','camp-notas'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
   document.querySelectorAll('input[name="camp-fmt"]').forEach(cb=>cb.checked=false);
   toast('Campana creada ✓');
 }
 
 function openEditCampana(id) {
-  const camp=campanas.find(x=>x.id===id); if(!camp)return;
-  document.getElementById('camp-edit-id').value          = id;
-  document.getElementById('camp-edit-nombre').value      = camp.nombre||'';
-  document.getElementById('camp-edit-color').value       = camp.color||'#b03311';
-  document.getElementById('camp-edit-status').value      = camp.status||'planificacion';
-  document.getElementById('camp-edit-inicio').value      = camp.fecha_inicio||'';
-  document.getElementById('camp-edit-fin').value         = camp.fecha_fin||'';
-  document.getElementById('camp-edit-periodo').value     = camp.periodo||'';
-  document.getElementById('camp-edit-objetivo').value    = camp.objetivo||'';
-  document.getElementById('camp-edit-estrategico').value = camp.concepto_estrategico||'';
-  document.getElementById('camp-edit-creativo').value    = camp.concepto_creativo||'';
-  document.getElementById('camp-edit-desarrollo').value  = camp.desarrollo||'';
-  document.getElementById('camp-edit-notas').value       = camp.notas||'';
-  // Formatos
-  const fmts=Array.isArray(camp.formatos)?camp.formatos:(camp.formatos?JSON.parse(camp.formatos):[]);
+  const camp=contentCamps.find(x=>x.id===id); if(!camp)return;
+  const flds=[['camp-edit-nombre','nombre'],['camp-edit-color','color'],['camp-edit-status','status'],
+    ['camp-edit-inicio','fecha_inicio'],['camp-edit-fin','fecha_fin'],['camp-edit-periodo','periodo'],
+    ['camp-edit-objetivo','objetivo'],['camp-edit-estrategico','concepto_estrategico'],
+    ['camp-edit-creativo','concepto_creativo'],['camp-edit-desarrollo','desarrollo'],['camp-edit-notas','notas']];
+  flds.forEach(([elId,key])=>{const e=document.getElementById(elId);if(e)e.value=camp[key]||'';});
+  document.getElementById('camp-edit-id').value=id;
+  const fmts=Array.isArray(camp.formatos)?camp.formatos:[];
   document.querySelectorAll('input[name="camp-edit-fmt"]').forEach(cb=>cb.checked=fmts.includes(cb.value));
   openModal('modal-camp-edit');
 }
 
 async function updateCampana() {
   const id=document.getElementById('camp-edit-id').value;
-  const formatos=[...document.querySelectorAll('input[name="camp-edit-fmt"]:checked')].map(el=>el.value);
-  const upd={
-    nombre:              document.getElementById('camp-edit-nombre').value.trim(),
-    color:               document.getElementById('camp-edit-color').value,
-    status:              document.getElementById('camp-edit-status').value,
-    fecha_inicio:        document.getElementById('camp-edit-inicio').value||null,
-    fecha_fin:           document.getElementById('camp-edit-fin').value||null,
-    periodo:             document.getElementById('camp-edit-periodo').value.trim(),
-    objetivo:            document.getElementById('camp-edit-objetivo').value.trim(),
+  const fmts=[...document.querySelectorAll('input[name="camp-edit-fmt"]:checked')].map(e=>e.value);
+  const upd={nombre:document.getElementById('camp-edit-nombre').value.trim(),
+    color:document.getElementById('camp-edit-color').value,
+    status:document.getElementById('camp-edit-status').value,
+    fecha_inicio:document.getElementById('camp-edit-inicio').value||null,
+    fecha_fin:document.getElementById('camp-edit-fin').value||null,
+    periodo:document.getElementById('camp-edit-periodo').value.trim(),
+    objetivo:document.getElementById('camp-edit-objetivo').value.trim(),
     concepto_estrategico:document.getElementById('camp-edit-estrategico').value.trim(),
-    concepto_creativo:   document.getElementById('camp-edit-creativo').value.trim(),
-    desarrollo:          document.getElementById('camp-edit-desarrollo').value.trim(),
-    notas:               document.getElementById('camp-edit-notas').value.trim(),
-    formatos,
-  };
+    concepto_creativo:document.getElementById('camp-edit-creativo').value.trim(),
+    desarrollo:document.getElementById('camp-edit-desarrollo').value.trim(),
+    notas:document.getElementById('camp-edit-notas').value.trim(),
+    formatos:fmts};
   const {error}=await db.from('content_campaigns').update(upd).eq('id',id);
   if(error){toast('Error: '+error.message);return;}
-  const camp=campanas.find(x=>x.id===id); if(camp)Object.assign(camp,upd);
-  updateCampSelector();
-  renderCampDoc(id);
-  renderCalCont();
-  closeModal('modal-camp-edit');
-  toast('Campana actualizada ✓');
+  const camp=contentCamps.find(x=>x.id===id);if(camp)Object.assign(camp,upd);
+  renderCampsList(); renderCalCont(); closeModal('modal-camp-edit'); toast('Campana actualizada ✓');
 }
 
 async function delCampana(id) {
-  if(!confirm('Eliminar esta campana y todas sus piezas?'))return;
+  if(!confirm('Eliminar esta campana y sus piezas?'))return;
   await db.from('content_piezas').delete().eq('campaign_id',id);
   await db.from('content_campaigns').delete().eq('id',id);
-  campanas=campanas.filter(x=>x.id!==id);
-  piezas=piezas.filter(x=>x.campaign_id!==id);
-  currentCampId=null;
-  updateCampSelector();
-  document.getElementById('camp-selector').value='';
-  selectCampana('');
-  renderCalCont();
-  closeModal('modal-camp-edit');
-  toast('Campana eliminada');
+  contentCamps=contentCamps.filter(x=>x.id!==id);
+  contentPiezas=contentPiezas.filter(x=>x.campaign_id!==id);
+  renderCampsList(); renderCalCont(); closeModal('modal-camp-edit'); toast('Campana eliminada');
 }
 
 // ── CRUD PIEZAS ───────────────────────────────────────────────────────────────
-function openAddPieza(campId) {
+function openAddPieza(campId){
   document.getElementById('pieza-camp-id').value=campId;
   document.getElementById('pieza-fecha').value=new Date().toISOString().split('T')[0];
-  ['pieza-titulo','pieza-notas'].forEach(id=>document.getElementById(id).value='');
+  ['pieza-titulo','pieza-notas'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
   openModal('modal-pieza');
 }
-
-function openAddPiezaForDate(date) {
-  // Abrir modal de pieza con la campaña actual y fecha pre-llenada
-  if(campanas.length===0){toast('Primero crea una campana');return;}
-  document.getElementById('pieza-camp-id').value=currentCampId||campanas[0].id;
-  document.getElementById('pieza-fecha').value=date;
-  ['pieza-titulo','pieza-notas'].forEach(id=>document.getElementById(id).value='');
-  openModal('modal-pieza');
-}
-
-async function savePieza() {
-  const titulo=document.getElementById('pieza-titulo').value.trim();
-  const campId=document.getElementById('pieza-camp-id').value;
-  if(!titulo){toast('Ponele un titulo a la pieza');return;}
-  const rec={
-    user_id:me.id, campaign_id:campId, titulo,
-    formato:          document.getElementById('pieza-formato').value,
-    plataforma:       document.getElementById('pieza-plataforma').value,
-    fecha_planificada:document.getElementById('pieza-fecha').value||null,
-    status:           document.getElementById('pieza-status').value,
-    notas:            document.getElementById('pieza-notas').value.trim(),
-  };
+async function savePieza(){
+  const titulo=document.getElementById('pieza-titulo')?.value.trim();
+  const campId=document.getElementById('pieza-camp-id')?.value;
+  if(!titulo){toast('Ponele titulo a la pieza');return;}
+  const rec={user_id:me.id,campaign_id:campId,titulo,
+    formato:document.getElementById('pieza-formato')?.value||'Reel',
+    plataforma:document.getElementById('pieza-plataforma')?.value||'Instagram',
+    fecha_planificada:document.getElementById('pieza-fecha')?.value||null,
+    status:document.getElementById('pieza-status')?.value||'pendiente',
+    notas:document.getElementById('pieza-notas')?.value.trim()||''};
   const {data,error}=await db.from('content_piezas').insert([rec]).select();
   if(error){toast('Error: '+error.message);return;}
-  piezas.push(data[0]);
-  if(currentCampId){
-    const camp=campanas.find(x=>x.id===currentCampId);
-    renderCampPiezas(currentCampId,camp?.color||'var(--accent)');
-  }
-  renderCalCont();
-  closeModal('modal-pieza');
-  toast('Pieza agregada ✓');
+  contentPiezas.push(data[0]);
+  renderCampsList(); renderCalCont(); closeModal('modal-pieza'); toast('Pieza agregada ✓');
 }
-
-async function cyclePiezaStatus(id) {
-  const p=piezas.find(x=>x.id===id); if(!p) return;
-  const next=PIEZA_CYCLE[(PIEZA_CYCLE.indexOf(p.status)+1)%PIEZA_CYCLE.length];
+async function cyclePiezaStatus(id){
+  const p=contentPiezas.find(x=>x.id===id);if(!p)return;
+  const next=PZ_CYCLE[(PZ_CYCLE.indexOf(p.status)+1)%PZ_CYCLE.length];
   await db.from('content_piezas').update({status:next}).eq('id',id);
-  p.status=next;
-  if(currentCampId){const camp=campanas.find(x=>x.id===currentCampId);renderCampPiezas(currentCampId,camp?.color||'var(--accent)');}
-  renderCalCont();
-  toast(next==='publicado'?'✓ Publicado!':'Estado → '+PIEZA_LABELS[next]);
+  p.status=next; renderCampsList(); renderCalCont();
+  toast(next==='publicado'?'✓ Publicado!':'→ '+PZ_LABEL[next]);
 }
-
-async function delPieza(id) {
+async function delPieza(id){
   await db.from('content_piezas').delete().eq('id',id);
-  piezas=piezas.filter(x=>x.id!==id);
-  if(currentCampId){const camp=campanas.find(x=>x.id===currentCampId);renderCampPiezas(currentCampId,camp?.color||'var(--accent)');}
-  renderCalCont();
-  toast('Pieza eliminada');
+  contentPiezas=contentPiezas.filter(x=>x.id!==id);
+  renderCampsList(); renderCalCont(); toast('Pieza eliminada');
 }
 
 // ── CALENDARIO INTERACTIVO ─────────────────────────────────────────────────────
-function renderCalCont() {
-  const mesEl=document.getElementById('cont-cal-mes'); if(!mesEl) return;
+function renderCalCont(){
+  const mesEl=document.getElementById('cont-cal-mes');if(!mesEl)return;
   const mesVal=mesEl.value||new Date().toISOString().substring(0,7);
   const [year,month]=mesVal.split('-').map(Number);
   const hoy=new Date();
@@ -4517,69 +4332,48 @@ function renderCalCont() {
   const primerDia=new Date(year,month-1,1).getDay();
   const primerLunes=primerDia===0?6:primerDia-1;
 
-  // Agrupar piezas por fecha con color de campaña
   const porDia={};
-  piezas.filter(p=>(p.fecha_planificada||'').startsWith(mesVal)).forEach(p=>{
+  contentPiezas.filter(p=>(p.fecha_planificada||'').startsWith(mesVal)).forEach(p=>{
     const d=parseInt(p.fecha_planificada.split('-')[2]);
-    const camp=campanas.find(c=>c.id===p.campaign_id);
-    if(!porDia[d]) porDia[d]=[];
-    porDia[d].push({...p, campColor: camp?.color||'var(--accent)', campName: camp?.nombre||''});
+    const camp=contentCamps.find(cc=>cc.id===p.campaign_id);
+    if(!porDia[d])porDia[d]=[];
+    porDia[d].push({...p,campColor:camp?.color||'var(--accent)',campName:camp?.nombre||''});
   });
 
-  const diasSem=['Lu','Ma','Mi','Ju','Vi','Sa','Do'];
-  const grid=document.getElementById('cont-cal-grid'); if(!grid) return;
-
+  const dias=['Lu','Ma','Mi','Ju','Vi','Sa','Do'];
+  const grid=document.getElementById('cont-cal-grid');if(!grid)return;
   let html=`<div style="font-size:13px;font-weight:700;text-align:center;margin-bottom:10px">${new Date(year,month-1,1).toLocaleDateString('es-AR',{month:'long',year:'numeric'}).toUpperCase()}</div>`;
   html+='<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px">';
-  diasSem.forEach(d=>{ html+=`<div style="font-size:10px;font-weight:700;text-align:center;color:var(--text2);padding:3px">${d}</div>`; });
-  for(let i=0;i<primerLunes;i++) html+='<div></div>';
-
+  dias.forEach(d=>{html+=`<div style="font-size:10px;font-weight:700;text-align:center;color:var(--text2);padding:3px">${d}</div>`;});
+  for(let i=0;i<primerLunes;i++)html+='<div></div>';
   for(let d=1;d<=diasEnMes;d++){
     const pd=porDia[d]||[];
     const fd=`${year}-${String(month).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
     const esHoy=d===hoy.getDate()&&month===hoy.getMonth()+1&&year===hoy.getFullYear();
-    const esFuturo=new Date(year,month-1,d)>hoy;
-
-    const hasPub=pd.some(p=>p.status==='publicado');
-    const allPub=pd.length>0&&pd.every(p=>p.status==='publicado');
-    const bgCell=allPub?'var(--green-l)':pd.length>0?'var(--accent-l)':'var(--surface2)';
-
-    const piezaChips=pd.slice(0,3).map(p=>`
-      <div onclick="event.stopPropagation();cyclePiezaStatus('${p.id}')"
-        title="${p.titulo} — Click para cambiar estado"
-        style="display:flex;align-items:center;gap:2px;padding:1px 5px;border-radius:8px;background:${p.campColor}20;border:0.5px solid ${p.campColor};cursor:pointer;margin-top:2px;max-width:100%;overflow:hidden">
-        <span style="font-size:9px;color:${p.campColor};font-weight:700">${PIEZA_ICONS[p.status]}</span>
-        <span style="font-size:9px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:60px">${p.titulo}</span>
-      </div>`).join('');
-    const masChip=pd.length>3?`<div style="font-size:9px;color:var(--text2);margin-top:2px">+${pd.length-3} mas</div>`:'';
-
-    html+=`<div onclick="openAddPiezaForDate('${fd}')"
-      title="Click para agregar pieza el ${d}/${month}"
-      style="border-radius:6px;padding:5px 4px;min-height:60px;border:0.5px solid ${esHoy?'var(--accent)':pd.length?'var(--border)':'var(--border)'};background:${bgCell};cursor:pointer;transition:all .12s;${esHoy?'box-shadow:0 0 0 2px var(--accent);':''}"
-      onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='${esHoy?'var(--accent)':pd.length?'var(--border)':'var(--border)'}'">
-      <div style="font-size:11px;font-weight:${esHoy?'800':'600'};color:${esHoy?'var(--accent)':esFuturo?'var(--text3)':'var(--text)'};text-align:center;margin-bottom:2px">${d}</div>
-      ${piezaChips}${masChip}
-      ${!esFuturo&&pd.length===0&&!esHoy?`<div style="font-size:9px;color:var(--text3);text-align:center;margin-top:8px">+</div>`:''}
+    const pubs=pd.filter(p=>p.status==='publicado').length;
+    const bgCell=pubs===pd.length&&pd.length>0?'var(--green-l)':pd.length?'var(--accent-l)':'var(--surface2)';
+    const chips=pd.slice(0,2).map(p=>`<div style="display:flex;align-items:center;gap:2px;padding:1px 4px;border-radius:6px;background:${p.campColor}22;border:0.5px solid ${p.campColor};margin-top:2px;cursor:pointer" onclick="event.stopPropagation();cyclePiezaStatus('${p.id}')" title="${p.titulo}"><span style="font-size:8px;color:${PZ_COLOR[p.status]}">${PZ_ICON[p.status]}</span><span style="font-size:8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:48px;color:var(--text)">${p.titulo}</span></div>`).join('');
+    const more=pd.length>2?`<div style="font-size:8px;color:var(--text2);margin-top:1px">+${pd.length-2}</div>`:'';
+    html+=`<div onclick="openAddPiezaForDate('${fd}')" title="Agregar pieza el ${d}/${month}" style="border-radius:6px;padding:4px;min-height:58px;border:0.5px solid ${esHoy?'var(--accent)':'var(--border)'};background:${bgCell};cursor:pointer;transition:border-color .12s" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='${esHoy?'var(--accent)':'var(--border)'}' ">
+      <div style="font-size:11px;font-weight:${esHoy?'800':'600'};color:${esHoy?'var(--accent)':'var(--text)'};text-align:center">${d}</div>
+      ${chips}${more}
     </div>`;
   }
   html+='</div>';
-
-  // Leyenda de campañas
-  const campsConPiezas=[...new Set(piezas.filter(p=>(p.fecha_planificada||'').startsWith(mesVal)).map(p=>p.campaign_id))].map(id=>campanas.find(c=>c.id===id)).filter(Boolean);
-  if(campsConPiezas.length){
-    html+=`<div style="margin-top:12px;padding-top:10px;border-top:0.5px solid var(--border);display:flex;gap:10px;flex-wrap:wrap;font-size:11px">
-      ${campsConPiezas.map(c=>`<span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${c.color};margin-right:4px"></span>${c.nombre}</span>`).join('')}
-      <span style="margin-left:auto;color:var(--text2)">${piezas.filter(p=>(p.fecha_planificada||'').startsWith(mesVal)).length} piezas planificadas</span>
-    </div>`;
-  }
-
+  const campsConPiezas=[...new Set(contentPiezas.filter(p=>(p.fecha_planificada||'').startsWith(mesVal)).map(p=>p.campaign_id))].map(id=>contentCamps.find(cc=>cc.id===id)).filter(Boolean);
+  if(campsConPiezas.length){html+=`<div style="margin-top:10px;padding-top:8px;border-top:0.5px solid var(--border);display:flex;gap:10px;flex-wrap:wrap;font-size:11px">${campsConPiezas.map(cc=>`<span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${cc.color||'var(--accent)'};margin-right:4px"></span>${cc.nombre}</span>`).join('')}</div>`;}
   grid.innerHTML=html;
 }
 
-// ── PLANIFICACION MENSUAL (para el sub-tab de campanas) ──────────────────────
-function renderPlanMensual() {
-  // Implementada dentro de renderCampDoc si se necesita
+function openAddPiezaForDate(date){
+  if(!contentCamps.length){toast('Crea una campana primero');switchContTab('campanas',document.getElementById('ctab-campanas'));return;}
+  document.getElementById('pieza-camp-id').value=contentCamps[0].id;
+  document.getElementById('pieza-fecha').value=date;
+  ['pieza-titulo','pieza-notas'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
+  openModal('modal-pieza');
 }
+
+function renderPlanMensual(){}
 
 
 // ══════════════════════════════════════════════════════════════════════════════
