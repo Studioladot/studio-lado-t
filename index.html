@@ -260,6 +260,7 @@ tr:hover td{background:var(--surface2)}
     <div class="nav-item" onclick="showPage('finanzas')" data-page="finanzas"><span class="ni">&#9672;</span><span>Finanzas</span></div>
     <div class="nav-item" onclick="showPage('contenido')" data-page="contenido"><span class="ni">&#9681;</span><span>Contenido</span></div>
     <div class="nav-item" onclick="showPage('crm')" data-page="crm"><span class="ni">&#9678;</span><span>CRM</span></div>
+    <div class="nav-item" onclick="showPage('notas')" data-page="notas"><span class="ni">&#128221;</span><span>Notas</span></div>
     <div class="sb-section">Inteligencia</div>
     <div class="nav-item" onclick="showPage('ia')" data-page="ia"><span class="ni">&#10022;</span><span>IA Estrategica</span></div>
     <div class="sb-section">Sistema</div>
@@ -620,6 +621,7 @@ tr:hover td{background:var(--surface2)}
     <button class="fin-tab active" onclick="switchFinTab('panel',this)" id="ftab-panel" style="padding:9px 18px;border:none;background:transparent;font-size:13px;font-weight:600;color:var(--accent);border-bottom:2px solid var(--accent);cursor:pointer">Panel</button>
     <button class="fin-tab" onclick="switchFinTab('gastos',this)" id="ftab-gastos" style="padding:9px 18px;border:none;background:transparent;font-size:13px;font-weight:500;color:var(--text2);border-bottom:2px solid transparent;cursor:pointer">Gastos</button>
     <button class="fin-tab" onclick="switchFinTab('ventas',this)" id="ftab-ventas" style="padding:9px 18px;border:none;background:transparent;font-size:13px;font-weight:500;color:var(--text2);border-bottom:2px solid transparent;cursor:pointer">Ventas del dia</button>
+    <button class="fin-tab" onclick="switchFinTab('aprender',this)" id="ftab-aprender" style="padding:9px 18px;border:none;background:transparent;font-size:13px;font-weight:500;color:var(--text2);border-bottom:2px solid transparent;cursor:pointer">&#127891; Aprender</button>
   </div>
 
   <!-- PANEL TAB -->
@@ -714,8 +716,12 @@ tr:hover td{background:var(--surface2)}
 
   <!-- VENTAS TAB -->
   <div id="fin-tab-ventas" style="display:none">
-    <div style="display:flex;gap:10px;margin-bottom:14px;align-items:center;flex-wrap:wrap">
+    <div style="display:flex;gap:8px;margin-bottom:14px;align-items:center;flex-wrap:wrap">
       <input type="month" id="ventas-mes-filter" style="border:0.5px solid var(--border);border-radius:var(--r);padding:7px 10px;font-size:13px;background:var(--surface);color:var(--text);outline:none" onchange="renderVentasDia()"/>
+      <div style="display:flex;border:0.5px solid var(--border);border-radius:var(--r);overflow:hidden">
+        <button id="ventas-view-lista" onclick="setVentasView('lista')" style="padding:6px 12px;border:none;background:var(--accent);color:#fff;font-size:12px;font-weight:600;cursor:pointer">&#9776; Lista</button>
+        <button id="ventas-view-calendario" onclick="setVentasView('calendario')" style="padding:6px 12px;border:none;background:transparent;color:var(--text2);font-size:12px;font-weight:500;cursor:pointer">&#128197; Calendario</button>
+      </div>
       <button class="btn btn-accent btn-sm" onclick="openModal('modal-venta-dia')">+ Agregar venta</button>
     </div>
     <div class="card" style="padding:0;overflow:hidden">
@@ -728,23 +734,290 @@ tr:hover td{background:var(--surface2)}
       <span style="font-size:13px;color:var(--text2)">Total del periodo: <strong id="ventas-dia-total" style="color:var(--green)">$0</strong></span>
     </div>
   </div>
+
+  <!-- CALENDARIO VIEW -->
+  <div id="fin-calendario-view" style="display:none">
+    <div class="card">
+      <div id="fin-cal-grid"></div>
+      <div style="display:flex;gap:14px;margin-top:12px;font-size:12px">
+        <span><span style="display:inline-block;width:10px;height:10px;background:var(--green-l);border:1px solid var(--green);border-radius:2px;margin-right:4px"></span>Sobre objetivo</span>
+        <span><span style="display:inline-block;width:10px;height:10px;background:var(--amber-l);border:1px solid var(--amber);border-radius:2px;margin-right:4px"></span>Sobre minimo</span>
+        <span><span style="display:inline-block;width:10px;height:10px;background:var(--red-l);border:1px solid var(--red);border-radius:2px;margin-right:4px"></span>Bajo minimo</span>
+        <span><span style="display:inline-block;width:10px;height:10px;background:var(--surface2);border:1px solid var(--border);border-radius:2px;margin-right:4px"></span>Sin ventas</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- APRENDER TAB -->
+  <div id="fin-tab-aprender" style="display:none">
+
+    <!-- Tarjeta hero -->
+    <div style="background:linear-gradient(135deg,var(--accent) 0%,#7a1f08 100%);border-radius:var(--rl);padding:24px 28px;margin-bottom:16px;color:#fff">
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;opacity:.7;margin-bottom:8px">EDUCACION FINANCIERA</div>
+      <div style="font-size:22px;font-weight:800;letter-spacing:-.02em;margin-bottom:6px">El margen real no es lo que crees</div>
+      <div style="font-size:14px;opacity:.8;line-height:1.6">Comprás a $10K, vendés a $20K. ¿Ganaste $10K? No. Esto te explica cuanto ganaste de verdad.</div>
+    </div>
+
+    <!-- El error más común -->
+    <div class="card" style="margin-bottom:12px">
+      <div style="font-size:15px;font-weight:700;margin-bottom:14px;color:var(--accent)">&#9888; El error más común</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+        <div style="background:var(--red-l);border-radius:var(--r);padding:16px;border-left:3px solid var(--red)">
+          <div style="font-size:12px;font-weight:700;color:var(--red);margin-bottom:8px">&#10060; LO QUE CREE LA GENTE</div>
+          <div style="font-size:13px;line-height:1.7">Compro a <strong>$10.000</strong><br>Vendo a <strong>$20.000</strong><br>Ganancia = <strong>$10.000 (100%)</strong><br><br><span style="color:var(--red);font-weight:600">← ESTO ES FALSO</span></div>
+        </div>
+        <div style="background:var(--green-l);border-radius:var(--r);padding:16px;border-left:3px solid var(--green)">
+          <div style="font-size:12px;font-weight:700;color:var(--green);margin-bottom:8px">&#10003; LA REALIDAD</div>
+          <div style="font-size:13px;line-height:1.7">Compro a <strong>$10.000</strong><br>Vendo a <strong>$20.000</strong><br>Margen bruto = <strong>50%</strong><br>Ganancia real = <strong>mucho menos</strong> &#8595;</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Fórmula paso a paso -->
+    <div class="card" style="margin-bottom:12px">
+      <div style="font-size:15px;font-weight:700;margin-bottom:16px">&#129518; La formula completa, paso a paso</div>
+      <div style="display:flex;flex-direction:column;gap:0">
+
+        <div style="display:flex;align-items:flex-start;gap:14px;padding:14px;background:var(--surface2);border-radius:var(--r);margin-bottom:8px">
+          <div style="background:var(--accent);color:#fff;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0">1</div>
+          <div>
+            <div style="font-size:13px;font-weight:700;margin-bottom:4px">Margen bruto</div>
+            <div style="font-size:12px;color:var(--text2);margin-bottom:6px">Es lo que te queda después de pagar el costo del producto.</div>
+            <div style="background:var(--surface);border-radius:var(--r);padding:10px;font-size:13px;font-family:monospace">(Precio venta − Costo) ÷ Precio venta × 100<br><span style="color:var(--accent)">Ej: ($20.000 − $10.000) ÷ $20.000 = <strong>50%</strong></span></div>
+          </div>
+        </div>
+
+        <div style="display:flex;align-items:flex-start;gap:14px;padding:14px;background:var(--surface2);border-radius:var(--r);margin-bottom:8px">
+          <div style="background:var(--accent);color:#fff;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0">2</div>
+          <div>
+            <div style="font-size:13px;font-weight:700;margin-bottom:4px">Restar el CPA (costo de adquisición por venta)</div>
+            <div style="font-size:12px;color:var(--text2);margin-bottom:6px">Cada venta que generó Meta Ads tiene un costo. Si tu CPA es $2.000, eso sale de tu margen.</div>
+            <div style="background:var(--surface);border-radius:var(--r);padding:10px;font-size:13px;font-family:monospace">Ganancia paso 1: $10.000<br>− CPA Meta Ads: $2.000<br><span style="color:var(--accent)">= <strong>$8.000 por unidad</strong></span></div>
+          </div>
+        </div>
+
+        <div style="display:flex;align-items:flex-start;gap:14px;padding:14px;background:var(--surface2);border-radius:var(--r);margin-bottom:8px">
+          <div style="background:var(--accent);color:#fff;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0">3</div>
+          <div>
+            <div style="font-size:13px;font-weight:700;margin-bottom:4px">Restar los gastos fijos proporcionales</div>
+            <div style="font-size:12px;color:var(--text2);margin-bottom:6px">El alquiler, tu sueldo, las plataformas, impuestos — todo eso también sale de cada venta. Dividís el total de gastos fijos por las unidades que vendés por mes.</div>
+            <div style="background:var(--surface);border-radius:var(--r);padding:10px;font-size:13px;font-family:monospace">Gastos fijos: $300.000 ÷ 30 ventas = $10.000/u<br>Ganancia: $8.000 − $10.000<br><span style="color:var(--red)">= <strong>−$2.000 (estás perdiendo)</strong></span></div>
+          </div>
+        </div>
+
+        <div style="display:flex;align-items:flex-start;gap:14px;padding:14px;background:var(--green-l);border-radius:var(--r);border:0.5px solid var(--green)">
+          <div style="background:var(--green);color:#fff;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0">&#10003;</div>
+          <div>
+            <div style="font-size:13px;font-weight:700;margin-bottom:4px;color:var(--green)">Fórmula del margen real</div>
+            <div style="background:var(--surface);border-radius:var(--r);padding:10px;font-size:13px;font-family:monospace">Margen real = (Precio − Costo − CPA − Gastos fijos/u) ÷ Precio × 100<br><br><span style="color:var(--green)">Con 60 ventas/mes:<br>($20K−$10K−$2K−$5K) ÷ $20K = <strong>15% de margen real</strong></span></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Calculadora interactiva -->
+    <div class="card" style="margin-bottom:12px">
+      <div style="font-size:15px;font-weight:700;margin-bottom:14px">&#128272; Calculadora de margen real</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+        <div class="fg"><label>Precio de venta (ARS)</label><input id="calc-precio" type="number" placeholder="20000" oninput="calcMargen()"/></div>
+        <div class="fg"><label>Costo del producto (ARS)</label><input id="calc-costo" type="number" placeholder="10000" oninput="calcMargen()"/></div>
+        <div class="fg"><label>CPA promedio (ARS)</label><input id="calc-cpa" type="number" placeholder="2000" oninput="calcMargen()"/></div>
+        <div class="fg"><label>Gastos fijos del mes (ARS)</label><input id="calc-gastos-fijos" type="number" placeholder="300000" oninput="calcMargen()"/></div>
+        <div class="fg"><label>Ventas estimadas por mes</label><input id="calc-ventas-mes" type="number" placeholder="30" oninput="calcMargen()"/></div>
+      </div>
+      <div id="calc-resultado" style="background:var(--surface2);border-radius:var(--r);padding:16px;font-size:13px;color:var(--text2)">
+        Completá los datos para ver tu margen real.
+      </div>
+    </div>
+
+    <!-- Regla de oro -->
+    <div class="card">
+      <div style="font-size:15px;font-weight:700;margin-bottom:12px">&#128081; Las 3 reglas de oro</div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div style="display:flex;gap:12px;padding:12px;background:var(--accent-l);border-radius:var(--r)">
+          <span style="font-size:20px;flex-shrink:0">&#128200;</span>
+          <div><div style="font-size:13px;font-weight:700;color:var(--accent);margin-bottom:2px">Si tu margen bruto es menor al 40%...</div><div style="font-size:12px;color:var(--text2)">Es muy difícil ser rentable con publicidad. Antes de escalar Meta Ads, revisá el precio de venta o negociá el costo del producto.</div></div>
+        </div>
+        <div style="display:flex;gap:12px;padding:12px;background:var(--blue-l);border-radius:var(--r)">
+          <span style="font-size:20px;flex-shrink:0">&#127919;</span>
+          <div><div style="font-size:13px;font-weight:700;color:var(--blue);margin-bottom:2px">El CPA ideal es menor al 15% del precio de venta</div><div style="font-size:12px;color:var(--text2)">Si vendés a $20.000, el CPA debería ser menos de $3.000. Si es más, o subís el precio o mejorás los anuncios.</div></div>
+        </div>
+        <div style="display:flex;gap:12px;padding:12px;background:var(--green-l);border-radius:var(--r)">
+          <span style="font-size:20px;flex-shrink:0">&#9989;</span>
+          <div><div style="font-size:13px;font-weight:700;color:var(--green);margin-bottom:2px">Objetivo: margen real mayor al 20%</div><div style="font-size:12px;color:var(--text2)">Con 20%+ de margen real podés reinvertir, crecer y pagar todo cómodamente. Por debajo de eso estás trabajando para pagar gastos.</div></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
 </div>
 
 <!-- CONTENIDO -->
 <div id="page-contenido" class="page">
   <div class="page-hdr">
-    <div><div class="page-title">Contenido</div><div class="page-sub">Calendario y seguimiento de publicaciones</div></div>
-    <button class="btn btn-accent" onclick="openModal('modal-post')">+ Nuevo post</button>
+    <div><div class="page-title">Contenido</div><div class="page-sub">Planificacion, control y ranking de tu estrategia de contenido</div></div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-outline" onclick="openModal('modal-idea')">&#128161; Idea</button>
+      <button class="btn btn-accent" onclick="openModal('modal-post')">+ Publicacion</button>
+    </div>
   </div>
-  <div class="filters" id="cont-filters">
-    <div class="ft active" onclick="filterCont('all',this)">Todos</div>
-    <div class="ft" onclick="filterCont('Instagram',this)">Instagram</div>
-    <div class="ft" onclick="filterCont('TikTok',this)">TikTok</div>
-    <div class="ft" onclick="filterCont('publicado',this)">Publicados</div>
-    <div class="ft" onclick="filterCont('pendiente',this)">Pendientes</div>
+
+  <!-- TABS -->
+  <div style="display:flex;gap:0;border-bottom:0.5px solid var(--border);margin-bottom:20px">
+    <button onclick="switchContTab('control',this)" id="ctab-control" style="padding:9px 18px;border:none;background:transparent;font-size:13px;font-weight:600;color:var(--accent);border-bottom:2px solid var(--accent);cursor:pointer">&#128200; Control</button>
+    <button onclick="switchContTab('calendario',this)" id="ctab-calendario" style="padding:9px 18px;border:none;background:transparent;font-size:13px;font-weight:500;color:var(--text2);border-bottom:2px solid transparent;cursor:pointer">&#128197; Calendario</button>
+    <button onclick="switchContTab('publicaciones',this)" id="ctab-publicaciones" style="padding:9px 18px;border:none;background:transparent;font-size:13px;font-weight:500;color:var(--text2);border-bottom:2px solid transparent;cursor:pointer">&#128247; Publicaciones</button>
+    <button onclick="switchContTab('ideas',this)" id="ctab-ideas" style="padding:9px 18px;border:none;background:transparent;font-size:13px;font-weight:500;color:var(--text2);border-bottom:2px solid transparent;cursor:pointer">&#128161; Ideas</button>
   </div>
-  <div class="content-grid" id="cont-grid">
-    <div class="empty" style="grid-column:1/-1"><div class="empty-icon">&#128197;</div><div class="empty-msg">Sin publicaciones</div><div class="empty-sub">Programa tu primer post</div></div>
+
+  <!-- CONTROL TAB -->
+  <div id="cont-tab-control">
+
+    <!-- Hero semanal -->
+    <div id="cont-hero" style="border-radius:var(--rl);padding:22px 26px;margin-bottom:14px;color:#fff;background:var(--text)">
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;opacity:.6;margin-bottom:4px" id="cont-semana-label">ESTA SEMANA</div>
+      <div style="display:flex;align-items:flex-end;gap:16px;margin-bottom:14px">
+        <div>
+          <div style="font-size:48px;font-weight:800;letter-spacing:-.04em;line-height:1" id="cont-posts-semana">0</div>
+          <div style="font-size:14px;opacity:.7">publicaciones</div>
+        </div>
+        <div style="font-size:14px;opacity:.7;margin-bottom:8px">de <strong id="cont-meta-semana" style="opacity:1;font-size:18px">5</strong> que te propusiste</div>
+      </div>
+      <div style="height:6px;background:rgba(255,255,255,.15);border-radius:3px;margin-bottom:12px">
+        <div id="cont-progress-bar" style="height:100%;border-radius:3px;background:#69db7c;width:0%;transition:width .4s"></div>
+      </div>
+      <div style="font-size:14px;font-weight:600" id="cont-motivacion">Cargando...</div>
+    </div>
+
+    <!-- Stats row -->
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px">
+      <div class="card" style="padding:14px 16px;margin:0">
+        <div class="fin-label">Este mes</div>
+        <div class="fin-value" id="cont-mes-total">—</div>
+        <div style="font-size:11px;color:var(--text2);margin-top:2px" id="cont-mes-sub">0 publicaciones</div>
+      </div>
+      <div class="card" style="padding:14px 16px;margin:0">
+        <div class="fin-label">Racha actual</div>
+        <div class="fin-value" id="cont-racha">—</div>
+        <div style="font-size:11px;color:var(--text2);margin-top:2px">dias seguidos</div>
+      </div>
+      <div class="card" style="padding:14px 16px;margin:0">
+        <div class="fin-label">Formato top</div>
+        <div class="fin-value" style="font-size:16px" id="cont-top-formato">—</div>
+        <div style="font-size:11px;color:var(--text2);margin-top:2px">mas publicado</div>
+      </div>
+      <div class="card" style="padding:14px 16px;margin:0">
+        <div class="fin-label">Plataforma top</div>
+        <div class="fin-value" style="font-size:16px" id="cont-top-plataforma">—</div>
+        <div style="font-size:11px;color:var(--text2);margin-top:2px">mas activa</div>
+      </div>
+    </div>
+
+    <!-- Meta semanal configurable -->
+    <div class="card" style="margin-bottom:14px">
+      <div class="card-title">Meta semanal
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-size:13px;color:var(--text2);font-weight:400">Publicaciones por semana:</span>
+          <input id="cont-meta-input" type="number" min="1" max="30" value="5"
+            style="width:60px;border:0.5px solid var(--border);border-radius:var(--r);padding:5px 8px;font-size:14px;font-weight:700;text-align:center;background:transparent;outline:none"
+            onchange="saveContMeta();renderControlContenido()"/>
+        </div>
+      </div>
+      <div id="cont-ranking-formatos">
+        <div style="font-size:12px;color:var(--text2);margin-bottom:8px;font-weight:600;text-transform:uppercase;letter-spacing:.06em">Ranking de formatos (ultimos 30 dias)</div>
+        <div id="cont-formatos-bars"></div>
+      </div>
+    </div>
+
+    <!-- Ultimos 7 dias -->
+    <div class="card">
+      <div class="card-title">Ultimos 7 dias</div>
+      <div id="cont-7dias" style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px"></div>
+    </div>
+
+  </div>
+
+  <!-- CALENDARIO TAB -->
+  <div id="cont-tab-calendario" style="display:none">
+    <div style="display:flex;gap:8px;margin-bottom:12px;align-items:center">
+      <input type="month" id="cont-cal-mes" style="border:0.5px solid var(--border);border-radius:var(--r);padding:7px 10px;font-size:13px;background:var(--surface);color:var(--text);outline:none" onchange="renderCalCont()"/>
+    </div>
+    <div class="card" id="cont-cal-card">
+      <div id="cont-cal-grid"></div>
+    </div>
+  </div>
+
+  <!-- PUBLICACIONES TAB -->
+  <div id="cont-tab-publicaciones" style="display:none">
+    <div style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:12px" id="cont-pub-filters">
+      <div class="ft active" onclick="filterCont2('all',this)">Todas</div>
+      <div class="ft" onclick="filterCont2('publicado',this)">Publicadas</div>
+      <div class="ft" onclick="filterCont2('pendiente',this)">Pendientes</div>
+      <div class="ft" onclick="filterCont2('Instagram',this)">Instagram</div>
+      <div class="ft" onclick="filterCont2('TikTok',this)">TikTok</div>
+      <div class="ft" onclick="filterCont2('Reel',this)">Reels</div>
+      <div class="ft" onclick="filterCont2('Carrusel',this)">Carruseles</div>
+    </div>
+    <div id="cont-pub-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px"></div>
+  </div>
+
+  <!-- IDEAS TAB -->
+  <div id="cont-tab-ideas" style="display:none">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <div style="font-size:13px;color:var(--text2)">Banco de ideas — capturá todo antes de que se te vaya</div>
+      <button class="btn btn-accent btn-sm" onclick="openModal('modal-idea')">+ Nueva idea</button>
+    </div>
+    <div id="cont-ideas-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px">
+      <div class="empty" style="grid-column:1/-1"><div class="empty-icon">&#128161;</div><div class="empty-msg">Sin ideas guardadas</div><div class="empty-sub">Cada vez que se te ocurra algo, anotalo aca</div></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- NOTAS -->
+<div id="page-notas" class="page">
+  <div class="page-hdr">
+    <div><div class="page-title">Notas</div><div class="page-sub">Ideas sueltas, pensamientos, lo que se te ocurra</div></div>
+    <button class="btn btn-accent" onclick="openModal('modal-nota')">+ Nueva nota</button>
+  </div>
+  <div id="notas-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px">
+    <div class="empty" style="grid-column:1/-1">
+      <div class="empty-icon">&#128221;</div>
+      <div class="empty-msg">Sin notas todavia</div>
+      <div class="empty-sub">Escribi lo que se te ocurra, sin estructura</div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL NOTA -->
+<div class="modal-backdrop" id="modal-nota">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-title">Nueva nota</div>
+    <div class="fg" style="margin-bottom:10px">
+      <label>Titulo (opcional)</label>
+      <input id="nota-titulo" type="text" placeholder="Ej: Idea reel Campera Eme, Contenido para semana..."/>
+    </div>
+    <div class="fg" style="margin-bottom:14px">
+      <label>La nota</label>
+      <textarea id="nota-contenido" rows="5" placeholder="Escribi lo que se te ocurra... ideas, referencias, frases, cualquier cosa." style="font-size:14px;line-height:1.6"></textarea>
+    </div>
+    <div style="display:flex;gap:6px;margin-bottom:4px;align-items:center">
+      <span style="font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-right:4px">Color</span>
+      <div id="nota-color-sel" style="display:flex;gap:6px">
+        <div onclick="selNotaColor('#fef3d8',this)" style="width:20px;height:20px;border-radius:50%;background:#fef3d8;border:2px solid var(--amber);cursor:pointer;box-shadow:0 0 0 2px var(--amber)"></div>
+        <div onclick="selNotaColor('#fbe8e3',this)" style="width:20px;height:20px;border-radius:50%;background:#fbe8e3;border:2px solid transparent;cursor:pointer"></div>
+        <div onclick="selNotaColor('#e8f2f0',this)" style="width:20px;height:20px;border-radius:50%;background:#e8f2f0;border:2px solid transparent;cursor:pointer"></div>
+        <div onclick="selNotaColor('#e4f0fb',this)" style="width:20px;height:20px;border-radius:50%;background:#e4f0fb;border:2px solid transparent;cursor:pointer"></div>
+        <div onclick="selNotaColor('#e4f5e7',this)" style="width:20px;height:20px;border-radius:50%;background:#e4f5e7;border:2px solid transparent;cursor:pointer"></div>
+        <div onclick="selNotaColor('#f0efec',this)" style="width:20px;height:20px;border-radius:50%;background:#f0efec;border:2px solid transparent;cursor:pointer"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-nota')">Cancelar</button>
+      <button class="btn btn-accent" onclick="saveNota()">Guardar nota</button>
+    </div>
   </div>
 </div>
 
@@ -1076,6 +1349,34 @@ create policy "own" on contacts for all using (auth.uid()=user_id);</div>
   </div>
 </div>
 
+<!-- Modal Nueva Idea -->
+<div class="modal-backdrop" id="modal-idea">
+  <div class="modal" style="max-width:460px">
+    <div class="modal-title">&#128161; Nueva idea de contenido</div>
+    <div class="form-row"><div class="fg full"><label>La idea</label><textarea id="idea-texto" rows="3" placeholder="Describí la idea. Ej: Mostrar cómo queda la campera con distintos outfits..."></textarea></div></div>
+    <div class="form-row">
+      <div class="fg"><label>Formato</label>
+        <select id="idea-formato">
+          <option>Reel</option><option>TikTok</option><option>Carrusel</option>
+          <option>Historia</option><option>Post</option><option>Otro</option>
+        </select>
+      </div>
+      <div class="fg"><label>Angulo / Tipo</label>
+        <select id="idea-angulo">
+          <option>Entretenimiento</option><option>Detras de escena</option>
+          <option>Prueba social</option><option>Educativo</option>
+          <option>Producto</option><option>Personal</option><option>Otro</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row"><div class="fg full"><label>Hook (primeras palabras / apertura)</label><input id="idea-hook" type="text" placeholder="Ej: No esperabamos que pase esto..."/></div></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-idea')">Cancelar</button>
+      <button class="btn btn-accent" onclick="saveIdea()">Guardar idea</button>
+    </div>
+  </div>
+</div>
+
 <!-- Modal Editar perfil de usuario (admin) -->
 <div class="modal-backdrop" id="modal-adm-user">
   <div class="modal" style="max-width:440px">
@@ -1321,6 +1622,8 @@ function showPage(p){
   if(p==='dashboard'&&META_TOKEN&&META_ACCOUNT){syncDashDateSelector();if(!metaCampaigns.length)initDashboardMeta();}
   if(p==='finanzas')loadFinanzas();
   if(p==='admin')loadAdmin();
+  if(p==='notas')loadNotas();
+  if(p==='contenido'){loadContenido();const cm=document.getElementById('cont-cal-mes');if(cm&&!cm.value)cm.value=new Date().toISOString().substring(0,7);}
 }
 
 // ── LOAD ALL ─────────────────────────────────────────────────────────────────
@@ -2984,7 +3287,7 @@ function renderGastos() {
       <td><span class="badge b-gray">${g.tipo}</span></td>
       <td style="font-weight:700">$${fmtN(g.monto)}</td>
       <td style="font-size:13px;color:var(--text2)">${g.dia_vencimiento?'Dia '+g.dia_vencimiento:'—'}</td>
-      <td><span class="badge ${g.pagado?'b-green':'b-amber'}">${g.pagado?'Pagado':'Pendiente'}</span></td>
+      <td><button onclick="togglePagado('${g.id}')" style="border:none;background:none;cursor:pointer;padding:2px"><span class="badge ${g.pagado?'b-green':'b-amber'}" style="cursor:pointer" title="Click para cambiar estado">${g.pagado?'✓ Pagado':'Pendiente'}</span></button></td>
       <td><button class="btn btn-sm btn-red" onclick="delGasto('${g.id}')">&#10005;</button></td>
     </tr>`).join('');
   }
@@ -3077,6 +3380,547 @@ function openFinConfig() {
   document.getElementById('fc-dias').value     = finConfig.dias_operativos||26;
   document.getElementById('fc-objetivo').value = finConfig.objetivo_ganancia_pct||20;
   openModal('modal-fin-config');
+}
+
+
+// ══════════════════════════════════════════════════════════════════════════════
+// FINANZAS — MEJORAS v2
+// ══════════════════════════════════════════════════════════════════════════════
+
+// ── GASTOS: marcar como pagado ────────────────────────────────────────────────
+async function togglePagado(id) {
+  const g = gastos.find(x => x.id === id);
+  if(!g) return;
+  const nuevo = !g.pagado;
+  const { error } = await db.from('expenses').update({ pagado: nuevo }).eq('id', id);
+  if(error){ toast('Error: '+error.message); return; }
+  g.pagado = nuevo;
+  renderGastos();
+  renderFinPanel();
+  toast(nuevo ? '✓ Marcado como pagado' : 'Marcado como pendiente');
+}
+
+// ── SWITCHFINTAB actualizado con aprender ────────────────────────────────────
+// Override switchFinTab para incluir el nuevo tab
+const _origSwitchFinTab = switchFinTab;
+function switchFinTab(tab, btn) {
+  finActiveTab = tab;
+  const allTabs = ['panel','gastos','ventas','aprender'];
+  allTabs.forEach(t => {
+    const el = document.getElementById('fin-tab-'+t);
+    const bt = document.getElementById('ftab-'+t);
+    if(el) el.style.display = t === tab ? 'block' : 'none';
+    if(bt) {
+      bt.style.color = t === tab ? 'var(--accent)' : 'var(--text2)';
+      bt.style.borderBottomColor = t === tab ? 'var(--accent)' : 'transparent';
+      bt.style.fontWeight = t === tab ? '600' : '500';
+    }
+  });
+  // También ocultar la vista de calendario si salís de ventas
+  const calView = document.getElementById('fin-calendario-view');
+  const tblSection = document.querySelector('#fin-tab-ventas .card');
+  if(tab !== 'ventas') {
+    if(calView) calView.style.display = 'none';
+  }
+}
+
+// ── VISTA CALENDARIO/LISTA ────────────────────────────────────────────────────
+let ventasView = 'lista';
+
+function setVentasView(view) {
+  ventasView = view;
+  const listBtn = document.getElementById('ventas-view-lista');
+  const calBtn  = document.getElementById('ventas-view-calendario');
+  const calView = document.getElementById('fin-calendario-view');
+  const tblCard = document.querySelector('#fin-tab-ventas > .card');
+
+  if(view === 'lista') {
+    if(listBtn){ listBtn.style.background='var(--accent)'; listBtn.style.color='#fff'; }
+    if(calBtn) { calBtn.style.background='transparent'; calBtn.style.color='var(--text2)'; }
+    if(calView) calView.style.display = 'none';
+    if(tblCard) tblCard.style.display = 'block';
+    document.querySelector('#fin-tab-ventas > div:last-of-type') && (document.querySelector('#fin-tab-ventas > div[style*="justify-content:flex-end"]').style.display = 'flex');
+  } else {
+    if(listBtn){ listBtn.style.background='transparent'; listBtn.style.color='var(--text2)'; }
+    if(calBtn) { calBtn.style.background='var(--accent)'; calBtn.style.color='#fff'; }
+    if(calView) calView.style.display = 'block';
+    if(tblCard) tblCard.style.display = 'none';
+    renderCalendario();
+  }
+}
+
+function renderCalendario() {
+  const mesVal = document.getElementById('ventas-mes-filter')?.value || new Date().toISOString().substring(0,7);
+  const [year, month] = mesVal.split('-').map(Number);
+  const margen   = (finConfig.margen_bruto||48)/100;
+  const diasOp   = finConfig.dias_operativos||26;
+  const totalGastos = gastos.reduce((a,g)=>a+(+g.monto||0),0);
+  const breakeven_dia = totalGastos>0&&margen>0 ? (totalGastos/margen)/diasOp : 0;
+  const objetivo_dia  = totalGastos>0&&margen>0 ? (totalGastos*(1+(finConfig.objetivo_ganancia_pct||20)/100)/margen)/diasOp : 0;
+
+  // Agrupar ventas por día
+  const ventasPorDia = {};
+  ventasDia.filter(v=>(v.fecha||'').startsWith(mesVal)).forEach(v=>{
+    const d = parseInt(v.fecha.split('-')[2]);
+    ventasPorDia[d] = (ventasPorDia[d]||0) + (+v.monto||0);
+  });
+
+  const primerDia = new Date(year, month-1, 1).getDay(); // 0=Dom
+  const diasEnMes = new Date(year, month, 0).getDate();
+  const primerLunes = primerDia === 0 ? 6 : primerDia - 1; // ajuste Lunes=0
+
+  const diasSemana = ['Lu','Ma','Mi','Ju','Vi','Sa','Do'];
+  let html = `<div style="font-size:13px;font-weight:700;margin-bottom:12px;text-align:center">
+    ${new Date(year,month-1,1).toLocaleDateString('es-AR',{month:'long',year:'numeric'}).toUpperCase()}
+  </div>`;
+  html += '<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px">';
+
+  // Headers
+  diasSemana.forEach(d => {
+    html += `<div style="font-size:11px;font-weight:700;text-align:center;color:var(--text2);padding:4px 0">${d}</div>`;
+  });
+
+  // Días vacíos al inicio
+  for(let i=0; i<primerLunes; i++) html += '<div></div>';
+
+  // Días del mes
+  for(let d=1; d<=diasEnMes; d++) {
+    const venta = ventasPorDia[d]||0;
+    const hoy = new Date();
+    const esHoy = d===hoy.getDate()&&month===hoy.getMonth()+1&&year===hoy.getFullYear();
+    const esFuturo = new Date(year,month-1,d) > hoy;
+
+    let bg='var(--surface2)', border='var(--border)', txtColor='var(--text2)';
+    let subTxt = '';
+    if(!esFuturo && venta>0){
+      if(venta >= objetivo_dia)     { bg='var(--green-l)';  border='var(--green)';  txtColor='var(--green)'; }
+      else if(venta >= breakeven_dia){ bg='var(--amber-l)'; border='var(--amber)';  txtColor='var(--amber)'; }
+      else                           { bg='var(--red-l)';   border='var(--red)';    txtColor='var(--red)'; }
+      subTxt = `<div style="font-size:9px;font-weight:700;margin-top:2px">${venta>=1000?'$'+(venta/1000).toFixed(0)+'K':'$'+venta}</div>`;
+    } else if(!esFuturo && venta===0 && breakeven_dia>0) {
+      subTxt = `<div style="font-size:9px;color:var(--text3);margin-top:2px">$0</div>`;
+    }
+
+    html += `<div style="background:${bg};border:0.5px solid ${border};border-radius:6px;padding:6px 4px;text-align:center;cursor:default;min-height:48px;display:flex;flex-direction:column;align-items:center;justify-content:center;${esHoy?'box-shadow:0 0 0 2px var(--accent);':''}" title="${venta>0?'$'+venta.toLocaleString('es-AR'):'Sin ventas'}">
+      <div style="font-size:11px;font-weight:${esHoy?'800':'600'};color:${esHoy?'var(--accent)':txtColor}">${d}</div>
+      ${subTxt}
+    </div>`;
+  }
+  html += '</div>';
+
+  // Resumen del mes
+  const totalMes = Object.values(ventasPorDia).reduce((a,v)=>a+v,0);
+  const diasConVentas = Object.keys(ventasPorDia).length;
+  html += `<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:14px;padding-top:14px;border-top:0.5px solid var(--border)">
+    <div style="text-align:center"><div style="font-size:11px;color:var(--text2);margin-bottom:2px">Total del mes</div><div style="font-size:16px;font-weight:700">${'$'+totalMes.toLocaleString('es-AR')}</div></div>
+    <div style="text-align:center"><div style="font-size:11px;color:var(--text2);margin-bottom:2px">Dias con ventas</div><div style="font-size:16px;font-weight:700">${diasConVentas}</div></div>
+    <div style="text-align:center"><div style="font-size:11px;color:var(--text2);margin-bottom:2px">Promedio por dia</div><div style="font-size:16px;font-weight:700">${diasConVentas>0?'$'+(totalMes/diasConVentas).toLocaleString('es-AR',{maximumFractionDigits:0}):'—'}</div></div>
+  </div>`;
+
+  const grid = document.getElementById('fin-cal-grid');
+  if(grid) grid.innerHTML = html;
+}
+
+// ── CALCULADORA INTERACTIVA DE MARGEN ────────────────────────────────────────
+function calcMargen() {
+  const precio      = +document.getElementById('calc-precio')?.value || 0;
+  const costo       = +document.getElementById('calc-costo')?.value || 0;
+  const cpa         = +document.getElementById('calc-cpa')?.value || 0;
+  const gastosFijos = +document.getElementById('calc-gastos-fijos')?.value || 0;
+  const ventasMes   = +document.getElementById('calc-ventas-mes')?.value || 1;
+  const el = document.getElementById('calc-resultado');
+  if(!el) return;
+  if(!precio || !costo) { el.innerHTML='Completá al menos el precio y el costo para calcular.'; el.style.background='var(--surface2)'; return; }
+
+  const margenBruto    = ((precio - costo) / precio * 100);
+  const gananciaXu     = precio - costo;
+  const despuesCPA     = gananciaXu - cpa;
+  const gastoFijoXu    = ventasMes > 0 ? gastosFijos / ventasMes : 0;
+  const gananciaReal   = despuesCPA - gastoFijoXu;
+  const margenReal     = (gananciaReal / precio * 100);
+  const color = margenReal >= 20 ? 'var(--green)' : margenReal >= 10 ? 'var(--amber)' : 'var(--red)';
+  const emoji = margenReal >= 20 ? '🟢' : margenReal >= 10 ? '🟡' : '🔴';
+
+  el.style.background = 'var(--surface)';
+  el.innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+      <div style="padding:10px;background:var(--surface2);border-radius:var(--r)">
+        <div style="font-size:10px;font-weight:600;color:var(--text2);text-transform:uppercase;margin-bottom:3px">Margen bruto</div>
+        <div style="font-size:18px;font-weight:700">${margenBruto.toFixed(1)}%</div>
+        <div style="font-size:11px;color:var(--text2)">$${(precio-costo).toLocaleString('es-AR')} por unidad</div>
+      </div>
+      <div style="padding:10px;background:var(--surface2);border-radius:var(--r)">
+        <div style="font-size:10px;font-weight:600;color:var(--text2);text-transform:uppercase;margin-bottom:3px">Después del CPA</div>
+        <div style="font-size:18px;font-weight:700;color:${despuesCPA>=0?'var(--text)':'var(--red)'}">${despuesCPA>=0?'+':''} $${despuesCPA.toLocaleString('es-AR')}</div>
+        <div style="font-size:11px;color:var(--text2)">Por unidad vendida</div>
+      </div>
+    </div>
+    <div style="padding:14px;background:${margenReal>=20?'var(--green-l)':margenReal>=10?'var(--amber-l)':'var(--red-l)'};border-radius:var(--r);border:0.5px solid ${color}">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <span style="font-size:13px;font-weight:700;color:${color}">${emoji} MARGEN REAL: ${margenReal.toFixed(1)}%</span>
+        <span style="font-size:15px;font-weight:800;color:${color}">$${gananciaReal.toLocaleString('es-AR')}/u</span>
+      </div>
+      <div style="font-size:12px;color:var(--text2);line-height:1.6">
+        Precio $${precio.toLocaleString('es-AR')} − Costo $${costo.toLocaleString('es-AR')} − CPA $${cpa.toLocaleString('es-AR')} − Gastos fijos $${Math.round(gastoFijoXu).toLocaleString('es-AR')}/u<br>
+        <strong style="color:${color}">Con ${ventasMes} ventas/mes: ganancia neta de $${(gananciaReal*ventasMes).toLocaleString('es-AR')}/mes</strong>
+      </div>
+    </div>`;
+}
+
+
+// ══════════════════════════════════════════════════════════════════════════════
+// CONTENIDO — Sistema completo
+// ══════════════════════════════════════════════════════════════════════════════
+let ideas = [], contFilter2 = 'all';
+
+// Cargar meta semanal desde localStorage
+function getContMeta(){ return parseInt(localStorage.getItem('lt_cont_meta')||'5'); }
+function saveContMeta(){ localStorage.setItem('lt_cont_meta', document.getElementById('cont-meta-input')?.value||5); }
+
+async function loadContenido() {
+  if(!me) return;
+  const [pRes, iRes] = await Promise.all([
+    db.from('content_posts').select('*').eq('user_id',me.id).order('date',{ascending:false}),
+    db.from('content_ideas').select('*').eq('user_id',me.id).order('created_at',{ascending:false}),
+  ]);
+  posts  = pRes.data || [];
+  ideas  = iRes.data || [];
+  renderControlContenido();
+  renderCalCont();
+  renderPublicaciones();
+  renderIdeas();
+}
+
+// ── TABS CONTENIDO ────────────────────────────────────────────────────────────
+function switchContTab(tab, btn) {
+  ['control','calendario','publicaciones','ideas'].forEach(t => {
+    const el = document.getElementById('cont-tab-'+t);
+    const bt = document.getElementById('ctab-'+t);
+    if(el) el.style.display = t===tab ? 'block' : 'none';
+    if(bt){
+      bt.style.color = t===tab ? 'var(--accent)' : 'var(--text2)';
+      bt.style.borderBottomColor = t===tab ? 'var(--accent)' : 'transparent';
+      bt.style.fontWeight = t===tab ? '600' : '500';
+    }
+  });
+}
+
+// ── CONTROL ───────────────────────────────────────────────────────────────────
+function renderControlContenido() {
+  const meta = getContMeta();
+  const inp = document.getElementById('cont-meta-input'); if(inp) inp.value = meta;
+  const metaEl = document.getElementById('cont-meta-semana'); if(metaEl) metaEl.textContent = meta;
+
+  const hoy = new Date();
+  // Inicio de la semana (lunes)
+  const diaSem = hoy.getDay() === 0 ? 6 : hoy.getDay()-1;
+  const lunesD = new Date(hoy); lunesD.setDate(hoy.getDate()-diaSem); lunesD.setHours(0,0,0,0);
+  const domingoD = new Date(lunesD); domingoD.setDate(lunesD.getDate()+6);
+
+  const fmtD = d => d.toISOString().split('T')[0];
+  const publicadas = posts.filter(p => p.status==='publicado' && p.date);
+
+  // Posts esta semana
+  const semana = publicadas.filter(p => p.date >= fmtD(lunesD) && p.date <= fmtD(domingoD));
+  const postsSem = semana.length;
+  const pct = Math.min(100, Math.round((postsSem/meta)*100));
+
+  // Posts este mes
+  const mesActual = hoy.toISOString().substring(0,7);
+  const mesPosts = publicadas.filter(p => (p.date||'').startsWith(mesActual));
+
+  document.getElementById('cont-posts-semana').textContent = postsSem;
+  const pb = document.getElementById('cont-progress-bar');
+  if(pb){ pb.style.width=pct+'%'; pb.style.background = pct>=100?'#69db7c':pct>=60?'#ffd43b':'#ff6b6b'; }
+  document.getElementById('cont-mes-total').textContent = mesPosts.length;
+  document.getElementById('cont-mes-sub').textContent = mesPosts.length+' publicaciones';
+
+  // Mensajes de motivación
+  const hoyLabel = lunesD.toLocaleDateString('es-AR',{day:'numeric',month:'short'})+' – '+domingoD.toLocaleDateString('es-AR',{day:'numeric',month:'short'});
+  document.getElementById('cont-semana-label').textContent = 'ESTA SEMANA · '+hoyLabel.toUpperCase();
+  const hero = document.getElementById('cont-hero');
+  const motEl = document.getElementById('cont-motivacion');
+  const msgs = {
+    0:  ['Solo subiste 0 esta semana. &#128293; ¡Hoy es el dia para arrancar!', '#b03311'],
+    low:['Solo subiste '+postsSem+' esta semana. Podés dar más, apuntá a '+meta+' &#128170;', '#8a5c0a'],
+    mid:['Vas bien con '+postsSem+' posts &#127775; ¡Seguí que falta poco para la meta!', '#1a5fa5'],
+    ok: ['&#9989; Meta cumplida esta semana! '+postsSem+'/'+meta+' ¡Sos una maquina!', '#2d7a3a'],
+  };
+  const key = postsSem===0?0:pct<50?'low':pct<100?'mid':'ok';
+  const [msg, col] = msgs[key];
+  if(motEl) motEl.innerHTML = msg;
+  if(hero){ hero.style.background = pct>=100?col:pct>=60?'#4a3800':pct>0?'#5a1a08':'var(--text)'; }
+
+  // Racha: días consecutivos publicando
+  const fechasPub = [...new Set(publicadas.map(p=>p.date))].sort((a,b)=>b.localeCompare(a));
+  let racha = 0, checkDate = new Date(hoy);
+  for(let i=0; i<60; i++){
+    const fd = fmtD(checkDate);
+    if(fechasPub.includes(fd)){ racha++; checkDate.setDate(checkDate.getDate()-1); }
+    else break;
+  }
+  document.getElementById('cont-racha').textContent = racha || '—';
+
+  // Top formato y plataforma
+  const last30 = publicadas.filter(p=>p.date>= fmtD(new Date(hoy.getFullYear(),hoy.getMonth()-1,hoy.getDate())));
+  const countBy = (arr, key) => arr.reduce((a,p)=>{a[p[key]]=(a[p[key]]||0)+1;return a;},{});
+  const fmtCount = countBy(last30,'format');
+  const platCount = countBy(last30,'platform');
+  const topFmt  = Object.entries(fmtCount).sort((a,b)=>b[1]-a[1])[0];
+  const topPlat = Object.entries(platCount).sort((a,b)=>b[1]-a[1])[0];
+  document.getElementById('cont-top-formato').textContent    = topFmt  ? topFmt[0]  : '—';
+  document.getElementById('cont-top-plataforma').textContent = topPlat ? topPlat[0] : '—';
+
+  // Ranking barras de formatos
+  const barsEl = document.getElementById('cont-formatos-bars');
+  if(barsEl){
+    const sortedFmt = Object.entries(fmtCount).sort((a,b)=>b[1]-a[1]);
+    const maxF = sortedFmt[0]?.[1]||1;
+    if(!sortedFmt.length){ barsEl.innerHTML='<div style="color:var(--text2);font-size:13px">Sin publicaciones en los ultimos 30 dias</div>'; }
+    else {
+      const colors = {Reel:'var(--accent)',TikTok:'var(--red)',Carrusel:'var(--blue)',Historia:'var(--amber)',Post:'var(--teal)',Otro:'var(--text2)'};
+      barsEl.innerHTML = sortedFmt.map(([fmt,count])=>`
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+          <div style="width:80px;font-size:12px;font-weight:600;color:var(--text2)">${fmt}</div>
+          <div style="flex:1;height:20px;background:var(--surface2);border-radius:4px;overflow:hidden">
+            <div style="height:100%;width:${Math.round((count/maxF)*100)}%;background:${colors[fmt]||'var(--text2)'};border-radius:4px;transition:width .4s;display:flex;align-items:center;padding-left:8px">
+              <span style="font-size:11px;font-weight:700;color:#fff">${count}</span>
+            </div>
+          </div>
+          <div style="font-size:11px;color:var(--text2)">${count} post${count>1?'s':''}</div>
+        </div>`).join('');
+    }
+  }
+
+  // Últimos 7 días visuales
+  const siete = document.getElementById('cont-7dias');
+  if(siete){
+    const dias7 = Array.from({length:7},(_,i)=>{ const d=new Date(hoy); d.setDate(hoy.getDate()-6+i); return d; });
+    siete.innerHTML = dias7.map(d=>{
+      const fd = fmtD(d);
+      const pDia = publicadas.filter(p=>p.date===fd);
+      const esHoy = fd===fmtD(hoy);
+      const bg = pDia.length>0 ? 'var(--accent)' : 'var(--surface2)';
+      const col = pDia.length>0 ? '#fff' : 'var(--text3)';
+      return `<div style="text-align:center;padding:8px 4px;background:${bg};border-radius:var(--r);border:${esHoy?'2px solid var(--accent-d)':'0.5px solid var(--border)'}">
+        <div style="font-size:10px;font-weight:600;color:${col};margin-bottom:4px">${d.toLocaleDateString('es-AR',{weekday:'short'}).toUpperCase()}</div>
+        <div style="font-size:18px;font-weight:800;color:${col}">${pDia.length||''}</div>
+        <div style="font-size:10px;color:${pDia.length>0?'rgba(255,255,255,.7)':'var(--text3)'}">${d.getDate()}</div>
+      </div>`;
+    }).join('');
+  }
+}
+
+// ── CALENDARIO CONTENIDO ─────────────────────────────────────────────────────
+function renderCalCont() {
+  const mesVal = document.getElementById('cont-cal-mes')?.value || new Date().toISOString().substring(0,7);
+  const [year,month] = mesVal.split('-').map(Number);
+  const hoy = new Date();
+
+  // Agrupar posts por fecha
+  const porDia = {};
+  posts.filter(p=>(p.date||'').startsWith(mesVal)).forEach(p=>{
+    const d=parseInt(p.date.split('-')[2]);
+    if(!porDia[d]) porDia[d]=[];
+    porDia[d].push(p);
+  });
+
+  const diasSem=['Lu','Ma','Mi','Ju','Vi','Sa','Do'];
+  const primerDia=new Date(year,month-1,1).getDay();
+  const primerLunes=primerDia===0?6:primerDia-1;
+  const diasEnMes=new Date(year,month,0).getDate();
+
+  let html=`<div style="font-size:13px;font-weight:700;text-align:center;margin-bottom:12px">${new Date(year,month-1,1).toLocaleDateString('es-AR',{month:'long',year:'numeric'}).toUpperCase()}</div>`;
+  html+='<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px">';
+  diasSem.forEach(d=>{ html+=`<div style="font-size:10px;font-weight:700;text-align:center;color:var(--text2);padding:3px">${d}</div>`; });
+  for(let i=0;i<primerLunes;i++) html+='<div></div>';
+  for(let d=1;d<=diasEnMes;d++){
+    const pdia=porDia[d]||[];
+    const esHoy=d===hoy.getDate()&&month===hoy.getMonth()+1&&year===hoy.getFullYear();
+    const esFuturo=new Date(year,month-1,d)>hoy;
+    const platColors={Instagram:'var(--accent)',TikTok:'var(--red)',Ambas:'var(--blue)',Otro:'var(--teal)'};
+    let inner='';
+    if(pdia.length>0){
+      inner=pdia.slice(0,3).map(p=>`<div style="width:6px;height:6px;border-radius:50%;background:${platColors[p.platform]||'var(--accent)'}"></div>`).join('');
+      if(pdia.length>3) inner+=`<span style="font-size:8px;color:var(--text2)">+${pdia.length-3}</span>`;
+    }
+    html+=`<div style="border-radius:6px;padding:5px 3px;text-align:center;min-height:52px;border:0.5px solid ${esHoy?'var(--accent)':pdia.length?'var(--border)':'var(--border)'};background:${pdia.length?'var(--accent-l)':'var(--surface2)'};${esHoy?'box-shadow:0 0 0 2px var(--accent);':''}">
+      <div style="font-size:11px;font-weight:${esHoy?'800':'600'};color:${esHoy?'var(--accent)':esFuturo?'var(--text3)':'var(--text)'};margin-bottom:4px">${d}</div>
+      <div style="display:flex;flex-wrap:wrap;justify-content:center;gap:2px">${inner}</div>
+    </div>`;
+  }
+  html+='</div>';
+
+  // Leyenda
+  const total=posts.filter(p=>(p.date||'').startsWith(mesVal)&&p.status==='publicado').length;
+  html+=`<div style="margin-top:12px;padding-top:12px;border-top:0.5px solid var(--border);display:flex;gap:14px;flex-wrap:wrap;align-items:center;font-size:12px">
+    <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--accent);margin-right:4px"></span>Instagram</span>
+    <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--red);margin-right:4px"></span>TikTok</span>
+    <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--blue);margin-right:4px"></span>Ambas</span>
+    <span style="margin-left:auto;color:var(--text2)">${total} publicadas este mes</span>
+  </div>`;
+
+  const grid=document.getElementById('cont-cal-grid'); if(grid) grid.innerHTML=html;
+}
+
+// ── PUBLICACIONES ─────────────────────────────────────────────────────────────
+function filterCont2(f,el){
+  contFilter2=f;
+  document.querySelectorAll('#cont-pub-filters .ft').forEach(t=>t.classList.remove('active'));
+  if(el) el.classList.add('active');
+  renderPublicaciones();
+}
+function renderPublicaciones(){
+  const list = contFilter2==='all' ? posts
+    : posts.filter(p=>p.status===contFilter2||p.platform===contFilter2||p.format===contFilter2);
+  const grid=document.getElementById('cont-pub-grid');
+  if(!grid) return;
+  if(!list.length){ grid.innerHTML='<div class="empty" style="grid-column:1/-1"><div class="empty-icon">&#128247;</div><div class="empty-msg">Sin publicaciones</div></div>'; return; }
+  const sBadge={publicado:'b-green',pendiente:'b-amber',borrador:'b-gray'};
+  const pColors={Instagram:'var(--accent)',TikTok:'var(--red)',Ambas:'var(--blue)'};
+  grid.innerHTML=list.map(p=>`
+    <div style="background:var(--surface);border:0.5px solid var(--border);border-radius:var(--rl);padding:14px;transition:border-color .15s" onmouseover="this.style.borderColor='var(--border2)'" onmouseout="this.style.borderColor='var(--border)'">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <div style="display:flex;gap:5px">
+          <span class="badge" style="background:${pColors[p.platform]||'var(--surface2)'};color:#fff;font-size:9px">${p.platform}</span>
+          <span class="badge b-gray" style="font-size:9px">${p.format}</span>
+        </div>
+        <span style="font-size:11px;color:var(--text3)">${p.date||''}</span>
+      </div>
+      <div style="font-size:13px;line-height:1.55;margin-bottom:10px;color:var(--text)">${p.caption||'Sin caption'}</div>
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <span class="badge ${sBadge[p.status]||'b-gray'}">${p.status}</span>
+        <div style="display:flex;gap:5px">
+          <button class="btn btn-sm btn-ghost" onclick="togglePostStatus('${p.id}','${p.status}')" title="Cambiar estado">&#10003;</button>
+          <button class="btn btn-sm btn-red" onclick="delPost('${p.id}')">&#10005;</button>
+        </div>
+      </div>
+      ${p.notes?`<div style="font-size:11px;color:var(--text2);margin-top:8px;padding-top:8px;border-top:0.5px solid var(--border)">${p.notes}</div>`:''}
+    </div>`).join('');
+}
+
+async function togglePostStatus(id, current){
+  const next = current==='pendiente'?'publicado':current==='publicado'?'borrador':'pendiente';
+  const {error} = await db.from('content_posts').update({status:next}).eq('id',id);
+  if(error){toast('Error: '+error.message);return;}
+  const p=posts.find(x=>x.id===id); if(p) p.status=next;
+  renderPublicaciones(); renderControlContenido(); toast('Estado → '+next);
+}
+
+// ── IDEAS ─────────────────────────────────────────────────────────────────────
+async function saveIdea(){
+  const texto=document.getElementById('idea-texto').value.trim();
+  if(!texto){toast('Escribi la idea');return;}
+  const rec={user_id:me.id,idea:texto,formato:document.getElementById('idea-formato').value,angulo:document.getElementById('idea-angulo').value,hook:document.getElementById('idea-hook').value.trim(),usado:false};
+  const {data,error}=await db.from('content_ideas').insert([rec]).select();
+  if(error){toast('Error: '+error.message);return;}
+  ideas.unshift(data[0]); renderIdeas(); closeModal('modal-idea');
+  ['idea-texto','idea-hook'].forEach(id=>document.getElementById(id).value='');
+  toast('Idea guardada ✓');
+}
+
+function renderIdeas(){
+  const grid=document.getElementById('cont-ideas-grid'); if(!grid) return;
+  if(!ideas.length){grid.innerHTML='<div class="empty" style="grid-column:1/-1"><div class="empty-icon">&#128161;</div><div class="empty-msg">Sin ideas guardadas</div><div class="empty-sub">Cada vez que se te ocurra algo, anotalo aca</div></div>';return;}
+  const angleColors={Entretenimiento:'b-accent',Producto:'b-blue','Detras de escena':'b-teal','Prueba social':'b-green',Educativo:'b-amber',Personal:'b-gray',Otro:'b-gray'};
+  grid.innerHTML=ideas.map(i=>`
+    <div style="background:${i.usado?'var(--surface2)':'var(--surface)'};border:0.5px solid var(--border);border-radius:var(--rl);padding:14px;opacity:${i.usado?.6:1}">
+      <div style="display:flex;gap:5px;margin-bottom:8px;flex-wrap:wrap">
+        <span class="badge b-accent" style="font-size:9px">${i.formato}</span>
+        <span class="badge ${angleColors[i.angulo]||'b-gray'}" style="font-size:9px">${i.angulo}</span>
+        ${i.usado?'<span class="badge b-green" style="font-size:9px">Usado</span>':''}
+      </div>
+      <div style="font-size:13px;font-weight:600;line-height:1.5;margin-bottom:6px">${i.idea}</div>
+      ${i.hook?`<div style="font-size:12px;color:var(--text2);padding:6px 10px;background:var(--surface2);border-radius:var(--r);margin-bottom:8px;border-left:2px solid var(--accent)"><strong>Hook:</strong> ${i.hook}</div>`:''}
+      <div style="display:flex;justify-content:flex-end;gap:5px">
+        <button class="btn btn-sm btn-outline" onclick="usarIdea('${i.id}','${i.usado}')">${i.usado?'Marcar sin usar':'&#10003; Marcar como usada'}</button>
+        <button class="btn btn-sm btn-red" onclick="delIdea('${i.id}')">&#10005;</button>
+      </div>
+    </div>`).join('');
+}
+
+async function usarIdea(id, usado){
+  const nuevo=!(usado==='true');
+  await db.from('content_ideas').update({usado:nuevo}).eq('id',id);
+  const i=ideas.find(x=>x.id===id); if(i) i.usado=nuevo;
+  renderIdeas(); toast(nuevo?'Idea marcada como usada':'Desmarcada');
+}
+async function delIdea(id){
+  await db.from('content_ideas').delete().eq('id',id);
+  ideas=ideas.filter(x=>x.id!==id); renderIdeas(); toast('Idea eliminada');
+}
+
+
+// ══════════════════════════════════════════════════════════════════════════════
+// NOTAS — libre y simple
+// ══════════════════════════════════════════════════════════════════════════════
+let notas = [];
+let notaColorSel = '#fef3d8';
+
+function selNotaColor(color, el) {
+  notaColorSel = color;
+  document.querySelectorAll('#nota-color-sel div').forEach(d => d.style.border = '2px solid transparent');
+  const borderColors = {
+    '#fef3d8':'var(--amber)','#fbe8e3':'var(--accent)','#e8f2f0':'var(--teal)',
+    '#e4f0fb':'var(--blue)','#e4f5e7':'var(--green)','#f0efec':'var(--border2)'
+  };
+  el.style.border = '2px solid ' + (borderColors[color]||'var(--border)');
+}
+
+async function loadNotas() {
+  if(!me) return;
+  const { data } = await db.from('notes').select('*').eq('user_id', me.id).order('created_at', {ascending:false});
+  notas = data || [];
+  renderNotas();
+}
+
+async function saveNota() {
+  const titulo    = document.getElementById('nota-titulo').value.trim();
+  const contenido = document.getElementById('nota-contenido').value.trim();
+  if(!contenido) { toast('Escribi algo en la nota'); return; }
+  const rec = { user_id: me.id, titulo: titulo||'', contenido, color: notaColorSel };
+  const { data, error } = await db.from('notes').insert([rec]).select();
+  if(error) { toast('Error: '+error.message); return; }
+  notas.unshift(data[0]);
+  renderNotas();
+  closeModal('modal-nota');
+  document.getElementById('nota-titulo').value = '';
+  document.getElementById('nota-contenido').value = '';
+  notaColorSel = '#fef3d8';
+  document.querySelectorAll('#nota-color-sel div').forEach((d,i)=>d.style.border=i===0?'2px solid var(--amber)':'2px solid transparent');
+  toast('Nota guardada ✓');
+}
+
+function renderNotas() {
+  const grid = document.getElementById('notas-grid');
+  if(!grid) return;
+  if(!notas.length) {
+    grid.innerHTML = '<div class="empty" style="grid-column:1/-1"><div class="empty-icon">&#128221;</div><div class="empty-msg">Sin notas todavia</div><div class="empty-sub">Escribi lo que se te ocurra, sin estructura</div></div>';
+    return;
+  }
+  const borderColors = {
+    '#fef3d8':'#c9a227','#fbe8e3':'#b03311','#e8f2f0':'#6fa398',
+    '#e4f0fb':'#1a5fa5','#e4f5e7':'#2d7a3a','#f0efec':'#c8c6c0'
+  };
+  grid.innerHTML = notas.map(n => {
+    const border = borderColors[n.color] || '#c8c6c0';
+    const fecha  = n.created_at ? new Date(n.created_at).toLocaleDateString('es-AR',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}) : '';
+    return `<div style="background:${n.color||'#fef3d8'};border:0.5px solid ${border};border-radius:var(--rl);padding:16px;position:relative;min-height:120px;display:flex;flex-direction:column;gap:8px;transition:transform .12s;cursor:default" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
+      ${n.titulo?`<div style="font-size:13px;font-weight:700;color:var(--text);line-height:1.3">${n.titulo}</div>`:''}
+      <div style="font-size:13px;color:var(--text);line-height:1.65;flex:1;white-space:pre-wrap">${n.contenido}</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-top:4px">
+        <span style="font-size:10px;color:${border};opacity:.7">${fecha}</span>
+        <button onclick="delNota('${n.id}')" style="border:none;background:transparent;cursor:pointer;font-size:14px;opacity:.4;transition:opacity .15s;padding:2px 4px" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.4'">&#10005;</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function delNota(id) {
+  await db.from('notes').delete().eq('id', id);
+  notas = notas.filter(n => n.id !== id);
+  renderNotas();
+  toast('Nota eliminada');
 }
 
 
