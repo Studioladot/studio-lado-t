@@ -3918,7 +3918,7 @@ function switchContTab(tab, btn) {
       bt.style.fontWeight=t===tab?'600':'500';
     }
   });
-  if(tab==='campanas'){if(!campanas.length)loadCampanas();else{renderCampanas();renderPlanMensual();}}
+  if(tab==='campanas'){if(!campanas.length)loadCampanas();else updateCampSelector();}
 }
 
 // ── CONTROL ───────────────────────────────────────────────────────────────────
@@ -4213,6 +4213,16 @@ async function loadCampanas() {
   piezas   = pRes.data || [];
   updateCampSelector();
   renderCalCont();
+  // Si ya hay una campana seleccionada, mostrarla; si no, mostrar empty state
+  if(currentCampId && campanas.find(x=>x.id===currentCampId)){
+    selectCampana(currentCampId);
+  } else if(campanas.length>0 && !currentCampId){
+    // Auto-seleccionar la primera
+    document.getElementById('camp-selector').value = campanas[0].id;
+    selectCampana(campanas[0].id);
+  } else {
+    selectCampana('');
+  }
 }
 
 function updateCampSelector() {
