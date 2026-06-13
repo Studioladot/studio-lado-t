@@ -1798,6 +1798,29 @@ async function signOut(){ await db.auth.signOut(); }
 
 // ── NAV ──────────────────────────────────────────────────────────────────────
 function showPage(p){
+  // PERMISOS: verificar acceso antes de navegar
+  if(!isAdmin && userProfile?.permissions){
+    const navEl=document.querySelector('[data-page="'+p+'"]');
+    const sec=navEl?.getAttribute('data-section');
+    if(sec && !userProfile.permissions.includes(sec)){
+      document.querySelectorAll('.page').forEach(pg=>pg.classList.remove('active'));
+      document.querySelectorAll('.nav-item').forEach(ni=>ni.classList.remove('active'));
+      let denied=document.getElementById('access-denied-page');
+      if(!denied){
+        denied=document.createElement('div');
+        denied.id='access-denied-page';
+        denied.className='page';
+        denied.innerHTML='<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:60vh;text-align:center"><div style="font-size:40px;margin-bottom:16px">&#128274;</div><div style="font-size:20px;font-weight:700;margin-bottom:8px">Seccion no disponible</div><div style="font-size:14px;color:var(--text2);max-width:340px">Esta seccion no esta incluida en tu plan. Contacta a Lado T para mas informacion.</div></div>';
+        document.getElementById('main').appendChild(denied);
+      }
+      denied.classList.add('active');
+      return;
+    }
+  }
+  // Ocultar access-denied si existia
+  const denied=document.getElementById('access-denied-page');
+  if(denied) denied.classList.remove('active');
+
   document.querySelectorAll('.page').forEach(e=>e.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(e=>e.classList.remove('active'));
   const pg=document.getElementById('page-'+p);
@@ -1806,24 +1829,22 @@ function showPage(p){
   if(ni)ni.classList.add('active');
   document.getElementById('sidebar').classList.remove('open');
   if(p==='meta-live')renderSnaps();
-  if(p==='meta-campanas'){ if(META_TOKEN && META_ACCOUNT && !metaCampaigns.length) loadMetaCampaigns(); }
+  if(p==='meta-campanas'){ if(META_TOKEN&&META_ACCOUNT&&!metaCampaigns.length)loadMetaCampaigns(); }
   if(p==='meta-connect'){
     const ti=document.getElementById('meta-token-input');
     const ai=document.getElementById('meta-account-input');
-    if(ti && META_TOKEN) ti.value=META_TOKEN;
-    if(ai && META_ACCOUNT) ai.value=META_ACCOUNT;
-    if(META_TOKEN && META_ACCOUNT) verifyMetaConnection();
+    if(ti&&META_TOKEN)ti.value=META_TOKEN;
+    if(ai&&META_ACCOUNT)ai.value=META_ACCOUNT;
+    if(META_TOKEN&&META_ACCOUNT)verifyMetaConnection();
   }
   if(p==='biblioteca')renderBib();
-  if(p==='finanzas')
-  if(p==='contenido')renderCont();
-  if(p==='crm')renderCRM();
+  if(p==='finanzas')loadFinanzas();
+  if(p==='notas')loadNotas();
+  if(p==='admin')loadAdmin();
   if(p==='config')loadConfigPage();
   if(p==='dashboard'&&META_TOKEN&&META_ACCOUNT){syncDashDateSelector();if(!metaCampaigns.length)initDashboardMeta();}
-  if(p==='finanzas')loadFinanzas();
-  if(p==='admin')loadAdmin();
-  if(p==='notas')loadNotas();
   if(p==='contenido'){loadContenido();const cm=document.getElementById('cont-cal-mes');if(cm&&!cm.value)cm.value=new Date().toISOString().substring(0,7);const cmp=document.getElementById('camp-mes-plan');if(cmp&&!cmp.value)cmp.value=new Date().toISOString().substring(0,7);}
+  if(p==='crm')renderCRM();
 }
 
 // ── LOAD ALL ─────────────────────────────────────────────────────────────────
@@ -3781,16 +3802,18 @@ async function loadContenido() {
 
 // ── TABS CONTENIDO ────────────────────────────────────────────────────────────
 function switchContTab(tab, btn) {
-  ['control','calendario','publicaciones','ideas'].forEach(t => {
-    const el = document.getElementById('cont-tab-'+t);
-    const bt = document.getElementById('ctab-'+t);
-    if(el) el.style.display = t===tab ? 'block' : 'none';
+  finActiveTab = tab;
+  ['control','calendario','publicaciones','ideas','campanas'].forEach(t => {
+    const el=document.getElementById('cont-tab-'+t);
+    const bt=document.getElementById('ctab-'+t);
+    if(el) el.style.display=t===tab?'block':'none';
     if(bt){
-      bt.style.color = t===tab ? 'var(--accent)' : 'var(--text2)';
-      bt.style.borderBottomColor = t===tab ? 'var(--accent)' : 'transparent';
-      bt.style.fontWeight = t===tab ? '600' : '500';
+      bt.style.color=t===tab?'var(--accent)':'var(--text2)';
+      bt.style.borderBottomColor=t===tab?'var(--accent)':'transparent';
+      bt.style.fontWeight=t===tab?'600':'500';
     }
   });
+  if(tab==='campanas'){if(!campanas.length)loadCampanas();else{renderCampanas();renderPlanMensual();}}
 }
 
 // ── CONTROL ───────────────────────────────────────────────────────────────────
@@ -4131,23 +4154,7 @@ async function loadCampanas() {
 
 // ── SWITCH TAB (actualizar para incluir campanas) ─────────────────────────────
 const _origSwitchContTab = switchContTab;
-function switchContTab(tab, btn) {
-  finActiveTab = tab;
-  ['control','calendario','publicaciones','ideas','campanas'].forEach(t => {
-    const el = document.getElementById('cont-tab-'+t);
-    const bt = document.getElementById('ctab-'+t);
-    if(el) el.style.display = t===tab ? 'block' : 'none';
-    if(bt){
-      bt.style.color = t===tab?'var(--accent)':'var(--text2)';
-      bt.style.borderBottomColor = t===tab?'var(--accent)':'transparent';
-      bt.style.fontWeight = t===tab?'600':'500';
-    }
-  });
-  if(tab==='campanas') {
-    if(!campanas.length) loadCampanas();
-    else { renderCampanas(); renderPlanMensual(); }
-  }
-}
+
 
 // ── CRUD CAMPANAS ─────────────────────────────────────────────────────────────
 async function saveCampana() {
@@ -4465,51 +4472,8 @@ function applyPermissions(permissions) {
 }
 
 // Mostrar mensaje de acceso denegado si navegan a sección bloqueada
-const _permOrigShowPage = showPage;
-function showPage(p) {
-  // Si no es admin y tiene permisos restringidos, verificar
-  if(!isAdmin && userProfile?.permissions) {
-    const perms = userProfile.permissions;
-    const el = document.querySelector(`[data-page="${p}"]`);
-    const sec = el?.getAttribute('data-section');
-    if(sec && !perms.includes(sec)) {
-      // Mostrar pantalla de acceso denegado
-      document.querySelectorAll('.page').forEach(pg=>pg.classList.remove('active'));
-      document.querySelectorAll('.nav-item').forEach(ni=>ni.classList.remove('active'));
-      const main = document.getElementById('main');
-      // Buscar si ya hay div de acceso denegado
-      let denied = document.getElementById('access-denied-page');
-      if(!denied) {
-        denied = document.createElement('div');
-        denied.id = 'access-denied-page';
-        denied.className = 'page';
-        denied.innerHTML = `<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:60vh;text-align:center">
-          <div style="font-size:40px;margin-bottom:16px">&#128274;</div>
-          <div style="font-size:20px;font-weight:700;margin-bottom:8px">Seccion no disponible</div>
-          <div style="font-size:14px;color:var(--text2);max-width:340px">Esta seccion no esta incluida en tu plan. Contacta a Lado T para mas informacion.</div>
-        </div>`;
-        main.appendChild(denied);
-      }
-      denied.classList.add('active');
-      return;
-    }
-  }
-  // Ocultar access-denied si existía
-  const denied = document.getElementById('access-denied-page');
-  if(denied) denied.classList.remove('active');
-  _permOrigShowPage(p);
-}
 
-// ── ACTUALIZAR checkUserAccess para aplicar permisos ─────────────────────────
-// (patch en el resultado de checkUserAccess)
-const _origCheckUserAccess = checkUserAccess;
-async function checkUserAccess() {
-  const result = await _origCheckUserAccess();
-  if(result && userProfile?.permissions) {
-    applyPermissions(userProfile.permissions);
-  }
-  return result;
-}
+
 
 // ── ACTUALIZAR saveUserAdmin para guardar permisos ────────────────────────────
 async function saveUserAdmin() {
@@ -4536,93 +4500,11 @@ async function saveUserAdmin() {
 
 // ── ACTUALIZAR editUser para cargar permisos actuales ────────────────────────
 // Parchamos editUser para que cargue los permisos al abrir el modal
-const _origEditUser = editUser;
-function editUser(uid) {
-  // Resetear permisos al máximo primero
-  ALL_SECTIONS.forEach(s => {
-    const el = document.getElementById('perm-'+s);
-    if(el) el.checked = true;
-  });
-  // Buscar el usuario en la lista cargada para ver sus permisos actuales
-  // Los datos están en la tabla, los pedimos de nuevo
-  db.from('user_profiles').select('*').eq('id', uid).single().then(({data}) => {
-    if(data) {
-      document.getElementById('adm-uid').value = uid;
-      document.getElementById('adm-status').value = data.is_approved ? 'active' : 'pending';
-      document.getElementById('adm-expires').value = data.expires_at || '';
-      document.getElementById('adm-notas').value = data.notas || '';
-      // Aplicar permisos guardados
-      if(data.permissions && Array.isArray(data.permissions)) {
-        ALL_SECTIONS.forEach(s => {
-          const el = document.getElementById('perm-'+s);
-          if(el) el.checked = data.permissions.includes(s);
-        });
-      }
-    }
-  });
-  openModal('modal-adm-user');
-}
+
 
 // ── MOSTRAR permisos en la tabla de admin ─────────────────────────────────────
 // Parchamos loadAdmin para mostrar las secciones activas de cada usuario
-const _origLoadAdmin = loadAdmin;
-async function loadAdmin() {
-  if(!isAdmin) return;
-  const { data } = await db.from('user_profiles').select('*').order('created_at',{ascending:false});
-  const users = data || [];
-  const now = new Date();
-  const activos    = users.filter(u=>u.is_approved&&(!u.expires_at||new Date(u.expires_at)>now));
-  const pendientes = users.filter(u=>!u.is_approved&&!u.is_admin);
-  const expirados  = users.filter(u=>u.expires_at&&new Date(u.expires_at)<=now);
 
-  const el = id => document.getElementById(id);
-  if(el('adm-total'))     el('adm-total').textContent     = users.length;
-  if(el('adm-activos'))   el('adm-activos').textContent   = activos.length;
-  if(el('adm-pendientes'))el('adm-pendientes').textContent= pendientes.length;
-  if(el('adm-expirados')) el('adm-expirados').textContent = expirados.length;
-
-  const tbl = document.getElementById('adm-users-tbl');
-  if(!tbl) return;
-  if(!users.length){ tbl.innerHTML='<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--text2)">Sin usuarios</td></tr>'; return; }
-
-  const secLabels = {dashboard:'Dashboard',meta:'Meta',finanzas:'Finanzas',contenido:'Contenido',crm:'CRM',notas:'Notas',ia:'IA'};
-  tbl.innerHTML = users.map(u => {
-    const expired = u.expires_at && new Date(u.expires_at) <= now;
-    const badge = u.is_admin    ? '<span class="badge b-accent">Admin</span>'
-      : expired                 ? '<span class="badge b-red">Expirado</span>'
-      : u.is_approved           ? '<span class="badge b-green">Activo</span>'
-      :                           '<span class="badge b-amber">Pendiente</span>';
-
-    // Mostrar permisos
-    let permsBadges = '';
-    if(!u.is_admin && u.is_approved) {
-      if(!u.permissions) {
-        permsBadges = '<span style="font-size:11px;color:var(--green)">&#10003; Acceso completo</span>';
-      } else if(Array.isArray(u.permissions)) {
-        permsBadges = u.permissions.map(s=>`<span style="font-size:10px;padding:1px 5px;background:var(--blue-l);color:var(--blue);border-radius:4px;font-weight:600">${secLabels[s]||s}</span>`).join(' ');
-      }
-    }
-
-    return `<tr>
-      <td>
-        <div style="font-weight:600;font-size:13px">${u.nombre||u.email||'—'}</div>
-        <div style="font-size:11px;color:var(--text2)">${u.email||''}</div>
-        <div style="margin-top:4px;display:flex;gap:3px;flex-wrap:wrap">${permsBadges}</div>
-      </td>
-      <td style="font-size:13px">${u.whatsapp||'—'}</td>
-      <td style="font-size:13px">${u.negocio||'—'}</td>
-      <td>${badge}</td>
-      <td style="font-size:12px;color:var(--text2)">${u.expires_at||'Sin vencimiento'}</td>
-      <td style="font-size:12px;color:var(--text2)">${u.created_at?new Date(u.created_at).toLocaleDateString('es-AR'):''}</td>
-      <td>
-        <div style="display:flex;gap:5px;flex-wrap:wrap">
-          ${!u.is_approved&&!u.is_admin?`<button class="btn btn-sm btn-accent" onclick="quickApprove('${u.id}')">Aprobar</button>`:''}
-          <button class="btn btn-sm btn-outline" onclick="editUser('${u.id}')">&#9881; Editar</button>
-        </div>
-      </td>
-    </tr>`;
-  }).join('');
-}
 
 
 
