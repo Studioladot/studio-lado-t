@@ -1615,7 +1615,7 @@ function showPage(p){
     if(META_TOKEN && META_ACCOUNT) verifyMetaConnection();
   }
   if(p==='biblioteca')renderBib();
-  if(p==='finanzas')renderFin();
+  if(p==='finanzas')
   if(p==='contenido')renderCont();
   if(p==='crm')renderCRM();
   if(p==='config')loadConfigPage();
@@ -1631,16 +1631,15 @@ async function loadAll(){
   if(!me)return;
   const uid=me.id;
   try{
-    const[a,b,c,d,e,f]=await Promise.all([
+    const[a,b,e,f]=await Promise.all([
       db.from('metrics').select('*').eq('user_id',uid).order('created_at',{ascending:false}).limit(100),
       db.from('scripts').select('*').eq('user_id',uid).order('updated_at',{ascending:false}),
-      db.from('objectives').select('*').eq('user_id',uid).order('created_at',{ascending:false}),
-      db.from('finances').select('*').eq('user_id',uid).order('created_at',{ascending:false}),
       db.from('content_posts').select('*').eq('user_id',uid).order('date',{ascending:false}),
       db.from('contacts').select('*').eq('user_id',uid).order('created_at',{ascending:false}),
     ]);
-    metrics=a.data||[]; scripts=b.data||[]; objectives=c.data||[];
-    finances=d.data||[]; posts=e.data||[]; contacts=f.data||[];
+    metrics=a.data||[]; scripts=b.data||[];
+    posts=e.data||[]; contacts=f.data||[];
+    // objectives y finances se cargan por separado en sus respectivas paginas
     renderDash(); renderScripts();
   }catch(e){
     console.error(e);
@@ -1909,31 +1908,19 @@ async function saveFin(){
   const margin=revenue>0?+((profit/revenue)*100).toFixed(1):0;
   const {data,error}=await db.from('finances').insert([{user_id:me.id,product,units,revenue,cost_prod:costProd,cost_ads:costAds,profit,margin,period:document.getElementById('fin-per').value.trim()}]).select();
   if(error){toast('Error: '+error.message);return;}
-  finances.unshift(data[0]); renderFin(); closeModal('modal-fin');
+  finances.unshift(data[0]);  closeModal('modal-fin');
   ['fin-prod','fin-units','fin-rev','fin-cprod','fin-cads','fin-per'].forEach(id=>document.getElementById(id).value='');
   toast('Registro guardado');
 }
 function renderFin(){
-  const totR=finances.reduce((a,f)=>a+(+f.revenue||0),0);
-  const totC=finances.reduce((a,f)=>a+(+f.cost_prod||0)+(+f.cost_ads||0),0);
-  const totP=finances.reduce((a,f)=>a+(+f.profit||0),0);
-  const avgM=totR>0?((totP/totR)*100).toFixed(1):0;
-  document.getElementById('fin-ing').textContent='$'+fmt(totR);
-  document.getElementById('fin-cos').textContent='$'+fmt(totC);
-  document.getElementById('fin-pro').textContent='$'+fmt(totP);
-  document.getElementById('fin-pro').className='fin-value '+(totP>=0?'green':'red');
-  document.getElementById('fin-mar').textContent=avgM+'%';
-  const tbl=document.getElementById('fin-tbl');
-  if(!finances.length){tbl.innerHTML='<tr><td colspan="9" style="text-align:center;color:var(--text2);padding:24px">Sin registros</td></tr>';return;}
-  tbl.innerHTML=finances.map(f=>`<tr>
-    <td style="font-weight:600">${f.product}</td><td>${f.units||0}</td>
-    <td>$${fmt(f.revenue||0)}</td><td>$${fmt(f.cost_prod||0)}</td><td>$${fmt(f.cost_ads||0)}</td>
-    <td style="font-weight:700;color:${(+f.profit||0)>=0?'var(--green)':'var(--red)'}">$${fmt(f.profit||0)}</td>
-    <td>${f.margin||0}%</td><td style="color:var(--text2)">${f.period||'—'}</td>
-    <td><button class="btn btn-sm btn-red" onclick="delFin('${f.id}')">&#10005;</button></td>
-  </tr>`).join('');
+  // Legacy - datos movidos a renderFinPanel y renderGastos
+  // Solo actualiza si los elementos existen (compatibilidad con pagina vieja)
+  const finIng = document.getElementById('fin-ing');
+  const finCos = document.getElementById('fin-cos');
+  if(!finIng && !finCos) return; // pagina nueva activa, no hacer nada
 }
-async function delFin(id){await db.from('finances').delete().eq('id',id);finances=finances.filter(f=>f.id!==id);renderFin();toast('Eliminado');}
+
+async function delFin(id){await db.from('finances').delete().eq('id',id);finances=finances.filter(f=>f.id!==id);toast('Eliminado');}
 
 // ── CONTENIDO ─────────────────────────────────────────────────────────────────
 async function savePost(){
