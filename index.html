@@ -3356,10 +3356,9 @@ async function checkUserAccess() {
 }
 
 function showPending(msg) {
-  document.getElementById('app').style.display = 'none';
   const ps = document.getElementById('pending-screen');
   if (ps) {
-    if (msg) ps.querySelector('div > div:nth-child(3)').textContent = msg;
+    if (msg) ps.querySelector('div > div:nth-child(4)').textContent = msg;
     ps.style.display = 'flex';
   }
 }
