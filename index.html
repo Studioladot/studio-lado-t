@@ -4562,85 +4562,65 @@ async function loadBibAds() {
   if(grid) grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:60px;color:var(--text2)"><span class="ld"></span><span class="ld"></span><span class="ld"></span><br><br>Cargando anuncios...</div>';
 
   try {
-    // ── PASO 1: anuncios con insights (sin creative, limit bajo) ──────────────
-    const insFields = 'spend,actions,action_values,ctr,cpm,cpc,frequency,impressions,clicks';
-    const step1Fields = [
+    // Solo insights + datos básicos, SIN creative en este paso
+    const insFields = 'spend,actions,action_values,ctr,cpm,frequency,impressions,clicks';
+    const fields = [
       'id','name','status','effective_status',
       'adset{name}','campaign{name}',
       `insights.date_preset(${datePreset}){${insFields}}`
     ].join(',');
 
-    // Solo activos + pausados, máx 50 por página
     const filterParam = encodeURIComponent(JSON.stringify([
       {field:'effective_status',operator:'IN',value:['ACTIVE','PAUSED']}
     ]));
-    let allAds = [];
-    let nextUrl = `https://graph.facebook.com/v19.0/act_${META_ACCOUNT}/ads?fields=${encodeURIComponent(step1Fields)}&filtering=${filterParam}&limit=50&access_token=${META_TOKEN}`;
 
-    // Máx 2 páginas = 100 anuncios
-    let pages = 0;
-    while(nextUrl && pages < 2) {
-      const r = await fetch(nextUrl);
-      const j = await r.json();
-      if(j.error) throw new Error(j.error.message);
-      allAds = allAds.concat(j.data || []);
-      nextUrl = j.paging?.next || null;
-      pages++;
-    }
+    // Máx 25 anuncios — suficiente y seguro
+    const url = `https://graph.facebook.com/v19.0/act_${META_ACCOUNT}/ads?fields=${encodeURIComponent(fields)}&filtering=${filterParam}&limit=25&access_token=${META_TOKEN}`;
+    const r1 = await fetch(url);
+    const j1 = await r1.json();
+    if(j1.error) throw new Error(j1.error.message);
+    const allAds = j1.data || [];
 
     if(!allAds.length) { bibAdsData = []; renderBibAds(); return; }
 
-    // ── PASO 2: creativos en lotes de 20 (solo thumbnail + object_type) ───────
-    const creativeMap = {};
-    const ids = allAds.map(a => a.id);
-    for(let i = 0; i < ids.length; i += 20) {
-      const batch = ids.slice(i, i + 20).join(',');
-      // Pedimos solo lo mínimo necesario del creative
-      const crFields = encodeURIComponent('id,creative{id,thumbnail_url,image_url,object_type,video_id}');
+    // Paso 2: para cada anuncio, pedir thumbnail individualmente (async paralelo)
+    const thumbMap = {};
+    await Promise.all(allAds.map(async ad => {
       try {
-        const r = await fetch(`https://graph.facebook.com/v19.0/?ids=${batch}&fields=${crFields}&access_token=${META_TOKEN}`);
+        const r = await fetch(`https://graph.facebook.com/v19.0/${ad.id}?fields=${encodeURIComponent('creative{thumbnail_url,object_type,video_id}')}&access_token=${META_TOKEN}`);
         const j = await r.json();
-        if(!j.error) {
-          Object.entries(j).forEach(([adId, adData]) => {
-            creativeMap[adId] = adData.creative || {};
-          });
-        }
-      } catch(e) { /* continuar aunque falle un lote */ }
-    }
+        if(!j.error && j.creative) thumbMap[ad.id] = j.creative;
+      } catch(e) {}
+    }));
 
-    // ── MAPEO FINAL ───────────────────────────────────────────────────────────
     bibAdsData = allAds.map(ad => {
-      const ins  = ad.insights?.data?.[0] || {};
+      const ins = ad.insights?.data?.[0] || {};
       const spend = parseFloat(ins.spend || 0);
-      const purchases = parseFloat(ins.actions?.find(a => a.action_type === 'purchase')?.value || 0);
-      const revenue   = parseFloat(ins.action_values?.find(a => a.action_type === 'purchase')?.value || 0);
-      const roas = spend > 0 && revenue > 0 ? revenue / spend : 0;
-      const cpa  = purchases > 0 ? spend / purchases : 0;
-      const cr   = creativeMap[ad.id] || {};
-      const imgUrl = cr.image_url || cr.thumbnail_url || '';
-      const isVideo = cr.object_type === 'VIDEO' || !!cr.video_id;
-
+      const purchases = parseFloat(ins.actions?.find(a => a.action_type==='purchase')?.value || 0);
+      const revenue   = parseFloat(ins.action_values?.find(a => a.action_type==='purchase')?.value || 0);
+      const cr = thumbMap[ad.id] || {};
       return {
         id: ad.id, name: ad.name,
         status: ad.effective_status || ad.status,
-        adsetName:    ad.adset?.name    || '',
+        adsetName: ad.adset?.name || '',
         campaignName: ad.campaign?.name || '',
-        imgUrl, isVideo,
+        imgUrl: cr.thumbnail_url || '',
+        isVideo: cr.object_type === 'VIDEO' || !!cr.video_id,
         spend,
         purchases,
         revenue,
-        roas,
-        cpa,
-        ctr:   parseFloat(ins.ctr       || 0),
-        cpm:   parseFloat(ins.cpm       || 0),
-        freq:  parseFloat(ins.frequency || 0),
-        clicks: parseInt(ins.clicks     || 0),
+        roas: spend > 0 && revenue > 0 ? revenue / spend : 0,
+        cpa:  purchases > 0 ? spend / purchases : 0,
+        ctr:  parseFloat(ins.ctr       || 0),
+        cpm:  parseFloat(ins.cpm       || 0),
+        freq: parseFloat(ins.frequency || 0),
+        clicks: parseInt(ins.clicks    || 0),
       };
     });
 
     renderBibAds();
   } catch(e) {
-    if(grid) grid.innerHTML = `<div class="empty" style="grid-column:1/-1"><div class="empty-icon">&#9888;</div><div class="empty-msg">Error al cargar</div><div class="empty-sub">${e.message.slice(0,180)}</div></div>`;
+    if(grid) grid.innerHTML = `<div class="empty" style="grid-column:1/-1"><div class="empty-icon">&#9888;</div><div class="empty-msg">Error al cargar</div><div class="empty-sub">${e.message.slice(0,200)}</div></div>`;
     console.error('loadBibAds:', e);
   }
 }
