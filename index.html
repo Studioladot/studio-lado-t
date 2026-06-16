@@ -3,20 +3,22 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Lado T OS</title>
+<title>GOTIX — Sistema Operativo de Negocios</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
   --bg:#f6f6f6;--surface:#fff;--surface2:#f0efec;--border:#e2e0db;--border2:#c8c6c0;
   --text:#1a1a18;--text2:#5f5e5a;--text3:#b0aea8;
-  --accent:#b03311;--accent-l:#fbe8e3;--accent-d:#8a2709;
+  --accent:#b44b28;--accent-l:#faeae4;--accent-d:#8f3a1f;
   --teal:#a6c5bb;--teal-l:#e8f2f0;--teal-d:#6fa398;
   --green:#2d7a3a;--green-l:#e4f5e7;
   --amber:#8a5c0a;--amber-l:#fef3d8;
   --red:#a32d2d;--red-l:#fce8e8;
   --blue:#1a5fa5;--blue-l:#e4f0fb;
   --sidebar-w:228px;--r:8px;--rl:14px;
+  --gotix-blue:#3a55b0;--gotix-blue-l:#e8edfa;--gotix-blue-d:#2a3f8a;
+  --gotix-beige:#ece1d0;--gotix-beige-d:#d4c4af;
 }
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.55;min-height:100vh}
 button,input,textarea,select{font-family:inherit;font-size:14px}
@@ -25,34 +27,34 @@ a{color:inherit;text-decoration:none}
 #setup-screen{display:none}
 .auth-card,.setup-card{background:var(--surface);border:0.5px solid var(--border);border-radius:var(--rl);padding:44px 40px;width:100%;max-width:400px;box-shadow:0 4px 24px rgba(0,0,0,.06)}
 .setup-card{max-width:480px}
-.auth-brand-name{font-size:26px;font-weight:800;letter-spacing:-0.04em;color:var(--accent)}
+.auth-brand-name{font-size:26px;font-weight:800;letter-spacing:-0.04em;color:var(--gotix-blue)}
 .auth-brand-tag{font-size:11px;font-weight:600;color:var(--teal);text-transform:uppercase;letter-spacing:.1em;margin-left:6px}
 .auth-sub{font-size:13px;color:var(--text2);margin-bottom:32px;margin-top:4px}
 .auth-tabs{display:flex;border:0.5px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:24px}
 .auth-tab{flex:1;padding:9px;font-size:13px;font-weight:500;border:none;background:transparent;cursor:pointer;color:var(--text2);transition:all .15s}
-.auth-tab.active{background:var(--accent);color:#fff}
+.auth-tab.active{background:var(--gotix-blue);color:#fff}
 .field{display:flex;flex-direction:column;gap:5px;margin-bottom:14px}
 .field label{font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.06em}
 .field input{border:0.5px solid var(--border);border-radius:var(--r);padding:10px 12px;background:transparent;color:var(--text);outline:none;transition:border-color .15s}
 .field input:focus{border-color:var(--accent)}
-.btn-primary{width:100%;padding:11px;border-radius:20px;border:none;background:var(--accent);color:#fff;font-size:14px;font-weight:600;cursor:pointer;margin-top:6px}
-.btn-primary:hover{background:var(--accent-d)}
+.btn-primary{width:100%;padding:11px;border-radius:20px;border:none;background:var(--gotix-blue);color:#fff;font-size:14px;font-weight:600;cursor:pointer;margin-top:6px}
+.btn-primary:hover{background:var(--gotix-blue-d)}
 .auth-msg{font-size:12px;color:var(--red);margin-top:10px;min-height:16px}
 #app{display:none;height:100vh;overflow:hidden}
-#sidebar{position:fixed;top:0;left:0;width:var(--sidebar-w);height:100vh;background:var(--surface);border-right:0.5px solid var(--border);display:flex;flex-direction:column;z-index:50;overflow-y:auto}
+#sidebar{position:fixed;top:0;left:0;width:var(--sidebar-w);height:100vh;background:var(--gotix-blue);border-right:none;display:flex;flex-direction:column;z-index:50;overflow-y:auto}
 #main{margin-left:var(--sidebar-w);height:100vh;overflow-y:auto;background:var(--bg)}
-.sb-brand{padding:18px 20px 14px;border-bottom:0.5px solid var(--border)}
-.sb-brand-name{font-size:20px;font-weight:800;letter-spacing:-.04em;color:var(--accent)}
-.sb-brand-sub{font-size:10px;font-weight:600;color:var(--teal);text-transform:uppercase;letter-spacing:.1em;margin-top:1px}
-.sb-section{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--text3);padding:12px 18px 4px;margin-top:2px}
-.nav-item{display:flex;align-items:center;gap:9px;padding:8px 18px;cursor:pointer;color:var(--text2);font-size:13px;font-weight:500;transition:all .12s;border-left:2px solid transparent;margin:1px 0}
-.nav-item:hover{background:var(--surface2);color:var(--text)}
-.nav-item.active{background:var(--accent-l);color:var(--accent);border-left-color:var(--accent);font-weight:600}
+.sb-brand{padding:18px 20px 14px;border-bottom:0.5px solid rgba(255,255,255,.12)}
+.sb-brand-name{font-size:20px;font-weight:800;letter-spacing:-.04em;color:var(--gotix-blue)}
+.sb-brand-sub{font-size:10px;font-weight:600;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.1em;margin-top:1px}
+.sb-section{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:rgba(255,255,255,.4);padding:12px 18px 4px;margin-top:2px}
+.nav-item{display:flex;align-items:center;gap:9px;padding:8px 18px;cursor:pointer;color:rgba(255,255,255,.65);font-size:13px;font-weight:500;transition:all .12s;border-left:2px solid transparent;margin:1px 0}
+.nav-item:hover{background:rgba(255,255,255,.08);color:#fff}
+.nav-item.active{background:rgba(255,255,255,.15);color:#fff;border-left-color:var(--gotix-beige);font-weight:600}
 .nav-item .ni{font-size:15px;width:18px;text-align:center;flex-shrink:0}
-.sb-footer{margin-top:auto;padding:14px 18px;border-top:0.5px solid var(--border)}
-.sb-user{font-size:11px;color:var(--text2);margin-bottom:8px;word-break:break-all}
-.sb-signout{background:transparent;border:0.5px solid var(--border);border-radius:var(--r);padding:7px 12px;cursor:pointer;font-size:12px;color:var(--text2);width:100%;text-align:center;transition:all .15s}
-.sb-signout:hover{background:var(--red-l);border-color:var(--red);color:var(--red)}
+.sb-footer{margin-top:auto;padding:14px 18px;border-top:0.5px solid rgba(255,255,255,.12)}
+.sb-user{font-size:11px;color:rgba(255,255,255,.5);margin-bottom:8px;word-break:break-all}
+.sb-signout{background:transparent;border:0.5px solid rgba(255,255,255,.2);border-radius:var(--r);padding:7px 12px;cursor:pointer;font-size:12px;color:rgba(255,255,255,.6);width:100%;text-align:center;transition:all .15s}
+.sb-signout:hover{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.4);color:#fff}
 .page{display:none;padding:26px 30px;animation:fadein .18s ease}
 .page.active{display:block}
 @keyframes fadein{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
@@ -211,8 +213,8 @@ tr:hover td{background:var(--surface2)}
 <!-- SETUP -->
 <div id="setup-screen" style="display:none">
   <div class="setup-card">
-    <div><span class="auth-brand-name">Lado T</span><span class="auth-brand-tag">OS</span></div>
-    <div class="auth-sub">Configuracion inicial del sistema</div>
+    <div><span class="auth-brand-name">GOTIX</span><span class="auth-brand-tag">Beta</span></div>
+    <div class="auth-sub">Bienvenido a GOTIX — Configuracion inicial</div>
     <div class="field"><label>Supabase URL</label><input id="cfg-url" type="url" placeholder="https://xxxx.supabase.co"/></div>
     <div class="field"><label>Supabase Anon Key</label><input id="cfg-key" type="password" placeholder="eyJhbGci..."/></div>
     <button class="btn-primary" onclick="saveConfig()">Conectar</button>
@@ -226,7 +228,7 @@ tr:hover td{background:var(--surface2)}
 <!-- AUTH -->
 <div id="auth-screen" style="display:none">
   <div class="auth-card">
-    <div><span class="auth-brand-name">Lado T</span><span class="auth-brand-tag">OS</span></div>
+    <div><span class="auth-brand-name">GOTIX</span><span class="auth-brand-tag">Beta</span></div>
     <div class="auth-sub">Sistema Operativo</div>
     <div class="auth-tabs">
       <button class="auth-tab active" onclick="switchTab('login')">Ingresar</button>
@@ -237,7 +239,7 @@ tr:hover td{background:var(--surface2)}
     <button class="btn-primary" onclick="doAuth()">Ingresar</button>
     <div class="auth-msg" id="auth-msg"></div>
     <div style="margin-top:10px;font-size:12px;color:var(--text2);text-align:center">
-      <span onclick="showSetup()" style="cursor:pointer;color:var(--accent)">Cambiar configuracion de Supabase</span>
+      <span onclick="showSetup()" style="cursor:pointer;color:var(--gotix-blue)">Cambiar configuracion de Supabase</span>
     </div>
   </div>
 </div>
@@ -245,7 +247,7 @@ tr:hover td{background:var(--surface2)}
 <!-- APP -->
 <div id="app">
 <aside id="sidebar">
-  <div class="sb-brand"><div class="sb-brand-name">Lado T</div><div class="sb-brand-sub">Sistema Operativo</div></div>
+  <div class="sb-brand"><div class="sb-brand-name">GOTIX</div><div class="sb-brand-sub">Sistema Operativo de Negocios</div></div>
   <nav>
     <div class="sb-section">Principal</div>
     <div class="nav-item active" onclick="showPage('dashboard')" data-page="dashboard" data-section="dashboard"><span class="ni">&#9672;</span><span>Dashboard</span></div>
@@ -253,13 +255,13 @@ tr:hover td{background:var(--surface2)}
     <div class="nav-item" onclick="showPage('meta-connect')" data-page="meta-connect" data-section="meta"><span class="ni">&#128279;</span><span>Conectar Meta</span></div>
     <div class="nav-item" onclick="showPage('meta-campanas')" data-page="meta-campanas" data-section="meta"><span class="ni">&#128202;</span><span>Campanas</span></div>
     <div class="nav-item" onclick="showPage('meta-live')" data-page="meta-live" data-section="meta"><span class="ni">&#9673;</span><span>Snapshots</span></div>
+    <div class="nav-item" onclick="showPage('bib-ads')" data-page="bib-ads" data-section="meta"><span class="ni">&#127916;</span><span>Biblioteca Ads</span></div>
     <div class="nav-item" onclick="showPage('guiones')" data-page="guiones" data-section="meta"><span class="ni">&#9681;</span><span>Guiones</span></div>
     <div class="nav-item" onclick="showPage('biblioteca')" data-page="biblioteca" data-section="meta"><span class="ni">&#9678;</span><span>Biblioteca</span></div>
     <div class="nav-item" onclick="showPage('benchmarks')" data-page="benchmarks" data-section="meta"><span class="ni">&#9680;</span><span>Benchmarks</span></div>
     <div class="sb-section">Negocio</div>
     <div class="nav-item" onclick="showPage('finanzas')" data-page="finanzas" data-section="finanzas"><span class="ni">&#9672;</span><span>Finanzas</span></div>
     <div class="nav-item" onclick="showPage('contenido')" data-page="contenido" data-section="contenido"><span class="ni">&#9681;</span><span>Contenido</span></div>
-    <div class="nav-item" onclick="showPage('crm')" data-page="crm" data-section="crm"><span class="ni">&#9678;</span><span>CRM</span></div>
     <div class="nav-item" onclick="showPage('notas')" data-page="notas" data-section="notas"><span class="ni">&#128221;</span><span>Notas</span></div>
     <div class="nav-item" onclick="showPage('campanas-contenido')" data-page="campanas-contenido" data-section="contenido"><span class="ni">&#127775;</span><span>Campanas</span></div>
     <div class="sb-section">Inteligencia</div>
@@ -332,7 +334,7 @@ tr:hover td{background:var(--surface2)}
           <button class="btn btn-sm btn-outline" onclick="setRankingLevel('ad',this)" id="rtab-ad">Anuncios</button>
         </div>
       </div>
-      <div id="ranking-list"><div class="empty"><div class="empty-icon">&#128200;</div><div class="empty-msg">Sin datos</div><div class="empty-sub">Carga tus primeras metricas</div></div></div>
+      <div id="ranking-list"><div class="empty"><div class="empty-icon">&#128200;</div><div class="empty-msg">Sin datos</div><div class="empty-sub">Conecta Meta Ads para ver datos en vivo</div></div></div>
     </div>
   </div>
   <!-- Widget Meta Live -->
@@ -1057,20 +1059,62 @@ tr:hover td{background:var(--surface2)}
   </div>
 </div>
 
-<!-- CRM -->
-<div id="page-crm" class="page">
+
+<!-- BIBLIOTECA ADS -->
+<div id="page-bib-ads" class="page">
   <div class="page-hdr">
-    <div><div class="page-title">CRM</div><div class="page-sub">Clientes y contactos de Lado T</div></div>
-    <button class="btn btn-accent" onclick="openModal('modal-crm')">+ Nuevo contacto</button>
+    <div>
+      <div class="page-title">&#127916; Biblioteca de Anuncios</div>
+      <div class="page-sub">Todos tus anuncios con su creativo y metricas en tiempo real</div>
+    </div>
+    <button class="btn btn-outline btn-sm" onclick="loadBibAds()">&#8635; Actualizar</button>
   </div>
-  <div class="filters" id="crm-filters">
-    <div class="ft active" onclick="filterCRM('all',this)">Todos</div>
-    <div class="ft" onclick="filterCRM('activo',this)">Activos</div>
-    <div class="ft" onclick="filterCRM('lead',this)">Leads</div>
-    <div class="ft" onclick="filterCRM('terminado',this)">Terminados</div>
+
+  <!-- FILTROS -->
+  <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;align-items:center">
+    <div style="position:relative;flex:1;min-width:200px;max-width:320px">
+      <span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text3)">&#128269;</span>
+      <input id="bibads-search" type="text" placeholder="Buscar por nombre de anuncio..."
+        style="width:100%;border:0.5px solid var(--border);border-radius:20px;padding:7px 12px 7px 30px;font-size:13px;background:var(--surface);color:var(--text);outline:none"
+        oninput="renderBibAds()"/>
+    </div>
+    <select id="bibads-date" onchange="loadBibAds()"
+      style="border:0.5px solid var(--border);border-radius:var(--r);padding:7px 10px;font-size:13px;background:var(--surface);color:var(--text);outline:none">
+      <option value="today">Hoy</option>
+      <option value="last_7d">7 dias</option>
+      <option value="last_14d">14 dias</option>
+      <option value="last_30d" selected>30 dias</option>
+      <option value="last_90d">90 dias</option>
+      <option value="this_month">Este mes</option>
+      <option value="maximum">Historico</option>
+    </select>
+    <select id="bibads-status" onchange="renderBibAds()"
+      style="border:0.5px solid var(--border);border-radius:var(--r);padding:7px 10px;font-size:13px;background:var(--surface);color:var(--text);outline:none">
+      <option value="all">Todos</option>
+      <option value="ACTIVE">Activos</option>
+      <option value="PAUSED">Pausados</option>
+    </select>
+    <select id="bibads-sort" onchange="renderBibAds()"
+      style="border:0.5px solid var(--border);border-radius:var(--r);padding:7px 10px;font-size:13px;background:var(--surface);color:var(--text);outline:none">
+      <option value="roas">Mayor ROAS</option>
+      <option value="spend">Mayor Gasto</option>
+      <option value="purchases">Mas Compras</option>
+      <option value="cpa_asc">Menor CPA</option>
+    </select>
+    <span id="bibads-count" style="font-size:12px;color:var(--text2);margin-left:4px"></span>
   </div>
-  <div id="crm-list"><div class="empty"><div class="empty-icon">&#128101;</div><div class="empty-msg">Sin contactos</div><div class="empty-sub">Agrega tus primeros clientes o leads</div></div></div>
+
+  <!-- GRID DE ANUNCIOS -->
+  <div id="bibads-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px">
+    <div class="empty" style="grid-column:1/-1">
+      <div class="empty-icon">&#127916;</div>
+      <div class="empty-msg">Sin anuncios cargados</div>
+      <div class="empty-sub">Conecta Meta Ads para ver tu biblioteca</div>
+    </div>
+  </div>
 </div>
+
+
 
 <!-- IA -->
 <div id="page-ia" class="page">
@@ -1280,8 +1324,9 @@ create policy "own" on contacts for all using (auth.uid()=user_id);</div>
 <div id="pending-screen" style="display:none;position:fixed;inset:0;background:var(--bg);z-index:500;align-items:center;justify-content:center">
   <div style="background:var(--surface);border-radius:var(--rl);padding:40px;max-width:420px;text-align:center;border:0.5px solid var(--border);box-shadow:0 4px 24px rgba(0,0,0,.08)">
     <div style="font-size:40px;margin-bottom:16px">&#9203;</div>
-    <div style="font-size:20px;font-weight:700;margin-bottom:8px">Cuenta pendiente de aprobacion</div>
-    <div style="font-size:13px;color:var(--text2);line-height:1.7;margin-bottom:20px">Tu registro fue recibido. El equipo de Lado T va a revisar tu cuenta y te avisamos por WhatsApp cuando este activa.</div>
+    <div style="font-size:24px;font-weight:800;color:var(--gotix-blue);margin-bottom:4px">GOTIX</div>
+        <div style="font-size:16px;font-weight:700;margin-bottom:8px">Cuenta pendiente de aprobacion</div>
+    <div style="font-size:13px;color:var(--text2);line-height:1.7;margin-bottom:20px">Tu registro fue recibido. El equipo de GOTIX va a revisar tu cuenta y te avisamos por WhatsApp cuando este activa.</div>
     <div style="background:var(--surface2);border-radius:var(--r);padding:14px;margin-bottom:20px">
       <div style="font-size:12px;color:var(--text2);margin-bottom:6px">¿Ya fuiste aprobado? Refrescá la pagina.</div>
       <button class="btn btn-accent" style="width:100%" onclick="location.reload()">Refrescar</button>
@@ -1612,9 +1657,6 @@ create policy "own" on contacts for all using (auth.uid()=user_id);</div>
           <input type="checkbox" id="perm-contenido" checked style="accent-color:var(--accent)"/> Contenido + Campanas
         </label>
         <label style="display:flex;align-items:center;gap:8px;padding:9px 12px;background:var(--surface2);border-radius:var(--r);cursor:pointer;font-size:13px">
-          <input type="checkbox" id="perm-crm" checked style="accent-color:var(--accent)"/> CRM
-        </label>
-        <label style="display:flex;align-items:center;gap:8px;padding:9px 12px;background:var(--surface2);border-radius:var(--r);cursor:pointer;font-size:13px">
           <input type="checkbox" id="perm-notas" checked style="accent-color:var(--accent)"/> Notas
         </label>
         <label style="display:flex;align-items:center;gap:8px;padding:9px 12px;background:var(--surface2);border-radius:var(--r);cursor:pointer;font-size:13px">
@@ -1623,8 +1665,8 @@ create policy "own" on contacts for all using (auth.uid()=user_id);</div>
 
       </div>
       <div style="margin-top:8px;display:flex;gap:8px">
-        <button class="btn btn-sm btn-outline" onclick="['dashboard','meta','finanzas','contenido','crm','notas','ia'].forEach(s=>document.getElementById('perm-'+s).checked=true)">Todo habilitado</button>
-        <button class="btn btn-sm btn-outline" onclick="['meta','finanzas','crm','ia'].forEach(s=>document.getElementById('perm-'+s).checked=false);['dashboard','contenido','notas'].forEach(s=>document.getElementById('perm-'+s).checked=true)" style="font-size:11px">Solo Creativo</button>
+        <button class="btn btn-sm btn-outline" onclick="['dashboard','meta','finanzas','contenido','notas','ia'].forEach(s=>document.getElementById('perm-'+s).checked=true)">Todo habilitado</button>
+        <button class="btn btn-sm btn-outline" onclick="['meta','finanzas','ia'].forEach(s=>document.getElementById('perm-'+s).checked=false);['dashboard','contenido','notas'].forEach(s=>document.getElementById('perm-'+s).checked=true)" style="font-size:11px">Solo Creativo</button>
         <button class="btn btn-sm btn-outline" onclick="['dashboard','contenido','notas','ia'].forEach(s=>document.getElementById('perm-'+s).checked=false);['meta','finanzas','crm'].forEach(s=>document.getElementById('perm-'+s).checked=true)" style="font-size:11px">Solo Meta+Fin</button>
       </div>
     </div>
@@ -1749,7 +1791,7 @@ create policy "own" on contacts for all using (auth.uid()=user_id);</div>
 // ── CONFIG ───────────────────────────────────────────────────────────────────
 let SBURL = 'https://vluoynizpvckjqomojxx.supabase.co';
 let SBKEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZsdW95bml6cHZja2pxb21vanh4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwMzE4MTQsImV4cCI6MjA5NjYwNzgxNH0.ItNRCYNzKYvs_S_ToOSOwKesRGZvniq0-kFNKcqZFPM';
-let APIKEY = localStorage.getItem('lt_anthropic_key')||'';
+let APIKEY = localStorage.getItem('gx_anthropic_key')||'';
 let db=null, me=null;
 let metrics=[], scripts=[], objectives=[], finances=[], posts=[], contacts=[];
 let selScript=null, bibF='all', contF='all', crmF='all', iaHistory=[];
@@ -1779,7 +1821,7 @@ function saveConfig(){
   const u=document.getElementById('cfg-url').value.trim();
   const k=document.getElementById('cfg-key').value.trim();
   if(!u||!k){ toast('Ingresa URL y Key de Supabase'); return; }
-  localStorage.setItem('lt_sb_url',u); localStorage.setItem('lt_sb_key',k);
+  localStorage.setItem('gx_sb_url',u); localStorage.setItem('gx_sb_key',k);
   SBURL=u; SBKEY=k;
   document.getElementById('setup-screen').style.display='none';
   init();
@@ -1846,7 +1888,7 @@ function showPage(p){
         denied=document.createElement('div');
         denied.id='access-denied-page';
         denied.className='page';
-        denied.innerHTML='<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:60vh;text-align:center"><div style="font-size:40px;margin-bottom:16px">&#128274;</div><div style="font-size:20px;font-weight:700;margin-bottom:8px">Seccion no disponible</div><div style="font-size:14px;color:var(--text2);max-width:340px">Esta seccion no esta incluida en tu plan. Contacta a Lado T para mas informacion.</div></div>';
+        denied.innerHTML='<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:60vh;text-align:center"><div style="font-size:40px;margin-bottom:16px">&#128274;</div><div style="font-size:20px;font-weight:700;margin-bottom:8px">Seccion no disponible</div><div style="font-size:14px;color:var(--text2);max-width:340px">Esta seccion no esta incluida en tu plan. Contacta al equipo GOTIX para mas informacion.</div></div>';
         document.getElementById('main').appendChild(denied);
       }
       denied.classList.add('active');
@@ -1864,6 +1906,7 @@ function showPage(p){
   const ni=document.querySelector('[data-page="'+p+'"]');
   if(ni)ni.classList.add('active');
   document.getElementById('sidebar').classList.remove('open');
+  if(p==='bib-ads')loadBibAds();
   if(p==='meta-live')renderSnaps();
   if(p==='meta-campanas'){ if(META_TOKEN&&META_ACCOUNT&&!metaCampaigns.length)loadMetaCampaigns(); }
   if(p==='meta-connect'){
@@ -1881,7 +1924,6 @@ function showPage(p){
   if(p==='config')loadConfigPage();
   if(p==='dashboard'&&META_TOKEN&&META_ACCOUNT){syncDashDateSelector();if(!metaCampaigns.length)initDashboardMeta();}
   if(p==='contenido'){loadContenido();const cm=document.getElementById('cont-cal-mes');if(cm&&!cm.value)cm.value=new Date().toISOString().substring(0,7);const cmp=document.getElementById('camp-mes-plan');if(cmp&&!cmp.value)cmp.value=new Date().toISOString().substring(0,7);}
-  if(p==='crm')renderCRM();
 }
 
 // ── LOAD ALL ─────────────────────────────────────────────────────────────────
@@ -2242,7 +2284,7 @@ async function sendIA(){const inp=document.getElementById('ia-inp');const msg=in
 async function askIA(msg){
   appendMsg('user',msg); iaHistory.push({role:'user',content:msg});
   const typing=appendMsg('typing','<span class="ld"></span><span class="ld"></span><span class="ld"></span>');
-  APIKEY=localStorage.getItem('lt_anthropic_key')||'';
+  APIKEY=localStorage.getItem('gx_anthropic_key')||'';
   if(!APIKEY){typing.remove();appendMsg('assistant','Para usar la IA, configura tu API key en Configuracion (menu lateral).');return;}
   const ctx=buildCtx();
   try{
@@ -2277,10 +2319,10 @@ function clearIA(){iaHistory=[];document.getElementById('ia-msgs').innerHTML='<d
 function saveBenchmarks(){
   const data={};
   ['hook','ctr','roas-min','roas','cpa','cpm','freq','p25','p100'].forEach(k=>{const el=document.getElementById('mb-'+k);if(el)data[k]=el.value;});
-  localStorage.setItem('lt_benchmarks',JSON.stringify(data)); toast('Targets guardados');
+  localStorage.setItem('gx_benchmarks',JSON.stringify(data)); toast('Targets guardados');
 }
 function loadBenchmarks(){
-  try{const data=JSON.parse(localStorage.getItem('lt_benchmarks')||'{}');
+  try{const data=JSON.parse(localStorage.getItem('gx_benchmarks')||'{}');
     ['hook','ctr','roas-min','roas','cpa','cpm','freq','p25','p100'].forEach(k=>{const el=document.getElementById('mb-'+k);if(el&&data[k])el.value=data[k];});
   }catch(e){}
 }
@@ -2288,23 +2330,23 @@ function loadBenchmarks(){
 // ── CONFIGURACION ─────────────────────────────────────────────────────────────
 function loadConfigPage(){
   const u=document.getElementById('cfg2-url'); const k=document.getElementById('cfg2-key');
-  if(u)u.value=localStorage.getItem('lt_sb_url')||'';
-  if(k)k.value=localStorage.getItem('lt_sb_key')||'';
+  if(u)u.value=localStorage.getItem('gx_sb_url')||'';
+  if(k)k.value=localStorage.getItem('gx_sb_key')||'';
   const a=document.getElementById('cfg2-api'); if(a)a.value='';
   const st=document.getElementById('api-status');
-  if(st){APIKEY=localStorage.getItem('lt_anthropic_key')||'';st.textContent=APIKEY?'API key configurada':'Sin API key — IA desactivada';st.style.color=APIKEY?'var(--green)':'var(--amber)';}
+  if(st){APIKEY=localStorage.getItem('gx_anthropic_key')||'';st.textContent=APIKEY?'API key configurada':'Sin API key — IA desactivada';st.style.color=APIKEY?'var(--green)':'var(--amber)';}
 }
 function saveSupabaseConfig(){
   const u=document.getElementById('cfg2-url').value.trim();
   const k=document.getElementById('cfg2-key').value.trim();
   if(!u||!k){toast('Ingresa URL y Key');return;}
-  localStorage.setItem('lt_sb_url',u); localStorage.setItem('lt_sb_key',k);
+  localStorage.setItem('gx_sb_url',u); localStorage.setItem('gx_sb_key',k);
   toast('Supabase guardado — reinicia sesion para aplicar');
 }
 function saveAPIKey(){
   const k=document.getElementById('cfg2-api').value.trim();
   if(!k){toast('Ingresa una API key valida');return;}
-  localStorage.setItem('lt_anthropic_key',k); APIKEY=k;
+  localStorage.setItem('gx_anthropic_key',k); APIKEY=k;
   document.getElementById('api-status').textContent='API key guardada y activa';
   document.getElementById('api-status').style.color='var(--green)';
   document.getElementById('ia-key-warn').style.display='none';
@@ -2312,7 +2354,7 @@ function saveAPIKey(){
 }
 function resetConfig(){
   if(!confirm('Eliminar toda la config local?'))return;
-  ['lt_sb_url','lt_sb_key','lt_anthropic_key','lt_benchmarks'].forEach(k=>localStorage.removeItem(k));
+  ['gx_sb_url','gx_sb_key','gx_anthropic_key','gx_benchmarks'].forEach(k=>localStorage.removeItem(k));
   toast('Config eliminada'); setTimeout(()=>location.reload(),1500);
 }
 function copySQL(){
@@ -2727,7 +2769,7 @@ function renderRanking() {
 // META ADS INTEGRATION
 // ══════════════════════════════════════════════════════════════════════════════
 
-let META_TOKEN = localStorage.getItem('lt_meta_token')||'';
+let META_TOKEN = localStorage.getItem('gx_meta_token')||'';
 let META_ACCOUNT = localStorage.getItem('lt_meta_account')||'';
 let metaCampaigns = [], metaAdsets = [], metaAds = [];
 let metaCampFilter = 'ALL';
@@ -2798,7 +2840,7 @@ function saveMetaConfig() {
   if(!token||!account) { toast('Ingresa token y account ID'); return; }
   META_TOKEN = token;
   META_ACCOUNT = account;
-  localStorage.setItem('lt_meta_token', token);
+  localStorage.setItem('gx_meta_token', token);
   localStorage.setItem('lt_meta_account', account);
   verifyMetaConnection();
 }
@@ -2825,7 +2867,7 @@ async function verifyMetaConnection() {
     // Si 400 = token expirado, pausar reintentos automáticos
     if(e.message && (e.message.includes('400') || e.message.includes('token'))) {
       META_TOKEN = '';
-      localStorage.removeItem('lt_meta_token');
+      localStorage.removeItem('gx_meta_token');
     }
     statusEl.innerHTML = `<span style="color:var(--red)">Token expirado — ve a Conectar Meta y pega uno nuevo</span>`;
     infoEl.innerHTML = `<div class="empty"><div class="empty-icon">⚠️</div><div class="empty-msg">Error de conexion</div><div class="empty-sub">${e.message}</div></div>`;
@@ -3206,7 +3248,7 @@ async function delSnap(id){
 
 // ── INIT META AL CARGAR ───────────────────────────────────────────────────────
 function initMeta() {
-  META_TOKEN = localStorage.getItem('lt_meta_token')||'';
+  META_TOKEN = localStorage.getItem('gx_meta_token')||'';
   META_ACCOUNT = localStorage.getItem('lt_meta_account')||'';
   if(META_TOKEN && META_ACCOUNT) {
     // Pre-llenar campos si existen
@@ -3824,8 +3866,8 @@ function calcMargen() {
 let ideas = [], contFilter2 = 'all';
 
 // Cargar meta semanal desde localStorage
-function getContMeta(){ return parseInt(localStorage.getItem('lt_cont_meta')||'5'); }
-function saveContMeta(){ localStorage.setItem('lt_cont_meta', document.getElementById('cont-meta-input')?.value||5); }
+function getContMeta(){ return parseInt(localStorage.getItem('gx_cont_meta')||'5'); }
+function saveContMeta(){ localStorage.setItem('gx_cont_meta', document.getElementById('cont-meta-input')?.value||5); }
 
 async function loadContenido() {
   if(!me) return;
@@ -4394,7 +4436,7 @@ function renderPlanMensual(){}
 // ══════════════════════════════════════════════════════════════════════════════
 // SISTEMA DE PERMISOS
 // ══════════════════════════════════════════════════════════════════════════════
-const ALL_SECTIONS = ['dashboard','meta','finanzas','contenido','crm','notas','ia'];
+const ALL_SECTIONS = ['dashboard','meta','finanzas','contenido','notas','ia'];
 
 function applyPermissions(permissions) {
   // null = acceso completo (admin)
@@ -4454,6 +4496,143 @@ async function saveUserAdmin() {
 // ── MOSTRAR permisos en la tabla de admin ─────────────────────────────────────
 // Parchamos loadAdmin para mostrar las secciones activas de cada usuario
 
+
+
+// ══════════════════════════════════════════════════════════════════════════════
+// BIBLIOTECA DE ANUNCIOS
+// ══════════════════════════════════════════════════════════════════════════════
+let bibAdsData = [];
+
+async function loadBibAds() {
+  if(!META_TOKEN || !META_ACCOUNT){ toast('Conecta Meta Ads primero'); showPage('meta-connect'); return; }
+  const grid = document.getElementById('bibads-grid');
+  const datePreset = document.getElementById('bibads-date')?.value || 'last_30d';
+  if(grid) grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--text2)"><span class="ld"></span><span class="ld"></span><span class="ld"></span><br><br>Cargando anuncios...</div>';
+
+  try {
+    const fields = [
+      'id','name','status','effective_status','adset_id','campaign_id',
+      `creative{thumbnail_url,image_url,body,title,call_to_action_type}`,
+      `insights.date_preset(${datePreset}){spend,actions,action_values,ctr,cpm,cpc,frequency,impressions,clicks}`
+    ].join(',');
+
+    const url = `https://graph.facebook.com/v19.0/act_${META_ACCOUNT}/ads?fields=${encodeURIComponent(fields)}&limit=100&access_token=${META_TOKEN}`;
+    const res = await fetch(url);
+    const json = await res.json();
+    if(json.error){ throw new Error(json.error.message); }
+
+    bibAdsData = (json.data||[]).map(ad => {
+      const ins = ad.insights?.data?.[0] || {};
+      const spend     = parseFloat(ins.spend||0);
+      const purchases = parseFloat(ins.actions?.find(a=>a.action_type==='purchase')?.value||0);
+      const revenue   = parseFloat(ins.action_values?.find(a=>a.action_type==='purchase')?.value||0);
+      const roas      = spend>0&&revenue>0 ? revenue/spend : 0;
+      const cpa       = purchases>0 ? spend/purchases : 0;
+      const ctr       = parseFloat(ins.ctr||0);
+      const cpm       = parseFloat(ins.cpm||0);
+      const frequency = parseFloat(ins.frequency||0);
+      const impressions = parseInt(ins.impressions||0);
+      const clicks    = parseInt(ins.clicks||0);
+      return {
+        id: ad.id, name: ad.name,
+        status: ad.effective_status || ad.status,
+        thumbnail: ad.creative?.thumbnail_url || ad.creative?.image_url || '',
+        title: ad.creative?.title || '',
+        body: ad.creative?.body || '',
+        spend, purchases, revenue, roas, cpa, ctr, cpm, frequency, impressions, clicks
+      };
+    });
+
+    renderBibAds();
+  } catch(e) {
+    if(grid) grid.innerHTML = `<div class="empty" style="grid-column:1/-1"><div class="empty-icon">&#9888;</div><div class="empty-msg">Error al cargar</div><div class="empty-sub">${e.message}</div></div>`;
+    if(e.message.includes('400') || e.message.includes('token')) META_TOKEN = '';
+  }
+}
+
+function renderBibAds() {
+  const grid     = document.getElementById('bibads-grid'); if(!grid) return;
+  const search   = (document.getElementById('bibads-search')?.value||'').toLowerCase();
+  const status   = document.getElementById('bibads-status')?.value||'all';
+  const sortBy   = document.getElementById('bibads-sort')?.value||'roas';
+  const countEl  = document.getElementById('bibads-count');
+
+  let list = [...bibAdsData];
+  if(search) list = list.filter(a=>(a.name||'').toLowerCase().includes(search));
+  if(status !== 'all') list = list.filter(a=>a.status===status);
+
+  list.sort((a,b)=>{
+    if(sortBy==='roas')      return b.roas-a.roas;
+    if(sortBy==='spend')     return b.spend-a.spend;
+    if(sortBy==='purchases') return b.purchases-a.purchases;
+    if(sortBy==='cpa_asc')   return (a.cpa||999999)-(b.cpa||999999);
+    return 0;
+  });
+
+  if(countEl) countEl.textContent = list.length + ' anuncio' + (list.length!==1?'s':'');
+
+  if(!list.length) {
+    grid.innerHTML = bibAdsData.length
+      ? '<div class="empty" style="grid-column:1/-1"><div class="empty-msg">Sin resultados para ese filtro</div></div>'
+      : '<div class="empty" style="grid-column:1/-1"><div class="empty-icon">&#127916;</div><div class="empty-msg">Sin anuncios</div><div class="empty-sub">Conecta Meta Ads y hace click en Actualizar</div></div>';
+    return;
+  }
+
+  grid.innerHTML = list.map(ad => {
+    const isActive = ad.status === 'ACTIVE';
+    const roasColor = ad.roas>=4?'var(--green)':ad.roas>=2?'var(--blue)':ad.roas>0?'var(--amber)':'var(--text3)';
+    const cpaFmt   = ad.cpa>0 ? '$'+fmtN(Math.round(ad.cpa)) : '—';
+    const spendFmt = ad.spend>0 ? '$'+ad.spend.toFixed(2) : '$0';
+    return `
+    <div style="background:var(--surface);border:0.5px solid var(--border);border-radius:var(--rl);overflow:hidden;transition:border-color .15s;cursor:default" onmouseover="this.style.borderColor='var(--border2)'" onmouseout="this.style.borderColor='var(--border)'">
+
+      <!-- Thumbnail -->
+      <div style="position:relative;aspect-ratio:1;background:var(--surface2);overflow:hidden">
+        ${ad.thumbnail
+          ? `<img src="${ad.thumbnail}" alt="${ad.name}" style="width:100%;height:100%;object-fit:cover" onerror="this.style.display='none'">`
+          : `<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:32px">&#127916;</div>`
+        }
+        <!-- Status badge -->
+        <div style="position:absolute;top:8px;right:8px;padding:3px 8px;border-radius:10px;font-size:10px;font-weight:700;background:${isActive?'#22c55e':'#94a3b8'};color:#fff">
+          ${isActive ? '● Activo' : '● Pausado'}
+        </div>
+        ${ad.roas>0?`<div style="position:absolute;bottom:8px;left:8px;padding:3px 9px;border-radius:10px;font-size:12px;font-weight:800;background:rgba(0,0,0,.75);color:${roasColor}">${ad.roas.toFixed(1)}x</div>`:''}
+      </div>
+
+      <!-- Info -->
+      <div style="padding:12px">
+        <div style="font-size:12px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text);margin-bottom:8px" title="${ad.name}">${ad.name}</div>
+
+        <!-- Metricas grid 2x2 -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+          <div style="background:var(--surface2);border-radius:6px;padding:7px 8px">
+            <div style="font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text2);margin-bottom:2px">Gasto</div>
+            <div style="font-size:14px;font-weight:700;color:var(--text)">${spendFmt}</div>
+          </div>
+          <div style="background:var(--surface2);border-radius:6px;padding:7px 8px">
+            <div style="font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text2);margin-bottom:2px">ROAS</div>
+            <div style="font-size:14px;font-weight:700;color:${roasColor}">${ad.roas>0?ad.roas.toFixed(1)+'x':'—'}</div>
+          </div>
+          <div style="background:var(--surface2);border-radius:6px;padding:7px 8px">
+            <div style="font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text2);margin-bottom:2px">CPA</div>
+            <div style="font-size:14px;font-weight:700;color:var(--text)">${cpaFmt}</div>
+          </div>
+          <div style="background:var(--surface2);border-radius:6px;padding:7px 8px">
+            <div style="font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text2);margin-bottom:2px">Compras</div>
+            <div style="font-size:14px;font-weight:700;color:var(--text)">${ad.purchases>0?Math.round(ad.purchases):'—'}</div>
+          </div>
+        </div>
+
+        <!-- CTR y Frecuencia -->
+        <div style="display:flex;gap:8px;margin-top:6px">
+          ${ad.ctr>0?`<span style="font-size:11px;color:var(--text2)">CTR: <strong>${ad.ctr.toFixed(2)}%</strong></span>`:''}
+          ${ad.cpm>0?`<span style="font-size:11px;color:var(--text2)">CPM: <strong>$${ad.cpm.toFixed(2)}</strong></span>`:''}
+          ${ad.frequency>0?`<span style="font-size:11px;color:var(--text2)">Frec: <strong>${ad.frequency.toFixed(1)}</strong></span>`:''}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
 
 
 
