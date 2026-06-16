@@ -213,7 +213,14 @@ tr:hover td{background:var(--surface2)}
 <!-- SETUP -->
 <div id="setup-screen" style="display:none">
   <div class="setup-card">
-    <div><span class="auth-brand-name">GOTIX</span><span class="auth-brand-tag">Beta</span></div>
+    <div><div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
+        <svg width="28" height="34" viewBox="0 0 32 38" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="25" cy="5" r="2.5" fill="#3a55b0"/>
+          <circle cx="15" cy="14" r="10" stroke="#3a55b0" stroke-width="3.5" fill="none" stroke-linecap="round" stroke-dasharray="52 10" stroke-dashoffset="5"/>
+          <path d="M7 22 Q7 34 15 34 Q23 34 23 26" stroke="#3a55b0" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+        </svg>
+        <span class="auth-brand-name">GOTIX</span><span class="auth-brand-tag">Beta</span>
+      </div></div>
     <div class="auth-sub">Bienvenido a GOTIX — Configuracion inicial</div>
     <div class="field"><label>Supabase URL</label><input id="cfg-url" type="url" placeholder="https://xxxx.supabase.co"/></div>
     <div class="field"><label>Supabase Anon Key</label><input id="cfg-key" type="password" placeholder="eyJhbGci..."/></div>
@@ -228,7 +235,14 @@ tr:hover td{background:var(--surface2)}
 <!-- AUTH -->
 <div id="auth-screen" style="display:none">
   <div class="auth-card">
-    <div><span class="auth-brand-name">GOTIX</span><span class="auth-brand-tag">Beta</span></div>
+    <div><div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
+        <svg width="28" height="34" viewBox="0 0 32 38" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="25" cy="5" r="2.5" fill="#3a55b0"/>
+          <circle cx="15" cy="14" r="10" stroke="#3a55b0" stroke-width="3.5" fill="none" stroke-linecap="round" stroke-dasharray="52 10" stroke-dashoffset="5"/>
+          <path d="M7 22 Q7 34 15 34 Q23 34 23 26" stroke="#3a55b0" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+        </svg>
+        <span class="auth-brand-name">GOTIX</span><span class="auth-brand-tag">Beta</span>
+      </div></div>
     <div class="auth-sub">Sistema Operativo</div>
     <div class="auth-tabs">
       <button class="auth-tab active" onclick="switchTab('login')">Ingresar</button>
@@ -253,7 +267,7 @@ tr:hover td{background:var(--surface2)}
     <div class="nav-item active" onclick="showPage('dashboard')" data-page="dashboard" data-section="dashboard"><span class="ni">&#9672;</span><span>Dashboard</span></div>
     <div class="sb-section">Meta Ads</div>
     <div class="nav-item" onclick="showPage('meta-connect')" data-page="meta-connect" data-section="meta"><span class="ni">&#128279;</span><span>Conectar Meta</span></div>
-    <div class="nav-item" onclick="showPage('meta-campanas')" data-page="meta-campanas" data-section="meta"><span class="ni">&#128202;</span><span>Campanas</span></div>
+    <div class="nav-item" onclick="showPage('meta-campanas')" data-page="meta-campanas" data-section="meta"><span class="ni">&#128202;</span><span>Organico</span></div>
     <div class="nav-item" onclick="showPage('meta-live')" data-page="meta-live" data-section="meta"><span class="ni">&#9673;</span><span>Snapshots</span></div>
     <div class="nav-item" onclick="showPage('bib-ads')" data-page="bib-ads" data-section="meta"><span class="ni">&#127916;</span><span>Biblioteca Ads</span></div>
     <div class="nav-item" onclick="showPage('guiones')" data-page="guiones" data-section="meta"><span class="ni">&#9681;</span><span>Guiones</span></div>
@@ -263,7 +277,7 @@ tr:hover td{background:var(--surface2)}
     <div class="nav-item" onclick="showPage('finanzas')" data-page="finanzas" data-section="finanzas"><span class="ni">&#9672;</span><span>Finanzas</span></div>
     <div class="nav-item" onclick="showPage('contenido')" data-page="contenido" data-section="contenido"><span class="ni">&#9681;</span><span>Contenido</span></div>
     <div class="nav-item" onclick="showPage('notas')" data-page="notas" data-section="notas"><span class="ni">&#128221;</span><span>Notas</span></div>
-    <div class="nav-item" onclick="showPage('campanas-contenido')" data-page="campanas-contenido" data-section="contenido"><span class="ni">&#127775;</span><span>Campanas</span></div>
+    <div class="nav-item" onclick="showPage('campanas-contenido')" data-page="campanas-contenido" data-section="contenido"><span class="ni">&#127775;</span><span>Organico</span></div>
     <div class="sb-section">Inteligencia</div>
     <div class="nav-item" onclick="showPage('ia')" data-page="ia" data-section="ia"><span class="ni">&#10022;</span><span>IA Estrategica</span></div>
     <div class="sb-section">Sistema</div>
@@ -1031,22 +1045,13 @@ tr:hover td{background:var(--surface2)}
         <button class="btn btn-accent" onclick="openModal('modal-campana')">+ Nueva campana</button>
       </div>
     </div>
-  </div>
-
-
-
-
-</div>
-
-
-</div>
 
 
 <!-- CAMPANAS DE CONTENIDO -->
 <div id="page-campanas-contenido" class="page">
   <div class="page-hdr">
-    <div><div class="page-title">&#127775; Campanas de Contenido</div>
-    <div class="page-sub">Planificacion creativa — objetivo, concepto, piezas y calendario</div></div>
+    <div><div class="page-title">&#127341; Organico</div>
+    <div class="page-sub">Planificacion de contenido organico — campanas, piezas y calendario</div></div>
     <button class="btn btn-accent" onclick="openModal('modal-campana')">+ Nueva campana</button>
   </div>
   <div id="contentCamps-list">
@@ -1434,7 +1439,7 @@ create policy "own" on contacts for all using (auth.uid()=user_id);</div>
 <!-- Modal Nueva Campana -->
 <div class="modal-backdrop" id="modal-campana">
   <div class="modal" style="max-width:600px">
-    <div class="modal-title">&#127775; Nueva campana</div>
+    <div class="modal-title">&#127341; Nueva campana organica</div>
     <div class="form-row">
       <div class="fg wide"><label>Nombre de la campana</label><input id="camp-nombre" type="text" placeholder="Ej: Campana Mundial, Drop Invierno 2026..."/></div>
       <div class="fg"><label>Color en calendario</label>
@@ -1538,7 +1543,7 @@ create policy "own" on contacts for all using (auth.uid()=user_id);</div>
 <!-- Modal Editar Campana -->
 <div class="modal-backdrop" id="modal-camp-edit">
   <div class="modal" style="max-width:600px">
-    <div class="modal-title">Editar campana</div>
+    <div class="modal-title">Editar campana organica</div>
     <input type="hidden" id="camp-edit-id"/>
     <div class="form-row">
       <div class="fg wide"><label>Nombre</label><input id="camp-edit-nombre" type="text"/></div>
