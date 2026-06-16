@@ -4562,20 +4562,48 @@ async function loadBibAds() {
   if(grid) grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:60px;color:var(--text2)"><span class="ld"></span><span class="ld"></span><span class="ld"></span><br><br>Cargando tu biblioteca de anuncios...</div>';
 
   try {
-    // Pedimos image_url además de thumbnail para mayor calidad
+    // PASO 1: traer anuncios con info básica + insights (sin creative para no sobrecargar)
     const insFields = `spend,actions,action_values,ctr,cpm,cpc,frequency,impressions,clicks`;
-    const fields = [
-      'id','name','status','effective_status','adset_id','campaign_id','adset{name}','campaign{name}',
-      `creative{id,name,thumbnail_url,image_url,picture,body,title,call_to_action_type,object_type,video_id}`,
+    const fields1 = [
+      'id','name','status','effective_status',
+      'adset{name}','campaign{name}',
       `insights.date_preset(${datePreset}){${insFields}}`
     ].join(',');
 
-    const url = `https://graph.facebook.com/v19.0/act_${META_ACCOUNT}/ads?fields=${encodeURIComponent(fields)}&limit=200&access_token=${META_TOKEN}`;
-    const res = await fetch(url);
-    const json = await res.json();
-    if(json.error) throw new Error(json.error.message);
+    // Limit 50 — suficiente para los anuncios activos relevantes
+    let allAds = [];
+    let nextUrl = `https://graph.facebook.com/v19.0/act_${META_ACCOUNT}/ads?fields=${encodeURIComponent(fields1)}&limit=50&filtering=${encodeURIComponent(JSON.stringify([{field:'effective_status',operator:'IN',value:['ACTIVE','PAUSED']}]))}&access_token=${META_TOKEN}`;
 
-    bibAdsData = (json.data||[]).map(ad => {
+    // Traer hasta 2 páginas (100 anuncios máx)
+    let pages = 0;
+    while(nextUrl && pages < 2) {
+      const res = await fetch(nextUrl);
+      const json = await res.json();
+      if(json.error) throw new Error(json.error.message);
+      allAds = allAds.concat(json.data||[]);
+      nextUrl = json.paging?.next || null;
+      pages++;
+    }
+
+    // PASO 2: traer creativos en lotes de 20 (batch)
+    const adIds = allAds.map(a=>a.id);
+    const creativeMap = {};
+    for(let i=0; i<adIds.length; i+=20) {
+      const batch = adIds.slice(i, i+20);
+      const batchFields = 'id,creative{id,name,thumbnail_url,object_type,video_id,body,title}';
+      const batchUrl = `https://graph.facebook.com/v19.0/?ids=${batch.join(',')}&fields=${encodeURIComponent(batchFields)}&access_token=${META_TOKEN}`;
+      try {
+        const r = await fetch(batchUrl);
+        const j = await r.json();
+        if(!j.error) {
+          Object.entries(j).forEach(([id, ad]) => {
+            creativeMap[id] = ad.creative || {};
+          });
+        }
+      } catch(e) { /* si falla un batch de creativos, seguimos igual */ }
+    }
+
+    bibAdsData = allAds.map(ad => {
       const ins       = ad.insights?.data?.[0] || {};
       const spend     = parseFloat(ins.spend||0);
       const purchases = parseFloat(ins.actions?.find(a=>a.action_type==='purchase')?.value||0);
@@ -4586,11 +4614,9 @@ async function loadBibAds() {
       const cpm       = parseFloat(ins.cpm||0);
       const freq      = parseFloat(ins.frequency||0);
       const clicks    = parseInt(ins.clicks||0);
-      const cr        = ad.creative || {};
-
-      // Priorizar image_url (alta res) > picture > thumbnail_url (baja res)
-      const imgUrl = cr.image_url || cr.picture || cr.thumbnail_url || '';
-      const isVideo = cr.object_type === 'VIDEO' || !!cr.video_id;
+      const cr        = creativeMap[ad.id] || {};
+      const imgUrl    = cr.thumbnail_url || '';
+      const isVideo   = cr.object_type === 'VIDEO' || !!cr.video_id;
 
       return {
         id: ad.id, name: ad.name,
@@ -4605,7 +4631,8 @@ async function loadBibAds() {
 
     renderBibAds();
   } catch(e) {
-    if(grid) grid.innerHTML = `<div class="empty" style="grid-column:1/-1"><div class="empty-icon">&#9888;</div><div class="empty-msg">Error al cargar</div><div class="empty-sub">${e.message.slice(0,120)}</div></div>`;
+    if(grid) grid.innerHTML = `<div class="empty" style="grid-column:1/-1"><div class="empty-icon">&#9888;</div><div class="empty-msg">Error al cargar</div><div class="empty-sub">${e.message.slice(0,180)}</div></div>`;
+    console.error('loadBibAds error:', e);
     if(e.message.includes('400') || e.message.includes('token')) META_TOKEN = '';
   }
 }
