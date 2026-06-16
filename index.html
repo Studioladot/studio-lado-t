@@ -4559,37 +4559,65 @@ async function loadBibAds() {
   if(!META_TOKEN || !META_ACCOUNT){ toast('Conecta Meta Ads primero'); showPage('meta-connect'); return; }
   const grid = document.getElementById('bibads-grid');
   const datePreset = document.getElementById('bibads-date')?.value || 'last_30d';
-  if(grid) grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:60px;color:var(--text2)"><span class="ld"></span><span class="ld"></span><span class="ld"></span><br><br>Cargando tu biblioteca de anuncios...</div>';
+  if(grid) grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:60px;color:var(--text2)"><span class="ld"></span><span class="ld"></span><span class="ld"></span><br><br>Cargando anuncios...</div>';
 
   try {
-    // Pedimos image_url además de thumbnail para mayor calidad
-    const insFields = `spend,actions,action_values,ctr,cpm,cpc,frequency,impressions,clicks`;
-    const fields = [
-      'id','name','status','effective_status','adset_id','campaign_id','adset{name}','campaign{name}',
-      `creative{id,name,thumbnail_url,image_url,picture,body,title,call_to_action_type,object_type,video_id}`,
+    // ── PASO 1: anuncios con insights (sin creative, limit bajo) ──────────────
+    const insFields = 'spend,actions,action_values,ctr,cpm,cpc,frequency,impressions,clicks';
+    const step1Fields = [
+      'id','name','status','effective_status',
+      'adset{name}','campaign{name}',
       `insights.date_preset(${datePreset}){${insFields}}`
     ].join(',');
 
-    const url = `https://graph.facebook.com/v19.0/act_${META_ACCOUNT}/ads?fields=${encodeURIComponent(fields)}&limit=200&access_token=${META_TOKEN}`;
-    const res = await fetch(url);
-    const json = await res.json();
-    if(json.error) throw new Error(json.error.message);
+    // Solo activos + pausados, máx 50 por página
+    const filterParam = encodeURIComponent(JSON.stringify([
+      {field:'effective_status',operator:'IN',value:['ACTIVE','PAUSED']}
+    ]));
+    let allAds = [];
+    let nextUrl = `https://graph.facebook.com/v19.0/act_${META_ACCOUNT}/ads?fields=${encodeURIComponent(step1Fields)}&filtering=${filterParam}&limit=50&access_token=${META_TOKEN}`;
 
-    bibAdsData = (json.data||[]).map(ad => {
-      const ins       = ad.insights?.data?.[0] || {};
-      const spend     = parseFloat(ins.spend||0);
-      const purchases = parseFloat(ins.actions?.find(a=>a.action_type==='purchase')?.value||0);
-      const revenue   = parseFloat(ins.action_values?.find(a=>a.action_type==='purchase')?.value||0);
-      const roas      = spend>0&&revenue>0 ? revenue/spend : 0;
-      const cpa       = purchases>0 ? spend/purchases : 0;
-      const ctr       = parseFloat(ins.ctr||0);
-      const cpm       = parseFloat(ins.cpm||0);
-      const freq      = parseFloat(ins.frequency||0);
-      const clicks    = parseInt(ins.clicks||0);
-      const cr        = ad.creative || {};
+    // Máx 2 páginas = 100 anuncios
+    let pages = 0;
+    while(nextUrl && pages < 2) {
+      const r = await fetch(nextUrl);
+      const j = await r.json();
+      if(j.error) throw new Error(j.error.message);
+      allAds = allAds.concat(j.data || []);
+      nextUrl = j.paging?.next || null;
+      pages++;
+    }
 
-      // Priorizar image_url (alta res) > picture > thumbnail_url (baja res)
-      const imgUrl = cr.image_url || cr.picture || cr.thumbnail_url || '';
+    if(!allAds.length) { bibAdsData = []; renderBibAds(); return; }
+
+    // ── PASO 2: creativos en lotes de 20 (solo thumbnail + object_type) ───────
+    const creativeMap = {};
+    const ids = allAds.map(a => a.id);
+    for(let i = 0; i < ids.length; i += 20) {
+      const batch = ids.slice(i, i + 20).join(',');
+      // Pedimos solo lo mínimo necesario del creative
+      const crFields = encodeURIComponent('id,creative{id,thumbnail_url,image_url,object_type,video_id}');
+      try {
+        const r = await fetch(`https://graph.facebook.com/v19.0/?ids=${batch}&fields=${crFields}&access_token=${META_TOKEN}`);
+        const j = await r.json();
+        if(!j.error) {
+          Object.entries(j).forEach(([adId, adData]) => {
+            creativeMap[adId] = adData.creative || {};
+          });
+        }
+      } catch(e) { /* continuar aunque falle un lote */ }
+    }
+
+    // ── MAPEO FINAL ───────────────────────────────────────────────────────────
+    bibAdsData = allAds.map(ad => {
+      const ins  = ad.insights?.data?.[0] || {};
+      const spend = parseFloat(ins.spend || 0);
+      const purchases = parseFloat(ins.actions?.find(a => a.action_type === 'purchase')?.value || 0);
+      const revenue   = parseFloat(ins.action_values?.find(a => a.action_type === 'purchase')?.value || 0);
+      const roas = spend > 0 && revenue > 0 ? revenue / spend : 0;
+      const cpa  = purchases > 0 ? spend / purchases : 0;
+      const cr   = creativeMap[ad.id] || {};
+      const imgUrl = cr.image_url || cr.thumbnail_url || '';
       const isVideo = cr.object_type === 'VIDEO' || !!cr.video_id;
 
       return {
@@ -4598,15 +4626,22 @@ async function loadBibAds() {
         adsetName:    ad.adset?.name    || '',
         campaignName: ad.campaign?.name || '',
         imgUrl, isVideo,
-        title: cr.title || '', body: cr.body || '',
-        spend, purchases, revenue, roas, cpa, ctr, cpm, freq, clicks
+        spend,
+        purchases,
+        revenue,
+        roas,
+        cpa,
+        ctr:   parseFloat(ins.ctr       || 0),
+        cpm:   parseFloat(ins.cpm       || 0),
+        freq:  parseFloat(ins.frequency || 0),
+        clicks: parseInt(ins.clicks     || 0),
       };
     });
 
     renderBibAds();
   } catch(e) {
-    if(grid) grid.innerHTML = `<div class="empty" style="grid-column:1/-1"><div class="empty-icon">&#9888;</div><div class="empty-msg">Error al cargar</div><div class="empty-sub">${e.message.slice(0,120)}</div></div>`;
-    if(e.message.includes('400') || e.message.includes('token')) META_TOKEN = '';
+    if(grid) grid.innerHTML = `<div class="empty" style="grid-column:1/-1"><div class="empty-icon">&#9888;</div><div class="empty-msg">Error al cargar</div><div class="empty-sub">${e.message.slice(0,180)}</div></div>`;
+    console.error('loadBibAds:', e);
   }
 }
 
@@ -4655,8 +4690,8 @@ function renderBibAds() {
       <!-- THUMBNAIL — ratio 4:5 para que se vean grandes y con calidad -->
       <div style="position:relative;width:100%;padding-bottom:100%;background:var(--surface2);overflow:hidden">
         ${ad.imgUrl
-          ? `<img src="${ad.imgUrl}" alt="${ad.name}" loading="lazy" referrerpolicy="no-referrer"
-              style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;object-position:center;image-rendering:auto"
+          ? `<img src="${ad.imgUrl}" alt="${ad.name}" loading="lazy"
+              style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;object-position:center"
               onerror="this.parentElement.innerHTML='<div style=\\'position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:36px;background:var(--surface2)\\'>&#127916;</div>'">`
           : `<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:40px">&#127916;</div>`
         }
