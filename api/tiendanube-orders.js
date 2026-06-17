@@ -1,6 +1,6 @@
 // api/tiendanube-orders.js
-// VERSION CORREGIDA: ahora detecta y reporta errores reales de la API de Tienda Nube
-// en vez de devolver $0 en silencio cuando algo falla.
+// Ahora acepta ?from=YYYY-MM-DD&to=YYYY-MM-DD como query params.
+// Si no se pasan, usa los ultimos 30 dias por defecto (comportamiento anterior).
 export default async function handler(req, res) {
   const authHeader = req.headers.authorization || '';
   const jwt = authHeader.replace('Bearer ', '');
@@ -22,8 +22,6 @@ export default async function handler(req, res) {
     }
 
     // 2. Buscar la conexion de Tienda Nube de este usuario
-    // Pedimos ordenado por created_at desc para asegurarnos de tomar la MAS RECIENTE
-    // si por algun motivo hay mas de una fila para el mismo user_id.
     const connRes = await fetch(
       `${process.env.SUPABASE_URL}/rest/v1/tiendanube_connections?user_id=eq.${userId}&select=*`,
       {
@@ -44,16 +42,31 @@ export default async function handler(req, res) {
       return res.status(404).json({ error: 'Tienda Nube no conectada' });
     }
 
-    // 3. Traer las ordenes de los ultimos 30 dias
-    const since = new Date();
-    since.setDate(since.getDate() - 30);
-    const sinceISO = since.toISOString();
+    // 3. Resolver el rango de fechas: personalizado (from/to) o ultimos 30 dias por defecto
+    const { from, to } = req.query;
+    let sinceISO, untilISO;
+    if (from && to) {
+      const fromDate = new Date(`${from}T00:00:00`);
+      const toDate = new Date(`${to}T23:59:59`);
+      if (isNaN(fromDate.getTime()) || isNaN(toDate.getTime())) {
+        return res.status(400).json({ error: 'Fechas invalidas. Formato esperado: YYYY-MM-DD' });
+      }
+      sinceISO = fromDate.toISOString();
+      untilISO = toDate.toISOString();
+    } else {
+      const since = new Date();
+      since.setDate(since.getDate() - 30);
+      sinceISO = since.toISOString();
+      untilISO = new Date().toISOString();
+    }
+
+    // 4. Traer las ordenes del rango elegido
     let allOrders = [];
     let page = 1;
     let hasMore = true;
-    while (hasMore && page <= 10) {
+    while (hasMore && page <= 20) {
       const ordersRes = await fetch(
-        `https://api.tiendanube.com/v1/${conn.store_id}/orders?created_at_min=${sinceISO}&per_page=50&page=${page}`,
+        `https://api.tiendanube.com/v1/${conn.store_id}/orders?created_at_min=${sinceISO}&created_at_max=${untilISO}&per_page=50&page=${page}`,
         {
           headers: {
             'Authentication': `bearer ${conn.access_token}`,
@@ -61,9 +74,6 @@ export default async function handler(req, res) {
           },
         }
       );
-
-      // FIX CLAVE: si la respuesta no es 2xx, no seguimos como si no hubiera nada.
-      // Devolvemos el error real para poder diagnosticarlo.
       if (!ordersRes.ok) {
         const errBody = await ordersRes.text();
         console.error('Tienda Nube API error:', ordersRes.status, errBody);
@@ -73,7 +83,6 @@ export default async function handler(req, res) {
           store_id: conn.store_id,
         });
       }
-
       const orders = await ordersRes.json();
       if (!Array.isArray(orders) || orders.length === 0) {
         hasMore = false;
@@ -84,7 +93,7 @@ export default async function handler(req, res) {
       }
     }
 
-    // 4. Calcular bruto, envio y neto
+    // 5. Calcular bruto, envio y neto
     let bruto = 0;
     let envio = 0;
     allOrders.forEach((order) => {
@@ -104,8 +113,7 @@ export default async function handler(req, res) {
       envio: Math.round(envio),
       neto: Math.round(neto),
       ordenes: allOrders.length,
-      ordenes_totales_traidas: allOrders.length, // antes de filtrar por 'paid'
-      periodo: 'ultimos_30_dias',
+      periodo: { desde: sinceISO, hasta: untilISO },
     });
   } catch (err) {
     console.error('Error en tiendanube-orders:', err);
