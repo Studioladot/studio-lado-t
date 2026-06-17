@@ -279,6 +279,7 @@ tr:hover td{background:var(--surface2)}
     <div class="nav-item" onclick="showPage('biblioteca')" data-page="biblioteca" data-section="meta"><span class="ni"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><rect x="1" y="2" width="4" height="15" rx="1"/><rect x="7" y="1" width="4" height="16" rx="1"/><path d="M13 5l4 12"/><path d="M13 5l-1 .3"/></svg></span><span>Biblioteca</span></div>
     <div class="nav-item" onclick="showPage('benchmarks')" data-page="benchmarks" data-section="meta"><span class="ni"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M1 15h16"/><path d="M3 15V9"/><path d="M7 15V6"/><path d="M11 15V3"/><path d="M15 15V8"/></svg></span><span>Benchmarks</span></div>
     <div class="sb-section">Negocio</div>
+    <div class="nav-item" onclick="showPage('tiendanube-connect')" data-page="tiendanube-connect" data-section="finanzas"><span class="ni"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6l1.5-3.5h9L15 6"/><path d="M3 6v8a1 1 0 001 1h10a1 1 0 001-1V6"/><path d="M7 15v-4a1 1 0 011-1h2a1 1 0 011 1v4"/><path d="M3 6h12"/></svg></span><span>Conectar Tienda Nube</span></div>
     <div class="nav-item" onclick="showPage('finanzas')" data-page="finanzas" data-section="finanzas"><span class="ni"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="9" cy="9" r="7.5"/><path d="M9 4.5v1m0 7v1M6.5 7c0-.8.7-1.5 2.5-1.5S11.5 6 11.5 7s-1 1.5-2.5 1.5S6.5 9.2 6.5 10 7.2 11.5 9 11.5s2.5-.7 2.5-1.5"/></svg></span><span>Finanzas</span></div>
     <div class="nav-item" onclick="showPage('contenido')" data-page="contenido" data-section="contenido"><span class="ni"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><rect x="1" y="1" width="7" height="4" rx="1"/><rect x="10" y="1" width="7" height="4" rx="1"/><rect x="1" y="7" width="7" height="10" rx="1"/><rect x="10" y="7" width="7" height="10" rx="1"/></svg></span><span>Contenido</span></div>
     <div class="nav-item" onclick="showPage('notas')" data-page="notas" data-section="notas"><span class="ni"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14l2-5.5L14.5 1l3 3L9 12.5z"/><path d="M4 14h4"/><path d="M10.5 3.5l3 3"/></svg></span><span>Notas</span></div>
@@ -627,6 +628,60 @@ tr:hover td{background:var(--surface2)}
   </div>
 </div>
 
+<!-- CONECTAR TIENDA NUBE -->
+<div id="page-tiendanube-connect" class="page">
+  <div class="page-hdr">
+    <div><div class="page-title">&#127968; Conectar Tienda Nube</div>
+    <div class="page-sub">Trae tus ventas online reales a Finanzas, automaticamente</div></div>
+  </div>
+
+  <div id="tn-not-connected" style="display:none">
+    <div class="card" style="max-width:560px;text-align:center;padding:36px 28px">
+      <div style="font-size:36px;margin-bottom:14px">&#127968;</div>
+      <div style="font-size:17px;font-weight:700;margin-bottom:8px">Conecta tu tienda</div>
+      <div style="font-size:13px;color:var(--text2);margin-bottom:22px;line-height:1.6">
+        Al conectar, GOTIX trae automaticamente tus ventas online y calcula el neto real
+        (sin contar el envio, para que el numero no este inflado).
+      </div>
+      <button class="btn btn-accent" onclick="connectTiendaNube()" style="padding:11px 24px">Conectar con Tienda Nube</button>
+    </div>
+  </div>
+
+  <div id="tn-connected" style="display:none">
+    <div class="card" style="max-width:560px">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px">
+        <div style="width:44px;height:44px;border-radius:50%;background:var(--green-l);display:flex;align-items:center;justify-content:center;font-size:20px">&#9989;</div>
+        <div>
+          <div style="font-size:15px;font-weight:700" id="tn-store-name">—</div>
+          <div style="font-size:12px;color:var(--text2)">Conectado correctamente</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-outline btn-sm" onclick="loadTiendaNubeSales()">&#8635; Sincronizar ventas ahora</button>
+        <button class="btn btn-red btn-sm" onclick="disconnectTiendaNube()">Desconectar</button>
+      </div>
+    </div>
+
+    <div class="card" style="max-width:560px;margin-top:14px">
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text2);margin-bottom:10px">Resumen — ultimos 30 dias</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div style="background:var(--surface2);border-radius:var(--r);padding:12px">
+          <div style="font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Bruto (con envio)</div>
+          <div style="font-size:18px;font-weight:700" id="tn-bruto">$0</div>
+        </div>
+        <div style="background:var(--surface2);border-radius:var(--r);padding:12px">
+          <div style="font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Envio cobrado</div>
+          <div style="font-size:18px;font-weight:700;color:var(--text2)" id="tn-envio">$0</div>
+        </div>
+        <div style="background:var(--green-l);border-radius:var(--r);padding:12px;grid-column:1/-1">
+          <div style="font-size:10px;color:var(--green);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;font-weight:700">Neto real (sin envio)</div>
+          <div style="font-size:22px;font-weight:800;color:var(--green)" id="tn-neto">$0</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- FINANZAS -->
 <div id="page-finanzas" class="page">
   <div class="page-hdr">
@@ -738,6 +793,27 @@ tr:hover td{background:var(--surface2)}
 
   <!-- VENTAS TAB -->
   <div id="fin-tab-ventas" style="display:none">
+
+    <!-- Resumen combinado: Tienda Nube (neto) + Manual = Total Real -->
+    <div class="card" id="ventas-resumen-combinado" style="margin-bottom:14px">
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text2);margin-bottom:10px">Resumen del mes — numero real (sin envio)</div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">
+        <div style="background:var(--surface2);border-radius:var(--r);padding:12px">
+          <div style="font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">&#127968; Tienda Nube (neto)</div>
+          <div style="font-size:18px;font-weight:700" id="vres-tn">$0</div>
+        </div>
+        <div style="background:var(--surface2);border-radius:var(--r);padding:12px">
+          <div style="font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">&#127970; Local / Manual</div>
+          <div style="font-size:18px;font-weight:700" id="vres-manual">$0</div>
+        </div>
+        <div style="background:var(--green-l);border-radius:var(--r);padding:12px">
+          <div style="font-size:10px;color:var(--green);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;font-weight:700">Total real</div>
+          <div style="font-size:20px;font-weight:800;color:var(--green)" id="vres-total">$0</div>
+        </div>
+      </div>
+      <div style="font-size:11px;color:var(--text3);margin-top:8px">El envio cobrado no se cuenta como venta para que el numero no este inflado. <span onclick="showPage('tiendanube-connect')" style="color:var(--accent);cursor:pointer;text-decoration:underline">Ver detalle de Tienda Nube</span></div>
+    </div>
+
     <div style="display:flex;gap:8px;margin-bottom:14px;align-items:center;flex-wrap:wrap">
       <input type="month" id="ventas-mes-filter" style="border:0.5px solid var(--border);border-radius:var(--r);padding:7px 10px;font-size:13px;background:var(--surface);color:var(--text);outline:none" onchange="renderVentasDia()"/>
       <div style="display:flex;border:0.5px solid var(--border);border-radius:var(--r);overflow:hidden">
@@ -1421,7 +1497,8 @@ create policy "own" on contacts for all using (auth.uid()=user_id);</div>
 <!-- Modal Venta del dia -->
 <div class="modal-backdrop" id="modal-venta-dia">
   <div class="modal" style="max-width:420px">
-    <div class="modal-title">Registrar venta del dia</div>
+    <div class="modal-title">Registrar venta manual</div>
+    <div style="font-size:12px;color:var(--text2);margin-bottom:12px">Para ventas que no pasan por Tienda Nube: local, showroom, redes, transferencia directa, etc.</div>
     <div class="form-row">
       <div class="fg"><label>Fecha</label><input id="v-fecha" type="date"/></div>
       <div class="fg"><label>Monto total (ARS)</label><input id="v-monto" type="number" placeholder="0"/></div>
@@ -1430,10 +1507,11 @@ create policy "own" on contacts for all using (auth.uid()=user_id);</div>
       <div class="fg"><label>Unidades vendidas</label><input id="v-unidades" type="number" placeholder="0"/></div>
       <div class="fg"><label>Canal</label>
         <select id="v-canal">
-          <option>TiendaNube</option>
+          <option>Local / Showroom</option>
           <option>Instagram Direct</option>
           <option>WhatsApp</option>
-          <option>Showroom</option>
+          <option>Efectivo</option>
+          <option>Transferencia</option>
           <option>Otro</option>
         </select>
       </div>
@@ -2001,6 +2079,7 @@ function showPage(p){
   }
   if(p==='biblioteca')renderBib();
   if(p==='finanzas')loadFinanzas();
+  if(p==='tiendanube-connect')loadTiendaNubeStatus();
   if(p==='notas')loadNotas();
   if(p==='campanas-contenido')loadCampanas();
   if(p==='admin')loadAdmin();
@@ -3474,14 +3553,17 @@ let gastosFilter = 'all', finActiveTab = 'panel';
 async function loadFinanzas() {
   if (!me) return;
   const uid = me.id;
-  const [gRes, vRes, cRes] = await Promise.all([
+  const [gRes, vRes, cRes, tRes] = await Promise.all([
     db.from('expenses').select('*').eq('user_id', uid).order('dia_vencimiento', {ascending: true}),
     db.from('daily_sales').select('*').eq('user_id', uid).order('fecha', {ascending: false}),
     db.from('fin_config').select('*').eq('user_id', uid).maybeSingle(),
+    db.from('tiendanube_connections').select('*').eq('user_id', uid).maybeSingle(),
   ]);
   gastos    = gRes.data || [];
   ventasDia = vRes.data || [];
   if (cRes.data) finConfig = cRes.data;
+  tnConnection = tRes.data || null;
+  if(tnConnection) loadTiendaNubeSales();
   renderFinPanel();
   renderGastos();
   renderVentasDia();
@@ -3728,11 +3810,78 @@ function renderVentasDia() {
   }
   const total = list.reduce((a,v)=>a+(+v.monto||0),0);
   setT('ventas-dia-total','$'+fmtN(total));
+
+  // Resumen combinado: Tienda Nube (neto, sin envio) + Manual = Total real
+  const tnNeto = tnConnection ? (tnSalesSummary.neto||0) : 0;
+  setT('vres-tn', '$'+fmtN(tnNeto));
+  setT('vres-manual', '$'+fmtN(total));
+  setT('vres-total', '$'+fmtN(tnNeto + total));
 }
 
 async function delVentaDia(id) {
   await db.from('daily_sales').delete().eq('id',id);
   ventasDia = ventasDia.filter(v=>v.id!==id); renderVentasDia(); renderFinPanel(); toast('Eliminado');
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// TIENDA NUBE — Conexion OAuth + ventas netas (sin envio)
+// ══════════════════════════════════════════════════════════════════════════════
+let tnConnection = null;
+let tnSalesSummary = { bruto:0, envio:0, neto:0 };
+
+function connectTiendaNube() {
+  const TN_CLIENT_ID = '34513';
+  const redirectBase = window.location.origin;
+  const authUrl = `https://www.tiendanube.com/apps/${TN_CLIENT_ID}/authorize?state=${me.id}`;
+  window.location.href = authUrl;
+}
+
+async function loadTiendaNubeStatus() {
+  if(!me) return;
+  const { data } = await db.from('tiendanube_connections').select('*').eq('user_id', me.id).maybeSingle();
+  tnConnection = data || null;
+  const notConn = document.getElementById('tn-not-connected');
+  const conn    = document.getElementById('tn-connected');
+  if(tnConnection) {
+    if(notConn) notConn.style.display = 'none';
+    if(conn) conn.style.display = 'block';
+    setT('tn-store-name', tnConnection.store_name || tnConnection.store_url || 'Tienda conectada');
+    loadTiendaNubeSales();
+  } else {
+    if(notConn) notConn.style.display = 'block';
+    if(conn) conn.style.display = 'none';
+  }
+}
+
+async function loadTiendaNubeSales() {
+  if(!tnConnection) return;
+  try {
+    const { data: sessionData } = await db.auth.getSession();
+    const jwt = sessionData?.session?.access_token;
+    const res = await fetch('/api/tiendanube-orders', {
+      headers: { 'Authorization': 'Bearer ' + jwt }
+    });
+    const json = await res.json();
+    if(json.error) throw new Error(json.error);
+    tnSalesSummary = { bruto: json.bruto||0, envio: json.envio||0, neto: json.neto||0 };
+    setT('tn-bruto', '$'+fmtN(tnSalesSummary.bruto));
+    setT('tn-envio', '$'+fmtN(tnSalesSummary.envio));
+    setT('tn-neto',  '$'+fmtN(tnSalesSummary.neto));
+    renderFinPanel();
+    renderVentasDia();
+  } catch(e) {
+    toast('Error al sincronizar: '+e.message);
+  }
+}
+
+async function disconnectTiendaNube() {
+  if(!confirm('Desconectar Tienda Nube? Vas a tener que volver a autorizar para reconectar.')) return;
+  await db.from('tiendanube_connections').delete().eq('user_id', me.id);
+  tnConnection = null;
+  tnSalesSummary = { bruto:0, envio:0, neto:0 };
+  loadTiendaNubeStatus();
+  renderFinPanel();
+  toast('Tienda Nube desconectada');
 }
 
 // ── CONFIG FINANCIERA ─────────────────────────────────────────────────────────
