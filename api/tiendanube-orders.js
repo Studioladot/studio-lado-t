@@ -25,7 +25,7 @@ export default async function handler(req, res) {
     // Pedimos ordenado por created_at desc para asegurarnos de tomar la MAS RECIENTE
     // si por algun motivo hay mas de una fila para el mismo user_id.
     const connRes = await fetch(
-      `${process.env.SUPABASE_URL}/rest/v1/tiendanube_connections?user_id=eq.${userId}&select=*&order=created_at.desc`,
+      `${process.env.SUPABASE_URL}/rest/v1/tiendanube_connections?user_id=eq.${userId}&select=*`,
       {
         headers: {
           'apikey': process.env.SUPABASE_SERVICE_ROLE_KEY,
@@ -33,6 +33,11 @@ export default async function handler(req, res) {
         },
       }
     );
+    if (!connRes.ok) {
+      const errText = await connRes.text();
+      console.error('Error consultando tiendanube_connections:', connRes.status, errText);
+      return res.status(500).json({ error: 'Error consultando la conexion en Supabase', detalle: errText });
+    }
     const connections = await connRes.json();
     const conn = connections?.[0];
     if (!conn) {
