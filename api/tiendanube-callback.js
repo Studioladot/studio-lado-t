@@ -81,10 +81,13 @@ export default async function handler(req, res) {
     );
 
     if (!supabaseRes.ok) {
-      const errText = await supabaseRes.text();
-      console.error('Error guardando en Supabase:', errText);
-      return res.status(500).send('Se conecto con Tienda Nube pero no se pudo guardar. Avisale a soporte.');
-    }
+  const errText = await supabaseRes.text();
+  console.error('Error guardando en Supabase:', errText);
+
+  return res.status(500).send(
+    'ERROR SUPABASE: ' + errText
+  );
+}
 
     // 4. Redirigir de vuelta a la app con un mensaje de exito
     res.redirect(302, '/?tn_connected=1');
