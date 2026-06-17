@@ -5202,7 +5202,72 @@ function renderBibAds() {
     </div>`;
   }).join('');
 }
+<script>
+// 1. Variables globales de estado
+let tnConfig = null;
+let tnDateRange = '30d';
 
+// 2. Guardar costo de envío
+async function saveShippingConfig() {
+  const cfg = {
+    user_id: me.id,
+    costo_envio_promedio: +document.getElementById('tn-shipping-cost').value || 0
+  };
+
+  const { data, error } = await db.from('tn_config').upsert([cfg], { onConflict: 'user_id' }).select();
+  
+  if (error) { 
+    toast('Error: ' + error.message); 
+    return; 
+  }
+  
+  if (data) tnConfig = data[0];
+  
+  closeModal('modal-tn-config');
+  loadTiendaNubeData();
+  toast('Configuración guardada ✓');
+}
+
+// 3. Helper de conversión de fechas
+function getDateFormats(rangeString) {
+  const end = new Date();
+  const start = new Date();
+  let metaPreset = 'last_30d';
+
+  switch(rangeString) {
+    case 'today':
+      start.setHours(0,0,0,0);
+      metaPreset = 'today';
+      break;
+    case '7d':
+      start.setDate(end.getDate() - 7);
+      metaPreset = 'last_7d';
+      break;
+    case '30d':
+      start.setDate(end.getDate() - 30);
+      metaPreset = 'last_30d';
+      break;
+    case 'month':
+      start.setDate(1);
+      metaPreset = 'this_month';
+      break;
+  }
+
+  return {
+    isoStart: start.toISOString(),
+    isoEnd: end.toISOString(),
+    metaPreset: metaPreset
+  };
+}
+
+// 4. Estructura principal de recarga de datos
+async function loadTiendaNubeData() {
+  if (!me.meta_token || !me.meta_account_id) {
+    return;
+  }
+  const dates = getDateFormats(tnDateRange);
+}
+</script>
 
 
 
