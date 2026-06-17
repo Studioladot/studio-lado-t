@@ -51,6 +51,11 @@ a{color:inherit;text-decoration:none}
 .nav-item:hover{background:rgba(255,255,255,.08);color:#fff}
 .nav-item.active{background:rgba(255,255,255,.15);color:#fff;border-left-color:var(--gotix-beige);font-weight:600}
 .nav-item .ni{width:18px;height:18px;display:flex;align-items:center;justify-content:center;flex-shrink:0;opacity:.75}.nav-item.active .ni,.nav-item:hover .ni{opacity:1}
+.nav-item.locked{color:rgba(255,255,255,.28);cursor:pointer}
+.nav-item.locked .ni{opacity:.35}
+.nav-item.locked:hover{background:rgba(255,255,255,.04);color:rgba(255,255,255,.4)}
+.nav-item.locked:hover .ni{opacity:.5}
+.nav-item.locked .nav-lock{margin-left:auto;font-size:11px;opacity:.6;flex-shrink:0}
 .sb-footer{margin-top:auto;padding:14px 18px;border-top:0.5px solid rgba(255,255,255,.12)}
 .sb-user{font-size:11px;color:rgba(255,255,255,.5);margin-bottom:8px;word-break:break-all}
 .sb-signout{background:transparent;border:0.5px solid rgba(255,255,255,.2);border-radius:var(--r);padding:7px 12px;cursor:pointer;font-size:12px;color:rgba(255,255,255,.6);width:100%;text-align:center;transition:all .15s}
@@ -4580,20 +4585,29 @@ function applyPermissions(permissions) {
 
   const allowed = Array.isArray(permissions) ? permissions : ALL_SECTIONS;
 
-  // Ocultar nav items bloqueados
+  // Marcar como "locked" (grisado) los nav items bloqueados, en vez de ocultarlos
   document.querySelectorAll('.nav-item[data-section]').forEach(el => {
     const sec = el.getAttribute('data-section');
     if(sec && !allowed.includes(sec)) {
-      el.style.display = 'none';
+      el.classList.add('locked');
+      // Agregar icono de candado al final si no existe ya
+      if(!el.querySelector('.nav-lock')) {
+        const lock = document.createElement('span');
+        lock.className = 'nav-lock';
+        lock.innerHTML = '&#128274;';
+        el.appendChild(lock);
+      }
+    } else {
+      el.classList.remove('locked');
+      const existingLock = el.querySelector('.nav-lock');
+      if(existingLock) existingLock.remove();
     }
   });
 
   // Si la página actual no está permitida, redirigir a la primera permitida
-  const currentPage = document.querySelector('.nav-item.active')?.getAttribute('data-page');
   const currentSection = document.querySelector('.nav-item.active')?.getAttribute('data-section');
   if(currentSection && !allowed.includes(currentSection)) {
-    // Ir al primer ítem permitido
-    const firstAllowed = document.querySelector(`.nav-item[data-section]`);
+    const firstAllowed = document.querySelector('.nav-item[data-section]:not(.locked)');
     if(firstAllowed) firstAllowed.click();
   }
 }
