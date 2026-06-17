@@ -3831,12 +3831,8 @@ let tnSalesSummary = { bruto:0, envio:0, neto:0 };
 
 function connectTiendaNube() {
   const TN_CLIENT_ID = '34513';
-
-  const authUrl =
-    `https://www.tiendanube.com/apps/${TN_CLIENT_ID}/authorize?state=${me.id}`;
-
-  alert(authUrl);
-
+  const redirectBase = window.location.origin;
+  const authUrl = `https://www.tiendanube.com/apps/${TN_CLIENT_ID}/authorize?state=${me.id}`;
   window.location.href = authUrl;
 }
 
