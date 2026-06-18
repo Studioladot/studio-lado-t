@@ -5380,28 +5380,37 @@ async function loadBibAds() {
         // y es la tapa real del video en buena resolucion. "thumbnails.data" puede dar mas resolucion
         // pero requiere permisos adicionales y a veces viene vacio sin error visible — por eso
         // lo tratamos como mejora opcional, nunca como unica fuente.
-        const videoId = cr.video_id || cr.asset_feed_spec?.videos?.[0]?.video_id;
+        const videoId = cr.video_id || cr.object_story_spec?.video_data?.video_id || cr.asset_feed_spec?.videos?.[0]?.video_id;
         if(videoId && !cr.image_url) {
-          // picture: campo basico, siempre disponible, sin permisos extra — lo pedimos primero y por separado
-          // asi un 400 en "thumbnails" (que si requiere permisos extra) no tira abajo todo el fetch.
+          // picture: campo basico, deberia ser siempre accesible. Si esto falla con 400/403,
+          // es un tema de permisos del token (no de resolucion) y "thumbnails" va a fallar igual,
+          // asi que directamente seguimos al fallback de thumbnail_url sin gastar otro request.
+          let pictureOk = false;
           try {
             const rp = await fetch(`https://graph.facebook.com/v19.0/${videoId}?fields=picture&access_token=${META_TOKEN}`);
             const jp = await rp.json();
-            if(jp.error) console.error('[BibAds] error video picture', videoId, jp.error);
-            else thumbMap[ad.id].videoThumb = jp.picture || '';
+            if(jp.error) {
+              console.error('[BibAds] error video picture', videoId, jp.error.message||jp.error, '| code:', jp.error.code, '| subcode:', jp.error.error_subcode);
+            } else {
+              thumbMap[ad.id].videoThumb = jp.picture || '';
+              pictureOk = true;
+            }
           } catch(e) { console.error('[BibAds] fetch video picture fallo', videoId, e); }
 
-          // thumbnails: mejor resolucion si esta disponible, pero opcional — no debe romper nada si falla
-          try {
-            const rt = await fetch(`https://graph.facebook.com/v19.0/${videoId}?fields=${encodeURIComponent('thumbnails{uri,width,height}')}&access_token=${META_TOKEN}`);
-            const jt = await rt.json();
-            if(jt.error) {
-              console.warn('[BibAds] thumbnails no disponible (uso picture)', videoId, jt.error);
-            } else {
-              const best = (jt.thumbnails?.data||[]).sort((a,b)=>(b.width*b.height)-(a.width*a.height))[0];
-              if(best?.uri) thumbMap[ad.id].videoThumb = best.uri;
-            }
-          } catch(e) { console.warn('[BibAds] fetch thumbnails fallo (uso picture)', videoId, e); }
+          // thumbnails: mejor resolucion si esta disponible — solo lo intentamos si "picture" funciono,
+          // para no insistir con un mismo problema de permisos en cada anuncio.
+          if(pictureOk) {
+            try {
+              const rt = await fetch(`https://graph.facebook.com/v19.0/${videoId}?fields=${encodeURIComponent('thumbnails{uri,width,height}')}&access_token=${META_TOKEN}`);
+              const jt = await rt.json();
+              if(jt.error) {
+                console.warn('[BibAds] thumbnails no disponible (uso picture)', videoId, jt.error);
+              } else {
+                const best = (jt.thumbnails?.data||[]).sort((a,b)=>(b.width*b.height)-(a.width*a.height))[0];
+                if(best?.uri) thumbMap[ad.id].videoThumb = best.uri;
+              }
+            } catch(e) { console.warn('[BibAds] fetch thumbnails fallo (uso picture)', videoId, e); }
+          }
         }
       } catch(e) { console.error('[BibAds] fetch creative fallo', ad.id, e); }
     }));
