@@ -5368,49 +5368,24 @@ async function loadBibAds() {
     const thumbMap = {};
     await Promise.all(allAds.map(async ad => {
       try {
-        const r = await fetch(`https://graph.facebook.com/v19.0/${ad.id}?fields=${encodeURIComponent('creative{object_type,video_id,image_url,thumbnail_url,object_story_spec,asset_feed_spec{images,videos}}')}&access_token=${META_TOKEN}`);
+        const r = await fetch(`https://graph.facebook.com/v19.0/${ad.id}?fields=${encodeURIComponent('creative{object_type,video_id,image_url,thumbnail_url,object_story_spec,asset_feed_spec{images,videos}}')}&thumbnail_width=1200&thumbnail_height=1200&access_token=${META_TOKEN}`);
         const j = await r.json();
         if(j.error) { console.error('[BibAds] error creative', ad.id, j.error); return; }
         if(!j.creative) return;
         const cr = j.creative;
         thumbMap[ad.id] = cr;
 
-        // Si es video, el thumbnail_url del creative suele venir chico/pixelado.
-        // El campo "picture" del endpoint del video SIEMPRE esta disponible (no requiere permisos extra)
-        // y es la tapa real del video en buena resolucion. "thumbnails.data" puede dar mas resolucion
-        // pero requiere permisos adicionales y a veces viene vacio sin error visible — por eso
-        // lo tratamos como mejora opcional, nunca como unica fuente.
-        const videoId = cr.video_id || cr.object_story_spec?.video_data?.video_id || cr.asset_feed_spec?.videos?.[0]?.video_id;
-        if(videoId && !cr.image_url) {
-          // picture: campo basico, deberia ser siempre accesible. Si esto falla con 400/403,
-          // es un tema de permisos del token (no de resolucion) y "thumbnails" va a fallar igual,
-          // asi que directamente seguimos al fallback de thumbnail_url sin gastar otro request.
-          let pictureOk = false;
+        // El endpoint directo /{video_id} requiere permisos que el token de Ads no tiene (error code 10).
+        // Fuente alternativa sin permisos extra: el thumbnail que el propio creative/story guarda del video,
+        // y un segundo pedido de thumbnail_url pidiendo tamaño grande (si Meta lo soporta para este ad).
+        const storyImg = cr.object_story_spec?.video_data?.image_url;
+        if(storyImg) thumbMap[ad.id].videoThumb = storyImg;
+        else if(cr.video_id || cr.object_story_spec?.video_data?.video_id) {
           try {
-            const rp = await fetch(`https://graph.facebook.com/v19.0/${videoId}?fields=picture&access_token=${META_TOKEN}`);
-            const jp = await rp.json();
-            if(jp.error) {
-              console.error('[BibAds] error video picture', videoId, jp.error.message||jp.error, '| code:', jp.error.code, '| subcode:', jp.error.error_subcode);
-            } else {
-              thumbMap[ad.id].videoThumb = jp.picture || '';
-              pictureOk = true;
-            }
-          } catch(e) { console.error('[BibAds] fetch video picture fallo', videoId, e); }
-
-          // thumbnails: mejor resolucion si esta disponible — solo lo intentamos si "picture" funciono,
-          // para no insistir con un mismo problema de permisos en cada anuncio.
-          if(pictureOk) {
-            try {
-              const rt = await fetch(`https://graph.facebook.com/v19.0/${videoId}?fields=${encodeURIComponent('thumbnails{uri,width,height}')}&access_token=${META_TOKEN}`);
-              const jt = await rt.json();
-              if(jt.error) {
-                console.warn('[BibAds] thumbnails no disponible (uso picture)', videoId, jt.error);
-              } else {
-                const best = (jt.thumbnails?.data||[]).sort((a,b)=>(b.width*b.height)-(a.width*a.height))[0];
-                if(best?.uri) thumbMap[ad.id].videoThumb = best.uri;
-              }
-            } catch(e) { console.warn('[BibAds] fetch thumbnails fallo (uso picture)', videoId, e); }
-          }
+            const rb = await fetch(`https://graph.facebook.com/v19.0/${ad.id}?fields=${encodeURIComponent('creative{thumbnail_url}')}&thumbnail_width=1200&thumbnail_height=1200&access_token=${META_TOKEN}`);
+            const jb = await rb.json();
+            if(!jb.error && jb.creative?.thumbnail_url) thumbMap[ad.id].videoThumb = jb.creative.thumbnail_url;
+          } catch(e) { console.warn('[BibAds] thumbnail_url grande fallo', ad.id, e); }
         }
       } catch(e) { console.error('[BibAds] fetch creative fallo', ad.id, e); }
     }));
