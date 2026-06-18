@@ -93,9 +93,10 @@ export default async function handler(req, res) {
       }
     }
 
-    // 5. Calcular bruto, envio y neto
+    // 5. Calcular bruto, envio y neto. Tambien armamos detalle de productos vendidos para calcular COGS.
     let bruto = 0;
     let envio = 0;
+    const lineItems = [];
     allOrders.forEach((order) => {
       const paymentStatus = order.payment_status;
       const orderStatus = order.status;
@@ -105,6 +106,15 @@ export default async function handler(req, res) {
       const shippingCost = parseFloat(order.shipping_cost_customer || 0);
       bruto += (subtotal - discount) + shippingCost;
       envio += shippingCost;
+      (order.products || []).forEach(it => {
+        lineItems.push({
+          variant_id: it.variant_id,
+          product_id: it.product_id,
+          name: it.name,
+          qty: parseInt(it.quantity || 1),
+          price: parseFloat(it.price || 0),
+        });
+      });
     });
     const neto = bruto - envio;
 
@@ -113,6 +123,7 @@ export default async function handler(req, res) {
       envio: Math.round(envio),
       neto: Math.round(neto),
       ordenes: allOrders.length,
+      line_items: lineItems,
       periodo: { desde: sinceISO, hasta: untilISO },
     });
   } catch (err) {
