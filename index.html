@@ -218,7 +218,8 @@ tr:hover td{background:var(--surface2)}
   [style*="grid-template-columns:repeat(3,1fr)"]{grid-template-columns:1fr !important}
 
   /* Grids de cards auto-fill → una sola columna para que no se corten */
-  #cont-pub-grid,#cont-ideas-grid,#notas-grid,#bibads-grid{grid-template-columns:1fr !important}
+  #cont-pub-grid,#cont-ideas-grid,#notas-grid{grid-template-columns:1fr !important}
+  #bibads-grid{grid-template-columns:repeat(2,1fr) !important}
 
   /* Paginas y tarjetas: menos padding para aprovechar el ancho */
   .page{padding:16px 14px}
@@ -1343,7 +1344,7 @@ tr:hover td{background:var(--surface2)}
   </div>
 
   <!-- GRID -->
-  <div id="bibads-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px">
+  <div id="bibads-grid" style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px">
     <div class="empty" style="grid-column:1/-1">
       <div class="empty-icon">&#127916;</div>
       <div class="empty-msg">Sin anuncios cargados</div>
@@ -5465,57 +5466,50 @@ function renderBibAds() {
     const isActive = ad.status === 'ACTIVE';
     const rc = roasClr(ad.roas);
     return `
-    <div style="background:var(--surface);border:0.5px solid var(--border);border-radius:14px;overflow:hidden;transition:box-shadow .15s;cursor:default" onmouseover="this.style.boxShadow='0 4px 20px rgba(0,0,0,.1)'" onmouseout="this.style.boxShadow='none'">
+    <div style="background:var(--surface);border:0.5px solid var(--border);border-radius:10px;overflow:hidden;transition:box-shadow .15s;cursor:default" onmouseover="this.style.boxShadow='0 4px 16px rgba(0,0,0,.1)'" onmouseout="this.style.boxShadow='none'">
 
-      <!-- THUMBNAIL — ratio 4:5 para que se vean grandes y con calidad -->
+      <!-- THUMBNAIL — ratio 4:5, frame real del video/imagen -->
       <div style="position:relative;width:100%;padding-bottom:100%;background:var(--surface2);overflow:hidden">
         ${ad.imgUrl
           ? `<img src="${ad.imgUrl}" alt="${ad.name}" loading="lazy"
               style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;object-position:center"
-              onerror="this.parentElement.innerHTML='<div style=\\'position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:36px;background:var(--surface2)\\'>&#127916;</div>'">`
-          : `<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:40px">&#127916;</div>`
+              onerror="this.parentElement.innerHTML='<div style=\\'position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:28px;background:var(--surface2)\\'>&#127916;</div>'">`
+          : `<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:30px">&#127916;</div>`
         }
         <!-- Estado badge -->
-        <div style="position:absolute;top:10px;left:10px;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;background:${isActive?'#16a34a':'#64748b'};color:#fff;display:flex;align-items:center;gap:4px">
-          <span style="width:6px;height:6px;border-radius:50%;background:#fff;display:inline-block"></span>
+        <div style="position:absolute;top:6px;left:6px;padding:2px 7px;border-radius:14px;font-size:9px;font-weight:700;background:${isActive?'#16a34a':'#64748b'};color:#fff;display:flex;align-items:center;gap:3px">
+          <span style="width:5px;height:5px;border-radius:50%;background:#fff;display:inline-block"></span>
           ${isActive ? 'Activo' : 'Pausado'}
         </div>
         <!-- Tipo badge -->
-        ${ad.isVideo?`<div style="position:absolute;top:10px;right:10px;padding:3px 8px;border-radius:6px;font-size:10px;font-weight:700;background:rgba(0,0,0,.6);color:#fff">&#9654; Video</div>`:''}
+        ${ad.isVideo?`<div style="position:absolute;top:6px;right:6px;padding:2px 6px;border-radius:5px;font-size:9px;font-weight:700;background:rgba(0,0,0,.6);color:#fff">&#9654;</div>`:''}
       </div>
 
       <!-- INFO -->
-      <div style="padding:14px 14px 12px">
+      <div style="padding:8px 9px 9px">
         <!-- Nombre del anuncio -->
-        <div style="font-size:13px;font-weight:700;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:3px" title="${ad.name}">${ad.name}</div>
+        <div style="font-size:11px;font-weight:700;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${ad.name}">${ad.name}</div>
         <!-- Campaña y conjunto -->
-        <div style="font-size:11px;color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:12px" title="${ad.campaignName}">${ad.campaignName||ad.adsetName||'—'}</div>
+        <div style="font-size:9.5px;color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:6px" title="${ad.campaignName}">${ad.campaignName||ad.adsetName||'—'}</div>
 
-        <!-- MÉTRICAS 2x2 -->
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-          <div style="padding:8px 10px;background:var(--surface2);border-radius:8px">
-            <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text2);margin-bottom:3px">Gasto</div>
-            <div style="font-size:16px;font-weight:800;color:var(--text)">$${ad.spend>0?ad.spend.toFixed(2):'0'}</div>
+        <!-- MÉTRICAS — lista vertical compacta -->
+        <div style="display:flex;flex-direction:column;gap:2px">
+          <div style="display:flex;justify-content:space-between;align-items:baseline">
+            <span style="font-size:10px;color:var(--text2)">Gasto</span>
+            <span style="font-size:12px;font-weight:700;color:var(--text)">$${ad.spend>0?ad.spend.toFixed(2):'0'}</span>
           </div>
-          <div style="padding:8px 10px;background:var(--surface2);border-radius:8px">
-            <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text2);margin-bottom:3px">ROAS</div>
-            <div style="font-size:16px;font-weight:800;color:${rc}">${ad.roas>0?ad.roas.toFixed(2)+'x':'—'}</div>
+          <div style="display:flex;justify-content:space-between;align-items:baseline">
+            <span style="font-size:10px;color:var(--text2)">ROAS</span>
+            <span style="font-size:12px;font-weight:700;color:${rc}">${ad.roas>0?ad.roas.toFixed(2)+'x':'—'}</span>
           </div>
-          <div style="padding:8px 10px;background:var(--surface2);border-radius:8px">
-            <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text2);margin-bottom:3px">CPA</div>
-            <div style="font-size:16px;font-weight:800;color:var(--text)">${ad.cpa>0?'$'+Math.round(ad.cpa):'—'}</div>
+          <div style="display:flex;justify-content:space-between;align-items:baseline">
+            <span style="font-size:10px;color:var(--text2)">CPA</span>
+            <span style="font-size:12px;font-weight:700;color:var(--text)">${ad.cpa>0?'$'+Math.round(ad.cpa):'—'}</span>
           </div>
-          <div style="padding:8px 10px;background:var(--surface2);border-radius:8px">
-            <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text2);margin-bottom:3px">Compras</div>
-            <div style="font-size:16px;font-weight:800;color:var(--text)">${ad.purchases>0?Math.round(ad.purchases):'—'}</div>
+          <div style="display:flex;justify-content:space-between;align-items:baseline">
+            <span style="font-size:10px;color:var(--text2)">Compras</span>
+            <span style="font-size:12px;font-weight:700;color:var(--text)">${ad.purchases>0?Math.round(ad.purchases):'—'}</span>
           </div>
-        </div>
-
-        <!-- CTR / CPM / Frecuencia -->
-        <div style="display:flex;gap:10px;margin-top:10px;padding-top:10px;border-top:0.5px solid var(--border)">
-          <span style="font-size:11px;color:var(--text2)">CTR <strong style="color:var(--text)">${ad.ctr>0?ad.ctr.toFixed(2)+'%':'—'}</strong></span>
-          <span style="font-size:11px;color:var(--text2)">CPM <strong style="color:var(--text)">${ad.cpm>0?'$'+ad.cpm.toFixed(2):'—'}</strong></span>
-          <span style="font-size:11px;color:var(--text2)">Frec <strong style="color:var(--text)">${ad.freq>0?ad.freq.toFixed(1):'—'}</strong></span>
         </div>
       </div>
     </div>`;
