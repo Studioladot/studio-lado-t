@@ -281,6 +281,20 @@ tr:hover td{background:var(--surface2)}
 .an-pill-row{display:flex;align-items:center;gap:6px}
 .an-channel-dot{width:7px;height:7px;border-radius:50%;background:var(--accent);flex-shrink:0}
 @media(max-width:900px){.an-grid{grid-template-columns:repeat(2,1fr)}}
+
+/* ── GRID DE PRODUCTOS — costo de productos (10 por fila) ─────────────────── */
+.an-prod-card{background:var(--surface);border:0.5px solid var(--border);border-radius:10px;overflow:hidden;cursor:pointer;transition:border-color .12s;position:relative}
+.an-prod-card:hover{border-color:var(--border2)}
+.an-prod-card.selected{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.an-prod-card-chk{position:absolute;top:6px;left:6px;width:16px;height:16px;z-index:2}
+.an-prod-card-img{width:100%;padding-bottom:100%;background:var(--surface2);position:relative;overflow:hidden}
+.an-prod-card-img img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.an-prod-card-body{padding:7px 8px 8px}
+.an-prod-card-name{font-size:11px;font-weight:700;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:2px}
+.an-prod-card-sub{font-size:10px;color:var(--text2);margin-bottom:5px}
+.an-prod-card-cost{font-size:11px;font-weight:700}
+@media(max-width:1200px){#an-prod-grid{grid-template-columns:repeat(6,1fr)!important}}
+@media(max-width:760px){#an-prod-grid{grid-template-columns:repeat(3,1fr)!important}}
 </style>
 </head>
 <body>
@@ -863,20 +877,20 @@ tr:hover td{background:var(--surface2)}
     <div class="page-sub">Carga el costo de cada producto de tu Tienda Nube</div></div>
     <div style="display:flex;gap:8px">
       <button class="btn btn-outline btn-sm" onclick="showPage('analisis')">&#8592; Volver a Analisis</button>
-      <button class="btn btn-outline" onclick="openModal('modal-an-bulk')">Editar en bulk</button>
+      <button class="btn btn-outline" onclick="openAnBulkModal()">Editar en bulk</button>
       <button class="btn btn-accent" onclick="loadAnProductos(true)">Sincronizar productos</button>
     </div>
   </div>
   <div style="display:flex;gap:10px;margin-bottom:14px;align-items:center">
+    <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2);cursor:pointer">
+      <input type="checkbox" id="an-prod-select-all" onchange="toggleAllAnProd(this)">Seleccionar todos
+    </label>
     <input type="text" id="an-prod-search" placeholder="Buscar producto..." oninput="renderAnProductos()"
       style="flex:1;border:0.5px solid var(--border);border-radius:var(--r);padding:8px 12px;font-size:13px;background:var(--surface);color:var(--text);outline:none">
     <span style="font-size:12px;color:var(--text2)" id="an-prod-count">—</span>
   </div>
-  <div class="card" style="padding:0;overflow:hidden">
-    <div class="tbl-wrap"><table>
-      <thead><tr><th style="width:36px"><input type="checkbox" id="an-prod-select-all" onchange="toggleAllAnProd(this)"></th><th></th><th>Producto</th><th>Variante</th><th>SKU</th><th>Precio venta</th><th>Costo</th><th>Margen</th></tr></thead>
-      <tbody id="an-prod-tbody"><tr><td colspan="8" style="text-align:center;color:var(--text2);padding:24px">Sin productos — sincroniza desde Tienda Nube</td></tr></tbody>
-    </table></div>
+  <div id="an-prod-grid" style="display:grid;grid-template-columns:repeat(10,1fr);gap:10px">
+    <div class="empty" style="grid-column:1/-1"><div class="empty-msg">Sin productos</div><div class="empty-sub">Sincroniza desde Tienda Nube</div></div>
   </div>
 </div>
 
@@ -1891,7 +1905,7 @@ create policy "own" on contacts for all using (auth.uid()=user_id);</div>
 <div class="modal-backdrop" id="modal-an-bulk">
   <div class="modal" style="max-width:420px">
     <div class="modal-title">Editar costos en bulk</div>
-    <div style="font-size:12px;color:var(--text2);margin-bottom:12px" id="an-bulk-sub">Aplica a los productos seleccionados en la tabla.</div>
+    <div style="font-size:12px;color:var(--text2);margin-bottom:12px" id="an-bulk-sub">Aplica a los productos seleccionados.</div>
     <div class="form-row">
       <div class="fg">
         <label>Modo</label>
@@ -1905,6 +1919,17 @@ create policy "own" on contacts for all using (auth.uid()=user_id);</div>
     <div class="modal-footer">
       <button class="btn btn-outline" onclick="closeModal('modal-an-bulk')">Cancelar</button>
       <button class="btn btn-accent" onclick="applyAnBulk()">Aplicar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal detalle de producto: costo por talle/variante -->
+<div class="modal-backdrop" id="modal-an-prod-detail">
+  <div class="modal" style="max-width:460px">
+    <div class="modal-title" id="an-detail-title">Producto</div>
+    <div id="an-detail-variants" style="display:flex;flex-direction:column;gap:8px;max-height:340px;overflow-y:auto"></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-an-prod-detail')">Cerrar</button>
     </div>
   </div>
 </div>
@@ -4777,7 +4802,7 @@ function anRenderCard(id, label, value, deltaPct, series, type, invertGood, inve
 function calcAnCOGS(lineItems) {
   if(!lineItems?.length || !anProductos.length) return 0;
   const costMap = {};
-  anProductos.forEach(p => { costMap[p.variant_id] = +p.cost || 0; });
+  anProductos.forEach(p => (p.variants||[]).forEach(v => { costMap[v.variant_id] = +v.cost || 0; }));
   let total = 0;
   lineItems.forEach(it => {
     const cost = costMap[it.variant_id] || 0;
@@ -4905,20 +4930,20 @@ async function loadAnProductosFromCache() {
   const { data } = await db.from('tn_product_costs').select('*').eq('user_id', me.id);
   const costMap = {};
   (data||[]).forEach(r => { costMap[r.variant_id] = +r.cost || 0; });
-  anProductos = anProductos.map(p => ({ ...p, cost: costMap[p.variant_id] ?? p.cost ?? 0 }));
-  // Si todavia no tenemos el catalogo cargado en memoria, lo intentamos traer (sin forzar sync con TN)
-  if(!anProductos.length && tnConnection) {
+  if(!anProductos.length) {
     const cached = JSON.parse(localStorage.getItem('gx_an_productos_cache')||'null');
-    if(cached) {
-      anProductos = cached.map(p => ({ ...p, cost: costMap[p.variant_id] ?? 0 }));
-    }
+    if(cached) anProductos = cached;
   }
+  anProductos = anProductos.map(p => ({
+    ...p,
+    variants: (p.variants||[]).map(v => ({ ...v, cost: costMap[v.variant_id] ?? v.cost ?? 0 })),
+  }));
 }
 
 async function loadAnProductos(forceSync) {
   if(!tnConnection) { toast('Conecta Tienda Nube primero'); return; }
-  const tbody = document.getElementById('an-prod-tbody');
-  if(forceSync && tbody) tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--text2);padding:24px">Sincronizando productos...</td></tr>';
+  const grid = document.getElementById('an-prod-grid');
+  if(forceSync && grid) grid.innerHTML = '<div class="empty" style="grid-column:1/-1"><div class="empty-msg">Sincronizando productos...</div></div>';
 
   let baseProducts = anProductos;
   if(forceSync || !anProductos.length) {
@@ -4927,7 +4952,7 @@ async function loadAnProductos(forceSync) {
       const r = await fetch('/api/tiendanube-products', { headers: { Authorization: `Bearer ${session.access_token}` } });
       const j = await r.json();
       if(j.error) { toast('Error al traer productos de Tienda Nube'); console.error(j.error); return; }
-      baseProducts = j.items || [];
+      baseProducts = j.products || [];
       localStorage.setItem('gx_an_productos_cache', JSON.stringify(baseProducts));
     } catch(e) { console.error('[AnProductos] sync fallo', e); toast('Error al sincronizar'); return; }
   }
@@ -4935,67 +4960,123 @@ async function loadAnProductos(forceSync) {
   const { data: costs } = await db.from('tn_product_costs').select('*').eq('user_id', me.id);
   const costMap = {};
   (costs||[]).forEach(r => { costMap[r.variant_id] = +r.cost || 0; });
-  anProductos = baseProducts.map(p => ({ ...p, cost: costMap[p.variant_id] ?? 0 }));
+  anProductos = baseProducts.map(p => ({
+    ...p,
+    variants: (p.variants||[]).map(v => ({ ...v, cost: costMap[v.variant_id] ?? 0 })),
+  }));
   renderAnProductos();
-  if(forceSync) toast(`${anProductos.length} variantes sincronizadas`);
+  if(forceSync) toast(`${anProductos.length} productos sincronizados`);
+}
+
+function anProductMargin(p) {
+  const withCost = p.variants.filter(v=>v.cost>0 && v.price>0);
+  if(!withCost.length) return null;
+  const avg = withCost.reduce((s,v)=>s+((v.price-v.cost)/v.price*100),0)/withCost.length;
+  return avg;
+}
+
+function anProductAvgCost(p) {
+  const withCost = p.variants.filter(v=>v.cost>0);
+  if(!withCost.length) return 0;
+  return withCost.reduce((s,v)=>s+v.cost,0)/withCost.length;
 }
 
 function renderAnProductos() {
-  const tbody = document.getElementById('an-prod-tbody');
-  if(!tbody) return;
+  const grid = document.getElementById('an-prod-grid');
+  if(!grid) return;
   const q = (document.getElementById('an-prod-search')?.value||'').toLowerCase();
-  const list = anProductos.filter(p => !q || p.product_name.toLowerCase().includes(q) || p.variant_name.toLowerCase().includes(q) || (p.sku||'').toLowerCase().includes(q));
-  setT('an-prod-count', `${list.length} variantes`);
+  const list = anProductos.filter(p => !q || p.product_name.toLowerCase().includes(q) || (p.variants||[]).some(v=>(v.sku||'').toLowerCase().includes(q)));
+  setT('an-prod-count', `${list.length} productos`);
   if(!list.length) {
-    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--text2);padding:24px">Sin productos — sincroniza desde Tienda Nube</td></tr>';
+    grid.innerHTML = '<div class="empty" style="grid-column:1/-1"><div class="empty-msg">Sin productos</div><div class="empty-sub">Sincroniza desde Tienda Nube</div></div>';
     return;
   }
-  tbody.innerHTML = list.map(p=>{
-    const margin = p.price>0 && p.cost>0 ? ((p.price-p.cost)/p.price*100) : null;
+  grid.innerHTML = list.map(p=>{
+    const margin = anProductMargin(p);
+    const avgCost = anProductAvgCost(p);
+    const marginColor = margin===null?'var(--text3)':margin>40?'var(--green)':margin>15?'var(--amber)':'var(--red)';
+    const isChecked = anSelectedProducts.has(p.product_id);
     return `
-    <tr>
-      <td><input type="checkbox" class="an-prod-chk" data-vid="${p.variant_id}"></td>
-      <td>${p.image?`<img src="${p.image}" style="width:32px;height:32px;border-radius:6px;object-fit:cover">`:''}</td>
-      <td>${p.product_name}</td>
-      <td style="color:var(--text2)">${p.variant_name||'—'}</td>
-      <td style="color:var(--text3);font-size:11px">${p.sku||'—'}</td>
-      <td>${fmtMoney(p.price)}</td>
-      <td><input type="number" value="${p.cost||0}" onchange="updateAnProductCost(${p.variant_id},${p.product_id},this.value)"
-          style="width:80px;border:0.5px solid var(--border);border-radius:6px;padding:4px 6px;font-size:12px;background:var(--surface);color:var(--text)"></td>
-      <td style="color:${margin===null?'var(--text3)':margin>40?'var(--green)':margin>15?'var(--amber)':'var(--red)'}">${margin===null?'—':margin.toFixed(0)+'%'}</td>
-    </tr>`;
+    <div class="an-prod-card${isChecked?' selected':''}" data-pid="${p.product_id}" onclick="openAnProductDetail(${p.product_id},event)">
+      <input type="checkbox" class="an-prod-card-chk" data-pid="${p.product_id}" ${isChecked?'checked':''} onclick="toggleAnProductSelect(${p.product_id},event)">
+      <div class="an-prod-card-img">${p.image?`<img src="${p.image}" alt="${p.product_name}" loading="lazy">`:''}</div>
+      <div class="an-prod-card-body">
+        <div class="an-prod-card-name" title="${p.product_name}">${p.product_name}</div>
+        <div class="an-prod-card-sub">${p.variants.length} talle${p.variants.length>1?'s':''}</div>
+        <div class="an-prod-card-cost" style="color:${marginColor}">${avgCost>0?fmtMoney(avgCost):'Sin costo'}</div>
+      </div>
+    </div>`;
   }).join('');
 }
 
+// ── SELECCION A NIVEL PRODUCTO (no por talle) ───────────────────────────────
+let anSelectedProducts = new Set();
+
+function toggleAnProductSelect(productId, ev) {
+  ev.stopPropagation();
+  if(anSelectedProducts.has(productId)) anSelectedProducts.delete(productId);
+  else anSelectedProducts.add(productId);
+  const card = document.querySelector(`.an-prod-card[data-pid="${productId}"]`);
+  if(card) card.classList.toggle('selected', anSelectedProducts.has(productId));
+}
+
 function toggleAllAnProd(cb) {
-  document.querySelectorAll('.an-prod-chk').forEach(c=>c.checked=cb.checked);
+  anSelectedProducts = new Set();
+  if(cb.checked) anProductos.forEach(p=>anSelectedProducts.add(p.product_id));
+  renderAnProductos();
+}
+
+// ── DETALLE DE PRODUCTO — costo por talle ───────────────────────────────────
+function openAnProductDetail(productId, ev) {
+  if(ev) ev.stopPropagation();
+  const p = anProductos.find(x=>x.product_id===productId);
+  if(!p) return;
+  document.getElementById('an-detail-title').textContent = p.product_name;
+  document.getElementById('an-detail-variants').innerHTML = p.variants.map(v=>`
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:0.5px solid var(--border)">
+      <div>
+        <div style="font-size:13px;font-weight:600">${v.variant_name||'Unica'}</div>
+        <div style="font-size:11px;color:var(--text2)">SKU ${v.sku||'—'} &middot; Precio ${fmtMoney(v.price)}</div>
+      </div>
+      <input type="number" value="${v.cost||0}" placeholder="Costo" onchange="updateAnProductCost(${v.variant_id},${productId},this.value)"
+        style="width:90px;border:0.5px solid var(--border);border-radius:6px;padding:6px 8px;font-size:13px;background:var(--surface);color:var(--text)">
+    </div>`).join('');
+  openModal('modal-an-prod-detail');
 }
 
 async function updateAnProductCost(variantId, productId, value) {
   const cost = +value || 0;
-  const p = anProductos.find(x=>x.variant_id===variantId);
-  if(p) p.cost = cost;
+  const p = anProductos.find(x=>x.product_id===productId);
+  const v = p?.variants.find(x=>x.variant_id===variantId);
+  if(v) v.cost = cost;
   await db.from('tn_product_costs').upsert([{ user_id: me.id, variant_id: variantId, product_id: productId, cost }], { onConflict: 'user_id,variant_id' });
   renderAnProductos();
+}
+
+// ── BULK — aplica a todas las variantes de los productos seleccionados ──────
+function openAnBulkModal() {
+  if(!anSelectedProducts.size) { toast('Selecciona al menos un producto'); return; }
+  document.getElementById('an-bulk-sub').textContent = `Aplica a ${anSelectedProducts.size} producto${anSelectedProducts.size>1?'s':''} seleccionado${anSelectedProducts.size>1?'s':''} (todos sus talles).`;
+  openModal('modal-an-bulk');
 }
 
 async function applyAnBulk() {
   const mode = document.getElementById('an-bulk-mode').value;
   const value = +document.getElementById('an-bulk-value').value || 0;
-  const checked = [...document.querySelectorAll('.an-prod-chk:checked')].map(c=>+c.dataset.vid);
-  if(!checked.length) { toast('Selecciona al menos un producto'); return; }
+  if(!anSelectedProducts.size) { toast('Selecciona al menos un producto'); return; }
   const rows = [];
-  checked.forEach(vid => {
-    const p = anProductos.find(x=>x.variant_id===vid);
-    if(!p) return;
-    const cost = mode==='pct' ? (p.price * value/100) : value;
-    p.cost = cost;
-    rows.push({ user_id: me.id, variant_id: p.variant_id, product_id: p.product_id, cost });
+  anProductos.forEach(p => {
+    if(!anSelectedProducts.has(p.product_id)) return;
+    p.variants.forEach(v => {
+      const cost = mode==='pct' ? (v.price * value/100) : value;
+      v.cost = cost;
+      rows.push({ user_id: me.id, variant_id: v.variant_id, product_id: p.product_id, cost });
+    });
   });
   if(rows.length) await db.from('tn_product_costs').upsert(rows, { onConflict: 'user_id,variant_id' });
   closeModal('modal-an-bulk');
   renderAnProductos();
-  toast(`Costo aplicado a ${rows.length} variantes`);
+  toast(`Costo aplicado a ${rows.length} talles de ${anSelectedProducts.size} productos`);
 }
 
 document.getElementById('an-bulk-mode')?.addEventListener('change', function(){
