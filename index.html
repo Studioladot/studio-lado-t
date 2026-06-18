@@ -5370,24 +5370,32 @@ async function loadBibAds() {
       try {
         const r = await fetch(`https://graph.facebook.com/v19.0/${ad.id}?fields=${encodeURIComponent('creative{object_type,video_id,image_url,thumbnail_url,object_story_spec,asset_feed_spec{images,videos}}')}&access_token=${META_TOKEN}`);
         const j = await r.json();
-        if(!j.error && j.creative) {
-          const cr = j.creative;
-          thumbMap[ad.id] = cr;
-          // Si es video, el thumbnail_url del creative suele venir chico/pixelado.
-          // Pedimos el thumbnail real al endpoint del video, que devuelve mucha mas resolucion.
-          const videoId = cr.video_id || cr.asset_feed_spec?.videos?.[0]?.video_id;
-          if(videoId && !cr.image_url) {
-            try {
-              const rv = await fetch(`https://graph.facebook.com/v19.0/${videoId}?fields=${encodeURIComponent('picture,thumbnails{uri,width,height}')}&access_token=${META_TOKEN}`);
-              const jv = await rv.json();
-              if(!jv.error) {
-                const best = (jv.thumbnails?.data||[]).sort((a,b)=>(b.width*b.height)-(a.width*a.height))[0];
-                thumbMap[ad.id].videoThumb = best?.uri || jv.picture || '';
-              }
-            } catch(e) {}
-          }
+        if(j.error) { console.error('[BibAds] error creative', ad.id, j.error); return; }
+        if(!j.creative) return;
+        const cr = j.creative;
+        thumbMap[ad.id] = cr;
+
+        // Si es video, el thumbnail_url del creative suele venir chico/pixelado.
+        // El campo "picture" del endpoint del video SIEMPRE esta disponible (no requiere permisos extra)
+        // y es la tapa real del video en buena resolucion. "thumbnails.data" puede dar mas resolucion
+        // pero requiere permisos adicionales y a veces viene vacio sin error visible — por eso
+        // lo tratamos como mejora opcional, nunca como unica fuente.
+        const videoId = cr.video_id || cr.asset_feed_spec?.videos?.[0]?.video_id;
+        if(videoId && !cr.image_url) {
+          try {
+            const rv = await fetch(`https://graph.facebook.com/v19.0/${videoId}?fields=${encodeURIComponent('picture,thumbnails{uri,width,height}')}&redirect=false&access_token=${META_TOKEN}`);
+            const jv = await rv.json();
+            if(jv.error) {
+              console.error('[BibAds] error video thumb', videoId, jv.error);
+            } else {
+              const best = (jv.thumbnails?.data||[]).sort((a,b)=>(b.width*b.height)-(a.width*a.height))[0];
+              // picture default de Meta es solo ~130x130 (se pixela al escalar en cards grandes).
+              // thumbnails.data trae versiones reales en mayor resolucion — las preferimos siempre que existan.
+              thumbMap[ad.id].videoThumb = best?.uri || jv.picture || '';
+            }
+          } catch(e) { console.error('[BibAds] fetch video thumb fallo', videoId, e); }
         }
-      } catch(e) {}
+      } catch(e) { console.error('[BibAds] fetch creative fallo', ad.id, e); }
     }));
 
     bibAdsData = allAds.map(ad => {
@@ -5396,7 +5404,7 @@ async function loadBibAds() {
       const purchases = parseFloat(ins.actions?.find(a => a.action_type==='purchase')?.value || 0);
       const revenue   = parseFloat(ins.action_values?.find(a => a.action_type==='purchase')?.value || 0);
       const cr = thumbMap[ad.id] || {};
-      // Prioridad: image_url (full picture, alta res) > primera imagen del asset_feed_spec (Advantage+) > thumbnail de video en alta res > thumbnail_url (ultimo recurso, pixelado)
+      // Prioridad: image_url (full picture, alta res) > primera imagen del asset_feed_spec (Advantage+) > thumbnail de video (picture/thumbnails) > thumbnail_url (ultimo recurso, pixelado)
       const feedImg = cr.asset_feed_spec?.images?.[0]?.url;
       const bestImg = cr.image_url || feedImg || cr.videoThumb || cr.thumbnail_url || '';
       return {
