@@ -5382,18 +5382,26 @@ async function loadBibAds() {
         // lo tratamos como mejora opcional, nunca como unica fuente.
         const videoId = cr.video_id || cr.asset_feed_spec?.videos?.[0]?.video_id;
         if(videoId && !cr.image_url) {
+          // picture: campo basico, siempre disponible, sin permisos extra — lo pedimos primero y por separado
+          // asi un 400 en "thumbnails" (que si requiere permisos extra) no tira abajo todo el fetch.
           try {
-            const rv = await fetch(`https://graph.facebook.com/v19.0/${videoId}?fields=${encodeURIComponent('picture,thumbnails{uri,width,height}')}&redirect=false&access_token=${META_TOKEN}`);
-            const jv = await rv.json();
-            if(jv.error) {
-              console.error('[BibAds] error video thumb', videoId, jv.error);
+            const rp = await fetch(`https://graph.facebook.com/v19.0/${videoId}?fields=picture&access_token=${META_TOKEN}`);
+            const jp = await rp.json();
+            if(jp.error) console.error('[BibAds] error video picture', videoId, jp.error);
+            else thumbMap[ad.id].videoThumb = jp.picture || '';
+          } catch(e) { console.error('[BibAds] fetch video picture fallo', videoId, e); }
+
+          // thumbnails: mejor resolucion si esta disponible, pero opcional — no debe romper nada si falla
+          try {
+            const rt = await fetch(`https://graph.facebook.com/v19.0/${videoId}?fields=${encodeURIComponent('thumbnails{uri,width,height}')}&access_token=${META_TOKEN}`);
+            const jt = await rt.json();
+            if(jt.error) {
+              console.warn('[BibAds] thumbnails no disponible (uso picture)', videoId, jt.error);
             } else {
-              const best = (jv.thumbnails?.data||[]).sort((a,b)=>(b.width*b.height)-(a.width*a.height))[0];
-              // picture default de Meta es solo ~130x130 (se pixela al escalar en cards grandes).
-              // thumbnails.data trae versiones reales en mayor resolucion — las preferimos siempre que existan.
-              thumbMap[ad.id].videoThumb = best?.uri || jv.picture || '';
+              const best = (jt.thumbnails?.data||[]).sort((a,b)=>(b.width*b.height)-(a.width*a.height))[0];
+              if(best?.uri) thumbMap[ad.id].videoThumb = best.uri;
             }
-          } catch(e) { console.error('[BibAds] fetch video thumb fallo', videoId, e); }
+          } catch(e) { console.warn('[BibAds] fetch thumbnails fallo (uso picture)', videoId, e); }
         }
       } catch(e) { console.error('[BibAds] fetch creative fallo', ad.id, e); }
     }));
