@@ -315,6 +315,7 @@ tr:hover td{background:var(--surface2)}
     <div class="nav-item" onclick="showPage('biblioteca')" data-page="biblioteca" data-section="meta"><span class="ni"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><rect x="1" y="2" width="4" height="15" rx="1"/><rect x="7" y="1" width="4" height="16" rx="1"/><path d="M13 5l4 12"/><path d="M13 5l-1 .3"/></svg></span><span>Biblioteca</span></div>
     <div class="nav-item" onclick="showPage('benchmarks')" data-page="benchmarks" data-section="meta"><span class="ni"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M1 15h16"/><path d="M3 15V9"/><path d="M7 15V6"/><path d="M11 15V3"/><path d="M15 15V8"/></svg></span><span>Benchmarks</span></div>
     <div class="sb-section">Negocio</div>
+    <div class="nav-item" onclick="showPage('analisis')" data-page="analisis" data-section="finanzas"><span class="ni"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 15h14"/><path d="M4 15V9l3-3 3 2.5L15 3"/></svg></span><span>Analisis</span></div>
     <div class="nav-item" onclick="showPage('tiendanube-connect')" data-page="tiendanube-connect" data-section="finanzas"><span class="ni"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6l1.5-3.5h9L15 6"/><path d="M3 6v8a1 1 0 001 1h10a1 1 0 001-1V6"/><path d="M7 15v-4a1 1 0 011-1h2a1 1 0 011 1v4"/><path d="M3 6h12"/></svg></span><span>Conectar Tienda Nube</span></div>
     <div class="nav-item" onclick="showPage('finanzas')" data-page="finanzas" data-section="finanzas"><span class="ni"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="9" cy="9" r="7.5"/><path d="M9 4.5v1m0 7v1M6.5 7c0-.8.7-1.5 2.5-1.5S11.5 6 11.5 7s-1 1.5-2.5 1.5S6.5 9.2 6.5 10 7.2 11.5 9 11.5s2.5-.7 2.5-1.5"/></svg></span><span>Finanzas</span></div>
     <div class="nav-item" onclick="showPage('contenido')" data-page="contenido" data-section="contenido"><span class="ni"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><rect x="1" y="1" width="7" height="4" rx="1"/><rect x="10" y="1" width="7" height="4" rx="1"/><rect x="1" y="7" width="7" height="10" rx="1"/><rect x="10" y="7" width="7" height="10" rx="1"/></svg></span><span>Contenido</span></div>
@@ -661,6 +662,150 @@ tr:hover td{background:var(--surface2)}
         <div style="background:var(--green-l);border-radius:var(--r);padding:10px;border-left:3px solid var(--green)"><div style="font-size:12px;font-weight:700;color:var(--green);margin-bottom:3px">ROAS &gt;4x por 7+ dias</div><div style="font-size:12px">Momento de escalar. Duplicar presupuesto del conjunto. Esperar 72hs.</div></div>
       </div>
     </div>
+  </div>
+</div>
+
+<!-- ANALISIS -->
+<div id="page-analisis" class="page">
+  <div class="page-hdr">
+    <div><div class="page-title">&#128202; Analisis</div>
+    <div class="page-sub">Vision financiera real del negocio: Meta + Tienda Nube + costos</div></div>
+    <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+      <select id="an-date-range" onchange="onAnDateRangeChange()"
+        style="border:0.5px solid var(--border);border-radius:var(--r);padding:6px 10px;font-size:13px;background:var(--surface);color:var(--text);outline:none;cursor:pointer">
+        <option value="today">Hoy</option>
+        <option value="yesterday">Ayer</option>
+        <option value="last_7d">7 dias</option>
+        <option value="last_14d">14 dias</option>
+        <option value="last_30d" selected>30 dias</option>
+        <option value="last_90d">90 dias</option>
+        <option value="this_month">Este mes</option>
+        <option value="last_month">Mes pasado</option>
+        <option value="custom">Personalizado...</option>
+      </select>
+      <div id="an-custom-date-wrap" style="display:none;gap:5px;align-items:center">
+        <input type="date" id="an-date-since" style="border:0.5px solid var(--border);border-radius:var(--r);padding:6px 8px;font-size:12px;background:var(--surface);color:var(--text);outline:none" onchange="loadAnalisis()">
+        <span style="font-size:12px;color:var(--text2)">&#8594;</span>
+        <input type="date" id="an-date-until" style="border:0.5px solid var(--border);border-radius:var(--r);padding:6px 8px;font-size:12px;background:var(--surface);color:var(--text);outline:none" onchange="loadAnalisis()">
+      </div>
+      <button class="btn btn-outline btn-sm" onclick="loadAnalisis()">&#8635; Actualizar</button>
+    </div>
+  </div>
+
+  <div id="an-not-connected" class="card" style="display:none;text-align:center;padding:30px">
+    <div style="font-size:13px;color:var(--text2)">Conecta Meta Ads y Tienda Nube para ver el analisis completo.</div>
+    <div style="display:flex;gap:8px;justify-content:center;margin-top:12px">
+      <button class="btn btn-outline btn-sm" onclick="showPage('meta-connect')">Conectar Meta</button>
+      <button class="btn btn-outline btn-sm" onclick="showPage('tiendanube-connect')">Conectar Tienda Nube</button>
+    </div>
+  </div>
+
+  <div id="an-content">
+    <!-- METRICAS PRINCIPALES -->
+    <div class="card-title" style="margin-bottom:8px">Metricas principales</div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:18px" id="an-main-grid">
+      <div class="stat-card"><div class="stat-label">Ordenes</div><div class="stat-value" id="an-ordenes">—</div></div>
+      <div class="stat-card"><div class="stat-label">Facturacion</div><div class="stat-value" id="an-facturacion">—</div></div>
+      <div class="stat-card"><div class="stat-label">Inversion publicitaria</div><div class="stat-value" id="an-inversion">—</div></div>
+      <div class="stat-card"><div class="stat-label">Facturacion neta</div><div class="stat-value" id="an-fact-neta">—</div></div>
+      <div class="stat-card teal"><div class="stat-label">Ganancia</div><div class="stat-value" id="an-ganancia">—</div></div>
+      <div class="stat-card"><div class="stat-label">Margen de ganancia</div><div class="stat-value" id="an-margen">—</div></div>
+      <div class="stat-card accent"><div class="stat-label">ROAS</div><div class="stat-value" id="an-roas">—</div></div>
+      <div class="stat-card"><div class="stat-label">True ROAS</div><div class="stat-value" id="an-true-roas">—</div></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr;gap:10px;margin-bottom:24px;max-width:260px">
+      <div class="stat-card"><div class="stat-label">True CPA</div><div class="stat-value" id="an-true-cpa">—</div></div>
+    </div>
+
+    <div class="grid-2" style="margin-bottom:8px">
+      <!-- TIENDA ONLINE -->
+      <div class="card">
+        <div class="card-title">&#127968; Tienda online</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div><div class="fin-label">Ordenes</div><div class="fin-value" id="an-tn-ordenes">—</div></div>
+          <div><div class="fin-label">Facturacion</div><div class="fin-value" id="an-tn-fact">—</div></div>
+          <div><div class="fin-label">Facturacion neta</div><div class="fin-value" id="an-tn-fact-neta">—</div></div>
+          <div><div class="fin-label">AOV</div><div class="fin-value" id="an-tn-aov">—</div></div>
+          <div><div class="fin-label">AOV neto</div><div class="fin-value" id="an-tn-aov-neto">—</div></div>
+        </div>
+      </div>
+      <!-- META -->
+      <div class="card">
+        <div class="card-title">&#128279; Meta</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div><div class="fin-label">Inversion publicitaria</div><div class="fin-value" id="an-meta-inv">—</div></div>
+          <div><div class="fin-label">ROAS</div><div class="fin-value green" id="an-meta-roas">—</div></div>
+          <div><div class="fin-label">CPA</div><div class="fin-value" id="an-meta-cpa">—</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- COSTOS -->
+    <div class="card" style="margin-bottom:8px">
+      <div class="card-title">
+        &#128176; Costos
+        <button class="btn btn-sm btn-outline" onclick="openModal('modal-an-costos-add')" style="margin-left:auto">+ Costo adicional</button>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+        <div>
+          <div class="fin-label">Costo de productos
+            <span onclick="showPage('an-productos')" style="color:var(--accent);cursor:pointer;font-size:11px;text-decoration:underline">configurar</span>
+          </div>
+          <div class="fin-value" id="an-costo-productos">—</div>
+        </div>
+        <div><div class="fin-label">Costos de envio</div><div class="fin-value" id="an-costo-envio">—</div></div>
+        <div><div class="fin-label">Costos adicionales</div><div class="fin-value" id="an-costo-adicional">—</div></div>
+      </div>
+      <div id="an-costo-adicional-list" style="margin-top:10px"></div>
+    </div>
+
+    <!-- CANALES DE MARKETING -->
+    <div class="card" style="margin-bottom:8px">
+      <div class="card-title">&#128225; Canales de marketing</div>
+      <div class="tbl-wrap"><table>
+        <thead><tr><th>Canal</th><th>Ad spend</th><th>ROAS</th><th>True ROAS</th><th>Ordenes</th><th>Revenue</th><th>Net revenue</th><th>True CPA</th><th>AOV</th><th>Net AOV</th></tr></thead>
+        <tbody id="an-canales-tbody"><tr><td colspan="10" style="text-align:center;color:var(--text2);padding:16px">Sin datos</td></tr></tbody>
+      </table></div>
+    </div>
+
+    <!-- ULTIMAS VENTAS -->
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">Ultimas ventas</div>
+        <div id="an-ultimas-ventas" class="tbl-wrap"><table>
+          <thead><tr><th>Producto</th><th>Variante</th><th>Cant.</th><th>Total</th></tr></thead>
+          <tbody id="an-ventas-tbody"><tr><td colspan="4" style="text-align:center;color:var(--text2);padding:16px">Sin datos</td></tr></tbody>
+        </table></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Facturacion por dia</div>
+        <div id="an-chart-wrap" style="height:220px;display:flex;align-items:center;justify-content:center;color:var(--text2);font-size:13px">Cargando grafico...</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ANALISIS — COSTO DE PRODUCTOS -->
+<div id="page-an-productos" class="page">
+  <div class="page-hdr">
+    <div><div class="page-title">&#128230; Costo de productos</div>
+    <div class="page-sub">Carga el costo de cada producto de tu Tienda Nube</div></div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-outline btn-sm" onclick="showPage('analisis')">&#8592; Volver a Analisis</button>
+      <button class="btn btn-outline" onclick="openModal('modal-an-bulk')">&#9999;&#65039; Editar en bulk</button>
+      <button class="btn btn-accent" onclick="loadAnProductos(true)">&#8635; Sincronizar productos</button>
+    </div>
+  </div>
+  <div style="display:flex;gap:10px;margin-bottom:14px;align-items:center">
+    <input type="text" id="an-prod-search" placeholder="Buscar producto..." oninput="renderAnProductos()"
+      style="flex:1;border:0.5px solid var(--border);border-radius:var(--r);padding:8px 12px;font-size:13px;background:var(--surface);color:var(--text);outline:none">
+    <span style="font-size:12px;color:var(--text2)" id="an-prod-count">—</span>
+  </div>
+  <div class="card" style="padding:0;overflow:hidden">
+    <div class="tbl-wrap"><table>
+      <thead><tr><th style="width:36px"><input type="checkbox" id="an-prod-select-all" onchange="toggleAllAnProd(this)"></th><th></th><th>Producto</th><th>Variante</th><th>SKU</th><th>Precio venta</th><th>Costo</th><th>Margen</th></tr></thead>
+      <tbody id="an-prod-tbody"><tr><td colspan="8" style="text-align:center;color:var(--text2);padding:24px">Sin productos — sincroniza desde Tienda Nube</td></tr></tbody>
+    </table></div>
   </div>
 </div>
 
@@ -1652,6 +1797,46 @@ create policy "own" on contacts for all using (auth.uid()=user_id);</div>
   </div>
 </div>
 
+<!-- Modal Costo adicional manual (Analisis) -->
+<div class="modal-backdrop" id="modal-an-costos-add">
+  <div class="modal" style="max-width:380px">
+    <div class="modal-title">Agregar costo adicional</div>
+    <div style="font-size:12px;color:var(--text2);margin-bottom:12px">Se suma a los gastos ya cargados en Finanzas para el calculo de Ganancia y True ROAS.</div>
+    <div class="form-row">
+      <div class="fg full"><label>Concepto</label><input id="an-costo-concepto" type="text" placeholder="Ej: Comision pasarela de pago"/></div>
+    </div>
+    <div class="form-row">
+      <div class="fg full"><label>Monto</label><input id="an-costo-monto" type="number" placeholder="0"/></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-an-costos-add')">Cancelar</button>
+      <button class="btn btn-accent" onclick="saveAnCostoAdicional()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Edicion bulk de costos de producto (Analisis) -->
+<div class="modal-backdrop" id="modal-an-bulk">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-title">Editar costos en bulk</div>
+    <div style="font-size:12px;color:var(--text2);margin-bottom:12px" id="an-bulk-sub">Aplica a los productos seleccionados en la tabla.</div>
+    <div class="form-row">
+      <div class="fg">
+        <label>Modo</label>
+        <select id="an-bulk-mode">
+          <option value="fixed">Monto fijo</option>
+          <option value="pct">% del precio de venta</option>
+        </select>
+      </div>
+      <div class="fg"><label id="an-bulk-value-lbl">Costo ($)</label><input id="an-bulk-value" type="number" placeholder="0"/></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-an-bulk')">Cancelar</button>
+      <button class="btn btn-accent" onclick="applyAnBulk()">Aplicar</button>
+    </div>
+  </div>
+</div>
+
 <!-- Modal Config Financiera -->
 <div class="modal-backdrop" id="modal-fin-config">
   <div class="modal" style="max-width:420px">
@@ -2238,6 +2423,7 @@ function showPage(p){
   if(p==='biblioteca')renderBib();
   if(p==='finanzas')loadFinanzas();
   if(p==='tiendanube-connect')loadTiendaNubeStatus();
+  if(p==='analisis')loadAnalisis();
   if(p==='notas')loadNotas();
   if(p==='campanas-contenido')loadCampanas();
   if(p==='admin')loadAdmin();
@@ -4249,7 +4435,400 @@ async function disconnectTiendaNube() {
   toast('Tienda Nube desconectada');
 }
 
-// ── CONFIG FINANCIERA ─────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════════════════
+// ANALISIS — vision financiera real: Meta + Tienda Nube + costos
+// ══════════════════════════════════════════════════════════════════════════════
+let anProductos = [];          // [{product_id,variant_id,sku,product_name,variant_name,price,stock,image,cost}]
+let anCostosAdicionales = [];  // [{id,concepto,monto}] manuales, ademas de gastos de Finanzas
+let anLineItems = [];          // line items de TN del periodo actual (para ultimas ventas + COGS)
+let anChannelRows = [];        // filas de la tabla de canales
+
+function anResolveDates() {
+  const val = document.getElementById('an-date-range')?.value || 'last_30d';
+  const today = new Date();
+  const fmt = d => d.toISOString().split('T')[0];
+  let since, until = fmt(today);
+  if(val==='custom') {
+    since = document.getElementById('an-date-since')?.value;
+    until = document.getElementById('an-date-until')?.value;
+    return { since, until, val };
+  }
+  if(val==='today') since = fmt(today);
+  else if(val==='yesterday') { const y=new Date(today); y.setDate(y.getDate()-1); since=fmt(y); until=fmt(y); }
+  else if(val==='last_7d') { const d=new Date(today); d.setDate(d.getDate()-6); since=fmt(d); }
+  else if(val==='last_14d') { const d=new Date(today); d.setDate(d.getDate()-13); since=fmt(d); }
+  else if(val==='last_30d') { const d=new Date(today); d.setDate(d.getDate()-29); since=fmt(d); }
+  else if(val==='last_90d') { const d=new Date(today); d.setDate(d.getDate()-89); since=fmt(d); }
+  else if(val==='this_month') { since = fmt(today).substring(0,8)+'01'; }
+  else if(val==='last_month') {
+    const d = new Date(today.getFullYear(), today.getMonth()-1, 1);
+    const last = new Date(today.getFullYear(), today.getMonth(), 0);
+    since = fmt(d); until = fmt(last);
+  } else since = fmt(new Date(today.setDate(today.getDate()-29)));
+  return { since, until, val };
+}
+
+function onAnDateRangeChange() {
+  const val = document.getElementById('an-date-range').value;
+  const wrap = document.getElementById('an-custom-date-wrap');
+  if(val==='custom') {
+    wrap.style.display = 'flex';
+    const today = new Date().toISOString().split('T')[0];
+    if(!document.getElementById('an-date-since').value) document.getElementById('an-date-since').value = today.substring(0,8)+'01';
+    if(!document.getElementById('an-date-until').value) document.getElementById('an-date-until').value = today;
+  } else {
+    wrap.style.display = 'none';
+    loadAnalisis();
+  }
+}
+
+async function loadAnalisis() {
+  if(!me) return;
+  const hasMeta = !!(META_TOKEN && META_ACCOUNT);
+  const hasTN   = !!tnConnection;
+  document.getElementById('an-not-connected').style.display = (hasMeta||hasTN) ? 'none' : 'block';
+  document.getElementById('an-content').style.display = (hasMeta||hasTN) ? 'block' : 'none';
+  if(!hasMeta && !hasTN) return;
+
+  const { since, until } = anResolveDates();
+
+  // 1. Cargar config financiera (costo envio + costos adicionales manual) y gastos de Finanzas si no estan
+  if(!finConfig || finConfig.margen_bruto===undefined) {
+    const { data } = await db.from('fin_config').select('*').eq('user_id', me.id).maybeSingle();
+    if(data) finConfig = data;
+  }
+  if(!gastos.length) {
+    const { data } = await db.from('gastos').select('*').eq('user_id', me.id);
+    if(data) gastos = data;
+  }
+  await loadAnCostosAdicionales();
+  await loadAnProductosFromCache();
+
+  // 2. Tienda Nube: ventas + line items del periodo
+  let tn = { bruto:0, envio:0, neto:0, ordenes:0, line_items:[] };
+  if(hasTN) {
+    try {
+      const session = (await db.auth.getSession()).data.session;
+      const r = await fetch(`/api/tiendanube-orders?from=${since}&to=${until}`, {
+        headers: { Authorization: `Bearer ${session.access_token}` }
+      });
+      const j = await r.json();
+      if(!j.error) tn = j;
+    } catch(e) { console.error('[Analisis] error TN orders', e); }
+  }
+  anLineItems = tn.line_items || [];
+
+  // 3. Meta: gasto + ROAS + compras del periodo (a nivel cuenta)
+  let metaSpend=0, metaRevenue=0, metaPurchases=0;
+  let channelMeta = null;
+  if(hasMeta) {
+    try {
+      const j = await metaGet(`act_${META_ACCOUNT}/insights`, { fields: AD_FIELDS, time_range: JSON.stringify({since,until}), level:'account' });
+      const d = j.data?.[0] || {};
+      metaSpend = +d.spend || 0;
+      metaPurchases = +(d.actions?.find(a=>a.action_type==='purchase')?.value || 0);
+      metaRevenue = +(d.action_values?.find(a=>a.action_type==='purchase')?.value || 0);
+      channelMeta = { spend: metaSpend, revenue: metaRevenue, purchases: metaPurchases };
+    } catch(e) { console.error('[Analisis] error Meta insights', e); }
+  }
+
+  // 4. Costos: productos (COGS real cruzando line items con costo cargado), envio, adicionales
+  const costoProductos = calcAnCOGS(anLineItems);
+  const costoEnvioUnit = +finConfig?.costo_envio_promedio || 0;
+  const costoEnvioTotal = costoEnvioUnit * (tn.ordenes||0);
+  const gastosFinanzasTotal = gastos.reduce((s,g)=>s+(+g.monto||0),0);
+  const costosAdicionalesManualTotal = anCostosAdicionales.reduce((s,c)=>s+(+c.monto||0),0);
+  const costosAdicionalesTotal = gastosFinanzasTotal + costosAdicionalesManualTotal;
+
+  // 5. Metricas principales
+  const ordenes = tn.ordenes || 0;
+  const facturacion = tn.bruto || 0;
+  const facturacionNeta = tn.neto || 0;
+  const inversion = metaSpend;
+  const costoTotal = costoProductos + costoEnvioTotal + costosAdicionalesTotal + inversion;
+  const ganancia = facturacionNeta - costoProductos - costoEnvioTotal - costosAdicionalesTotal - inversion;
+  const margen = facturacion>0 ? (ganancia/facturacion*100) : 0;
+  const roas = inversion>0 ? (metaRevenue||facturacion)/inversion : 0;
+  const trueRoas = inversion>0 ? facturacionNeta/inversion : 0; // descuenta envio (facturacion neta) sobre gasto Meta
+  const trueCpa = ordenes>0 ? (inversion + costoProductos + costoEnvioTotal)/ordenes : 0;
+
+  setT('an-ordenes', ordenes);
+  setT('an-facturacion', fmtMoney(facturacion));
+  setT('an-inversion', fmtMoney(inversion));
+  setT('an-fact-neta', fmtMoney(facturacionNeta));
+  setT('an-ganancia', fmtMoney(ganancia));
+  setT('an-margen', margen.toFixed(1)+'%');
+  setT('an-roas', roas>0?roas.toFixed(2)+'x':'—');
+  setT('an-true-roas', trueRoas>0?trueRoas.toFixed(2)+'x':'—');
+  setT('an-true-cpa', trueCpa>0?fmtMoney(trueCpa):'—');
+
+  // Colorear ganancia
+  const ganEl = document.getElementById('an-ganancia');
+  if(ganEl) ganEl.style.color = ganancia>=0 ? 'var(--green)' : 'var(--red)';
+
+  // 6. Tienda online
+  const aov = ordenes>0 ? facturacion/ordenes : 0;
+  const aovNeto = ordenes>0 ? facturacionNeta/ordenes : 0;
+  setT('an-tn-ordenes', ordenes);
+  setT('an-tn-fact', fmtMoney(facturacion));
+  setT('an-tn-fact-neta', fmtMoney(facturacionNeta));
+  setT('an-tn-aov', aov>0?fmtMoney(aov):'—');
+  setT('an-tn-aov-neto', aovNeto>0?fmtMoney(aovNeto):'—');
+
+  // 7. Meta
+  const metaRoasShown = inversion>0 && metaRevenue>0 ? metaRevenue/inversion : 0;
+  const metaCpa = metaPurchases>0 ? inversion/metaPurchases : 0;
+  setT('an-meta-inv', fmtMoney(inversion));
+  setT('an-meta-roas', metaRoasShown>0?metaRoasShown.toFixed(2)+'x':'—');
+  setT('an-meta-cpa', metaCpa>0?fmtMoney(metaCpa):'—');
+
+  // 8. Costos
+  setT('an-costo-productos', fmtMoney(costoProductos));
+  setT('an-costo-envio', fmtMoney(costoEnvioTotal));
+  setT('an-costo-adicional', fmtMoney(costosAdicionalesTotal));
+  renderAnCostosAdicionalesList();
+
+  // 9. Canales de marketing (por ahora Meta es el unico canal con datos automaticos)
+  anChannelRows = [];
+  if(channelMeta) {
+    const chRoas = channelMeta.spend>0 ? channelMeta.revenue/channelMeta.spend : 0;
+    const chTrueRoas = channelMeta.spend>0 ? facturacionNeta/channelMeta.spend : 0;
+    const chTrueCpa = channelMeta.purchases>0 ? (channelMeta.spend+costoProductos+costoEnvioTotal)/channelMeta.purchases : 0;
+    const chAov = channelMeta.purchases>0 ? channelMeta.revenue/channelMeta.purchases : 0;
+    anChannelRows.push({
+      canal:'Meta Ads', spend:channelMeta.spend, roas:chRoas, trueRoas:chTrueRoas,
+      ordenes:channelMeta.purchases, revenue:channelMeta.revenue, netRevenue:facturacionNeta,
+      trueCpa:chTrueCpa, aov:chAov, netAov:aovNeto,
+    });
+  }
+  renderAnCanales();
+
+  // 10. Ultimas ventas (line items de TN)
+  renderAnUltimasVentas();
+
+  // 11. Grafico de facturacion por dia
+  renderAnChart(since, until);
+}
+
+function calcAnCOGS(lineItems) {
+  if(!lineItems?.length || !anProductos.length) return 0;
+  const costMap = {};
+  anProductos.forEach(p => { costMap[p.variant_id] = +p.cost || 0; });
+  let total = 0;
+  lineItems.forEach(it => {
+    const cost = costMap[it.variant_id] || 0;
+    total += cost * (it.qty||1);
+  });
+  return total;
+}
+
+function fmtMoney(n) {
+  if(n===null||n===undefined||isNaN(n)) return '—';
+  return '$'+Math.round(n).toLocaleString('es-AR');
+}
+
+// ── COSTOS ADICIONALES MANUAL ───────────────────────────────────────────────
+async function loadAnCostosAdicionales() {
+  const { data } = await db.from('an_costos_adicionales').select('*').eq('user_id', me.id);
+  anCostosAdicionales = data || [];
+}
+
+function renderAnCostosAdicionalesList() {
+  const wrap = document.getElementById('an-costo-adicional-list');
+  if(!wrap) return;
+  if(!anCostosAdicionales.length) { wrap.innerHTML=''; return; }
+  wrap.innerHTML = anCostosAdicionales.map(c=>`
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-top:0.5px solid var(--border);font-size:12px">
+      <span style="color:var(--text2)">${c.concepto}</span>
+      <span style="display:flex;gap:8px;align-items:center">
+        <strong>${fmtMoney(c.monto)}</strong>
+        <span onclick="deleteAnCostoAdicional('${c.id}')" style="cursor:pointer;color:var(--text3)">&times;</span>
+      </span>
+    </div>`).join('');
+}
+
+async function saveAnCostoAdicional() {
+  const concepto = document.getElementById('an-costo-concepto').value.trim();
+  const monto = +document.getElementById('an-costo-monto').value || 0;
+  if(!concepto || !monto) { toast('Completa concepto y monto'); return; }
+  const { error } = await db.from('an_costos_adicionales').insert([{ user_id: me.id, concepto, monto }]);
+  if(error) { toast('Error al guardar'); console.error(error); return; }
+  document.getElementById('an-costo-concepto').value='';
+  document.getElementById('an-costo-monto').value='';
+  closeModal('modal-an-costos-add');
+  toast('Costo adicional agregado');
+  loadAnalisis();
+}
+
+async function deleteAnCostoAdicional(id) {
+  await db.from('an_costos_adicionales').delete().eq('id', id);
+  loadAnalisis();
+}
+
+// ── CANALES ──────────────────────────────────────────────────────────────────
+function renderAnCanales() {
+  const tbody = document.getElementById('an-canales-tbody');
+  if(!tbody) return;
+  if(!anChannelRows.length) {
+    tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;color:var(--text2);padding:16px">Sin datos — conecta Meta Ads</td></tr>';
+    return;
+  }
+  tbody.innerHTML = anChannelRows.map(r=>`
+    <tr>
+      <td><strong>${r.canal}</strong></td>
+      <td>${fmtMoney(r.spend)}</td>
+      <td style="color:${roasColor(r.roas)}">${r.roas>0?r.roas.toFixed(2)+'x':'—'}</td>
+      <td style="color:${roasColor(r.trueRoas)}">${r.trueRoas>0?r.trueRoas.toFixed(2)+'x':'—'}</td>
+      <td>${r.ordenes||0}</td>
+      <td>${fmtMoney(r.revenue)}</td>
+      <td>${fmtMoney(r.netRevenue)}</td>
+      <td>${r.trueCpa>0?fmtMoney(r.trueCpa):'—'}</td>
+      <td>${r.aov>0?fmtMoney(r.aov):'—'}</td>
+      <td>${r.netAov>0?fmtMoney(r.netAov):'—'}</td>
+    </tr>`).join('');
+}
+
+// ── ULTIMAS VENTAS ───────────────────────────────────────────────────────────
+function renderAnUltimasVentas() {
+  const tbody = document.getElementById('an-ventas-tbody');
+  if(!tbody) return;
+  if(!anLineItems.length) {
+    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--text2);padding:16px">Sin ventas en el periodo</td></tr>';
+    return;
+  }
+  const last = anLineItems.slice(-15).reverse();
+  tbody.innerHTML = last.map(it=>`
+    <tr>
+      <td>${it.name||'—'}</td>
+      <td style="color:var(--text2)">${it.variant_id||'—'}</td>
+      <td>${it.qty||1}</td>
+      <td>${fmtMoney((it.price||0)*(it.qty||1))}</td>
+    </tr>`).join('');
+}
+
+// ── GRAFICO FACTURACION POR DIA (canvas simple, sin libreria externa) ────────
+function renderAnChart(since, until) {
+  const wrap = document.getElementById('an-chart-wrap');
+  if(!wrap) return;
+  // Agrupamos line items no nos da fecha por item; usamos un fallback simple de barra unica
+  // con el total del periodo si no hay desagregado por dia disponible.
+  if(!anLineItems.length) {
+    wrap.innerHTML = '<div style="color:var(--text2);font-size:13px">Sin datos para graficar</div>';
+    return;
+  }
+  const total = anLineItems.reduce((s,it)=>s+(it.price||0)*(it.qty||1),0);
+  wrap.innerHTML = `<div style="text-align:center">
+    <div style="font-size:13px;color:var(--text2);margin-bottom:6px">Facturacion total del periodo</div>
+    <div style="font-size:28px;font-weight:800;color:var(--text)">${fmtMoney(total)}</div>
+    <div style="font-size:11px;color:var(--text3);margin-top:6px">${since} &#8594; ${until}</div>
+  </div>`;
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ANALISIS — COSTO DE PRODUCTOS (vinculado a Tienda Nube)
+// ══════════════════════════════════════════════════════════════════════════════
+async function loadAnProductosFromCache() {
+  const { data } = await db.from('tn_product_costs').select('*').eq('user_id', me.id);
+  const costMap = {};
+  (data||[]).forEach(r => { costMap[r.variant_id] = +r.cost || 0; });
+  anProductos = anProductos.map(p => ({ ...p, cost: costMap[p.variant_id] ?? p.cost ?? 0 }));
+  // Si todavia no tenemos el catalogo cargado en memoria, lo intentamos traer (sin forzar sync con TN)
+  if(!anProductos.length && tnConnection) {
+    const cached = JSON.parse(localStorage.getItem('gx_an_productos_cache')||'null');
+    if(cached) {
+      anProductos = cached.map(p => ({ ...p, cost: costMap[p.variant_id] ?? 0 }));
+    }
+  }
+}
+
+async function loadAnProductos(forceSync) {
+  if(!tnConnection) { toast('Conecta Tienda Nube primero'); return; }
+  const tbody = document.getElementById('an-prod-tbody');
+  if(forceSync && tbody) tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--text2);padding:24px">Sincronizando productos...</td></tr>';
+
+  let baseProducts = anProductos;
+  if(forceSync || !anProductos.length) {
+    try {
+      const session = (await db.auth.getSession()).data.session;
+      const r = await fetch('/api/tiendanube-products', { headers: { Authorization: `Bearer ${session.access_token}` } });
+      const j = await r.json();
+      if(j.error) { toast('Error al traer productos de Tienda Nube'); console.error(j.error); return; }
+      baseProducts = j.items || [];
+      localStorage.setItem('gx_an_productos_cache', JSON.stringify(baseProducts));
+    } catch(e) { console.error('[AnProductos] sync fallo', e); toast('Error al sincronizar'); return; }
+  }
+
+  const { data: costs } = await db.from('tn_product_costs').select('*').eq('user_id', me.id);
+  const costMap = {};
+  (costs||[]).forEach(r => { costMap[r.variant_id] = +r.cost || 0; });
+  anProductos = baseProducts.map(p => ({ ...p, cost: costMap[p.variant_id] ?? 0 }));
+  renderAnProductos();
+  if(forceSync) toast(`${anProductos.length} variantes sincronizadas`);
+}
+
+function renderAnProductos() {
+  const tbody = document.getElementById('an-prod-tbody');
+  if(!tbody) return;
+  const q = (document.getElementById('an-prod-search')?.value||'').toLowerCase();
+  const list = anProductos.filter(p => !q || p.product_name.toLowerCase().includes(q) || p.variant_name.toLowerCase().includes(q) || (p.sku||'').toLowerCase().includes(q));
+  setT('an-prod-count', `${list.length} variantes`);
+  if(!list.length) {
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--text2);padding:24px">Sin productos — sincroniza desde Tienda Nube</td></tr>';
+    return;
+  }
+  tbody.innerHTML = list.map(p=>{
+    const margin = p.price>0 && p.cost>0 ? ((p.price-p.cost)/p.price*100) : null;
+    return `
+    <tr>
+      <td><input type="checkbox" class="an-prod-chk" data-vid="${p.variant_id}"></td>
+      <td>${p.image?`<img src="${p.image}" style="width:32px;height:32px;border-radius:6px;object-fit:cover">`:''}</td>
+      <td>${p.product_name}</td>
+      <td style="color:var(--text2)">${p.variant_name||'—'}</td>
+      <td style="color:var(--text3);font-size:11px">${p.sku||'—'}</td>
+      <td>${fmtMoney(p.price)}</td>
+      <td><input type="number" value="${p.cost||0}" onchange="updateAnProductCost(${p.variant_id},${p.product_id},this.value)"
+          style="width:80px;border:0.5px solid var(--border);border-radius:6px;padding:4px 6px;font-size:12px;background:var(--surface);color:var(--text)"></td>
+      <td style="color:${margin===null?'var(--text3)':margin>40?'var(--green)':margin>15?'var(--amber)':'var(--red)'}">${margin===null?'—':margin.toFixed(0)+'%'}</td>
+    </tr>`;
+  }).join('');
+}
+
+function toggleAllAnProd(cb) {
+  document.querySelectorAll('.an-prod-chk').forEach(c=>c.checked=cb.checked);
+}
+
+async function updateAnProductCost(variantId, productId, value) {
+  const cost = +value || 0;
+  const p = anProductos.find(x=>x.variant_id===variantId);
+  if(p) p.cost = cost;
+  await db.from('tn_product_costs').upsert([{ user_id: me.id, variant_id: variantId, product_id: productId, cost }], { onConflict: 'user_id,variant_id' });
+  renderAnProductos();
+}
+
+async function applyAnBulk() {
+  const mode = document.getElementById('an-bulk-mode').value;
+  const value = +document.getElementById('an-bulk-value').value || 0;
+  const checked = [...document.querySelectorAll('.an-prod-chk:checked')].map(c=>+c.dataset.vid);
+  if(!checked.length) { toast('Selecciona al menos un producto'); return; }
+  const rows = [];
+  checked.forEach(vid => {
+    const p = anProductos.find(x=>x.variant_id===vid);
+    if(!p) return;
+    const cost = mode==='pct' ? (p.price * value/100) : value;
+    p.cost = cost;
+    rows.push({ user_id: me.id, variant_id: p.variant_id, product_id: p.product_id, cost });
+  });
+  if(rows.length) await db.from('tn_product_costs').upsert(rows, { onConflict: 'user_id,variant_id' });
+  closeModal('modal-an-bulk');
+  renderAnProductos();
+  toast(`Costo aplicado a ${rows.length} variantes`);
+}
+
+document.getElementById('an-bulk-mode')?.addEventListener('change', function(){
+  document.getElementById('an-bulk-value-lbl').textContent = this.value==='pct' ? 'Porcentaje (%)' : 'Costo ($)';
+});
+
+
 async function saveFinConfig() {
   const cfg = {
     user_id: me.id,
@@ -5464,7 +6043,7 @@ function renderBibAds() {
 
   grid.innerHTML = list.map(ad => {
     const isActive = ad.status === 'ACTIVE';
-    const rc = roasClr(ad.roas);
+    const rc = roasColor(ad.roas);
     return `
     <div style="background:var(--surface);border:0.5px solid var(--border);border-radius:10px;overflow:hidden;transition:box-shadow .15s;cursor:default" onmouseover="this.style.boxShadow='0 4px 16px rgba(0,0,0,.1)'" onmouseout="this.style.boxShadow='none'">
 
