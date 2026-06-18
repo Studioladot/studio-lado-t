@@ -242,6 +242,45 @@ tr:hover td{background:var(--surface2)}
 @media(max-width:420px){
   [style*="grid-template-columns:repeat(4,1fr)"]{grid-template-columns:1fr !important}
 }
+/* ── ANALISIS — panel tipo sistema, dark, sparklines ──────────────────────── */
+.an-dark{
+  --ad-bg:#0e0f12; --ad-surface:#15171b; --ad-surface2:#1c1f24; --ad-border:#262a30;
+  --ad-text:#f3f4f5; --ad-text2:#9a9fa8; --ad-text3:#5c6168;
+  --ad-up:#34d399; --ad-down:#f87171;
+  background:var(--ad-bg);border-radius:var(--rl);padding:18px 20px 20px;margin-bottom:14px;
+  border:0.5px solid var(--ad-border);
+}
+.an-dark-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;gap:8px}
+.an-dark-title{display:flex;align-items:center;gap:9px;font-size:14px;font-weight:700;color:var(--ad-text);letter-spacing:-.01em}
+.an-dark-ico{width:26px;height:26px;border-radius:7px;background:var(--ad-surface2);display:flex;align-items:center;justify-content:center;color:var(--ad-text2);flex-shrink:0}
+.an-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.an-card{
+  background:var(--ad-surface);border:0.5px solid var(--ad-border);border-radius:12px;
+  padding:14px 16px 12px;position:relative;overflow:hidden;min-height:108px;
+  display:flex;flex-direction:column;justify-content:space-between;
+}
+.an-card-top{display:flex;align-items:center;gap:7px;margin-bottom:10px}
+.an-card-ico{width:18px;height:18px;color:var(--ad-text3);flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.an-card-label{font-size:11px;font-weight:600;color:var(--ad-text2);text-transform:uppercase;letter-spacing:.04em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.an-card-val-row{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.an-card-val{font-size:21px;font-weight:700;color:var(--ad-text);letter-spacing:-.02em}
+.an-card-delta{font-size:11px;font-weight:700;display:flex;align-items:center;gap:2px}
+.an-card-delta.up{color:var(--ad-up)}
+.an-card-delta.down{color:var(--ad-down)}
+.an-card-spark{position:absolute;left:0;right:0;bottom:0;height:30px;opacity:.9;pointer-events:none}
+.an-card.accent{background:linear-gradient(135deg,var(--accent) 0%,var(--accent-d) 100%);border-color:var(--accent)}
+.an-card.accent .an-card-label,.an-card.accent .an-card-ico{color:rgba(255,255,255,.75)}
+.an-card.accent .an-card-val{color:#fff}
+.an-section-label{font-size:10.5px;font-weight:700;color:var(--ad-text3);text-transform:uppercase;letter-spacing:.08em;margin:2px 0 8px}
+.an-table-dark{width:100%;border-collapse:collapse}
+.an-table-dark th{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--ad-text3);padding:9px 12px;text-align:left;border-bottom:0.5px solid var(--ad-border);background:transparent;white-space:nowrap}
+.an-table-dark td{padding:11px 12px;font-size:13px;color:var(--ad-text);border-bottom:0.5px solid var(--ad-border);vertical-align:middle}
+.an-table-dark tr:last-child td{border-bottom:none}
+.an-table-dark tr:hover td{background:var(--ad-surface2)}
+.an-pill{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:20px;font-size:11.5px;font-weight:700}
+.an-pill-row{display:flex;align-items:center;gap:6px}
+.an-channel-dot{width:7px;height:7px;border-radius:50%;background:var(--accent);flex-shrink:0}
+@media(max-width:900px){.an-grid{grid-template-columns:repeat(2,1fr)}}
 </style>
 </head>
 <body>
@@ -668,7 +707,7 @@ tr:hover td{background:var(--surface2)}
 <!-- ANALISIS -->
 <div id="page-analisis" class="page">
   <div class="page-hdr">
-    <div><div class="page-title">&#128202; Analisis</div>
+    <div><div class="page-title">Analisis</div>
     <div class="page-sub">Vision financiera real del negocio: Meta + Tienda Nube + costos</div></div>
     <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
       <select id="an-date-range" onchange="onAnDateRangeChange()"
@@ -688,7 +727,9 @@ tr:hover td{background:var(--surface2)}
         <span style="font-size:12px;color:var(--text2)">&#8594;</span>
         <input type="date" id="an-date-until" style="border:0.5px solid var(--border);border-radius:var(--r);padding:6px 8px;font-size:12px;background:var(--surface);color:var(--text);outline:none" onchange="loadAnalisis()">
       </div>
-      <button class="btn btn-outline btn-sm" onclick="loadAnalisis()">&#8635; Actualizar</button>
+      <button class="btn btn-outline btn-sm" onclick="loadAnalisis()">
+        <svg width="13" height="13" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" style="vertical-align:-2px;margin-right:4px"><path d="M15 5a6.5 6.5 0 10.9 5.5"/><path d="M15 1.5V5h-3.5"/></svg>Actualizar
+      </button>
     </div>
   </div>
 
@@ -701,85 +742,115 @@ tr:hover td{background:var(--surface2)}
   </div>
 
   <div id="an-content">
-    <!-- METRICAS PRINCIPALES -->
-    <div class="card-title" style="margin-bottom:8px">Metricas principales</div>
-    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:18px" id="an-main-grid">
-      <div class="stat-card"><div class="stat-label">Ordenes</div><div class="stat-value" id="an-ordenes">—</div></div>
-      <div class="stat-card"><div class="stat-label">Facturacion</div><div class="stat-value" id="an-facturacion">—</div></div>
-      <div class="stat-card"><div class="stat-label">Inversion publicitaria</div><div class="stat-value" id="an-inversion">—</div></div>
-      <div class="stat-card"><div class="stat-label">Facturacion neta</div><div class="stat-value" id="an-fact-neta">—</div></div>
-      <div class="stat-card teal"><div class="stat-label">Ganancia</div><div class="stat-value" id="an-ganancia">—</div></div>
-      <div class="stat-card"><div class="stat-label">Margen de ganancia</div><div class="stat-value" id="an-margen">—</div></div>
-      <div class="stat-card accent"><div class="stat-label">ROAS</div><div class="stat-value" id="an-roas">—</div></div>
-      <div class="stat-card"><div class="stat-label">True ROAS</div><div class="stat-value" id="an-true-roas">—</div></div>
-    </div>
-    <div style="display:grid;grid-template-columns:1fr;gap:10px;margin-bottom:24px;max-width:260px">
-      <div class="stat-card"><div class="stat-label">True CPA</div><div class="stat-value" id="an-true-cpa">—</div></div>
-    </div>
 
-    <div class="grid-2" style="margin-bottom:8px">
-      <!-- TIENDA ONLINE -->
-      <div class="card">
-        <div class="card-title">&#127968; Tienda online</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-          <div><div class="fin-label">Ordenes</div><div class="fin-value" id="an-tn-ordenes">—</div></div>
-          <div><div class="fin-label">Facturacion</div><div class="fin-value" id="an-tn-fact">—</div></div>
-          <div><div class="fin-label">Facturacion neta</div><div class="fin-value" id="an-tn-fact-neta">—</div></div>
-          <div><div class="fin-label">AOV</div><div class="fin-value" id="an-tn-aov">—</div></div>
-          <div><div class="fin-label">AOV neto</div><div class="fin-value" id="an-tn-aov-neto">—</div></div>
+    <!-- METRICAS PRINCIPALES -->
+    <div class="an-dark">
+      <div class="an-dark-hdr">
+        <div class="an-dark-title">
+          <span class="an-dark-ico"><svg width="14" height="14" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 15h14"/><path d="M4 15V9l3-3 3 2.5L15 3"/></svg></span>
+          Metricas principales
         </div>
       </div>
-      <!-- META -->
-      <div class="card">
-        <div class="card-title">&#128279; Meta</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-          <div><div class="fin-label">Inversion publicitaria</div><div class="fin-value" id="an-meta-inv">—</div></div>
-          <div><div class="fin-label">ROAS</div><div class="fin-value green" id="an-meta-roas">—</div></div>
-          <div><div class="fin-label">CPA</div><div class="fin-value" id="an-meta-cpa">—</div></div>
+      <div class="an-grid" id="an-main-grid">
+        <div class="an-card" id="anc-ordenes"></div>
+        <div class="an-card" id="anc-facturacion"></div>
+        <div class="an-card" id="anc-inversion"></div>
+        <div class="an-card" id="anc-fact-neta"></div>
+        <div class="an-card" id="anc-ganancia"></div>
+        <div class="an-card" id="anc-margen"></div>
+        <div class="an-card accent" id="anc-roas"></div>
+        <div class="an-card" id="anc-true-roas"></div>
+      </div>
+      <div class="an-grid" style="grid-template-columns:1fr;margin-top:10px;max-width:300px">
+        <div class="an-card" id="anc-true-cpa"></div>
+      </div>
+    </div>
+
+    <!-- TIENDA ONLINE + META -->
+    <div style="display:grid;grid-template-columns:1.4fr 1fr;gap:14px;margin-bottom:14px;align-items:start">
+      <div class="an-dark" style="margin-bottom:0">
+        <div class="an-dark-hdr">
+          <div class="an-dark-title">
+            <span class="an-dark-ico"><svg width="13" height="13" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6l1.5-3.5h9L15 6"/><path d="M3 6v8a1 1 0 001 1h10a1 1 0 001-1V6"/><path d="M7 15v-4a1 1 0 011-1h2a1 1 0 011 1v4"/><path d="M3 6h12"/></svg></span>
+            Tienda online
+          </div>
+        </div>
+        <div class="an-grid" style="grid-template-columns:repeat(3,1fr)" id="an-tn-grid">
+          <div class="an-card" id="anc-tn-ordenes"></div>
+          <div class="an-card" id="anc-tn-fact"></div>
+          <div class="an-card" id="anc-tn-fact-neta"></div>
+          <div class="an-card" id="anc-tn-aov"></div>
+          <div class="an-card" id="anc-tn-aov-neto"></div>
+        </div>
+      </div>
+      <div class="an-dark" style="margin-bottom:0">
+        <div class="an-dark-hdr">
+          <div class="an-dark-title">
+            <span class="an-dark-ico"><svg width="13" height="13" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M7.5 10.5a4 4 0 005.7 0l2-2a4 4 0 00-5.7-5.7L8 4.3"/><path d="M10.5 7.5a4 4 0 00-5.7 0l-2 2a4 4 0 005.7 5.7L10 13.7"/></svg></span>
+            Meta
+          </div>
+        </div>
+        <div class="an-grid" style="grid-template-columns:1fr 1fr" id="an-meta-grid">
+          <div class="an-card" style="grid-column:1/-1" id="anc-meta-inv"></div>
+          <div class="an-card" id="anc-meta-roas"></div>
+          <div class="an-card" id="anc-meta-cpa"></div>
         </div>
       </div>
     </div>
 
     <!-- COSTOS -->
-    <div class="card" style="margin-bottom:8px">
-      <div class="card-title">
-        &#128176; Costos
-        <button class="btn btn-sm btn-outline" onclick="openModal('modal-an-costos-add')" style="margin-left:auto">+ Costo adicional</button>
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
-        <div>
-          <div class="fin-label">Costo de productos
-            <span onclick="showPage('an-productos')" style="color:var(--accent);cursor:pointer;font-size:11px;text-decoration:underline">configurar</span>
-          </div>
-          <div class="fin-value" id="an-costo-productos">—</div>
+    <div class="an-dark">
+      <div class="an-dark-hdr">
+        <div class="an-dark-title">
+          <span class="an-dark-ico"><svg width="13" height="13" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="9" cy="9" r="7"/><path d="M9 5v8M6.5 7c0-1 .8-1.7 2.5-1.7s2.5.7 2.5 1.7-1 1.3-2.5 1.3S6.5 9 6.5 10s1 1.7 2.5 1.7 2.5-.7 2.5-1.7"/></svg></span>
+          Costos
         </div>
-        <div><div class="fin-label">Costos de envio</div><div class="fin-value" id="an-costo-envio">—</div></div>
-        <div><div class="fin-label">Costos adicionales</div><div class="fin-value" id="an-costo-adicional">—</div></div>
+        <button class="btn btn-sm btn-outline" onclick="openModal('modal-an-costos-add')">+ Costo adicional</button>
+      </div>
+      <div class="an-grid" style="grid-template-columns:repeat(3,1fr)">
+        <div class="an-card" id="anc-costo-productos"></div>
+        <div class="an-card" id="anc-costo-envio"></div>
+        <div class="an-card" id="anc-costo-adicional"></div>
       </div>
       <div id="an-costo-adicional-list" style="margin-top:10px"></div>
     </div>
 
     <!-- CANALES DE MARKETING -->
-    <div class="card" style="margin-bottom:8px">
-      <div class="card-title">&#128225; Canales de marketing</div>
-      <div class="tbl-wrap"><table>
+    <div class="an-dark">
+      <div class="an-dark-hdr">
+        <div class="an-dark-title">
+          <span class="an-dark-ico"><svg width="13" height="13" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="4.5" cy="9" r="2.5"/><circle cx="13.5" cy="4" r="2.5"/><circle cx="13.5" cy="14" r="2.5"/><path d="M6.7 7.8l4.6-2.7M6.7 10.2l4.6 2.7"/></svg></span>
+          Canales de marketing
+        </div>
+      </div>
+      <div class="tbl-wrap" style="margin:-2px -2px 0"><table class="an-table-dark">
         <thead><tr><th>Canal</th><th>Ad spend</th><th>ROAS</th><th>True ROAS</th><th>Ordenes</th><th>Revenue</th><th>Net revenue</th><th>True CPA</th><th>AOV</th><th>Net AOV</th></tr></thead>
-        <tbody id="an-canales-tbody"><tr><td colspan="10" style="text-align:center;color:var(--text2);padding:16px">Sin datos</td></tr></tbody>
+        <tbody id="an-canales-tbody"><tr><td colspan="10" style="text-align:center;color:var(--ad-text3);padding:18px">Sin datos</td></tr></tbody>
       </table></div>
     </div>
 
-    <!-- ULTIMAS VENTAS -->
-    <div class="grid-2">
-      <div class="card">
-        <div class="card-title">Ultimas ventas</div>
-        <div id="an-ultimas-ventas" class="tbl-wrap"><table>
+    <!-- ULTIMAS VENTAS + GRAFICO -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+      <div class="an-dark" style="margin-bottom:0">
+        <div class="an-dark-hdr">
+          <div class="an-dark-title">
+            <span class="an-dark-ico"><svg width="13" height="13" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="14" height="14" rx="2"/><path d="M2 7h14"/><path d="M6 2v5"/></svg></span>
+            Ultimas ventas
+          </div>
+        </div>
+        <div class="tbl-wrap" style="margin:-2px -2px 0"><table class="an-table-dark">
           <thead><tr><th>Producto</th><th>Variante</th><th>Cant.</th><th>Total</th></tr></thead>
-          <tbody id="an-ventas-tbody"><tr><td colspan="4" style="text-align:center;color:var(--text2);padding:16px">Sin datos</td></tr></tbody>
+          <tbody id="an-ventas-tbody"><tr><td colspan="4" style="text-align:center;color:var(--ad-text3);padding:18px">Sin datos</td></tr></tbody>
         </table></div>
       </div>
-      <div class="card">
-        <div class="card-title">Facturacion por dia</div>
-        <div id="an-chart-wrap" style="height:220px;display:flex;align-items:center;justify-content:center;color:var(--text2);font-size:13px">Cargando grafico...</div>
+      <div class="an-dark" style="margin-bottom:0">
+        <div class="an-dark-hdr">
+          <div class="an-dark-title">
+            <span class="an-dark-ico"><svg width="13" height="13" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 15V9l3.5-3 3.5 2.5L15 3"/><path d="M2 15h14"/></svg></span>
+            Facturacion por dia
+          </div>
+        </div>
+        <div id="an-chart-wrap" style="height:200px"></div>
       </div>
     </div>
   </div>
@@ -788,12 +859,12 @@ tr:hover td{background:var(--surface2)}
 <!-- ANALISIS — COSTO DE PRODUCTOS -->
 <div id="page-an-productos" class="page">
   <div class="page-hdr">
-    <div><div class="page-title">&#128230; Costo de productos</div>
+    <div><div class="page-title">Costo de productos</div>
     <div class="page-sub">Carga el costo de cada producto de tu Tienda Nube</div></div>
     <div style="display:flex;gap:8px">
       <button class="btn btn-outline btn-sm" onclick="showPage('analisis')">&#8592; Volver a Analisis</button>
-      <button class="btn btn-outline" onclick="openModal('modal-an-bulk')">&#9999;&#65039; Editar en bulk</button>
-      <button class="btn btn-accent" onclick="loadAnProductos(true)">&#8635; Sincronizar productos</button>
+      <button class="btn btn-outline" onclick="openModal('modal-an-bulk')">Editar en bulk</button>
+      <button class="btn btn-accent" onclick="loadAnProductos(true)">Sincronizar productos</button>
     </div>
   </div>
   <div style="display:flex;gap:10px;margin-bottom:14px;align-items:center">
@@ -810,6 +881,7 @@ tr:hover td{background:var(--surface2)}
 </div>
 
 <!-- CONECTAR TIENDA NUBE -->
+
 <div id="page-tiendanube-connect" class="page">
   <div class="page-hdr">
     <div><div class="page-title">&#127968; Tienda Nube</div>
@@ -4482,6 +4554,41 @@ function onAnDateRangeChange() {
   }
 }
 
+// Devuelve el rango anterior equivalente en duracion (para comparar deltas, como Escalafy)
+function anPrevRange(since, until) {
+  const d1 = new Date(since+'T00:00:00');
+  const d2 = new Date(until+'T00:00:00');
+  const days = Math.round((d2-d1)/86400000)+1;
+  const prevUntil = new Date(d1); prevUntil.setDate(prevUntil.getDate()-1);
+  const prevSince = new Date(prevUntil); prevSince.setDate(prevSince.getDate()-(days-1));
+  const fmt = d => d.toISOString().split('T')[0];
+  return { since: fmt(prevSince), until: fmt(prevUntil) };
+}
+
+async function fetchTNOrders(since, until) {
+  if(!tnConnection) return { bruto:0, envio:0, neto:0, ordenes:0, line_items:[], serie_diaria:[] };
+  try {
+    const session = (await db.auth.getSession()).data.session;
+    const r = await fetch(`/api/tiendanube-orders?from=${since}&to=${until}`, { headers: { Authorization: `Bearer ${session.access_token}` } });
+    const j = await r.json();
+    if(j.error) throw j.error;
+    return j;
+  } catch(e) { console.error('[Analisis] error TN orders', e); return { bruto:0, envio:0, neto:0, ordenes:0, line_items:[], serie_diaria:[] }; }
+}
+
+async function fetchMetaTotals(since, until) {
+  if(!(META_TOKEN && META_ACCOUNT)) return { spend:0, revenue:0, purchases:0 };
+  try {
+    const j = await metaGet(`act_${META_ACCOUNT}/insights`, { fields: AD_FIELDS, time_range: JSON.stringify({since,until}), level:'account' });
+    const d = j.data?.[0] || {};
+    return {
+      spend: +d.spend || 0,
+      purchases: +(d.actions?.find(a=>a.action_type==='purchase')?.value || 0),
+      revenue: +(d.action_values?.find(a=>a.action_type==='purchase')?.value || 0),
+    };
+  } catch(e) { console.error('[Analisis] error Meta insights', e); return { spend:0, revenue:0, purchases:0 }; }
+}
+
 async function loadAnalisis() {
   if(!me) return;
   const hasMeta = !!(META_TOKEN && META_ACCOUNT);
@@ -4491,8 +4598,8 @@ async function loadAnalisis() {
   if(!hasMeta && !hasTN) return;
 
   const { since, until } = anResolveDates();
+  const prev = anPrevRange(since, until);
 
-  // 1. Cargar config financiera (costo envio + costos adicionales manual) y gastos de Finanzas si no estan
   if(!finConfig || finConfig.margen_bruto===undefined) {
     const { data } = await db.from('fin_config').select('*').eq('user_id', me.id).maybeSingle();
     if(data) finConfig = data;
@@ -4504,110 +4611,167 @@ async function loadAnalisis() {
   await loadAnCostosAdicionales();
   await loadAnProductosFromCache();
 
-  // 2. Tienda Nube: ventas + line items del periodo
-  let tn = { bruto:0, envio:0, neto:0, ordenes:0, line_items:[] };
-  if(hasTN) {
-    try {
-      const session = (await db.auth.getSession()).data.session;
-      const r = await fetch(`/api/tiendanube-orders?from=${since}&to=${until}`, {
-        headers: { Authorization: `Bearer ${session.access_token}` }
-      });
-      const j = await r.json();
-      if(!j.error) tn = j;
-    } catch(e) { console.error('[Analisis] error TN orders', e); }
-  }
+  // Periodo actual + periodo anterior (para deltas), en paralelo
+  const [tn, tnPrev, meta, metaPrev] = await Promise.all([
+    fetchTNOrders(since, until),
+    fetchTNOrders(prev.since, prev.until),
+    fetchMetaTotals(since, until),
+    fetchMetaTotals(prev.since, prev.until),
+  ]);
   anLineItems = tn.line_items || [];
 
-  // 3. Meta: gasto + ROAS + compras del periodo (a nivel cuenta)
-  let metaSpend=0, metaRevenue=0, metaPurchases=0;
-  let channelMeta = null;
-  if(hasMeta) {
-    try {
-      const j = await metaGet(`act_${META_ACCOUNT}/insights`, { fields: AD_FIELDS, time_range: JSON.stringify({since,until}), level:'account' });
-      const d = j.data?.[0] || {};
-      metaSpend = +d.spend || 0;
-      metaPurchases = +(d.actions?.find(a=>a.action_type==='purchase')?.value || 0);
-      metaRevenue = +(d.action_values?.find(a=>a.action_type==='purchase')?.value || 0);
-      channelMeta = { spend: metaSpend, revenue: metaRevenue, purchases: metaPurchases };
-    } catch(e) { console.error('[Analisis] error Meta insights', e); }
-  }
-
-  // 4. Costos: productos (COGS real cruzando line items con costo cargado), envio, adicionales
-  const costoProductos = calcAnCOGS(anLineItems);
   const costoEnvioUnit = +finConfig?.costo_envio_promedio || 0;
-  const costoEnvioTotal = costoEnvioUnit * (tn.ordenes||0);
   const gastosFinanzasTotal = gastos.reduce((s,g)=>s+(+g.monto||0),0);
   const costosAdicionalesManualTotal = anCostosAdicionales.reduce((s,c)=>s+(+c.monto||0),0);
   const costosAdicionalesTotal = gastosFinanzasTotal + costosAdicionalesManualTotal;
 
-  // 5. Metricas principales
-  const ordenes = tn.ordenes || 0;
-  const facturacion = tn.bruto || 0;
-  const facturacionNeta = tn.neto || 0;
-  const inversion = metaSpend;
-  const costoTotal = costoProductos + costoEnvioTotal + costosAdicionalesTotal + inversion;
-  const ganancia = facturacionNeta - costoProductos - costoEnvioTotal - costosAdicionalesTotal - inversion;
-  const margen = facturacion>0 ? (ganancia/facturacion*100) : 0;
-  const roas = inversion>0 ? (metaRevenue||facturacion)/inversion : 0;
-  const trueRoas = inversion>0 ? facturacionNeta/inversion : 0; // descuenta envio (facturacion neta) sobre gasto Meta
-  const trueCpa = ordenes>0 ? (inversion + costoProductos + costoEnvioTotal)/ordenes : 0;
+  function computeMetrics(tnData, metaData) {
+    const ordenes = tnData.ordenes || 0;
+    const facturacion = tnData.bruto || 0;
+    const facturacionNeta = tnData.neto || 0;
+    const inversion = metaData.spend || 0;
+    const costoProductos = calcAnCOGS(tnData.line_items || []);
+    const costoEnvioTotal = costoEnvioUnit * ordenes;
+    const ganancia = facturacionNeta - costoProductos - costoEnvioTotal - costosAdicionalesTotal - inversion;
+    const margen = facturacion>0 ? (ganancia/facturacion*100) : 0;
+    const roas = inversion>0 && metaData.revenue>0 ? metaData.revenue/inversion : 0;
+    const trueRoas = inversion>0 ? facturacionNeta/inversion : 0;
+    const trueCpa = ordenes>0 ? (inversion+costoProductos+costoEnvioTotal)/ordenes : 0;
+    const aov = ordenes>0 ? facturacion/ordenes : 0;
+    const aovNeto = ordenes>0 ? facturacionNeta/ordenes : 0;
+    const metaCpa = metaData.purchases>0 ? inversion/metaData.purchases : 0;
+    return { ordenes,facturacion,facturacionNeta,inversion,costoProductos,costoEnvioTotal,ganancia,margen,roas,trueRoas,trueCpa,aov,aovNeto,metaCpa,metaRevenue:metaData.revenue,metaPurchases:metaData.purchases };
+  }
 
-  setT('an-ordenes', ordenes);
-  setT('an-facturacion', fmtMoney(facturacion));
-  setT('an-inversion', fmtMoney(inversion));
-  setT('an-fact-neta', fmtMoney(facturacionNeta));
-  setT('an-ganancia', fmtMoney(ganancia));
-  setT('an-margen', margen.toFixed(1)+'%');
-  setT('an-roas', roas>0?roas.toFixed(2)+'x':'—');
-  setT('an-true-roas', trueRoas>0?trueRoas.toFixed(2)+'x':'—');
-  setT('an-true-cpa', trueCpa>0?fmtMoney(trueCpa):'—');
+  const cur  = computeMetrics(tn, meta);
+  const prv  = computeMetrics(tnPrev, metaPrev);
+  const delta = (a,b) => b>0 ? ((a-b)/b*100) : (a>0?100:0);
 
-  // Colorear ganancia
-  const ganEl = document.getElementById('an-ganancia');
-  if(ganEl) ganEl.style.color = ganancia>=0 ? 'var(--green)' : 'var(--red)';
+  // Series para sparklines: TN trae serie_diaria con bruto/neto/ordenes; Meta no se desagrega por dia aqui (queda plano)
+  const serie = tn.serie_diaria || [];
+  const sOrdenes = serie.map(d=>d.ordenes);
+  const sFact = serie.map(d=>d.bruto);
+  const sFactNeta = serie.map(d=>d.neto);
+  const flatSerie = serie.length ? serie.map(()=>1) : [];
 
-  // 6. Tienda online
-  const aov = ordenes>0 ? facturacion/ordenes : 0;
-  const aovNeto = ordenes>0 ? facturacionNeta/ordenes : 0;
-  setT('an-tn-ordenes', ordenes);
-  setT('an-tn-fact', fmtMoney(facturacion));
-  setT('an-tn-fact-neta', fmtMoney(facturacionNeta));
-  setT('an-tn-aov', aov>0?fmtMoney(aov):'—');
-  setT('an-tn-aov-neto', aovNeto>0?fmtMoney(aovNeto):'—');
+  anRenderCard('anc-ordenes','Ordenes',cur.ordenes,delta(cur.ordenes,prv.ordenes),sOrdenes,'int');
+  anRenderCard('anc-facturacion','Facturacion',cur.facturacion,delta(cur.facturacion,prv.facturacion),sFact,'money');
+  anRenderCard('anc-inversion','Inversion publicitaria',cur.inversion,delta(cur.inversion,prv.inversion),flatSerie,'money');
+  anRenderCard('anc-fact-neta','Facturacion neta',cur.facturacionNeta,delta(cur.facturacionNeta,prv.facturacionNeta),sFactNeta,'money');
+  anRenderCard('anc-ganancia','Ganancia',cur.ganancia,delta(cur.ganancia,prv.ganancia),sFactNeta,'money',true);
+  anRenderCard('anc-margen','Margen de ganancia',cur.margen,delta(cur.margen,prv.margen),flatSerie,'pct');
+  anRenderCard('anc-roas','ROAS',cur.roas,delta(cur.roas,prv.roas),flatSerie,'x');
+  anRenderCard('anc-true-roas','True ROAS',cur.trueRoas,delta(cur.trueRoas,prv.trueRoas),flatSerie,'x');
+  anRenderCard('anc-true-cpa','True CPA',cur.trueCpa,delta(cur.trueCpa,prv.trueCpa),flatSerie,'money',false,true);
 
-  // 7. Meta
-  const metaRoasShown = inversion>0 && metaRevenue>0 ? metaRevenue/inversion : 0;
-  const metaCpa = metaPurchases>0 ? inversion/metaPurchases : 0;
-  setT('an-meta-inv', fmtMoney(inversion));
-  setT('an-meta-roas', metaRoasShown>0?metaRoasShown.toFixed(2)+'x':'—');
-  setT('an-meta-cpa', metaCpa>0?fmtMoney(metaCpa):'—');
+  anRenderCard('anc-tn-ordenes','Ordenes',cur.ordenes,delta(cur.ordenes,prv.ordenes),sOrdenes,'int');
+  anRenderCard('anc-tn-fact','Facturacion',cur.facturacion,delta(cur.facturacion,prv.facturacion),sFact,'money');
+  anRenderCard('anc-tn-fact-neta','Facturacion neta',cur.facturacionNeta,delta(cur.facturacionNeta,prv.facturacionNeta),sFactNeta,'money');
+  anRenderCard('anc-tn-aov','AOV',cur.aov,delta(cur.aov,prv.aov),flatSerie,'money');
+  anRenderCard('anc-tn-aov-neto','AOV neto',cur.aovNeto,delta(cur.aovNeto,prv.aovNeto),flatSerie,'money');
 
-  // 8. Costos
-  setT('an-costo-productos', fmtMoney(costoProductos));
-  setT('an-costo-envio', fmtMoney(costoEnvioTotal));
-  setT('an-costo-adicional', fmtMoney(costosAdicionalesTotal));
+  anRenderCard('anc-meta-inv','Inversion publicitaria',cur.inversion,delta(cur.inversion,prv.inversion),flatSerie,'money');
+  anRenderCard('anc-meta-roas','ROAS',cur.inversion>0&&cur.metaRevenue>0?cur.metaRevenue/cur.inversion:0,delta(cur.metaRevenue/(cur.inversion||1),prv.metaRevenue/(prv.inversion||1)),flatSerie,'x');
+  anRenderCard('anc-meta-cpa','CPA',cur.metaCpa,delta(cur.metaCpa,prv.metaCpa),flatSerie,'money',false,true);
+
+  anRenderCard('anc-costo-productos','Costo de productos',cur.costoProductos,delta(cur.costoProductos,prv.costoProductos),flatSerie,'money',false,true);
+  anRenderCard('anc-costo-envio','Costos de envio',cur.costoEnvioTotal,delta(cur.costoEnvioTotal,prv.costoEnvioTotal),flatSerie,'money',false,true);
+  anRenderCard('anc-costo-adicional','Costos adicionales',costosAdicionalesTotal,0,flatSerie,'money',false,true);
   renderAnCostosAdicionalesList();
 
-  // 9. Canales de marketing (por ahora Meta es el unico canal con datos automaticos)
+  // Canales de marketing
   anChannelRows = [];
-  if(channelMeta) {
-    const chRoas = channelMeta.spend>0 ? channelMeta.revenue/channelMeta.spend : 0;
-    const chTrueRoas = channelMeta.spend>0 ? facturacionNeta/channelMeta.spend : 0;
-    const chTrueCpa = channelMeta.purchases>0 ? (channelMeta.spend+costoProductos+costoEnvioTotal)/channelMeta.purchases : 0;
-    const chAov = channelMeta.purchases>0 ? channelMeta.revenue/channelMeta.purchases : 0;
+  if(hasMeta) {
+    const chRoas = cur.inversion>0 ? cur.metaRevenue/cur.inversion : 0;
+    const chTrueRoas = cur.inversion>0 ? cur.facturacionNeta/cur.inversion : 0;
+    const chTrueCpa = cur.metaPurchases>0 ? (cur.inversion+cur.costoProductos+cur.costoEnvioTotal)/cur.metaPurchases : 0;
+    const chAov = cur.metaPurchases>0 ? cur.metaRevenue/cur.metaPurchases : 0;
     anChannelRows.push({
-      canal:'Meta Ads', spend:channelMeta.spend, roas:chRoas, trueRoas:chTrueRoas,
-      ordenes:channelMeta.purchases, revenue:channelMeta.revenue, netRevenue:facturacionNeta,
-      trueCpa:chTrueCpa, aov:chAov, netAov:aovNeto,
+      canal:'Meta Ads', spend:cur.inversion, roas:chRoas, trueRoas:chTrueRoas,
+      ordenes:cur.metaPurchases, revenue:cur.metaRevenue, netRevenue:cur.facturacionNeta,
+      trueCpa:chTrueCpa, aov:chAov, netAov:cur.aovNeto,
     });
   }
   renderAnCanales();
-
-  // 10. Ultimas ventas (line items de TN)
   renderAnUltimasVentas();
+  renderAnChart(serie);
 
-  // 11. Grafico de facturacion por dia
-  renderAnChart(since, until);
+  // Botton de "configurar" costo de productos quedo afuera del card dark; lo agregamos como nota
+  const cpEl = document.getElementById('anc-costo-productos');
+  if(cpEl && !cpEl.querySelector('.an-configure-link')) {
+    const link = document.createElement('div');
+    link.className = 'an-configure-link';
+    link.style = 'font-size:10.5px;color:var(--accent);cursor:pointer;margin-top:4px;font-weight:600';
+    link.textContent = 'Configurar costos →';
+    link.onclick = () => showPage('an-productos');
+    cpEl.appendChild(link);
+  }
+}
+
+// ── RENDER DE CARD CON SPARKLINE SVG ────────────────────────────────────────
+const AN_ICONS = {
+  int:   '<svg width="14" height="14" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><rect x="2" y="2" width="14" height="14" rx="2"/><path d="M6 9h6M9 6v6"/></svg>',
+  money: '<svg width="14" height="14" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="9" cy="9" r="7"/><path d="M9 5.3v7.4M6.7 7c0-1 .8-1.7 2.3-1.7s2.3.7 2.3 1.7-.9 1.3-2.3 1.3-2.3.3-2.3 1.3.9 1.7 2.3 1.7 2.3-.7 2.3-1.7"/></svg>',
+  pct:   '<svg width="14" height="14" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="5" cy="5" r="2"/><circle cx="13" cy="13" r="2"/><path d="M14 4L4 14"/></svg>',
+  x:     '<svg width="14" height="14" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 14l4.5-9L11 11l5-8"/></svg>',
+};
+
+function anFmtVal(val, type) {
+  if(val===null||val===undefined||isNaN(val)) return '—';
+  if(type==='money') return fmtMoney(val);
+  if(type==='pct') return val.toFixed(1)+'%';
+  if(type==='x') return val.toFixed(2)+'x';
+  return Math.round(val).toLocaleString('es-AR');
+}
+
+function anSparkSvg(series, isGood) {
+  if(!series || series.length<2) return '';
+  const w=240,h=30,pad=2;
+  const max=Math.max(...series,0.0001), min=Math.min(...series,0);
+  const range = (max-min)||1;
+  const stepX = (w-pad*2)/(series.length-1);
+  const pts = series.map((v,i)=>{
+    const x = pad+i*stepX;
+    const y = h-pad-((v-min)/range)*(h-pad*2);
+    return [x,y];
+  });
+  const path = pts.map((p,i)=>(i===0?'M':'L')+p[0].toFixed(1)+','+p[1].toFixed(1)).join(' ');
+  const areaPath = path+` L${pts[pts.length-1][0].toFixed(1)},${h} L${pts[0][0].toFixed(1)},${h} Z`;
+  const color = isGood===false ? 'var(--ad-down)' : 'var(--ad-up)';
+  const gradId = 'ang'+Math.random().toString(36).slice(2,9);
+  return `<svg class="an-card-spark" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none">
+    <defs><linearGradient id="${gradId}" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="${color}" stop-opacity=".25"/>
+      <stop offset="100%" stop-color="${color}" stop-opacity="0"/>
+    </linearGradient></defs>
+    <path d="${areaPath}" fill="url(#${gradId})" stroke="none"/>
+    <path d="${path}" fill="none" stroke="${color}" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>`;
+}
+
+function anRenderCard(id, label, value, deltaPct, series, type, invertGood, invertColor) {
+  const el = document.getElementById(id);
+  if(!el) return;
+  const isAccent = el.classList.contains('accent');
+  // Para metricas donde "menos es mejor" (costos, CPA), invertimos el sentido del color/flecha
+  const goingUp = deltaPct > 0.05;
+  const goingDown = deltaPct < -0.05;
+  let isGood = goingUp;
+  if(invertColor) isGood = !goingUp;
+  const showDelta = Math.abs(deltaPct) > 0.05 && series.some(v=>v>0);
+  const deltaClass = isGood ? 'up' : 'down';
+  const arrow = goingUp ? '&#8593;' : goingDown ? '&#8595;' : '&#8212;';
+  el.innerHTML = `
+    <div class="an-card-top">
+      <span class="an-card-ico">${AN_ICONS[type]||AN_ICONS.int}</span>
+      <span class="an-card-label">${label}</span>
+    </div>
+    <div class="an-card-val-row">
+      <span class="an-card-val">${anFmtVal(value,type)}</span>
+      ${showDelta?`<span class="an-card-delta ${deltaClass}">${arrow} ${Math.abs(deltaPct).toFixed(1)}%</span>`:''}
+    </div>
+    ${anSparkSvg(series, invertColor ? !isGood : isGood)}
+  `;
 }
 
 function calcAnCOGS(lineItems) {
@@ -4638,11 +4802,11 @@ function renderAnCostosAdicionalesList() {
   if(!wrap) return;
   if(!anCostosAdicionales.length) { wrap.innerHTML=''; return; }
   wrap.innerHTML = anCostosAdicionales.map(c=>`
-    <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-top:0.5px solid var(--border);font-size:12px">
-      <span style="color:var(--text2)">${c.concepto}</span>
-      <span style="display:flex;gap:8px;align-items:center">
-        <strong>${fmtMoney(c.monto)}</strong>
-        <span onclick="deleteAnCostoAdicional('${c.id}')" style="cursor:pointer;color:var(--text3)">&times;</span>
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-top:0.5px solid var(--ad-border);font-size:12px">
+      <span style="color:var(--ad-text2)">${c.concepto}</span>
+      <span style="display:flex;gap:10px;align-items:center">
+        <strong style="color:var(--ad-text)">${fmtMoney(c.monto)}</strong>
+        <span onclick="deleteAnCostoAdicional('${c.id}')" style="cursor:pointer;color:var(--ad-text3);font-size:15px;line-height:1">&times;</span>
       </span>
     </div>`).join('');
 }
@@ -4670,15 +4834,15 @@ function renderAnCanales() {
   const tbody = document.getElementById('an-canales-tbody');
   if(!tbody) return;
   if(!anChannelRows.length) {
-    tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;color:var(--text2);padding:16px">Sin datos — conecta Meta Ads</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;color:var(--ad-text3);padding:18px">Sin datos — conecta Meta Ads</td></tr>';
     return;
   }
   tbody.innerHTML = anChannelRows.map(r=>`
     <tr>
-      <td><strong>${r.canal}</strong></td>
+      <td><span class="an-pill-row"><span class="an-channel-dot"></span><strong>${r.canal}</strong></span></td>
       <td>${fmtMoney(r.spend)}</td>
-      <td style="color:${roasColor(r.roas)}">${r.roas>0?r.roas.toFixed(2)+'x':'—'}</td>
-      <td style="color:${roasColor(r.trueRoas)}">${r.trueRoas>0?r.trueRoas.toFixed(2)+'x':'—'}</td>
+      <td style="color:${roasColor(r.roas)};font-weight:700">${r.roas>0?r.roas.toFixed(2)+'x':'—'}</td>
+      <td style="color:${roasColor(r.trueRoas)};font-weight:700">${r.trueRoas>0?r.trueRoas.toFixed(2)+'x':'—'}</td>
       <td>${r.ordenes||0}</td>
       <td>${fmtMoney(r.revenue)}</td>
       <td>${fmtMoney(r.netRevenue)}</td>
@@ -4693,35 +4857,45 @@ function renderAnUltimasVentas() {
   const tbody = document.getElementById('an-ventas-tbody');
   if(!tbody) return;
   if(!anLineItems.length) {
-    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--text2);padding:16px">Sin ventas en el periodo</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--ad-text3);padding:18px">Sin ventas en el periodo</td></tr>';
     return;
   }
   const last = anLineItems.slice(-15).reverse();
   tbody.innerHTML = last.map(it=>`
     <tr>
       <td>${it.name||'—'}</td>
-      <td style="color:var(--text2)">${it.variant_id||'—'}</td>
+      <td style="color:var(--ad-text2)">${it.variant_id||'—'}</td>
       <td>${it.qty||1}</td>
-      <td>${fmtMoney((it.price||0)*(it.qty||1))}</td>
+      <td style="font-weight:700">${fmtMoney((it.price||0)*(it.qty||1))}</td>
     </tr>`).join('');
 }
 
-// ── GRAFICO FACTURACION POR DIA (canvas simple, sin libreria externa) ────────
-function renderAnChart(since, until) {
+// ── GRAFICO FACTURACION POR DIA — barras SVG con la serie diaria real de TN ──
+function renderAnChart(serie) {
   const wrap = document.getElementById('an-chart-wrap');
   if(!wrap) return;
-  // Agrupamos line items no nos da fecha por item; usamos un fallback simple de barra unica
-  // con el total del periodo si no hay desagregado por dia disponible.
-  if(!anLineItems.length) {
-    wrap.innerHTML = '<div style="color:var(--text2);font-size:13px">Sin datos para graficar</div>';
+  if(!serie || !serie.length) {
+    wrap.innerHTML = '<div style="height:100%;display:flex;align-items:center;justify-content:center;color:var(--ad-text3);font-size:13px">Sin datos para graficar</div>';
     return;
   }
-  const total = anLineItems.reduce((s,it)=>s+(it.price||0)*(it.qty||1),0);
-  wrap.innerHTML = `<div style="text-align:center">
-    <div style="font-size:13px;color:var(--text2);margin-bottom:6px">Facturacion total del periodo</div>
-    <div style="font-size:28px;font-weight:800;color:var(--text)">${fmtMoney(total)}</div>
-    <div style="font-size:11px;color:var(--text3);margin-top:6px">${since} &#8594; ${until}</div>
-  </div>`;
+  const w=480, h=180, padBottom=20, padTop=8, gap=4;
+  const barW = (w/serie.length)-gap;
+  const max = Math.max(...serie.map(d=>d.bruto), 1);
+  const bars = serie.map((d,i)=>{
+    const x = i*(barW+gap);
+    const barH = Math.max(2,((d.bruto/max)*(h-padBottom-padTop)));
+    const y = h-padBottom-barH;
+    return `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${barW.toFixed(1)}" height="${barH.toFixed(1)}" rx="2" fill="var(--accent)" opacity="0.9"><title>${d.fecha}: ${fmtMoney(d.bruto)}</title></rect>`;
+  }).join('');
+  const firstLabel = serie[0]?.fecha?.slice(5) || '';
+  const lastLabel = serie[serie.length-1]?.fecha?.slice(5) || '';
+  wrap.innerHTML = `
+    <svg viewBox="0 0 ${w} ${h}" style="width:100%;height:100%">
+      ${bars}
+    </svg>
+    <div style="display:flex;justify-content:space-between;font-size:10.5px;color:var(--ad-text3);margin-top:2px">
+      <span>${firstLabel}</span><span>${lastLabel}</span>
+    </div>`;
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
