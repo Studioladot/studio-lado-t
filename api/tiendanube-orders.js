@@ -1,5 +1,5 @@
 // api/tiendanube-orders.js
-// Ahora acepta ?from=YYYY-MM-DD&to=YYYY-MM-DD como query params.
+// Acepta ?from=YYYY-MM-DD&to=YYYY-MM-DD como query params.
 // Si no se pasan, usa los ultimos 30 dias por defecto (comportamiento anterior).
 export default async function handler(req, res) {
   const authHeader = req.headers.authorization || '';
