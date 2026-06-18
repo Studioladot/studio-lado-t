@@ -97,6 +97,7 @@ export default async function handler(req, res) {
     let bruto = 0;
     let envio = 0;
     const lineItems = [];
+    const byDay = {}; // { 'YYYY-MM-DD': { bruto, envio, ordenes } }
     allOrders.forEach((order) => {
       const paymentStatus = order.payment_status;
       const orderStatus = order.status;
@@ -104,8 +105,16 @@ export default async function handler(req, res) {
       const subtotal = parseFloat(order.subtotal || 0);
       const discount = parseFloat(order.discount || 0);
       const shippingCost = parseFloat(order.shipping_cost_customer || 0);
-      bruto += (subtotal - discount) + shippingCost;
+      const orderBruto = (subtotal - discount) + shippingCost;
+      bruto += orderBruto;
       envio += shippingCost;
+      const day = (order.created_at || '').substring(0, 10);
+      if (day) {
+        if (!byDay[day]) byDay[day] = { bruto: 0, envio: 0, ordenes: 0 };
+        byDay[day].bruto += orderBruto;
+        byDay[day].envio += shippingCost;
+        byDay[day].ordenes += 1;
+      }
       (order.products || []).forEach(it => {
         lineItems.push({
           variant_id: it.variant_id,
@@ -117,6 +126,12 @@ export default async function handler(req, res) {
       });
     });
     const neto = bruto - envio;
+    const serieDiaria = Object.keys(byDay).sort().map(day => ({
+      fecha: day,
+      bruto: Math.round(byDay[day].bruto),
+      neto: Math.round(byDay[day].bruto - byDay[day].envio),
+      ordenes: byDay[day].ordenes,
+    }));
 
     res.status(200).json({
       bruto: Math.round(bruto),
@@ -124,6 +139,7 @@ export default async function handler(req, res) {
       neto: Math.round(neto),
       ordenes: allOrders.length,
       line_items: lineItems,
+      serie_diaria: serieDiaria,
       periodo: { desde: sinceISO, hasta: untilISO },
     });
   } catch (err) {
