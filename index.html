@@ -282,7 +282,18 @@ tr:hover td{background:var(--surface2)}
 .an-channel-dot{width:7px;height:7px;border-radius:50%;background:var(--accent);flex-shrink:0}
 @media(max-width:900px){.an-grid{grid-template-columns:repeat(2,1fr)}}
 
-/* ── GRID DE PRODUCTOS — costo de productos (10 por fila) ─────────────────── */
+/* ── BUSINESS HEALTH SCORE ────────────────────────────────────────────────── */
+.bhs-dim{display:flex;align-items:center;gap:10px}
+.bhs-dim-label{font-size:11.5px;color:var(--ad-text2);width:160px;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bhs-dim-bar-bg{flex:1;height:5px;background:var(--ad-surface2);border-radius:3px;overflow:hidden}
+.bhs-dim-bar{height:100%;border-radius:3px;transition:width 1.2s cubic-bezier(.4,0,.2,1)}
+.bhs-dim-val{font-size:11.5px;font-weight:700;color:var(--ad-text);width:32px;text-align:right;flex-shrink:0}
+.bhs-action{display:flex;align-items:flex-start;gap:8px;padding:8px 10px;background:var(--ad-surface2);border-radius:8px;border-left:2.5px solid}
+.bhs-action-ico{width:14px;height:14px;flex-shrink:0;margin-top:1px}
+.bhs-action-text{font-size:12px;color:var(--ad-text2);line-height:1.45}
+.bhs-action-text strong{color:var(--ad-text);font-weight:700}
+</style>
+
 .an-prod-card{background:var(--surface);border:0.5px solid var(--border);border-radius:10px;overflow:hidden;cursor:pointer;transition:border-color .12s;position:relative}
 .an-prod-card:hover{border-color:var(--border2)}
 .an-prod-card.selected{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
@@ -424,6 +435,40 @@ tr:hover td{background:var(--surface2)}
       <button class="btn btn-accent" onclick="openModal('modal-snap')">+ Cargar metricas</button>
     </div>
   </div>
+
+  <!-- BUSINESS HEALTH SCORE ─────────────────────────────────────────────── -->
+  <div class="an-dark" id="bhs-panel" style="margin-bottom:14px">
+    <div style="display:grid;grid-template-columns:220px 1fr;gap:32px;align-items:center">
+
+      <!-- GAUGE CIRCULAR -->
+      <div style="display:flex;flex-direction:column;align-items:center">
+        <div style="position:relative;width:168px;height:168px">
+          <svg viewBox="0 0 168 168" style="width:168px;height:168px;transform:rotate(-90deg)">
+            <circle cx="84" cy="84" r="70" fill="none" stroke="#1c1f24" stroke-width="11"/>
+            <circle id="bhs-arc" cx="84" cy="84" r="70" fill="none" stroke-width="11"
+              stroke-linecap="round"
+              stroke-dasharray="439.82"
+              stroke-dashoffset="439.82"
+              style="transition:stroke-dashoffset 1.4s cubic-bezier(.4,0,.2,1),stroke .5s"/>
+          </svg>
+          <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0">
+            <div id="bhs-score-num" style="font-size:50px;font-weight:800;color:var(--ad-text);letter-spacing:-.05em;line-height:1">—</div>
+            <div style="font-size:11px;font-weight:600;color:var(--ad-text3);text-transform:uppercase;letter-spacing:.08em">/ 100</div>
+          </div>
+        </div>
+        <div id="bhs-label" style="font-size:16px;font-weight:800;margin-top:10px;letter-spacing:-.02em;color:var(--ad-text)">—</div>
+        <div id="bhs-sublabel" style="font-size:11.5px;color:var(--ad-text2);margin-top:4px;text-align:center;max-width:200px;line-height:1.45">—</div>
+      </div>
+
+      <!-- DIMENSIONES + ACCIONES -->
+      <div>
+        <div style="font-size:10px;font-weight:700;color:var(--ad-text3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:14px">Business Health Score — ultimos 30 dias</div>
+        <div id="bhs-dims" style="display:flex;flex-direction:column;gap:9px"></div>
+        <div id="bhs-actions" style="margin-top:16px;display:flex;flex-direction:column;gap:7px"></div>
+      </div>
+    </div>
+  </div>
+
   <div class="stats-grid">
     <div class="stat-card accent"><div class="stat-label">Gasto total</div><div class="stat-value" id="ds-gasto">—</div><div class="stat-sub" id="ds-sub-gasto">USD acumulado</div></div>
     <div class="stat-card"><div class="stat-label">ROAS promedio</div><div class="stat-value" id="ds-roas">—</div><div class="stat-sub" id="ds-sub-roas">Campanas activas</div></div>
@@ -2588,7 +2633,190 @@ function renderDash(){
     <td>${m.hook_rate?m.hook_rate+'%':'—'}</td>
     <td style="color:var(--text2);font-size:12px">${fmtDate(m.created_at)}</td>
   </tr>`).join('');
+  // Health Score siempre al final (usa datos ya calculados en renderDash)
+  renderBHS();
 }
+
+// ══════════════════════════════════════════════════════════════════════════════
+// BUSINESS HEALTH SCORE
+// Dimensions (ponderadas):
+//   Rentabilidad    30% — margen neto real sobre facturacion
+//   Publicidad      25% — True ROAS vs breakeven (2x) y objetivo (3.5x)
+//   Ventas          20% — crecimiento vs periodo anterior (usa serie de metrics)
+//   Eficiencia      15% — ratio (costos totales) / facturacion
+//   Impulso         10% — tendencia ultimos 7 dias vs 7 anteriores en gasto/ROAS
+// ══════════════════════════════════════════════════════════════════════════════
+function computeBHS() {
+  const breakeven = +finConfig?.margen_bruto || 50; // % margen bruto de config
+  const breakevenRoas = 100 / breakeven;            // ROAS de equilibrio
+  const targetRoas   = 3.5;                          // objetivo KIRIZ/GOTIX
+
+  // --- DATOS META (de snapshots cargados en metrics[]) ---
+  const recent = metrics.slice(0,30);
+  const avgRoas     = recent.filter(m=>+m.roas>0).reduce((s,m)=>s+(+m.roas),0) / (recent.filter(m=>+m.roas>0).length||1);
+  const avgCpa      = recent.filter(m=>+m.cpa>0).reduce((s,m)=>s+(+m.cpa),0)   / (recent.filter(m=>+m.cpa>0).length||1);
+  const totalSpend  = recent.reduce((s,m)=>s+(+m.spend||0),0);
+
+  // --- DATOS TN ---
+  const ventas   = tnSalesSummary?.neto  || 0;
+  const ordenes  = tnSalesSummary?.ordenes || 0;
+
+  // --- COSTOS (de finConfig) ---
+  const costoEnvioUnit = +finConfig?.costo_envio_promedio || 0;
+  const gastosTotal    = gastos.reduce((s,g)=>s+(+g.monto||0),0);
+  const costoEnvioTotal= costoEnvioUnit * ordenes;
+  const costoTotal     = totalSpend + costoEnvioTotal + gastosTotal;
+
+  // --- GANANCIA y MARGEN ---
+  const ganancia = ventas - costoTotal;
+  const margenReal = ventas>0 ? (ganancia / ventas * 100) : null;
+
+  // --- IMPULSO (tendencia): ultimas 5 entradas vs 5 anteriores ---
+  const m1 = metrics.slice(0,5);
+  const m2 = metrics.slice(5,10);
+  const avgR1 = m1.filter(m=>+m.roas>0).reduce((s,m)=>s+(+m.roas),0)/(m1.filter(m=>+m.roas>0).length||1);
+  const avgR2 = m2.filter(m=>+m.roas>0).reduce((s,m)=>s+(+m.roas),0)/(m2.filter(m=>+m.roas>0).length||1);
+  const tendencia = avgR2>0 ? ((avgR1-avgR2)/avgR2*100) : 0;
+
+  // --- SCORING por dimension ---
+  // clamp: satura entre 0 y 100
+  const clamp = (v,mn=0,mx=100) => Math.max(mn,Math.min(mx,v));
+
+  // 1. RENTABILIDAD (30%): margen>30% = 100, 15-30% = proporcional, 0-15% = reducido, <0 = 0
+  let sRentabilidad;
+  if(margenReal===null) sRentabilidad = null;
+  else if(margenReal >= 30) sRentabilidad = 100;
+  else if(margenReal >= 15) sRentabilidad = clamp(50 + (margenReal-15)/15*50);
+  else if(margenReal >= 0)  sRentabilidad = clamp(margenReal/15*50);
+  else                      sRentabilidad = 0;
+
+  // 2. PUBLICIDAD (25%): True ROAS vs breakeven/objetivo
+  let sPublicidad;
+  const trueRoas = totalSpend>0 && ventas>0 ? ventas/totalSpend : null;
+  if(trueRoas===null) sPublicidad = null;
+  else if(trueRoas >= targetRoas) sPublicidad = 100;
+  else if(trueRoas >= breakevenRoas) sPublicidad = clamp(50 + (trueRoas-breakevenRoas)/(targetRoas-breakevenRoas)*50);
+  else if(trueRoas > 0) sPublicidad = clamp(trueRoas/breakevenRoas*50);
+  else sPublicidad = 0;
+
+  // 3. VENTAS (20%): se basa en si hay ventas y crecimiento (si no hay TN, usa compras de Meta)
+  let sVentas;
+  if(ventas>0) {
+    // Si hay TN: evaluamos margen de crecimiento como proxy (sin periodo anterior disponible aqui)
+    sVentas = ventas>0 ? clamp(60 + Math.min(40, tendencia*0.5)) : 40;
+  } else if(recent.length>0) {
+    const totP = recent.reduce((s,m)=>s+(+m.purchases||0),0);
+    sVentas = totP>50?80:totP>20?60:totP>5?40:20;
+  } else {
+    sVentas = null;
+  }
+
+  // 4. EFICIENCIA DE COSTOS (15%): costoTotal/ventas <50% = 100, 50-80% = proporcional, >80% = bajo
+  let sEficiencia;
+  if(ventas>0 && costoTotal>0) {
+    const ratio = costoTotal/ventas*100;
+    if(ratio<=50)      sEficiencia = 100;
+    else if(ratio<=80) sEficiencia = clamp(100-(ratio-50)/30*50);
+    else               sEficiencia = clamp(Math.max(0,50-(ratio-80)/20*50));
+  } else sEficiencia = null;
+
+  // 5. IMPULSO (10%): tendencia de ROAS > +10% = 100, 0 a +10% = 50-100, negativo baja
+  let sImpulso;
+  if(metrics.length>=6) {
+    if(tendencia>=10)       sImpulso = 100;
+    else if(tendencia>=0)   sImpulso = clamp(50+tendencia*5);
+    else if(tendencia>=-20) sImpulso = clamp(50+tendencia*2.5);
+    else                    sImpulso = 0;
+  } else sImpulso = null;
+
+  // --- SCORE TOTAL ponderado (omitiendo dimensiones sin datos) ---
+  const dims = [
+    { label:'Rentabilidad',    peso:30, score:sRentabilidad, icon:'M3 12l3-3 3 3 3-3 3 3', color:'#34d399', action: margenReal!==null && margenReal<15 ? 'El margen neto es bajo. Revisá costos o subí el ticket promedio.' : margenReal!==null && margenReal<0 ? 'Estás perdiendo dinero. Los costos superan los ingresos.' : null },
+    { label:'Publicidad',      peso:25, score:sPublicidad,   icon:'M2 15V9l4-4 4 4 4-5',   color:'#60a5fa', action: trueRoas!==null && trueRoas<breakevenRoas ? `True ROAS (${trueRoas.toFixed(1)}x) está bajo el breakeven (${breakevenRoas.toFixed(1)}x). Pausá lo que no convierte.` : trueRoas!==null && trueRoas<targetRoas ? `True ROAS (${trueRoas.toFixed(1)}x) por debajo del objetivo de ${targetRoas}x. Escalar con cautela.` : null },
+    { label:'Ventas',          peso:20, score:sVentas,       icon:'M4 6h16M4 12h8M4 18h4', color:'#a78bfa', action: sVentas!==null && sVentas<40 ? 'Ventas bajas. Revisá campañas activas y rotá creativos.' : null },
+    { label:'Eficiencia',      peso:15, score:sEficiencia,   icon:'M9 7h6M9 11h6M9 15h4',  color:'#fbbf24', action: sEficiencia!==null && sEficiencia<40 ? 'Costos altos en relación a las ventas. Revisá gastos fijos.' : null },
+    { label:'Impulso',         peso:10, score:sImpulso,      icon:'M2 12l4-4 4 4 4-2 4 2', color:'#f472b6', action: sImpulso!==null && sImpulso<40 ? 'ROAS en caída. Analizá creativos y audiencias actuales.' : null },
+  ];
+
+  const withData = dims.filter(d=>d.score!==null);
+  const totalPeso = withData.reduce((s,d)=>s+d.peso,0)||1;
+  const scoreTotal = withData.reduce((s,d)=>s+d.score*(d.peso/totalPeso),0);
+
+  return { score: Math.round(scoreTotal), dims, trueRoas, margenReal };
+}
+
+function renderBHS() {
+  const { score, dims, trueRoas, margenReal } = computeBHS();
+
+  // --- GAUGE ---
+  const arc = document.getElementById('bhs-arc');
+  const circumference = 439.82;
+  const offset = circumference - (score/100)*circumference;
+  if(arc) {
+    const color = score>=75?'#34d399':score>=50?'#60a5fa':score>=30?'#fbbf24':'#f87171';
+    arc.style.stroke = color;
+    // Animar tras paint
+    setTimeout(()=>{ arc.style.strokeDashoffset = offset; },50);
+  }
+  setT('bhs-score-num', score);
+
+  // Label y sublabel
+  let label, sublabel;
+  if(score>=80)      { label='Negocio saludable';    sublabel='Tus metricas principales estan en zona verde. Momento de escalar.'; }
+  else if(score>=60) { label='En buen camino';        sublabel='La operacion funciona pero hay margenes de mejora claros.'; }
+  else if(score>=40) { label='Atencion requerida';    sublabel='Hay senales de alerta. Revisa las dimensiones rojas antes de escalar.'; }
+  else if(score>=20) { label='En zona critica';       sublabel='Multiples metricas estan bajo el minimo. Prioriza estabilizar antes de invertir mas.'; }
+  else               { label='Riesgo alto';            sublabel='El negocio necesita intervencion inmediata. Detene la inversion hasta estabilizar.'; }
+
+  if(score>=80) { label='Negocio saludable'; }
+  const labelEl = document.getElementById('bhs-label');
+  const subEl   = document.getElementById('bhs-sublabel');
+  if(labelEl) { labelEl.textContent=label; labelEl.style.color=score>=75?'#34d399':score>=50?'#60a5fa':score>=30?'#fbbf24':'#f87171'; }
+  if(subEl)     subEl.textContent=sublabel;
+
+  // --- DIMENSIONES ---
+  const dimsEl = document.getElementById('bhs-dims');
+  if(dimsEl) {
+    dimsEl.innerHTML = dims.map(d=>{
+      if(d.score===null) return `
+        <div class="bhs-dim">
+          <span class="bhs-dim-label">${d.label}</span>
+          <div class="bhs-dim-bar-bg"><div class="bhs-dim-bar" style="width:0%;background:${d.color}"></div></div>
+          <span class="bhs-dim-val" style="color:var(--ad-text3)">—</span>
+        </div>`;
+      const pct = Math.round(d.score);
+      return `
+        <div class="bhs-dim">
+          <span class="bhs-dim-label">${d.label}</span>
+          <div class="bhs-dim-bar-bg"><div class="bhs-dim-bar" id="bhsbar-${d.label.toLowerCase().replace(/\s+/g,'')}" style="width:0%;background:${d.color}"></div></div>
+          <span class="bhs-dim-val">${pct}</span>
+        </div>`;
+    }).join('');
+    // Animar barras
+    setTimeout(()=>{
+      dims.forEach(d=>{
+        if(d.score===null) return;
+        const bar = document.getElementById('bhsbar-'+d.label.toLowerCase().replace(/\s+/g,''));
+        if(bar) bar.style.width = Math.round(d.score)+'%';
+      });
+    },80);
+  }
+
+  // --- ACCIONES ---
+  const actionsEl = document.getElementById('bhs-actions');
+  if(actionsEl) {
+    const actions = dims.filter(d=>d.action).map(d=>d.action);
+    if(!actions.length) {
+      actionsEl.innerHTML = `<div class="bhs-action" style="border-color:#34d399"><span class="bhs-action-text">Sin alertas criticas — el negocio opera dentro de los parametros saludables.</span></div>`;
+    } else {
+      actionsEl.innerHTML = actions.slice(0,3).map(a=>`
+        <div class="bhs-action" style="border-color:#f87171">
+          <span class="bhs-action-text"><strong>Accion:</strong> ${a}</span>
+        </div>`).join('');
+    }
+  }
+}
+
 
 // ── OBJECTIVES ────────────────────────────────────────────────────────────────
 function renderObjs(){
