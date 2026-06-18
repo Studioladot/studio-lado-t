@@ -43,7 +43,7 @@ export default async function handler(req, res) {
     let hasMore = true;
     while (hasMore && page <= 30) {
       const prodRes = await fetch(
-        `https://api.tiendanube.com/v1/${conn.store_id}/products?per_page=50&page=${page}`,
+        `https://api.tiendanube.com/v1/${conn.store_id}/products?per_page=50&page=${page}&published=true`,
         {
           headers: {
             'Authentication': `bearer ${conn.access_token}`,
@@ -65,27 +65,32 @@ export default async function handler(req, res) {
       }
     }
 
-    // Achatamos a nivel variante, que es donde tiene sentido cargar el costo
-    const items = [];
-    allProducts.forEach(p => {
-      const name = p.name?.es || p.name?.pt || Object.values(p.name || {})[0] || 'Sin nombre';
-      const img = p.images?.[0]?.src || '';
-      (p.variants || []).forEach(v => {
-        const values = (v.values || []).map(val => val.es || val.pt || Object.values(val)[0]).filter(Boolean).join(' / ');
-        items.push({
-          product_id: p.id,
-          variant_id: v.id,
-          sku: v.sku || '',
-          product_name: name,
-          variant_name: values,
-          price: parseFloat(v.price || 0),
-          stock: v.stock,
-          image: img,
+    // Agrupado por producto (cada uno con su lista de variantes/talles adentro).
+    // Solo productos visibles en la tienda (published=true ya filtrado arriba; chequeamos de nuevo por si acaso).
+    const products = allProducts
+      .filter(p => p.published !== false)
+      .map(p => {
+        const name = p.name?.es || p.name?.pt || Object.values(p.name || {})[0] || 'Sin nombre';
+        const img = p.images?.[0]?.src || '';
+        const variants = (p.variants || []).map(v => {
+          const values = (v.values || []).map(val => val.es || val.pt || Object.values(val)[0]).filter(Boolean).join(' / ');
+          return {
+            variant_id: v.id,
+            sku: v.sku || '',
+            variant_name: values,
+            price: parseFloat(v.price || 0),
+            stock: v.stock,
+          };
         });
+        return {
+          product_id: p.id,
+          product_name: name,
+          image: img,
+          variants,
+        };
       });
-    });
 
-    res.status(200).json({ items, total: items.length });
+    res.status(200).json({ products, total: products.length });
   } catch (err) {
     console.error('Error en tiendanube-products:', err);
     res.status(500).json({ error: err.message });
