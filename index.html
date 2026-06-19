@@ -1103,16 +1103,7 @@ tr:hover td{background:var(--surface2)}
         <span style="color:var(--text2);font-size:13px">Total orden</span>
         <span style="font-weight:700" id="vd-total">$0</span>
       </div>
-      <div class="modal-backdrop" id="modal-dia-piezas">
-  <div class="modal" style="max-width:480px">
-    <div class="modal-title" id="dia-piezas-titulo">Publicaciones del dia</div>
-    <div id="dia-piezas-list" style="display:flex;flex-direction:column;gap:8px;max-height:380px;overflow-y:auto;margin-bottom:14px"></div>
-    <div class="modal-footer" style="justify-content:space-between">
-      <button class="btn btn-outline" onclick="closeModal('modal-dia-piezas')">Cerrar</button>
-      <button class="btn btn-accent" id="dia-piezas-add-btn" onclick="">+ Agregar pieza</button>
-    </div>
-  </div>
-</div>
+    
       <div style="display:flex;justify-content:space-between;padding:9px 0;border-bottom:0.5px solid var(--border)">
         <span style="color:var(--text2);font-size:13px">Costo publicitario (CPA prorrateado)</span>
         <span style="color:var(--red)" id="vd-cpa">-$0</span>
@@ -1136,6 +1127,16 @@ tr:hover td{background:var(--surface2)}
     </div>
     <div class="modal-footer">
       <button class="btn btn-outline" onclick="closeModal('modal-venta-detalle')">Cerrar</button>
+    </div>
+  </div>
+</div>
+   <div class="modal-backdrop" id="modal-dia-piezas">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-title" id="dia-piezas-titulo">Publicaciones del dia</div>
+    <div id="dia-piezas-list" style="display:flex;flex-direction:column;gap:8px;max-height:380px;overflow-y:auto;margin-bottom:14px"></div>
+    <div class="modal-footer" style="justify-content:space-between">
+      <button class="btn btn-outline" onclick="closeModal('modal-dia-piezas')">Cerrar</button>
+      <button class="btn btn-accent" id="dia-piezas-add-btn" onclick="">+ Agregar pieza</button>
     </div>
   </div>
 </div>
