@@ -4307,7 +4307,7 @@ function renderFinPanel() {
 
   // Stats
   setT('fin-stat-gastos',  '$'+fmtN(totalGastos));
-  cconst ve = document.getElementById('fin-stat-ventas'); if(ve){ ve.textContent='$'+fmtN(totalVentas); ve.style.color='var(--text)'; }
+  const ve = document.getElementById('fin-stat-ventas'); if(ve){ ve.textContent='$'+fmtN(totalVentas); ve.style.color='var(--text)'; }
   const pe = document.getElementById('fin-stat-profit'); if(pe){ pe.textContent=(profitNeto>=0?'+':'')+'$'+fmtN(profitNeto); pe.className='fin-value '+(profitNeto>=0?'green':'red'); }
   setT('fin-stat-dias', diasRestantes+' dias');
 
