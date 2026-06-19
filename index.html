@@ -1130,16 +1130,6 @@ tr:hover td{background:var(--surface2)}
     </div>
   </div>
 </div>
-   <div class="modal-backdrop" id="modal-dia-piezas">
-  <div class="modal" style="max-width:480px">
-    <div class="modal-title" id="dia-piezas-titulo">Publicaciones del dia</div>
-    <div id="dia-piezas-list" style="display:flex;flex-direction:column;gap:8px;max-height:380px;overflow-y:auto;margin-bottom:14px"></div>
-    <div class="modal-footer" style="justify-content:space-between">
-      <button class="btn btn-outline" onclick="closeModal('modal-dia-piezas')">Cerrar</button>
-      <button class="btn btn-accent" id="dia-piezas-add-btn" onclick="">+ Agregar pieza</button>
-    </div>
-  </div>
-</div>
 
   <!-- TABS -->
   <div style="display:flex;gap:0;border-bottom:0.5px solid var(--border);margin-bottom:20px">
@@ -2039,7 +2029,17 @@ create policy "own" on contacts for all using (auth.uid()=user_id);</div>
     </div>
   </div>
 </div>
-
+<div class="modal-backdrop" id="modal-dia-piezas">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-title" id="dia-piezas-titulo">Publicaciones del dia</div>
+    <div id="dia-piezas-list" style="display:flex;flex-direction:column;gap:8px;max-height:380px;overflow-y:auto;margin-bottom:14px"></div>
+    <div class="modal-footer" style="justify-content:space-between">
+      <button class="btn btn-outline" onclick="closeModal('modal-dia-piezas')">Cerrar</button>
+      <button class="btn btn-accent" id="dia-piezas-add-btn" onclick="">+ Agregar pieza</button>
+    </div>
+  </div>
+</div>
+  
 <!-- Modal Config Financiera -->
 <div class="modal-backdrop" id="modal-fin-config">
   <div class="modal" style="max-width:420px">
