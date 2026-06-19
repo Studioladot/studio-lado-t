@@ -6402,6 +6402,14 @@ function renderCalCont(){
     if(!porDia[d])porDia[d]=[];
     porDia[d].push({...p,campColor:camp?.color||'var(--accent)',campName:camp?.nombre||''});
   });
+  posts.filter(p=>(p.date||'').startsWith(mesVal)).forEach(p=>{
+    const d=parseInt(p.date.split('-')[2]);
+    if(!porDia[d])porDia[d]=[];
+    porDia[d].push({
+      id:p.id, titulo:p.caption||p.platform||'Publicacion', status:p.status==='publicado'?'publicado':'pendiente',
+      campColor:'var(--blue)', campName:'Sin campana',
+    });
+  });
 
   const dias=['Lu','Ma','Mi','Ju','Vi','Sa','Do'];
   const grid=document.getElementById('cont-cal-grid');if(!grid)return;
