@@ -5477,6 +5477,8 @@ async function saveFinConfig() {
     objetivo_ganancia_pct: +document.getElementById('fc-objetivo').value|| 20,
     costo_envio_promedio:  +document.getElementById('fc-envio').value   || 0,
     comision_tn_pct:       +document.getElementById('fc-comision-tn').value || 2,
+      meta_moneda:           document.getElementById('fc-meta-moneda')?.value || 'ARS',
+usd_manual:            +document.getElementById('fc-usd-manual')?.value || 0,
   };
   const { data, error } = await db.from('fin_config').upsert([cfg], {onConflict:'user_id'}).select();
   if(error){ toast('Error: '+error.message); return; }
@@ -5491,6 +5493,8 @@ function openFinConfig() {
   document.getElementById('fc-objetivo').value = finConfig.objetivo_ganancia_pct||20;
   document.getElementById('fc-envio').value    = finConfig.costo_envio_promedio||0;
   document.getElementById('fc-comision-tn').value = finConfig.comision_tn_pct||2;
+document.getElementById('fc-meta-moneda').value = finConfig.meta_moneda||'ARS';
+document.getElementById('fc-usd-manual').value = finConfig.usd_manual||0;
   openModal('modal-fin-config');
 }
 
