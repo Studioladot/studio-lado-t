@@ -1102,6 +1102,16 @@ tr:hover td{background:var(--surface2)}
         <span style="color:var(--text2);font-size:13px">Total orden</span>
         <span style="font-weight:700" id="vd-total">$0</span>
       </div>
+      <div class="modal-backdrop" id="modal-dia-piezas">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-title" id="dia-piezas-titulo">Publicaciones del dia</div>
+    <div id="dia-piezas-list" style="display:flex;flex-direction:column;gap:8px;max-height:380px;overflow-y:auto;margin-bottom:14px"></div>
+    <div class="modal-footer" style="justify-content:space-between">
+      <button class="btn btn-outline" onclick="closeModal('modal-dia-piezas')">Cerrar</button>
+      <button class="btn btn-accent" id="dia-piezas-add-btn" onclick="">+ Agregar pieza</button>
+    </div>
+  </div>
+</div>
       <div style="display:flex;justify-content:space-between;padding:9px 0;border-bottom:0.5px solid var(--border)">
         <span style="color:var(--text2);font-size:13px">Costo publicitario (CPA prorrateado)</span>
         <span style="color:var(--red)" id="vd-cpa">-$0</span>
@@ -5876,7 +5886,7 @@ async function togglePostStatus(id, current){
   const {error} = await db.from('content_posts').update({status:next}).eq('id',id);
   if(error){toast('Error: '+error.message);return;}
   const p=posts.find(x=>x.id===id); if(p) p.status=next;
-  renderPublicaciones(); renderControlContenido(); toast('Estado → '+next);
+  renderPublicaciones(); renderControlContenido(); renderCalCont(); toast('Estado → '+next);
 }
 
 // ── IDEAS ─────────────────────────────────────────────────────────────────────
@@ -6397,12 +6407,16 @@ function renderCalCont(){
   const primerDia=new Date(year,month-1,1).getDay();
   const primerLunes=primerDia===0?6:primerDia-1;
 
-  const porDia={};
-  contentPiezas.filter(p=>(p.fecha_planificada||'').startsWith(mesVal)).forEach(p=>{
-    const d=parseInt(p.fecha_planificada.split('-')[2]);
-    const camp=contentCamps.find(cc=>cc.id===p.campaign_id);
+ const porDia={};
+  getUnifiedContentItems().filter(p=>(p.date||'').startsWith(mesVal)).forEach(p=>{
+    const d=parseInt(p.date.split('-')[2]);
     if(!porDia[d])porDia[d]=[];
-    porDia[d].push({...p,campColor:camp?.color||'var(--accent)',campName:camp?.nombre||''});
+    porDia[d].push({
+      id:p.id, titulo:p.caption||p.platform||'Publicacion', status:p.status,
+      campColor: p.source==='campana' ? (p.campaignColor||'var(--accent)') : 'var(--blue)',
+      campName: p.source==='campana' ? p.campaignName : 'Publicacion suelta',
+      source: p.source,
+    });
   });
   posts.filter(p=>(p.date||'').startsWith(mesVal)).forEach(p=>{
     const d=parseInt(p.date.split('-')[2]);
@@ -6427,7 +6441,7 @@ function renderCalCont(){
     const bgCell=pubs===pd.length&&pd.length>0?'var(--green-l)':pd.length?'var(--surface2)':'transparent';
     const chips=pd.slice(0,2).map(p=>`<div style="display:flex;align-items:center;gap:2px;padding:1px 4px;border-radius:6px;background:var(--surface);border:1px solid var(--border);margin-top:2px;cursor:pointer" onclick="event.stopPropagation();cyclePiezaStatus('${p.id}')" title="${p.titulo}"><span style="font-size:8px;color:${PZ_COLOR[p.status]}">${PZ_ICON[p.status]}</span><span style="font-size:8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:48px;color:var(--text)">${p.titulo}</span></div>`).join('');
     const more=pd.length>2?`<div style="font-size:8px;color:var(--text2);margin-top:1px">+${pd.length-2}</div>`:'';
-    html+=`<div onclick="openAddPiezaForDate('${fd}')" title="Agregar pieza el ${d}/${month}" style="border-radius:8px;padding:4px;min-height:58px;border:1px solid ${esHoy?'var(--accent)':'var(--border)'};background:${bgCell};cursor:pointer;transition:border-color .12s" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='${esHoy?'var(--accent)':'var(--border)'}' ">
+   html+=`<div onclick="openDiaPiezas('${fd}')" title="Ver publicaciones del ${d}/${month}" ...
       <div style="font-size:11px;font-weight:${esHoy?'800':'600'};color:${esHoy?'var(--accent)':'var(--text)'};text-align:center">${d}</div>
       ${chips}${more}
     </div>`;
@@ -6437,7 +6451,34 @@ function renderCalCont(){
   if(campsConPiezas.length){html+=`<div style="margin-top:10px;padding-top:8px;border-top:0.5px solid var(--border);display:flex;gap:10px;flex-wrap:wrap;font-size:11px">${campsConPiezas.map(cc=>`<span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${cc.color||'var(--accent)'};margin-right:4px"></span>${cc.nombre}</span>`).join('')}</div>`;}
   grid.innerHTML=html;
 }
-
+function openDiaPiezas(date){
+  const items = getUnifiedContentItems().filter(p=>p.date===date);
+  document.getElementById('dia-piezas-titulo').textContent = new Date(date+'T00:00:00').toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long'});
+  const list = document.getElementById('dia-piezas-list');
+  if(!items.length){
+    list.innerHTML = '<div style="text-align:center;color:var(--text2);font-size:13px;padding:20px">Sin publicaciones este dia</div>';
+  } else {
+    list.innerHTML = items.map(p=>{
+      const isCamp = p.source==='campana';
+      const editFn = isCamp ? `openEditPieza('${p.id}')` : `openEditPost('${p.id}')`;
+      const delFn  = isCamp ? `delPieza('${p.id}');closeModal('modal-dia-piezas')` : `delPost('${p.id}');closeModal('modal-dia-piezas')`;
+      return `
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:12px;display:flex;flex-direction:column;gap:6px">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
+          <div style="font-size:13px;font-weight:600;color:var(--text)">${p.caption||'Sin titulo'}</div>
+          <span class="badge ${p.status==='publicado'?'b-green':'b-amber'}" style="font-size:9px;flex-shrink:0">${p.status}</span>
+        </div>
+        <div style="font-size:11px;color:var(--text2)">${p.platform||''} · ${p.format||''}${isCamp?' · '+p.campaignName:''}</div>
+        <div style="display:flex;gap:6px;margin-top:4px">
+          <button class="btn btn-sm btn-outline" onclick="${editFn}">Editar</button>
+          <button class="btn btn-sm btn-red btn-ghost" onclick="${delFn}">Eliminar</button>
+        </div>
+      </div>`;
+    }).join('');
+  }
+  document.getElementById('dia-piezas-add-btn').onclick = ()=>{ closeModal('modal-dia-piezas'); openAddPiezaForDate(date); };
+  openModal('modal-dia-piezas');
+}
 function openAddPiezaForDate(date){
   if(!contentCamps.length){toast('Crea una campana primero');switchContTab('campanas',document.getElementById('ctab-campanas'));return;}
   document.getElementById('pieza-camp-id').value=contentCamps[0].id;
