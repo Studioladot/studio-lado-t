@@ -1421,7 +1421,7 @@ tr:hover td{background:var(--surface2)}
     <div><div class="page-title">Contenido</div><div class="page-sub">Planificacion, control y ranking de tu estrategia de contenido</div></div>
     <div style="display:flex;gap:8px">
       <button class="btn btn-outline" onclick="openModal('modal-idea')">&#128161; Idea</button>
-      <button class="btn btn-accent" onclick="openModal('modal-post')">+ Publicacion</button>
+    <button class="btn btn-accent" onclick="openNewPost()">+ Publicacion</button>
     </div>
   </div>
 
@@ -5916,6 +5916,16 @@ function openEditPost(id){
   document.getElementById('post-format').value = p.format||'Post';
   document.getElementById('post-date').value = p.date||'';
   document.getElementById('post-status').value = p.status||'pendiente';
+  openModal('modal-post');
+}
+  function openNewPost(){
+  document.getElementById('post-edit-id').value = '';
+  document.getElementById('post-caption').value = '';
+  document.getElementById('post-platform').value = 'Instagram';
+  document.getElementById('post-format').value = 'Reel';
+  document.getElementById('post-date').value = new Date().toISOString().split('T')[0];
+  document.getElementById('post-status').value = 'pendiente';
+  document.getElementById('modal-post-titulo').textContent = 'Nueva publicacion';
   openModal('modal-post');
 }
 
