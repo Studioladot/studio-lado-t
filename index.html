@@ -2132,8 +2132,9 @@ create policy "own" on contacts for all using (auth.uid()=user_id);</div>
 <!-- Modal Nueva Pieza -->
 <div class="modal-backdrop" id="modal-pieza">
   <div class="modal" style="max-width:440px">
-    <div class="modal-title">Agregar pieza</div>
+   <div class="modal-title" id="modal-pieza-titulo">Agregar pieza</div>
     <input type="hidden" id="pieza-camp-id"/>
+    <input type="hidden" id="pieza-edit-id"/>
     <div class="form-row">
       <div class="fg wide"><label>Titulo</label><input id="pieza-titulo" type="text" placeholder="Ej: Reel unboxing, Carrusel 5 outfits..."/></div>
     </div>
@@ -2170,7 +2171,7 @@ create policy "own" on contacts for all using (auth.uid()=user_id);</div>
     </div></div>
     <div class="modal-footer">
       <button class="btn btn-outline" onclick="closeModal('modal-pieza')">Cancelar</button>
-      <button class="btn btn-accent" onclick="savePieza()">Agregar pieza</button>
+      <button class="btn btn-accent" id="btn-pieza-guardar" onclick="savePieza()">Agregar pieza</button>
     </div>
   </div>
 </div>
@@ -2226,6 +2227,43 @@ create policy "own" on contacts for all using (auth.uid()=user_id);</div>
       <button class="btn btn-outline" onclick="closeModal('modal-pieza-view')">Cancelar</button>
       <button class="btn btn-red" onclick="delPiezaFromView()">Eliminar</button>
       <button class="btn btn-accent" onclick="updatePieza()">Guardar cambios</button>
+    </div>
+  </div>
+</div>
+  <!-- Modal Post suelto (sin campaña) -->
+<div class="modal-backdrop" id="modal-post">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-title" id="modal-post-titulo">Editar publicacion</div>
+    <input type="hidden" id="post-edit-id"/>
+    <div class="form-row">
+      <div class="fg wide"><label>Texto / Caption</label><textarea id="post-caption" rows="3" placeholder="Texto de la publicacion..."></textarea></div>
+    </div>
+    <div class="form-row">
+      <div class="fg"><label>Plataforma</label>
+        <select id="post-platform">
+          <option>Instagram</option><option>TikTok</option><option>Ambas</option><option>YouTube</option>
+        </select>
+      </div>
+      <div class="fg"><label>Formato</label>
+        <select id="post-format">
+          <option>Reel</option><option>TikTok</option><option>Carrusel</option>
+          <option>Historia</option><option>Post</option><option>Video largo</option><option>Otro</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="fg"><label>Fecha</label><input id="post-date" type="date"/></div>
+      <div class="fg"><label>Estado</label>
+        <select id="post-status">
+          <option value="pendiente">Pendiente</option>
+          <option value="borrador">Borrador</option>
+          <option value="publicado">Publicado</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-post')">Cancelar</button>
+      <button class="btn btn-accent" onclick="saveEditPost()">Guardar cambios</button>
     </div>
   </div>
 </div>
@@ -5888,7 +5926,36 @@ async function togglePostStatus(id, current){
   const p=posts.find(x=>x.id===id); if(p) p.status=next;
   renderPublicaciones(); renderControlContenido(); renderCalCont(); toast('Estado → '+next);
 }
+function openEditPost(id){
+  const p = posts.find(x=>String(x.id)===String(id));
+  if(!p){toast('Publicacion no encontrada');return;}
+  document.getElementById('post-edit-id').value = p.id;
+  document.getElementById('post-caption').value = p.caption||'';
+  document.getElementById('post-platform').value = p.platform||'Instagram';
+  document.getElementById('post-format').value = p.format||'Post';
+  document.getElementById('post-date').value = p.date||'';
+  document.getElementById('post-status').value = p.status||'pendiente';
+  openModal('modal-post');
+}
 
+async function saveEditPost(){
+  const id = document.getElementById('post-edit-id').value;
+  if(!id) return;
+  const rec = {
+    caption: document.getElementById('post-caption').value.trim(),
+    platform: document.getElementById('post-platform').value,
+    format: document.getElementById('post-format').value,
+    date: document.getElementById('post-date').value || null,
+    status: document.getElementById('post-status').value,
+  };
+  const {data,error} = await db.from('content_posts').update(rec).eq('id',id).select();
+  if(error){toast('Error: '+error.message);return;}
+  const idx = posts.findIndex(x=>String(x.id)===String(id));
+  if(idx>-1) posts[idx] = data[0];
+  renderCont(); renderPublicaciones(); renderControlContenido(); renderCalCont();
+  closeModal('modal-post');
+  toast('Publicacion actualizada ✓');
+}
 // ── IDEAS ─────────────────────────────────────────────────────────────────────
 async function saveIdea(){
   const texto=document.getElementById('idea-texto').value.trim();
@@ -6277,16 +6344,28 @@ async function savePieza(){
     status:document.getElementById('pieza-status')?.value||'pendiente',
     notas:document.getElementById('pieza-notas')?.value.trim()||'',
     media_url, media_type};
-  const {data,error}=await db.from('content_piezas').insert([rec]).select();
-  if(error){toast('Error: '+error.message);return;}
-  contentPiezas.push(data[0]);
+ const editId = document.getElementById('pieza-edit-id')?.value;
+  let data, error;
+  if(editId){
+    if(!media_url){ const old=contentPiezas.find(x=>String(x.id)===String(editId)); if(old){media_url=old.media_url||'';media_type=old.media_type||'';} }
+    ({data,error} = await db.from('content_piezas').update({...rec,media_url,media_type}).eq('id',editId).select());
+    if(error){toast('Error: '+error.message);return;}
+    const idx = contentPiezas.findIndex(x=>String(x.id)===String(editId));
+    if(idx>-1) contentPiezas[idx] = data[0];
+  } else {
+    ({data,error} = await db.from('content_piezas').insert([rec]).select());
+    if(error){toast('Error: '+error.message);return;}
+    contentPiezas.push(data[0]);
+  }
   renderCampsList(); renderCalCont();
   if(document.getElementById('cont-pub-grid')) renderPublicaciones();
   if(document.getElementById('cont-posts-semana')) renderControlContenido();
   closeModal('modal-pieza');
   if(fileInput) fileInput.value = '';
-  if(btn){ btn.dataset.loading='0'; btn.disabled=false; btn.textContent='Guardar'; }
-  toast('Pieza agregada ✓');
+  document.getElementById('pieza-edit-id').value = '';
+  document.getElementById('modal-pieza-titulo').textContent = 'Agregar pieza';
+  document.getElementById('btn-pieza-guardar').textContent = 'Agregar pieza';
+  toast(editId ? 'Pieza actualizada ✓' : 'Pieza agregada ✓');
 }
 async function cyclePiezaStatus(id){
   const p=contentPiezas.find(x=>x.id===id);if(!p)return;
@@ -6481,10 +6560,29 @@ function openDiaPiezas(date){
 }
 function openAddPiezaForDate(date){
   if(!contentCamps.length){toast('Crea una campana primero');switchContTab('campanas',document.getElementById('ctab-campanas'));return;}
+  document.getElementById('pieza-edit-id').value='';
+  document.getElementById('modal-pieza-titulo').textContent='Agregar pieza';
+  document.getElementById('btn-pieza-guardar').textContent='Agregar pieza';
   document.getElementById('pieza-camp-id').value=contentCamps[0].id;
   document.getElementById('pieza-fecha').value=date;
   ['pieza-titulo','pieza-notas'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
   openModal('modal-pieza');
+}
+  function openEditPieza(id){
+  const p = contentPiezas.find(x=>String(x.id)===String(id));
+  if(!p){toast('Pieza no encontrada');return;}
+  document.getElementById('pieza-edit-id').value = p.id;
+  document.getElementById('pieza-camp-id').value = p.campaign_id||'';
+  document.getElementById('pieza-titulo').value = p.titulo||'';
+  document.getElementById('pieza-formato').value = p.formato||'Reel';
+  document.getElementById('pieza-plataforma').value = p.plataforma||'Instagram';
+  document.getElementById('pieza-fecha').value = p.fecha_planificada||'';
+  document.getElementById('pieza-status').value = p.status||'pendiente';
+  document.getElementById('pieza-notas').value = p.notas||'';
+  document.getElementById('modal-pieza-titulo').textContent = 'Editar pieza';
+  document.getElementById('btn-pieza-guardar').textContent = 'Guardar cambios';
+  openModal('modal-pieza');
+}
 }
 
 function renderPlanMensual(){}
