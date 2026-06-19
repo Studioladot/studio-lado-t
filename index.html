@@ -2485,26 +2485,6 @@ create policy "own" on contacts for all using (auth.uid()=user_id);</div>
   </div>
 </div>
 
-<div class="modal-backdrop" id="modal-post">
-  <div class="modal">
-    <div class="modal-title">Nueva publicacion</div>
-    <div class="form-row">
-      <div class="fg"><label>Fecha</label><input id="post-date" type="date"/></div>
-      <div class="fg"><label>Plataforma</label><select id="post-plat"><option>Instagram</option><option>TikTok</option><option>Ambas</option></select></div>
-      <div class="fg"><label>Formato</label><select id="post-fmt"><option>Reel</option><option>Post</option><option>Historia</option><option>Carrusel</option><option>TikTok</option></select></div>
-    </div>
-    <div class="form-row"><div class="fg full"><label>Caption / Texto</label><textarea id="post-cap" rows="4" placeholder="Escribe el copy del post..."></textarea></div></div>
-    <div class="form-row">
-      <div class="fg"><label>Estado</label><select id="post-stat"><option value="pendiente">Pendiente</option><option value="publicado">Publicado</option><option value="borrador">Borrador</option></select></div>
-      <div class="fg wide"><label>Notas</label><input id="post-notes" type="text" placeholder="Ideas, hashtags, referencias..."/></div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-outline" onclick="closeModal('modal-post')">Cancelar</button>
-      <button class="btn btn-accent" onclick="savePost()">Guardar</button>
-    </div>
-  </div>
-</div>
-
 <div class="modal-backdrop" id="modal-crm">
   <div class="modal">
     <div class="modal-title">Nuevo contacto</div>
