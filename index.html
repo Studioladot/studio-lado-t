@@ -6247,9 +6247,11 @@ async function uploadPiezaMedia(file) {
 }
 
 async function savePieza(){
+  const btn = document.querySelector('#modal-pieza .btn-accent');
+  if(btn){ if(btn.dataset.loading==='1') return; btn.dataset.loading='1'; btn.disabled=true; btn.textContent='Guardando...'; }
   const titulo=document.getElementById('pieza-titulo')?.value.trim();
   const campId=document.getElementById('pieza-camp-id')?.value;
-  if(!titulo){toast('Ponele titulo a la pieza');return;}
+  if(!titulo){toast('Ponele titulo a la pieza');if(btn){btn.disabled=false;btn.dataset.loading='0';btn.textContent='Guardar';}return;}
   const fileInput = document.getElementById('pieza-media-file');
   const file = fileInput?.files?.[0];
   let media_url = '', media_type = '';
@@ -6273,6 +6275,7 @@ async function savePieza(){
   if(document.getElementById('cont-posts-semana')) renderControlContenido();
   closeModal('modal-pieza');
   if(fileInput) fileInput.value = '';
+  if(btn){ btn.dataset.loading='0'; btn.disabled=false; btn.textContent='Guardar'; }
   toast('Pieza agregada ✓');
 }
 async function cyclePiezaStatus(id){
