@@ -4295,6 +4295,7 @@ async function loadFinanzas() {
 // ── FINANZAS TABS ─────────────────────────────────────────────────────────────
 function switchFinTab(tab, btn) {
   finActiveTab = tab;
+  if(tab==='ventas') loadFinVentasTab();
   ['panel','gastos','ventas'].forEach(t => {
     const el = document.getElementById('fin-tab-'+t);
     const bt = document.getElementById('ftab-'+t);
@@ -5672,7 +5673,6 @@ async function loadContenido() {
 // ── TABS CONTENIDO ────────────────────────────────────────────────────────────
 function switchContTab(tab, btn) {
   finActiveTab = tab;
-  if(tab==='ventas') loadFinVentasTab();
   ['control','calendario','publicaciones','ideas'].forEach(t => {
     const el=document.getElementById('cont-tab-'+t);
     const bt=document.getElementById('ctab-'+t);
