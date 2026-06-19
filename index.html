@@ -8,8 +8,8 @@
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --bg:#09090B;--surface:#18181B;--surface2:#1f1f23;--border:#27272A;--border2:#3a3a40;
- --text:#fafafa;--text2:#a1a1aa;--text3:#71717a;
+  --bg:#09090B;--surface:#19191c;--surface2:#222226;--border:#2e2e33;--border2:#3f3f46;
+--text:#fafafa;--text2:#a1a1aa;--text3:#71717a;
   --accent:#10B981;--accent-l:#0c1f17;--accent-d:#0d9668;
   --teal:#22c55e;--teal-l:#0f1f15;--teal-d:#16a34a;
   --green:#22c55e;--green-l:#0f1f15;
@@ -5970,8 +5970,7 @@ function renderCampsList() {
     const pct  = pz.length>0?Math.round((done/pz.length)*100):0;
     const fmts = Array.isArray(camp.formatos)?camp.formatos:[];
     return `
-    <div style="background:var(--surface);border:0.5px solid var(--border);border-radius:var(--rl);margin-bottom:14px;overflow:hidden">
-
+   <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);margin-bottom:14px;overflow:hidden">
       <!-- Header -->
      <div style="background:var(--surface);padding:16px 20px;color:var(--text);border-bottom:1px solid var(--border);display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap">
   <div>
@@ -5990,7 +5989,7 @@ function renderCampsList() {
       <div style="padding:18px 20px">
 
         <!-- Objetivo + Conceptos -->
-        ${camp.objetivo?`<div style="margin-bottom:14px"><div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text2);margin-bottom:5px">Objetivo</div><div style="font-size:13px;line-height:1.6">${camp.objetivo}</div></div>`:''}
+        ${camp.objetivo?`<div style="margin-bottom:14px"><div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text2);margin-bottom:5px">Objetivo</div><div style="font-size:13px;line-height:1.6;color:var(--text)">${camp.objetivo}</div></div>`:''}
 
        ${camp.concepto_estrategico||camp.concepto_creativo?`
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
