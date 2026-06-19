@@ -2651,7 +2651,7 @@ function showPage(p){
     if(META_TOKEN&&META_ACCOUNT)verifyMetaConnection();
   }
   if(p==='biblioteca')renderBib();
-  if(p==='finanzas')loadFinanzas();
+if(p==='finanzas'){loadFinanzas();loadCotizacionUSD();}
   if(p==='tiendanube-connect')loadTiendaNubeStatus();
   if(p==='analisis')loadAnalisis();
   if(p==='notas')loadNotas();
@@ -5444,7 +5444,7 @@ function convertirUSD(monto) {
     try {
       const mj = await metaGet(`act_${META_ACCOUNT}/insights`, { fields:'spend', time_range:JSON.stringify({since:sinceStr,until:untilStr}), level:'account' });
       const spend = +(mj.data?.[0]?.spend || 0);
-      finVentasMetaCpaProrrateado = finVentasCache.length>0 ? spend/finVentasCache.length : 0;
+     finVentasMetaCpaProrrateado = finVentasCache.length>0 ? convertirUSD(spend/finVentasCache.length) : 0;
     } catch(e) { console.error('[FinVentas] error Meta spend', e); }
   }
   if(typeof loadAnProductosFromCache==='function') await loadAnProductosFromCache();
