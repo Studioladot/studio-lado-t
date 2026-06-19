@@ -5402,7 +5402,31 @@ document.getElementById('an-bulk-mode')?.addEventListener('change', function(){
 let finVentasCache = [];
 let finVentasMetaCpaProrrateado = 0;
 
-async function loadFinVentasTab() {
+let cotizacionUSD = 0;
+
+async function loadCotizacionUSD() {
+  if(+finConfig?.usd_manual > 0) { cotizacionUSD = +finConfig.usd_manual; renderCotizacionBadge('manual'); return; }
+  try {
+    const r = await fetch('https://dolarapi.com/v1/dolares/tarjeta');
+    const j = await r.json();
+    cotizacionUSD = j.venta || 0;
+    renderCotizacionBadge('api');
+  } catch(e) { console.error('[Cotizacion] error', e); cotizacionUSD = 0; renderCotizacionBadge('error'); }
+}
+
+function renderCotizacionBadge(source) {
+  const el = document.getElementById('fin-cotizacion-badge');
+  if(!el) return;
+  if(source==='error') { el.textContent = 'Cotizacion no disponible'; el.style.color='var(--text3)'; return; }
+  el.textContent = `USD Tarjeta: $${cotizacionUSD.toLocaleString('es-AR')}` + (source==='manual'?' (manual)':'');
+  el.style.color = 'var(--text2)';
+}
+
+function convertirUSD(monto) {
+  if((finConfig?.meta_moneda||'ARS') !== 'USD') return monto;
+  return monto * (cotizacionUSD || 0);
+}
+  async function loadFinVentasTab() {
   if(!tnConnection) return;
   const since = new Date(); since.setDate(since.getDate()-29);
   const sinceStr = since.toISOString().split('T')[0];
