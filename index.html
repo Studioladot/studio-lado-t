@@ -6422,10 +6422,10 @@ function renderCalCont(){
     const fd=`${year}-${String(month).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
     const esHoy=d===hoy.getDate()&&month===hoy.getMonth()+1&&year===hoy.getFullYear();
     const pubs=pd.filter(p=>p.status==='publicado').length;
-    const bgCell=pubs===pd.length&&pd.length>0?'var(--green-l)':pd.length?'var(--accent-l)':'var(--surface2)';
-    const chips=pd.slice(0,2).map(p=>`<div style="display:flex;align-items:center;gap:2px;padding:1px 4px;border-radius:6px;background:${p.campColor}22;border:0.5px solid ${p.campColor};margin-top:2px;cursor:pointer" onclick="event.stopPropagation();cyclePiezaStatus('${p.id}')" title="${p.titulo}"><span style="font-size:8px;color:${PZ_COLOR[p.status]}">${PZ_ICON[p.status]}</span><span style="font-size:8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:48px;color:var(--text)">${p.titulo}</span></div>`).join('');
+    const bgCell=pubs===pd.length&&pd.length>0?'var(--green-l)':pd.length?'var(--surface2)':'transparent';
+    const chips=pd.slice(0,2).map(p=>`<div style="display:flex;align-items:center;gap:2px;padding:1px 4px;border-radius:6px;background:var(--surface);border:1px solid var(--border);margin-top:2px;cursor:pointer" onclick="event.stopPropagation();cyclePiezaStatus('${p.id}')" title="${p.titulo}"><span style="font-size:8px;color:${PZ_COLOR[p.status]}">${PZ_ICON[p.status]}</span><span style="font-size:8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:48px;color:var(--text)">${p.titulo}</span></div>`).join('');
     const more=pd.length>2?`<div style="font-size:8px;color:var(--text2);margin-top:1px">+${pd.length-2}</div>`:'';
-    html+=`<div onclick="openAddPiezaForDate('${fd}')" title="Agregar pieza el ${d}/${month}" style="border-radius:6px;padding:4px;min-height:58px;border:0.5px solid ${esHoy?'var(--accent)':'var(--border)'};background:${bgCell};cursor:pointer;transition:border-color .12s" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='${esHoy?'var(--accent)':'var(--border)'}' ">
+    html+=`<div onclick="openAddPiezaForDate('${fd}')" title="Agregar pieza el ${d}/${month}" style="border-radius:8px;padding:4px;min-height:58px;border:1px solid ${esHoy?'var(--accent)':'var(--border)'};background:${bgCell};cursor:pointer;transition:border-color .12s" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='${esHoy?'var(--accent)':'var(--border)'}' ">
       <div style="font-size:11px;font-weight:${esHoy?'800':'600'};color:${esHoy?'var(--accent)':'var(--text)'};text-align:center">${d}</div>
       ${chips}${more}
     </div>`;
