@@ -1093,6 +1093,41 @@ tr:hover td{background:var(--surface2)}
       <button class="btn btn-accent" onclick="openModal('modal-venta-dia')">+ Venta del dia</button>
     </div>
   </div>
+  <div class="modal-backdrop" id="modal-venta-detalle">
+  <div class="modal" style="max-width:380px">
+    <div class="modal-title">Orden <span id="vd-id" style="color:var(--text2);font-weight:400"></span></div>
+    <div style="font-size:11px;color:var(--text3);margin-bottom:8px" id="vd-fecha"></div>
+    <div style="display:flex;flex-direction:column;gap:0">
+      <div style="display:flex;justify-content:space-between;padding:9px 0;border-bottom:0.5px solid var(--border)">
+        <span style="color:var(--text2);font-size:13px">Total orden</span>
+        <span style="font-weight:700" id="vd-total">$0</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding:9px 0;border-bottom:0.5px solid var(--border)">
+        <span style="color:var(--text2);font-size:13px">Costo publicitario (CPA prorrateado)</span>
+        <span style="color:var(--red)" id="vd-cpa">-$0</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding:9px 0;border-bottom:0.5px solid var(--border)">
+        <span style="color:var(--text2);font-size:13px">Costo de envio</span>
+        <span style="color:var(--red)" id="vd-envio">-$0</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding:9px 0;border-bottom:0.5px solid var(--border)">
+        <span style="color:var(--text2);font-size:13px">Costo de productos</span>
+        <span style="color:var(--red)" id="vd-cogs">-$0</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding:9px 0;border-bottom:0.5px solid var(--border)">
+        <span style="color:var(--text2);font-size:13px">Comision Tienda Nube</span>
+        <span style="color:var(--red)" id="vd-comision-tn">-$0</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding:12px 0 2px">
+        <span style="font-weight:700;font-size:14px">Neto real</span>
+        <span style="font-weight:800;font-size:18px;color:var(--accent)" id="vd-neto">$0</span>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-venta-detalle')">Cerrar</button>
+    </div>
+  </div>
+</div>
 
   <!-- TABS -->
   <div style="display:flex;gap:0;border-bottom:0.5px solid var(--border);margin-bottom:20px">
@@ -1230,7 +1265,23 @@ tr:hover td{background:var(--surface2)}
       </table></div>
     </div>
     <div style="display:flex;justify-content:flex-end;padding:12px 0;gap:16px">
-      <span style="font-size:13px;color:var(--text2)">Total del periodo: <strong id="ventas-dia-total" style="color:var(--green)">$0</strong></span>
+     <span style="font-size:13px;color:var(--text2)">Total del periodo: <strong id="ventas-dia-total" style="color:var(--green)">$0</strong></span>
+    </div>
+
+    <!-- Ultimas ventas reales de Tienda Nube, con desglose de costos -->
+    <div class="an-dark" style="margin-top:14px">
+      <div class="an-dark-hdr">
+        <div class="an-dark-title">Ultimas ventas (Tienda Nube)</div>
+        <span style="font-size:11px;color:var(--ad-text3)" id="fin-ventas-count">—</span>
+      </div>
+      <div class="tbl-wrap" style="margin:-2px -2px 0"><table class="an-table-dark">
+        <thead><tr>
+          <th>Id orden</th><th>Origen</th><th>Estado</th><th>Fecha</th><th>Total orden</th><th>Total neto</th><th></th>
+        </tr></thead>
+        <tbody id="fin-ventas-tbody">
+          <tr><td colspan="7" style="text-align:center;color:var(--ad-text3);padding:20px">Conecta Tienda Nube para ver tus ventas</td></tr>
+        </tbody>
+      </table></div>
     </div>
   </div>
 
@@ -1989,6 +2040,7 @@ create policy "own" on contacts for all using (auth.uid()=user_id);</div>
     <div class="form-row">
       <div class="fg"><label>Objetivo de ganancia %</label><input id="fc-objetivo" type="number" placeholder="20" step="0.1"/></div>
       <div class="fg"><label>Costo de envio promedio $</label><input id="fc-envio" type="number" placeholder="0" step="1"/></div>
+      <div class="fg"><label>Comision Tienda Nube %</label><input id="fc-comision-tn" type="number" placeholder="2" step="0.1"/></div>
     </div>
     <div style="font-size:11px;color:var(--text2);margin:-8px 0 4px">Promedio por pedido (no por producto). Se usa para calcular la ganancia real en Tienda Nube.</div>
     <div style="background:var(--surface2);border-radius:var(--r);padding:12px;font-size:12px;color:var(--text2);margin-top:4px;line-height:1.7">
@@ -5309,7 +5361,76 @@ document.getElementById('an-bulk-mode')?.addEventListener('change', function(){
   document.getElementById('an-bulk-value-lbl').textContent = this.value==='pct' ? 'Porcentaje (%)' : 'Costo ($)';
 });
 
+let finVentasCache = [];
+let finVentasMetaCpaProrrateado = 0;
 
+async function loadFinVentasTab() {
+  if(!tnConnection) return;
+  const since = new Date(); since.setDate(since.getDate()-29);
+  const sinceStr = since.toISOString().split('T')[0];
+  const untilStr = new Date().toISOString().split('T')[0];
+
+  const session = (await db.auth.getSession()).data.session;
+  const r = await fetch(`/api/tiendanube-orders?from=${sinceStr}&to=${untilStr}`, { headers:{Authorization:`Bearer ${session.access_token}`} });
+  const j = await r.json();
+  if(j.error) { console.error('[FinVentas] error TN', j.error); return; }
+  finVentasCache = j.orders || [];
+
+  finVentasMetaCpaProrrateado = 0;
+  if(META_TOKEN && META_ACCOUNT && finVentasCache.length) {
+    try {
+      const mj = await metaGet(`act_${META_ACCOUNT}/insights`, { fields:'spend', time_range:JSON.stringify({since:sinceStr,until:untilStr}), level:'account' });
+      const spend = +(mj.data?.[0]?.spend || 0);
+      finVentasMetaCpaProrrateado = finVentasCache.length>0 ? spend/finVentasCache.length : 0;
+    } catch(e) { console.error('[FinVentas] error Meta spend', e); }
+  }
+  if(typeof loadAnProductosFromCache==='function') await loadAnProductosFromCache();
+  renderFinVentasTabla();
+}
+
+function finComisionTNPct() { return (+finConfig?.comision_tn_pct || 2) / 100; }
+
+function renderFinVentasTabla() {
+  const tbody = document.getElementById('fin-ventas-tbody');
+  setT('fin-ventas-count', `${finVentasCache.length} ordenes (30 dias)`);
+  if(!finVentasCache.length) {
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--ad-text3);padding:20px">Sin ventas en los ultimos 30 dias</td></tr>';
+    return;
+  }
+  tbody.innerHTML = finVentasCache.map(o=>{
+    const cogs = typeof calcAnCOGS==='function' ? calcAnCOGS(o.line_items||[]) : 0;
+    const comisionTN = o.total*finComisionTNPct();
+    const neto = o.total - finVentasMetaCpaProrrateado - o.shipping_cost - cogs - comisionTN;
+    return `
+    <tr>
+      <td style="font-weight:600">#${o.number||o.id}</td>
+      <td><span class="an-pill-row"><span class="an-channel-dot" style="background:var(--accent)"></span>Tienda Nube</span></td>
+      <td><span class="an-pill" style="background:var(--green-l);color:var(--green)">Pagado</span></td>
+      <td style="color:var(--ad-text2)">${new Date(o.created_at).toLocaleDateString('es-AR',{day:'2-digit',month:'short'})}</td>
+      <td>${fmtMoney(o.total)}</td>
+      <td style="font-weight:700">${fmtMoney(neto)}</td>
+      <td><span onclick="openVentaDetalle('${o.id}')" style="color:var(--accent);cursor:pointer;font-size:12px;font-weight:600">Ver detalle</span></td>
+    </tr>`;
+  }).join('');
+}
+
+function openVentaDetalle(orderId) {
+  const o = finVentasCache.find(x=>String(x.id)===String(orderId));
+  if(!o) return;
+  const cogs = typeof calcAnCOGS==='function' ? calcAnCOGS(o.line_items||[]) : 0;
+  const comisionTN = o.total*finComisionTNPct();
+  const neto = o.total - finVentasMetaCpaProrrateado - o.shipping_cost - cogs - comisionTN;
+
+  setT('vd-id', '#'+(o.number||o.id));
+  setT('vd-fecha', new Date(o.created_at).toLocaleDateString('es-AR',{day:'2-digit',month:'long',year:'numeric'}));
+  setT('vd-total', fmtMoney(o.total));
+  setT('vd-cpa', '-'+fmtMoney(finVentasMetaCpaProrrateado));
+  setT('vd-envio', '-'+fmtMoney(o.shipping_cost));
+  setT('vd-cogs', '-'+fmtMoney(cogs));
+  setT('vd-comision-tn', '-'+fmtMoney(comisionTN));
+  setT('vd-neto', fmtMoney(neto));
+  openModal('modal-venta-detalle');
+}
 async function saveFinConfig() {
   const cfg = {
     user_id: me.id,
@@ -5317,6 +5438,7 @@ async function saveFinConfig() {
     dias_operativos:       +document.getElementById('fc-dias').value    || 26,
     objetivo_ganancia_pct: +document.getElementById('fc-objetivo').value|| 20,
     costo_envio_promedio:  +document.getElementById('fc-envio').value   || 0,
+    comision_tn_pct:       +document.getElementById('fc-comision-tn').value || 2,
   };
   const { data, error } = await db.from('fin_config').upsert([cfg], {onConflict:'user_id'}).select();
   if(error){ toast('Error: '+error.message); return; }
@@ -5330,6 +5452,7 @@ function openFinConfig() {
   document.getElementById('fc-dias').value     = finConfig.dias_operativos||26;
   document.getElementById('fc-objetivo').value = finConfig.objetivo_ganancia_pct||20;
   document.getElementById('fc-envio').value    = finConfig.costo_envio_promedio||0;
+  document.getElementById('fc-comision-tn').value = finConfig.comision_tn_pct||2;
   openModal('modal-fin-config');
 }
 
@@ -5549,6 +5672,7 @@ async function loadContenido() {
 // ── TABS CONTENIDO ────────────────────────────────────────────────────────────
 function switchContTab(tab, btn) {
   finActiveTab = tab;
+  if(tab==='ventas') loadFinVentasTab();
   ['control','calendario','publicaciones','ideas'].forEach(t => {
     const el=document.getElementById('cont-tab-'+t);
     const bt=document.getElementById('ctab-'+t);
