@@ -93,10 +93,12 @@ export default async function handler(req, res) {
       }
     }
 
-    // 5. Calcular bruto, envio y neto. Tambien armamos detalle de productos vendidos para calcular COGS.
+    // 5. Calcular bruto, envio y neto. Tambien armamos detalle por orden (para la tabla de "Ultimas ventas")
+    //    y un array plano de line items (para COGS agregado del periodo, ya usado en Analisis).
     let bruto = 0;
     let envio = 0;
     const lineItems = [];
+    const ordersOut = [];
     const byDay = {}; // { 'YYYY-MM-DD': { bruto, envio, ordenes } }
     allOrders.forEach((order) => {
       const paymentStatus = order.payment_status;
@@ -115,14 +117,21 @@ export default async function handler(req, res) {
         byDay[day].envio += shippingCost;
         byDay[day].ordenes += 1;
       }
-      (order.products || []).forEach(it => {
-        lineItems.push({
-          variant_id: it.variant_id,
-          product_id: it.product_id,
-          name: it.name,
-          qty: parseInt(it.quantity || 1),
-          price: parseFloat(it.price || 0),
-        });
+      const orderLineItems = (order.products || []).map(it => ({
+        variant_id: it.variant_id,
+        product_id: it.product_id,
+        name: it.name,
+        qty: parseInt(it.quantity || 1),
+        price: parseFloat(it.price || 0),
+      }));
+      orderLineItems.forEach(li => lineItems.push(li));
+      ordersOut.push({
+        id: order.id,
+        number: order.number,
+        created_at: order.created_at,
+        total: Math.round(orderBruto),
+        shipping_cost: Math.round(shippingCost),
+        line_items: orderLineItems,
       });
     });
     const neto = bruto - envio;
@@ -138,6 +147,7 @@ export default async function handler(req, res) {
       envio: Math.round(envio),
       neto: Math.round(neto),
       ordenes: allOrders.length,
+      orders: ordersOut.sort((a,b)=>new Date(b.created_at)-new Date(a.created_at)),
       line_items: lineItems,
       serie_diaria: serieDiaria,
       periodo: { desde: sinceISO, hasta: untilISO },
