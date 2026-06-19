@@ -3144,8 +3144,9 @@ async function savePost(){
 }
 function filterCont(f,el){contF=f;document.querySelectorAll('#cont-filters .ft').forEach(t=>t.classList.remove('active'));if(el)el.classList.add('active');renderCont();}
 function renderCont(){
-  const filtered=contF==='all'?posts:posts.filter(p=>p.platform===contF||p.status===contF);
   const grid=document.getElementById('cont-grid');
+  if(!grid) return;
+  const filtered=contF==='all'?posts:posts.filter(p=>p.platform===contF||p.status===contF);
   if(!filtered.length){grid.innerHTML='<div class="empty" style="grid-column:1/-1"><div class="empty-icon">&#128197;</div><div class="empty-msg">Sin publicaciones</div></div>';return;}
   const sBadge={publicado:'b-green',pendiente:'b-amber',borrador:'b-gray'};
   grid.innerHTML=filtered.map(p=>`
