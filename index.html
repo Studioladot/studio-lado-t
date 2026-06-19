@@ -234,6 +234,7 @@ tr:hover td{background:var(--surface2)}
   .form-row{gap:8px}
   .fg{min-width:100%}
   .fg.wide{min-width:100%}
+  #cont-cal-days-grid{grid-template-columns:repeat(7,1fr) !important}
 
   /* Filas de filtros largas (Biblioteca Ads, etc.) ocupan todo el ancho */
   .page-hdr select,.page-hdr input{flex:1;min-width:140px}
@@ -6509,7 +6510,7 @@ function renderCalCont(){
   const dias=['Lu','Ma','Mi','Ju','Vi','Sa','Do'];
   const grid=document.getElementById('cont-cal-grid');if(!grid)return;
   let html=`<div style="font-size:13px;font-weight:700;text-align:center;margin-bottom:10px">${new Date(year,month-1,1).toLocaleDateString('es-AR',{month:'long',year:'numeric'}).toUpperCase()}</div>`;
-  html+='<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px">';
+ html+='<div id="cont-cal-days-grid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px">';
   dias.forEach(d=>{html+=`<div style="font-size:10px;font-weight:700;text-align:center;color:var(--text2);padding:3px">${d}</div>`;});
   for(let i=0;i<primerLunes;i++)html+='<div></div>';
   for(let d=1;d<=diasEnMes;d++){
