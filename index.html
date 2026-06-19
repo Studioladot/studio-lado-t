@@ -6350,12 +6350,12 @@ async function savePieza(){
   if(editId){
     if(!media_url){ const old=contentPiezas.find(x=>String(x.id)===String(editId)); if(old){media_url=old.media_url||'';media_type=old.media_type||'';} }
     ({data,error} = await db.from('content_piezas').update({...rec,media_url,media_type}).eq('id',editId).select());
-    if(error){toast('Error: '+error.message);return;}
+   if(error){toast('Error: '+error.message);if(btn){btn.disabled=false;btn.dataset.loading='0';btn.textContent='Guardar';}return;}
     const idx = contentPiezas.findIndex(x=>String(x.id)===String(editId));
     if(idx>-1) contentPiezas[idx] = data[0];
   } else {
     ({data,error} = await db.from('content_piezas').insert([rec]).select());
-    if(error){toast('Error: '+error.message);return;}
+    if(error){toast('Error: '+error.message);if(btn){btn.disabled=false;btn.dataset.loading='0';btn.textContent='Guardar';}return;}
     contentPiezas.push(data[0]);
   }
   renderCampsList(); renderCalCont();
