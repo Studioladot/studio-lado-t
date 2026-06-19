@@ -434,7 +434,74 @@ tr:hover td{background:var(--surface2)}
       <button class="btn btn-accent" onclick="openModal('modal-snap')">+ Cargar metricas</button>
     </div>
   </div>
+<!-- ONBOARDING VIDEO + GRILLA PRINCIPAL ─────────────────────────────────── -->
+<div style="position:relative;width:100%;aspect-ratio:16/9;border-radius:var(--rl);overflow:hidden;border:1px solid #27272A;background:#18181B;margin-bottom:14px;cursor:pointer" onclick="alert('Conectar video de onboarding aqui')">
+  <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center">
+    <div style="width:64px;height:64px;border-radius:50%;border:1px solid #27272A;background:rgba(24,24,27,.9);display:flex;align-items:center;justify-content:center">
+      <svg width="20" height="20" viewBox="0 0 18 18" fill="#FAFAFA"><path d="M3 1.5l13 7.5-13 7.5z"/></svg>
+    </div>
+  </div>
+  <div style="position:absolute;bottom:12px;left:12px;font-size:11px;font-weight:600;color:#fafafa;background:rgba(24,24,27,.9);border:1px solid #27272A;padding:4px 10px;border-radius:6px">
+    Onboarding · 3:42
+  </div>
+</div>
 
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+
+  <!-- Meta Ads -->
+  <div style="background:#18181B;border:1px solid #27272A;border-radius:var(--rl);padding:18px">
+    <div style="display:flex;align-items:center;justify-content:between;gap:8px;margin-bottom:14px">
+      <span style="font-size:11px;font-weight:700;color:#71717a;text-transform:uppercase;letter-spacing:.08em">Meta Ads</span>
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:flex-end">
+      <div>
+        <div style="font-size:11px;color:#71717a;margin-bottom:4px">ROAS Promedio</div>
+        <div style="font-size:24px;font-weight:700;color:#fafafa">—</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:11px;color:#71717a;margin-bottom:4px">Gasto del Mes</div>
+        <div style="font-size:16px;font-weight:600;color:#a1a1aa">$ —</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tienda Nube -->
+  <div style="background:#18181B;border:1px solid #27272A;border-radius:var(--rl);padding:18px">
+    <div style="margin-bottom:14px">
+      <span style="font-size:11px;font-weight:700;color:#71717a;text-transform:uppercase;letter-spacing:.08em">Tienda Nube</span>
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:flex-end">
+      <div>
+        <div style="font-size:11px;color:#71717a;margin-bottom:4px">Ventas Totales</div>
+        <div style="font-size:24px;font-weight:700;color:#fafafa">$ —</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:11px;color:#71717a;margin-bottom:4px">Ticket Promedio</div>
+        <div style="font-size:16px;font-weight:600;color:#a1a1aa">$ —</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Contenido -->
+  <div style="background:#18181B;border:1px solid #27272A;border-radius:var(--rl);padding:18px">
+    <div style="margin-bottom:14px">
+      <span style="font-size:11px;font-weight:700;color:#71717a;text-transform:uppercase;letter-spacing:.08em">Contenido</span>
+    </div>
+    <div style="font-size:11px;color:#71717a;margin-bottom:4px">Piezas publicadas vs. planificadas (semana)</div>
+    <div style="font-size:24px;font-weight:700;color:#fafafa">— / —</div>
+  </div>
+
+  <!-- Finanzas (destacado) -->
+  <div style="background:#18181B;border:1px solid #27272A;border-radius:var(--rl);padding:18px">
+    <div style="margin-bottom:14px">
+      <span style="font-size:11px;font-weight:700;color:#71717a;text-transform:uppercase;letter-spacing:.08em">Finanzas</span>
+    </div>
+    <div style="font-size:11px;color:#71717a;margin-bottom:4px">Profit estimado (neto real)</div>
+    <div style="font-size:30px;font-weight:800;color:#fafafa">$ —</div>
+  </div>
+
+</div>
+  
   <!-- BUSINESS HEALTH SCORE ─────────────────────────────────────────────── -->
   <div class="an-dark" id="bhs-panel" style="margin-bottom:14px">
     <div style="display:grid;grid-template-columns:220px 1fr;gap:32px;align-items:center">
