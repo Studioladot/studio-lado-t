@@ -219,6 +219,11 @@ tr:hover td{background:var(--surface2)}
   /* Grids de cards auto-fill → una sola columna para que no se corten */
   #cont-pub-grid,#cont-ideas-grid,#notas-grid{grid-template-columns:1fr !important}
   #bibads-grid{grid-template-columns:repeat(2,1fr) !important}
+  /* Banner bienvenida + video: en mobile, columnas apiladas */
+  [style*="grid-template-columns:1.1fr 0.9fr"]{grid-template-columns:1fr !important;padding:18px !important;gap:18px !important}
+
+  /* Grilla de metricas (Meta Ads / Tienda Nube / Contenido / Finanzas): 1 columna en mobile */
+  [style*="grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px"]{grid-template-columns:1fr !important}
 
   /* Paginas y tarjetas: menos padding para aprovechar el ancho */
   .page{padding:16px 14px}
