@@ -436,14 +436,34 @@ tr:hover td{background:var(--surface2)}
   </div>
 <!-- ONBOARDING VIDEO + GRILLA PRINCIPAL ─────────────────────────────────── -->
 <div style="position:relative;width:100%;aspect-ratio:16/9;border-radius:var(--rl);overflow:hidden;border:1px solid #27272A;background:#18181B;margin-bottom:14px;cursor:pointer" onclick="alert('Conectar video de onboarding aqui')">
-  <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center">
-    <div style="width:64px;height:64px;border-radius:50%;border:1px solid #27272A;background:rgba(24,24,27,.9);display:flex;align-items:center;justify-content:center">
-      <svg width="20" height="20" viewBox="0 0 18 18" fill="#FAFAFA"><path d="M3 1.5l13 7.5-13 7.5z"/></svg>
+<!-- BANNER BIENVENIDA + VIDEO ONBOARDING (2 columnas) ─────────────────────── -->
+<div style="background:#131316;border:1px solid #27272A;border-radius:var(--rl);padding:28px;margin-bottom:14px;display:grid;grid-template-columns:1.1fr 0.9fr;gap:32px;align-items:center">
+
+  <!-- IZQUIERDA: texto + CTA -->
+  <div>
+    <div style="font-size:22px;font-weight:800;color:#FFFFFF;letter-spacing:-.02em;margin-bottom:8px">
+      El motor de tu negocio
+    </div>
+    <div style="font-size:13px;color:#a1a1aa;line-height:1.5;margin-bottom:18px;max-width:380px">
+      Controlá tus anuncios, medí tus márgenes reales y escalá tu marca en un solo lugar.
+    </div>
+    <button style="background:transparent;border:1px solid #27272A;color:#fafafa;font-size:13px;font-weight:600;padding:9px 16px;border-radius:var(--r);cursor:pointer" onclick="alert('Conectar video de onboarding aqui')">
+      Ver recorrido
+    </button>
+  </div>
+
+  <!-- DERECHA: video compacto -->
+  <div style="position:relative;width:100%;aspect-ratio:16/10;border-radius:var(--r);overflow:hidden;border:1px solid #27272A;background:#18181B;cursor:pointer" onclick="alert('Conectar video de onboarding aqui')">
+    <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center">
+      <div style="width:48px;height:48px;border-radius:50%;border:1px solid #27272A;background:rgba(24,24,27,.9);display:flex;align-items:center;justify-content:center">
+        <svg width="15" height="15" viewBox="0 0 18 18" fill="#FAFAFA"><path d="M3 1.5l13 7.5-13 7.5z"/></svg>
+      </div>
+    </div>
+    <div style="position:absolute;bottom:10px;left:10px;font-size:10px;font-weight:600;color:#fafafa;background:rgba(24,24,27,.9);border:1px solid #27272A;padding:3px 8px;border-radius:6px">
+      Onboarding · 3:42
     </div>
   </div>
-  <div style="position:absolute;bottom:12px;left:12px;font-size:11px;font-weight:600;color:#fafafa;background:rgba(24,24,27,.9);border:1px solid #27272A;padding:4px 10px;border-radius:6px">
-    Onboarding · 3:42
-  </div>
+
 </div>
 
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
