@@ -5634,8 +5634,7 @@ function renderControlContenido() {
   const key = postsSem===0?0:pct<50?'low':pct<100?'mid':'ok';
   const [msg, col] = msgs[key];
   if(motEl) motEl.innerHTML = msg;
-  if(hero){ hero.style.background = pct>=100?col:pct>=60?'#4a3800':pct>0?'#5a1a08':'var(--text)'; }
-
+  if(hero){ hero.style.background = pct>=100?col:pct>=60?'#4a3800':pct>0?'#5a1a08':'var(--surface2)'; }
   // Racha: días consecutivos publicando
   const fechasPub = [...new Set(publicadas.map(p=>p.date))].sort((a,b)=>b.localeCompare(a));
   let racha = 0, checkDate = new Date(hoy);
