@@ -5985,18 +5985,18 @@ function renderCampsList() {
         </div>
       </div>
 
-      ${pz.length>0?`<div style="height:3px;background:rgba(0,0,0,.1)"><div style="height:100%;width:${pct}%;background:${camp.color||'var(--accent)'}99;transition:width .4s"></div></div>`:''}
+      ${pz.length>0?`<div style="height:3px;background:var(--surface2)"><div style="height:100%;width:${pct}%;background:var(--accent);transition:width .4s"></div></div>`:''}
 
       <div style="padding:18px 20px">
 
         <!-- Objetivo + Conceptos -->
         ${camp.objetivo?`<div style="margin-bottom:14px"><div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text2);margin-bottom:5px">Objetivo</div><div style="font-size:13px;line-height:1.6">${camp.objetivo}</div></div>`:''}
 
-        ${camp.concepto_estrategico||camp.concepto_creativo?`
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
-          ${camp.concepto_estrategico?`<div style="background:var(--blue-l);border-radius:var(--r);padding:11px;border-left:3px solid var(--blue)"><div style="font-size:10px;font-weight:700;color:var(--blue);margin-bottom:4px;text-transform:uppercase;letter-spacing:.06em">Concepto estrategico</div><div style="font-size:13px;line-height:1.5">${camp.concepto_estrategico}</div></div>`:''}
-          ${camp.concepto_creativo?`<div style="background:var(--accent-l);border-radius:var(--r);padding:11px;border-left:3px solid var(--accent)"><div style="font-size:10px;font-weight:700;color:var(--accent);margin-bottom:4px;text-transform:uppercase;letter-spacing:.06em">Concepto creativo</div><div style="font-size:15px;font-weight:700;font-style:italic;line-height:1.4">"${camp.concepto_creativo}"</div></div>`:''}
-        </div>`:''}
+       ${camp.concepto_estrategico||camp.concepto_creativo?`
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+  ${camp.concepto_estrategico?`<div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:11px"><div style="font-size:10px;font-weight:700;color:var(--text2);margin-bottom:4px;text-transform:uppercase;letter-spacing:.06em">Concepto estrategico</div><div style="font-size:13px;line-height:1.5;color:var(--text)">${camp.concepto_estrategico}</div></div>`:''}
+  ${camp.concepto_creativo?`<div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:11px"><div style="font-size:10px;font-weight:700;color:var(--text2);margin-bottom:4px;text-transform:uppercase;letter-spacing:.06em">Concepto creativo</div><div style="font-size:15px;font-weight:700;font-style:italic;line-height:1.4;color:var(--text)">"${camp.concepto_creativo}"</div></div>`:''}
+</div>`:''}
 
         <!-- Desarrollo -->
         ${camp.desarrollo?`<div style="margin-bottom:14px"><div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text2);margin-bottom:6px">Desarrollo y fases</div><div style="font-size:13px;line-height:1.7;white-space:pre-wrap;color:var(--text)">${camp.desarrollo}</div></div>`:''}
@@ -6011,7 +6011,7 @@ function renderCampsList() {
             <button class="btn btn-sm btn-outline" onclick="openAddPieza('${camp.id}')">+ Agregar pieza</button>
           </div>
           ${pz.length?pz.map(p=>`
-          <div style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:${p.status==='publicado'?'var(--green-l)':'var(--surface2)'};border-radius:var(--r);margin-bottom:4px">
+          <div style="display:flex;align-items:center;gap:10px;padding:8px 10px;border-bottom:1px solid var(--border);margin-bottom:0">
             <button onclick="cyclePiezaStatus('${p.id}')" title="Click para cambiar estado"
               style="width:26px;height:26px;border-radius:50%;border:2px solid ${PZ_COLOR[p.status]};background:${p.status==='publicado'?PZ_COLOR[p.status]:'transparent'};color:${p.status==='publicado'?'#fff':PZ_COLOR[p.status]};font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:700">
               ${PZ_ICON[p.status]||'◌'}
@@ -6019,8 +6019,8 @@ function renderCampsList() {
             ${p.media_url?(p.media_type==='video'?`<div onclick="event.stopPropagation();window.open('${p.media_url}','_blank')" style="width:34px;height:34px;border-radius:6px;background:var(--text);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;font-size:13px;color:#fff" title="Ver video de referencia">&#9654;</div>`:`<img src="${p.media_url}" onclick="event.stopPropagation();window.open('${p.media_url}','_blank')" style="width:34px;height:34px;border-radius:6px;object-fit:cover;cursor:pointer;flex-shrink:0" title="Ver foto de referencia"/>`):''}
             <div onclick="openViewPieza('${p.id}')" style="flex:1;min-width:0;cursor:pointer" title="Click para ver y editar">
               <span style="font-size:13px;font-weight:${p.status==='publicado'?'400':'600'};${p.status==='publicado'?'text-decoration:line-through;color:var(--text2)':''}">${p.titulo}</span>
-              <span class="badge b-gray" style="font-size:9px;margin-left:5px">${p.formato}</span>
-              <span class="badge b-gray" style="font-size:9px;margin-left:3px">${p.plataforma}</span>
+              <span class="badge" style="background:var(--surface2);border:1px solid var(--border);color:var(--text2);font-size:9px;margin-left:5px">${p.formato}</span>
+              <span class="badge" style="background:var(--surface2);border:1px solid var(--border);color:var(--text2);font-size:9px;margin-left:3px">${p.plataforma}</span>
               ${p.fecha_planificada?`<span style="font-size:11px;color:var(--text3);margin-left:5px">${new Date(p.fecha_planificada+'T12:00:00').toLocaleDateString('es-AR',{day:'numeric',month:'short'})}</span>`:''}
               ${p.notas?`<span style="font-size:11px;color:var(--accent);margin-left:5px">&#128221;</span>`:''}
             </div>
