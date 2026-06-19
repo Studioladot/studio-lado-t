@@ -157,8 +157,8 @@ tr:hover td{background:var(--surface2)}
 .fin-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}
 .fin-card{background:var(--surface);border:0.5px solid var(--border);border-radius:var(--rl);padding:14px 16px}
 .fin-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text2);margin-bottom:3px}
-.fin-value{font-size:20px;font-weight:700;letter-spacing:-.02em}
-.fin-value.green{color:var(--green)}.fin-value.red{color:var(--red)}
+..fin-value{font-size:20px;font-weight:700;letter-spacing:-.02em;color:var(--text)}
+.fin-value.green{color:var(--text)}.fin-value.red{color:var(--text)}
 .content-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px}
 .cp-card{background:var(--surface);border:0.5px solid var(--border);border-radius:var(--rl);padding:14px}
 .cp-card:hover{border-color:var(--border2)}
@@ -1137,7 +1137,7 @@ tr:hover td{background:var(--surface2)}
     <!-- Stats cards -->
     <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px" id="fin-stats-grid">
       <div class="card" style="padding:14px 16px;margin:0"><div class="fin-label">Gastos del mes</div><div class="fin-value" id="fin-stat-gastos">—</div></div>
-      <div class="card" style="padding:14px 16px;margin:0"><div class="fin-label">Ventas acumuladas</div><div class="fin-value green" id="fin-stat-ventas">—</div></div>
+      <div class="card" style="padding:14px 16px;margin:0"><div class="fin-label">Ventas acumuladas</div><div class="fin-value" id="fin-stat-ventas">—</div></div>
       <div class="card" style="padding:14px 16px;margin:0"><div class="fin-label">Profit estimado</div><div class="fin-value" id="fin-stat-profit">—</div></div>
       <div class="card" style="padding:14px 16px;margin:0"><div class="fin-label">Dias restantes</div><div class="fin-value" id="fin-stat-dias">—</div></div>
     </div>
@@ -1159,7 +1159,7 @@ tr:hover td{background:var(--surface2)}
           <div style="font-size:18px;font-weight:700" id="fin-vendido-hoy">—</div>
         </div>
       </div>
-      <div id="fin-hoy-status" style="font-size:13px;font-weight:600;text-align:center;padding:10px;border-radius:var(--r)"></div>
+     <div id="fin-hoy-status" style="font-size:13px;font-weight:600;text-align:center;padding:12px 16px;border-radius:var(--r);border:1px solid transparent"></div>
     </div>
 
     <!-- Proximos vencimientos -->
@@ -4335,14 +4335,14 @@ function renderFinPanel() {
     } else if(ventasHoy >= breakeven_dia){
       const extra = ventasHoy - breakeven_dia;
       statusEl.innerHTML = '&#128994; No perdiste. Faltan $'+fmtN(Math.round(objetivo_dia-ventasHoy))+' para el objetivo.';
-      statusEl.style.background = 'var(--amber-l)'; statusEl.style.color = 'var(--amber)';
-      rcEl.style.background = 'var(--amber-l)'; rcEl.style.borderColor = 'var(--amber)';
+      statusEl.style.background = 'var(--amber-l)'; statusEl.style.color = 'var(--amber)'; statusEl.style.borderColor = 'rgba(234,179,8,.3)';
+rcEl.style.background = 'var(--amber-l)'; rcEl.style.borderColor = 'var(--amber)';
       document.getElementById('fin-vendido-hoy').style.color = 'var(--amber)';
     } else {
       const faltan = breakeven_dia - ventasHoy;
       statusEl.innerHTML = '&#128308; Estas perdiendo. Faltan $'+fmtN(Math.round(faltan))+' para no perder.';
-      statusEl.style.background = 'var(--red-l)'; statusEl.style.color = 'var(--red)';
-      rcEl.style.background = 'var(--red-l)'; rcEl.style.borderColor = 'var(--red)';
+      statusEl.style.background = 'var(--red-l)'; statusEl.style.color = 'var(--red)'; statusEl.style.borderColor = 'rgba(239,68,68,.3)';
+rcEl.style.background = 'var(--red-l)'; rcEl.style.borderColor = 'var(--red)';
       document.getElementById('fin-vendido-hoy').style.color = 'var(--red)';
     }
   }
