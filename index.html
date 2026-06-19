@@ -5405,22 +5405,33 @@ let finVentasMetaCpaProrrateado = 0;
 
 let cotizacionUSD = 0;
 
+let cotizaciones = {};
+
 async function loadCotizacionUSD() {
-  if(+finConfig?.usd_manual > 0) { cotizacionUSD = +finConfig.usd_manual; renderCotizacionBadge('manual'); return; }
   try {
-    const r = await fetch('https://dolarapi.com/v1/dolares/tarjeta');
+    const r = await fetch('https://dolarapi.com/v1/dolares');
     const j = await r.json();
-    cotizacionUSD = j.venta || 0;
-    renderCotizacionBadge('api');
-  } catch(e) { console.error('[Cotizacion] error', e); cotizacionUSD = 0; renderCotizacionBadge('error'); }
+    cotizaciones = {};
+    (j||[]).forEach(d => { cotizaciones[d.casa] = d; });
+    cotizacionUSD = (+finConfig?.usd_manual > 0) ? +finConfig.usd_manual : (cotizaciones.tarjeta?.venta || 0);
+    renderCotizacionBadge();
+  } catch(e) { console.error('[Cotizacion] error', e); renderCotizacionBadge(true); }
 }
 
-function renderCotizacionBadge(source) {
+function renderCotizacionBadge(failed) {
   const el = document.getElementById('fin-cotizacion-badge');
   if(!el) return;
-  if(source==='error') { el.textContent = 'Cotizacion no disponible'; el.style.color='var(--text3)'; return; }
-  el.textContent = `USD Tarjeta: $${cotizacionUSD.toLocaleString('es-AR')}` + (source==='manual'?' (manual)':'');
-  el.style.color = 'var(--text2)';
+  if(failed || !Object.keys(cotizaciones).length) { el.textContent = 'Cotizacion no disponible'; return; }
+  const tipos = [
+    {key:'blue', label:'Dolar Blue'},
+    {key:'bolsa', label:'Dolar MEP'},
+    {key:'tarjeta', label:'Dolar Tarjeta'},
+    {key:'oficial', label:'Dolar Oficial'},
+  ];
+  el.innerHTML = tipos.filter(t=>cotizaciones[t.key]).map(t=>{
+    const d = cotizaciones[t.key];
+    return `<span style="margin-right:14px"><strong style="color:var(--text2)">${t.label}:</strong> compra $${d.compra.toLocaleString('es-AR')} · venta $${d.venta.toLocaleString('es-AR')}</span>`;
+  }).join('');
 }
 
 function convertirUSD(monto) {
