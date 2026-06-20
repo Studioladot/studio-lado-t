@@ -926,10 +926,10 @@ tr:hover td{background:var(--surface2)}
   <div id="an-content">
 
     <!-- METRICAS PRINCIPALES -->
-    <div class="an-dark">
+    <div class="an-dark an-section" id="an-sec-metricas">
       <div class="an-dark-hdr">
-       <div class="an-dark-title">
-          <span class="an-dark-ico"><svg width="14" height="14" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 15h14"/><path d="M4 15V9l3-3 3 2.5L15 3"/></svg></span>
+        <div class="an-dark-title">
+          <span class="an-dark-ico"><svg width="14" height="14"
           Metricas principales
         </div>
         <span class="an-card-grip" style="cursor:grab">&#10247;</span>
@@ -950,11 +950,11 @@ tr:hover td{background:var(--surface2)}
     </div>
 
     <!-- TIENDA ONLINE + META -->
-    <div style="display:grid;grid-template-columns:1.4fr 1fr;gap:14px;margin-bottom:14px;align-items:start">
-      <div class="an-dark" style="margin-bottom:0">
+   <div class="an-section" id="an-sec-row" style="display:grid;grid-template-columns:1.4fr 1fr;gap:14px;margin-bottom:14px;align-items:start">
+      <div class="an-dark an-subsection" id="an-sec-tienda" style="margin-bottom:0">
         <div class="an-dark-hdr">
           <div class="an-dark-title">
-            <span class="an-dark-ico"><svg width="13" height="13" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6l1.5-3.5h9L15 6"/><path d="M3 6v8a1 1 0 001 1h10a1 1 0 001-1V6"/><path d="M7 15v-4a1 1 0 011-1h2a1 1 0 011 1v4"/><path d="M3 6h12"/></svg></span>
+            <span class="an-dark-ico"><svg width="13" height="13" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6l1.5-3.5h9L15 6"/>
            Tienda online
           </div>
           <span class="an-card-grip" style="cursor:grab">&#10247;</span>
@@ -967,10 +967,10 @@ tr:hover td{background:var(--surface2)}
           <div class="an-card" id="anc-tn-aov-neto"></div>
         </div>
       </div>
-      <div class="an-dark" style="margin-bottom:0">
+    <div class="an-dark an-subsection" id="an-sec-meta" style="margin-bottom:0">
         <div class="an-dark-hdr">
           <div class="an-dark-title">
-            <span class="an-dark-ico"><svg width="13" height="13" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M7.5 10.5a4 4 0 005.7 0l2-2a4 4 0 00-5.7-5.7L8 4.3"/><path d="M10.5 7.5a4 4 0 00-5.7 0l-2 2a4 4 0 005.7 5.7L10 13.7"/></svg></span>
+            <span class="an-dark-ico"><svg width="13" height="13" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M7.5 10.5a4 4 0 005.7 0
            Meta
           </div>
           <span class="an-card-grip" style="cursor:grab">&#10247;</span>
@@ -984,11 +984,10 @@ tr:hover td{background:var(--surface2)}
     </div>
 
     <!-- COSTOS -->
-    <div class="an-dark">
+   <div class="an-dark an-section" id="an-sec-costos">
       <div class="an-dark-hdr">
         <div class="an-dark-title">
-          <span class="an-dark-ico"><svg width="13" height="13" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="9" cy="9" r="7"/><path d="M9 5v8M6.5 7c0-1 .8-1.7 2.5-1.7s2.5.7 2.5 1.7-1 1.3-2.5 1.3S6.5 9 6.5 10s1 1.7 2.5 1.7 2.5-.7 2.5-1.7"/></svg></span>
-        Costos
+          <span class="an-dark-ico"><svg width="13" height="13" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="9" cy="9" r="7"/>
         </div>
         <div style="display:flex;align-items:center;gap:10px">
           <button class="btn btn-sm btn-outline" onclick="openModal('modal-an-costos-add')">+ Costo adicional</button>
@@ -3225,35 +3224,53 @@ async function delSc(id){
   document.getElementById('sc-editor').innerHTML='<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:200px;color:var(--text2)"><div style="font-size:26px;margin-bottom:8px">&#9681;</div><div style="font-weight:600;color:var(--text)">Selecciona un guion</div></div>';
   renderScripts(); renderBib(); toast('Guion eliminado');
 }
-  function initCardDragDrop(gridId) {
+  function initDragDrop(gridId, itemSelector) {
   const grid = document.getElementById(gridId);
   if (!grid) return;
-  grid.querySelectorAll('.an-card').forEach(card => {
-    if (card.dataset.dragInit) return; // evita duplicar listeners en cada refresh
-    card.dataset.dragInit = '1';
-    card.draggable = false;
+  grid.querySelectorAll(itemSelector).forEach(item => {
+    if (item.dataset.dragInit) return;
+    item.dataset.dragInit = '1';
+    item.draggable = false;
 
-    const grip = card.querySelector('.an-card-grip');
-    if (grip) grip.addEventListener('mousedown', () => { card.draggable = true; });
+    const grip = item.querySelector('.an-card-grip');
+    if (grip) grip.addEventListener('mousedown', () => { item.draggable = true; });
 
-    card.addEventListener('dragstart', e => {
-      e.dataTransfer.setData('text/plain', card.id);
-      card.classList.add('dragging');
+    item.addEventListener('dragstart', e => {
+      e.dataTransfer.setData('text/plain', item.id);
+      item.classList.add('dragging');
     });
-    card.addEventListener('dragend', () => {
-      card.classList.remove('dragging');
-      card.draggable = false;
+    item.addEventListener('dragend', () => {
+      item.classList.remove('dragging');
+      item.draggable = false;
     });
-    card.addEventListener('dragover', e => e.preventDefault());
-    card.addEventListener('drop', e => {
+    item.addEventListener('dragover', e => e.preventDefault());
+    item.addEventListener('drop', e => {
       e.preventDefault();
       const draggedId = e.dataTransfer.getData('text/plain');
       const dragged = document.getElementById(draggedId);
-      if (dragged && dragged !== card) {
-        const cards = [...grid.children];
-        if (cards.indexOf(dragged) < cards.indexOf(card)) card.after(dragged);
-        else card.before(dragged);
+      if (dragged && dragged !== item) {
+        const items = [...grid.children];
+        if (items.indexOf(dragged) < items.indexOf(item)) item.after(dragged);
+        else item.before(dragged);
         saveCardOrder(gridId);
+      }
+    });
+  });
+}
+
+async function saveCardOrder(gridId) {
+  const grid = document.getElementById(gridId);
+  if (!grid || !me) return;
+  const ids = [...grid.children].map(c => c.id).filter(Boolean);
+  await db.from('card_order').upsert({ user_id: me.id, grid_id: gridId, card_ids: ids });
+}
+
+async function loadCardOrder(gridId) {
+  const grid = document.getElementById(gridId);
+  if (!grid || !me) return;
+  const { data } = await db.from('card_order').select('card_ids').eq('user_id', me.id).eq('grid_id', gridId).maybeSingle();
+  if (data?.card_ids) data.card_ids.forEach(id => { const el = document.getElementById(id); if (el) grid.appendChild(el); });
+}
       }
     });
   });
@@ -5202,6 +5219,10 @@ async function loadAnalisis() {
   anRenderCard('anc-costo-productos','Costo de productos',cur.costoProductos,delta(cur.costoProductos,prv.costoProductos),flatSerie,'money',false,true);
   anRenderCard('anc-costo-envio','Costos de envio',cur.costoEnvioTotal,delta(cur.costoEnvioTotal,prv.costoEnvioTotal),flatSerie,'money',false,true);
   anRenderCard('anc-costo-adicional','Costos adicionales',costosAdicionalesTotal,0,flatSerie,'money',false,true);
+  await loadCardOrder('an-content');
+  await loadCardOrder('an-sec-row');
+  initDragDrop('an-content', '.an-section');
+  initDragDrop('an-sec-row', '.an-subsection');
   await loadCardOrder('an-main-grid');
   await loadCardOrder('an-tn-grid');
   await loadCardOrder('an-meta-grid');
