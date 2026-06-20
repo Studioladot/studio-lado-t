@@ -974,7 +974,7 @@ body.focus-mode #main{margin-left:0}
         <span class="an-card-grip" style="cursor:grab">&#10247;</span>
       </div>
       <div class="an-grid" id="an-main-grid">
-        <div class="an-card" id="anc-ordenes"></div>
+        <div class="an-card" id="anc-ordenes" draggable="true">
         <div class="an-card" id="anc-facturacion"></div>
         <div class="an-card" id="anc-inversion"></div>
         <div class="an-card" id="anc-fact-neta"></div>
@@ -1064,10 +1064,11 @@ body.focus-mode #main{margin-left:0}
             Ultimas ventas
           </div>
         </div>
-        <div class="tbl-wrap" style="margin:-2px -2px 0"><table class="an-table-dark">
+       <div class="tbl-wrap" style="margin:-2px -2px 0"><table class="an-table-dark">
           <thead><tr><th>Producto</th><th>Variante</th><th>Cant.</th><th>Total</th></tr></thead>
           <tbody id="an-ventas-tbody"><tr><td colspan="4" style="text-align:center;color:var(--ad-text3);padding:18px">Sin datos</td></tr></tbody>
         </table></div>
+        <div id="an-ventas-pager" style="display:flex;justify-content:center;gap:4px;padding:10px 0 4px"></div>
       </div>
       <div class="an-dark" style="margin-bottom:0">
         <div class="an-dark-hdr">
@@ -5592,6 +5593,30 @@ async function loadAnalisis() {
   await loadCardOrder('an-content');
   await loadCardOrder('an-sec-row');
   initDragDrop('an-content', '.an-section');
+  initCardSwap('an-main-grid');
+  function initCardSwap(gridId) {
+  const grid = document.getElementById(gridId);
+  if (!grid) return;
+  grid.querySelectorAll(':scope > .an-card').forEach(card => {
+    if (card.dataset.swapInit) return;
+    card.dataset.swapInit = '1';
+    card.draggable = true;
+    card.style.cursor = 'grab';
+    card.addEventListener('dragstart', e => { e.dataTransfer.setData('text/plain', card.id); card.classList.add('dragging'); });
+    card.addEventListener('dragend', () => card.classList.remove('dragging'));
+    card.addEventListener('dragover', e => e.preventDefault());
+    card.addEventListener('drop', e => {
+      e.preventDefault();
+      const draggedId = e.dataTransfer.getData('text/plain');
+      const dragged = document.getElementById(draggedId);
+      if (dragged && dragged !== card) {
+        const cards = [...grid.children];
+        if (cards.indexOf(dragged) < cards.indexOf(card)) card.after(dragged);
+        else card.before(dragged);
+      }
+    });
+  });
+}
   initDragDrop('an-sec-row', '.an-subsection');
   await loadCardOrder('an-main-grid');
   await loadCardOrder('an-tn-grid');
@@ -5772,21 +5797,52 @@ function renderAnCanales() {
 }
 
 // ── ULTIMAS VENTAS ───────────────────────────────────────────────────────────
+let anVentasPage = 1;
+const AN_VENTAS_PAGE_SIZE = 8;
+
 function renderAnUltimasVentas() {
   const tbody = document.getElementById('an-ventas-tbody');
+  const pager = document.getElementById('an-ventas-pager');
   if(!tbody) return;
   if(!anLineItems.length) {
     tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--ad-text3);padding:18px">Sin ventas en el periodo</td></tr>';
+    if(pager) pager.innerHTML='';
     return;
   }
-  const last = anLineItems.slice(-15).reverse();
-  tbody.innerHTML = last.map(it=>`
+  const all = [...anLineItems].reverse(); // cada item individual, sin agrupar
+  const totalPages = Math.max(1, Math.ceil(all.length / AN_VENTAS_PAGE_SIZE));
+  if(anVentasPage > totalPages) anVentasPage = totalPages;
+  const start = (anVentasPage-1)*AN_VENTAS_PAGE_SIZE;
+  const slice = all.slice(start, start+AN_VENTAS_PAGE_SIZE);
+
+  tbody.innerHTML = slice.map(it=>`
     <tr>
       <td>${it.name||'—'}</td>
       <td style="color:var(--ad-text2)">${it.variant_id||'—'}</td>
       <td>${it.qty||1}</td>
       <td style="font-weight:700">${fmtMoney((it.price||0)*(it.qty||1))}</td>
     </tr>`).join('');
+
+  if(pager) pager.innerHTML = anBuildEllipsisPager(anVentasPage, totalPages, 'goToAnVentasPage');
+}
+
+function goToAnVentasPage(p){ anVentasPage=p; renderAnUltimasVentas(); }
+
+function anBuildEllipsisPager(current, total, fnName){
+  if(total<=1) return '';
+  const pages=[1];
+  for(let i=current-1;i<=current+1;i++) if(i>1 && i<total) pages.push(i);
+  if(total>1) pages.push(total);
+  const uniq=[...new Set(pages)].sort((a,b)=>a-b);
+  let html=`<button class="btn btn-sm btn-ghost" ${current<=1?'disabled':''} onclick="${fnName}(${current-1})">&lt;</button>`;
+  let prev=0;
+  uniq.forEach(p=>{
+    if(p-prev>1) html+=`<span style="color:var(--ad-text3);padding:0 4px;font-size:12px">...</span>`;
+    html+=`<button class="btn btn-sm btn-ghost" style="${p===current?'background:var(--ad-surface2);font-weight:700;color:var(--ad-text)':''}" onclick="${fnName}(${p})">${p}</button>`;
+    prev=p;
+  });
+  html+=`<button class="btn btn-sm btn-ghost" ${current>=total?'disabled':''} onclick="${fnName}(${current+1})">&gt;</button>`;
+  return html;
 }
 
 // ── GRAFICO FACTURACION POR DIA — barras SVG con la serie diaria real de TN ──
