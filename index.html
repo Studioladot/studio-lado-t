@@ -3268,12 +3268,6 @@ async function saveCardOrder(gridId) {
 
 
 // === PERSISTENCIA EN SUPABASE ===
-async function saveCardOrder(gridId) {
-  const grid = document.getElementById(gridId);
-  if (!grid || !me) return;
-  const cardIds = [...grid.children].map(c => c.id);
-  await db.from('card_order').upsert({ user_id: me.id, grid_id: gridId, card_ids: cardIds });
-}
 
 async function loadCardOrder(gridId) {
   const grid = document.getElementById(gridId);
