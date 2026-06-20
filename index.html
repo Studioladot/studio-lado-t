@@ -830,7 +830,13 @@ tr:hover td{background:var(--surface2)}
   </div>
   <div class="scripts-layout">
     <div class="scripts-list">
-      <div class="scripts-list-hdr"><span style="font-size:12px;font-weight:600;color:var(--text2)">GUIONES</span><span id="sc-count" style="font-size:12px;color:var(--text3)">0</span></div>
+     <div class="scripts-list-hdr"><span style="font-size:12px;font-weight:600;color:var(--text2)">GUIONES</span><span id="sc-count" style="font-size:12px;color:var(--text3)">0</span></div>
+      <div style="display:flex;gap:4px;padding:0 10px 8px;flex-wrap:wrap">
+        <div class="ft active" style="font-size:10px;padding:4px 8px" onclick="filterScriptsByStatus('all',this)">Todos</div>
+        <div class="ft" style="font-size:10px;padding:4px 8px" onclick="filterScriptsByStatus('borrador',this)">Ideas</div>
+        <div class="ft" style="font-size:10px;padding:4px 8px" onclick="filterScriptsByStatus('test',this)">En Test</div>
+        <div class="ft" style="font-size:10px;padding:4px 8px" onclick="filterScriptsByStatus('activo',this)">Activos</div>
+      </div>
       <div class="scripts-list-body" id="sc-list"><div class="empty" style="padding:24px 12px"><div class="empty-msg">Sin guiones</div></div></div>
     </div>
     <div class="script-editor" id="sc-editor">
@@ -2787,7 +2793,7 @@ let metrics=[], scripts=[], objectives=[], finances=[], posts=[], contacts=[];
 let selScript=null, bibF='all', contF='all', crmF='all', iaHistory=[];
 const ANGLES=['Necesidad Emocional','Prueba Social','Modelado','Urgencia/Escasez','Promocion','Valor/Precio','Problema/Solucion','FAQ','Detras de escena','Otro'];
 const STS=['borrador','test','activo','ganador','pausado'];
-const STS_LBL={borrador:'Borrador',test:'En test',activo:'Activo',ganador:'Ganador',pausado:'Pausado'};
+const STS_LBL={borrador:'Idea/Borrador',test:'En test',activo:'Activo en Meta',ganador:'Ganador',pausado:'Pausado'};
 const STS_BADGE={borrador:'b-gray',test:'b-blue',activo:'b-teal',ganador:'b-green',pausado:'b-amber'};
 
 // ── INIT ─────────────────────────────────────────────────────────────────────
@@ -3306,7 +3312,10 @@ function renderScEditor(s){
   document.getElementById('sc-editor').innerHTML=`
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
     <input style="font-size:18px;font-weight:700;border:none;outline:none;background:transparent;color:var(--text);flex:1" value="${esc(s.title)}" placeholder="Titulo del guion" oninput="updSc('${s.id}','title',this.value)"/>
-    <button class="btn btn-sm btn-red" onclick="delSc('${s.id}')">Eliminar</button>
+    <div style="display:flex;gap:6px">
+      <button class="btn btn-sm btn-outline" onclick="toggleFocusMode()">&#9974; Modo Enfoque</button>
+      <button class="btn btn-sm btn-red" onclick="delSc('${s.id}')">Eliminar</button>
+    </div>
   </div>
   <div class="se-sec">Informacion basica</div>
   <div class="form-row">
@@ -3314,11 +3323,10 @@ function renderScEditor(s){
     <div class="fg"><label>Producto</label><input type="text" value="${esc(s.product)}" placeholder="Campera Eme..." onchange="updSc('${s.id}','product',this.value)"/></div>
     <div class="fg"><label>Estado</label><select onchange="updSc('${s.id}','status',this.value)">${STS.map(st=>`<option value="${st}" ${s.status===st?'selected':''}>${STS_LBL[st]}</option>`).join('')}</select></div>
   </div>
-  <div class="se-sec">Script del video</div>
-  <div class="fg" style="margin-bottom:10px"><label>Hook (primeros 3 segundos)</label><textarea rows="2" placeholder="Que dice o muestra en el primer momento..." oninput="updSc('${s.id}','hook',this.value)">${esc(s.hook)}</textarea></div>
-  <div class="fg" style="margin-bottom:10px"><label>Desarrollo (cuerpo del video)</label><textarea rows="5" placeholder="El video completo, escena a escena..." oninput="updSc('${s.id}','body',this.value)">${esc(s.body)}</textarea></div>
-  <div class="fg" style="margin-bottom:10px"><label>CTA (cierre)</label><textarea rows="2" placeholder="Como termina — que hace el espectador..." oninput="updSc('${s.id}','cta',this.value)">${esc(s.cta)}</textarea></div>
-  <div class="fg" style="margin-bottom:14px"><label>Copy del feed (texto del anuncio)</label><textarea rows="3" placeholder="Texto que va en el feed de Instagram/TikTok..." oninput="updSc('${s.id}','copy_feed',this.value)">${esc(s.copy_feed)}</textarea></div>
+ <div class="fg" style="margin-bottom:10px"><label>Hook (primeros 3 segundos)</label><textarea rows="2" style="font-size:1.05rem;font-weight:600;border:1px solid #333333;background:#111111;color:#ffffff;max-height:64px" placeholder="Que dice o muestra en el primer momento..." oninput="updSc('${s.id}','hook',this.value)">${esc(s.hook)}</textarea></div>
+  <div class="fg" style="margin-bottom:10px"><label>Desarrollo (cuerpo del video)</label><textarea rows="8" style="background:#090909;color:#ffffff;min-height:180px" placeholder="El video completo, escena a escena..." oninput="updSc('${s.id}','body',this.value)">${esc(s.body)}</textarea></div>
+  <div class="fg" style="margin-bottom:10px"><label>CTA (cierre)</label><textarea rows="2" style="font-size:13px" placeholder="Como termina — que hace el espectador..." oninput="updSc('${s.id}','cta',this.value)">${esc(s.cta)}</textarea></div>
+  <div class="fg" style="margin-bottom:14px"><label>Copy del feed (texto del anuncio)</label><textarea rows="3" style="font-size:13px" placeholder="Texto que va en el feed de Instagram/TikTok..." oninput="updSc('${s.id}','copy_feed',this.value)">${esc(s.copy_feed)}</textarea></div>
   <div class="se-sec">Metricas de video</div>
   <div class="video-metrics">
     <div class="vm-card">
