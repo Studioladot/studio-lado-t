@@ -146,11 +146,12 @@ body.focus-mode #main{margin-left:0}
 .vm-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text2);margin-bottom:5px}
 .bench-table th,.bench-table td{text-align:center;vertical-align:middle}
 .bench-table th:first-child,.bench-table td:first-child{text-align:left}
-.bc{padding:2px 7px;border-radius:4px;font-size:12px;font-weight:600;display:inline-block}
-.bc-g{background:var(--green-l);color:var(--green)}
-.bc-b{background:var(--blue-l);color:var(--blue)}
-.bc-a{background:var(--amber-l);color:var(--amber)}
-.bc-r{background:var(--red-l);color:var(--red)}
+.bc{padding:2px 8px;border-radius:5px;font-size:12px;font-weight:600;display:inline-block;color:#ffffff;border:1px solid #222222}
+.bc-g{background:rgba(74,222,128,.1)}
+.bc-b{background:rgba(59,130,246,.1)}
+.bc-a{background:rgba(245,158,11,.1)}
+.bc-r{background:rgba(239,68,68,.1)}
+  .mb-inp::placeholder{color:rgba(255,255,255,.4)}
 .obj-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:0.5px solid var(--border)}
 .obj-row:last-child{border-bottom:none}
 .obj-info{flex:1}
@@ -900,25 +901,25 @@ body.focus-mode #main{margin-left:0}
     <div class="card">
       <div class="card-title">Mis targets personalizados</div>
       <div id="my-benchmarks">
-        <div class="obj-row"><span style="flex:1;font-size:13px;font-weight:500">Hook Rate objetivo</span><input class="mb-inp" id="mb-hook" type="text" placeholder="3%" style="width:80px;border:0.5px solid var(--border);border-radius:var(--r);padding:5px 8px;text-align:right;background:transparent;outline:none;font-size:13px" onchange="saveBenchmarks()"/></div>
-        <div class="obj-row"><span style="flex:1;font-size:13px;font-weight:500">CTR objetivo</span><input class="mb-inp" id="mb-ctr" type="text" placeholder="1.5%" style="width:80px;border:0.5px solid var(--border);border-radius:var(--r);padding:5px 8px;text-align:right;background:transparent;outline:none;font-size:13px" onchange="saveBenchmarks()"/></div>
-        <div class="obj-row"><span style="flex:1;font-size:13px;font-weight:500">ROAS minimo</span><input class="mb-inp" id="mb-roas-min" type="text" placeholder="2x" style="width:80px;border:0.5px solid var(--border);border-radius:var(--r);padding:5px 8px;text-align:right;background:transparent;outline:none;font-size:13px" onchange="saveBenchmarks()"/></div>
-        <div class="obj-row"><span style="flex:1;font-size:13px;font-weight:500">ROAS objetivo</span><input class="mb-inp" id="mb-roas" type="text" placeholder="4x" style="width:80px;border:0.5px solid var(--border);border-radius:var(--r);padding:5px 8px;text-align:right;background:transparent;outline:none;font-size:13px" onchange="saveBenchmarks()"/></div>
-        <div class="obj-row"><span style="flex:1;font-size:13px;font-weight:500">CPA maximo (ARS)</span><input class="mb-inp" id="mb-cpa" type="text" placeholder="$15.000" style="width:80px;border:0.5px solid var(--border);border-radius:var(--r);padding:5px 8px;text-align:right;background:transparent;outline:none;font-size:13px" onchange="saveBenchmarks()"/></div>
-        <div class="obj-row"><span style="flex:1;font-size:13px;font-weight:500">CPM maximo (USD)</span><input class="mb-inp" id="mb-cpm" type="text" placeholder="$1.50" style="width:80px;border:0.5px solid var(--border);border-radius:var(--r);padding:5px 8px;text-align:right;background:transparent;outline:none;font-size:13px" onchange="saveBenchmarks()"/></div>
-        <div class="obj-row"><span style="flex:1;font-size:13px;font-weight:500">Frecuencia maxima</span><input class="mb-inp" id="mb-freq" type="text" placeholder="3" style="width:80px;border:0.5px solid var(--border);border-radius:var(--r);padding:5px 8px;text-align:right;background:transparent;outline:none;font-size:13px" onchange="saveBenchmarks()"/></div>
-        <div class="obj-row"><span style="flex:1;font-size:13px;font-weight:500">P25 objetivo</span><input class="mb-inp" id="mb-p25" type="text" placeholder="30%" style="width:80px;border:0.5px solid var(--border);border-radius:var(--r);padding:5px 8px;text-align:right;background:transparent;outline:none;font-size:13px" onchange="saveBenchmarks()"/></div>
-        <div class="obj-row"><span style="flex:1;font-size:13px;font-weight:500">P100 objetivo</span><input class="mb-inp" id="mb-p100" type="text" placeholder="10%" style="width:80px;border:0.5px solid var(--border);border-radius:var(--r);padding:5px 8px;text-align:right;background:transparent;outline:none;font-size:13px" onchange="saveBenchmarks()"/></div>
+        <div class="obj-row"><span style="flex:1;font-size:13px;font-weight:500">Hook Rate objetivo</span><input class="mb-inp" id="mb-hook" type="text" placeholder="3%" style="width:80px;border:1px solid #222222;border-radius:var(--r);padding:5px 8px;text-align:right;background:transparent;outline:none;font-size:13px;color:#ffffff"
+        <div class="obj-row"><span style="flex:1;font-size:13px;font-weight:500">CTR objetivo</span><input class="mb-inp" id="mb-ctr" type="text" placeholder="1.5%" style="width:80px;border:1px solid #222222;border-radius:var(--r);padding:5px 8px;text-align:right;background:transparent;outline:none;font-size:13px;color:#ffffff"
+        <div class="obj-row"><span style="flex:1;font-size:13px;font-weight:500">ROAS minimo</span><input class="mb-inp" id="mb-roas-min" type="text" placeholder="2x" style="width:80px;border:1px solid #222222;border-radius:var(--r);padding:5px 8px;text-align:right;background:transparent;outline:none;font-size:13px;color:#ffffff"
+        <div class="obj-row"><span style="flex:1;font-size:13px;font-weight:500">ROAS objetivo</span><input class="mb-inp" id="mb-roas" type="text" placeholder="4x" style="width:80px;border:1px solid #222222;border-radius:var(--r);padding:5px 8px;text-align:right;background:transparent;outline:none;font-size:13px;color:#ffffff"
+        <div class="obj-row"><span style="flex:1;font-size:13px;font-weight:500">CPA maximo (ARS)</span><input class="mb-inp" id="mb-cpa" type="text" placeholder="$15.000" style="width:80px;border:1px solid #222222;border-radius:var(--r);padding:5px 8px;text-align:right;background:transparent;outline:none;font-size:13px;color:#ffffff"
+        <div class="obj-row"><span style="flex:1;font-size:13px;font-weight:500">CPM maximo (USD)</span><input class="mb-inp" id="mb-cpm" type="text" placeholder="$1.50" style="width:80px;border:1px solid #222222;border-radius:var(--r);padding:5px 8px;text-align:right;background:transparent;outline:none;font-size:13px;color:#ffffff"
+        <div class="obj-row"><span style="flex:1;font-size:13px;font-weight:500">Frecuencia maxima</span><input class="mb-inp" id="mb-freq" type="text" placeholder="3" style="width:80px;border:1px solid #222222;border-radius:var(--r);padding:5px 8px;text-align:right;background:transparent;outline:none;font-size:13px;color:#ffffff"
+        <div class="obj-row"><span style="flex:1;font-size:13px;font-weight:500">P25 objetivo</span><input class="mb-inp" id="mb-p25" type="text" placeholder="30%" style="width:80px;border:1px solid #222222;border-radius:var(--r);padding:5px 8px;text-align:right;background:transparent;outline:none;font-size:13px;color:#ffffff"
+        <div class="obj-row"><span style="flex:1;font-size:13px;font-weight:500">P100 objetivo</span><input class="mb-inp" id="mb-p100" type="text" placeholder="10%" style="width:80px;border:1px solid #222222;border-radius:var(--r);padding:5px 8px;text-align:right;background:transparent;outline:none;font-size:13px;color:#ffffff"
         <div style="margin-top:12px"><button class="btn btn-accent btn-sm" onclick="saveBenchmarks()">Guardar targets</button></div>
       </div>
     </div>
     <div class="card">
       <div class="card-title">Guia rapida</div>
       <div style="display:flex;flex-direction:column;gap:9px">
-        <div style="background:var(--red-l);border-radius:var(--r);padding:10px;border-left:3px solid var(--red)"><div style="font-size:12px;font-weight:700;color:var(--red);margin-bottom:3px">Hook Rate &lt;2%</div><div style="font-size:12px">El primer segundo no frena el scroll. Cambiar apertura del video.</div></div>
-        <div style="background:var(--red-l);border-radius:var(--r);padding:10px;border-left:3px solid var(--red)"><div style="font-size:12px;font-weight:700;color:var(--red);margin-bottom:3px">CTR &lt;1% con Hook &gt;3%</div><div style="font-size:12px">Video engancha pero no convierte. Problema en el CTA o la promesa.</div></div>
-        <div style="background:var(--amber-l);border-radius:var(--r);padding:10px;border-left:3px solid var(--amber)"><div style="font-size:12px;font-weight:700;color:var(--amber);margin-bottom:3px">Frecuencia &gt;3.5</div><div style="font-size:12px">Saturacion. Meter creativos nuevos antes de subir presupuesto.</div></div>
-        <div style="background:var(--green-l);border-radius:var(--r);padding:10px;border-left:3px solid var(--green)"><div style="font-size:12px;font-weight:700;color:var(--green);margin-bottom:3px">ROAS &gt;4x por 7+ dias</div><div style="font-size:12px">Momento de escalar. Duplicar presupuesto del conjunto. Esperar 72hs.</div></div>
+      <div style="background:var(--red-l);border-radius:var(--r);padding:10px;border-left:3px solid var(--red)"><div style="font-size:12px;font-weight:700;color:var(--red);margin-bottom:3px">Hook Rate &lt;2%</div><div style="font-size:12px;color:#A1A1AA">El primer segundo no frena el scroll. Cambiar apertura del video.</div></div>
+        <div style="background:var(--red-l);border-radius:var(--r);padding:10px;border-left:3px solid var(--red)"><div style="font-size:12px;font-weight:700;color:var(--red);margin-bottom:3px">CTR &lt;1% con Hook &gt;3%</div><div style="font-size:12px;color:#A1A1AA">Video engancha pero no convierte. Problema en el CTA o la promesa.</div></div>
+        <div style="background:var(--amber-l);border-radius:var(--r);padding:10px;border-left:3px solid var(--amber)"><div style="font-size:12px;font-weight:700;color:var(--amber);margin-bottom:3px">Frecuencia &gt;3.5</div><div style="font-size:12px;color:#A1A1AA">Saturacion. Meter creativos nuevos antes de subir presupuesto.</div></div>
+        <div style="background:var(--green-l);border-radius:var(--r);padding:10px;border-left:3px solid var(--green)"><div style="font-size:12px;font-weight:700;color:var(--green);margin-bottom:3px">ROAS &gt;4x por 7+ dias</div><div style="font-size:12px;color:#A1A1AA">Momento de escalar. Duplicar presupuesto del conjunto. Esperar 72hs.</div></div>
       </div>
     </div>
   </div>
