@@ -1127,22 +1127,25 @@ tr:hover td{background:var(--surface2)}
 
     <div class="card" style="margin-top:14px">
       <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text2);margin-bottom:10px" id="tn-resumen-label">Resumen — ultimos 30 dias</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-        <div style="background:var(--surface2);border-radius:var(--r);padding:12px">
-          <div style="font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Bruto (con envio)</div>
-          <div style="font-size:18px;font-weight:700" id="tn-bruto">$0</div>
+      <div class="an-grid" style="grid-template-columns:repeat(4,1fr)">
+        <div class="an-card">
+          <div class="an-card-top"><span class="an-card-label">Bruto (con envio)</span></div>
+          <div class="an-card-val" id="tn-bruto">$0</div>
         </div>
-        <div style="background:var(--surface2);border-radius:var(--r);padding:12px">
-          <div style="font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Envio cobrado</div>
-          <div style="font-size:18px;font-weight:700;color:var(--text2)" id="tn-envio">$0</div>
+        <div class="an-card">
+          <div class="an-card-top"><span class="an-card-label">Envio cobrado</span></div>
+          <div class="an-card-val" id="tn-envio">$0</div>
         </div>
-       <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--rl);padding:24px 28px;margin-bottom:16px;color:var(--text)">
-          <div style="font-size:10px;color:var(--green);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;font-weight:700">Neto real (sin envio)</div>
-          <div style="font-size:22px;font-weight:800;color:var(--green)" id="tn-neto">$0</div>
+        <div class="an-card">
+          <div class="an-card-top"><span class="an-card-label">Neto real (sin envio)</span></div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <div class="an-card-val" id="tn-neto">$0</div>
+            <span style="font-size:10px;font-weight:700;color:var(--green);background:var(--green-l);border:1px solid var(--green);border-radius:4px;padding:1px 6px">neto</span>
+          </div>
         </div>
-        <div style="background:var(--surface2);border-radius:var(--r);padding:12px">
-          <div style="font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Ganancia real (neto - costo envio - gasto Meta)</div>
-          <div style="font-size:18px;font-weight:700" id="tn-ganancia-real">$0</div>
+        <div class="an-card">
+          <div class="an-card-top"><span class="an-card-label">Ganancia real</span></div>
+          <div class="an-card-val" id="tn-ganancia-real">$0</div>
         </div>
       </div>
     </div>
@@ -1152,18 +1155,21 @@ tr:hover td{background:var(--surface2)}
       <div class="card-title">ROAS Real vs ROAS de Meta</div>
       <div id="tn-roas-empty" class="empty" style="display:none"><div class="empty-icon">&#128279;</div><div class="empty-msg">Conecta Meta Ads</div><div class="empty-sub">Para comparar el ROAS reportado contra las ventas reales</div></div>
       <div id="tn-roas-content" style="display:none">
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:6px">
-          <div style="background:var(--surface2);border-radius:var(--r);padding:12px">
-            <div style="font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Gasto Meta Ads</div>
-            <div style="font-size:18px;font-weight:700" id="tn-roas-gasto">$0</div>
+       <div class="an-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:6px">
+          <div class="an-card">
+            <div class="an-card-top"><span class="an-card-label">Gasto Meta Ads</span></div>
+            <div class="an-card-val" id="tn-roas-gasto">$0</div>
           </div>
-          <div style="background:var(--blue-l);border-radius:var(--r);padding:12px">
-            <div style="font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">ROAS reportado (Meta)</div>
-            <div style="font-size:18px;font-weight:700" id="tn-roas-meta">0x</div>
+          <div class="an-card">
+            <div class="an-card-top"><span class="an-card-label">ROAS reportado (Meta)</span></div>
+            <div class="an-card-val" id="tn-roas-meta">0x</div>
           </div>
-          <div style="background:var(--green-l);border-radius:var(--r);padding:12px">
-            <div style="font-size:10px;color:var(--green);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;font-weight:700">ROAS real (ventas TN / gasto)</div>
-            <div style="font-size:18px;font-weight:800;color:var(--green)" id="tn-roas-real">0x</div>
+          <div class="an-card">
+            <div class="an-card-top"><span class="an-card-label">ROAS real (ventas TN / gasto)</span></div>
+            <div style="display:flex;align-items:center;gap:8px">
+              <div class="an-card-val" id="tn-roas-real">0x</div>
+              <span style="font-size:10px;font-weight:700;color:var(--green);background:var(--green-l);border:1px solid var(--green);border-radius:4px;padding:1px 6px">real</span>
+            </div>
           </div>
         </div>
         <div style="font-size:12px;color:var(--text2);margin-top:6px" id="tn-roas-diff">—</div>
@@ -5078,7 +5084,8 @@ async function loadTNFunnel() {
     const gastoMeta = +ins.spend || 0;
     const roasMeta = +ins.roas || 0;
     const ventasTN = tnSalesSummary.neto || 0;
-    const roasReal = gastoMeta>0 ? (ventasTN/gastoMeta) : 0;
+   const gastoMetaARS = convertirUSD(gastoMeta);
+    const roasReal = gastoMetaARS>0 ? (ventasTN/gastoMetaARS) : 0;
     setT('tn-roas-gasto', '$'+fmtN(gastoMeta));
     setT('tn-roas-meta', roasMeta+'x');
     setT('tn-roas-real', roasReal.toFixed(2)+'x');
@@ -5106,7 +5113,7 @@ async function loadTNFunnel() {
     setT('tn-f-purch', fmtN(purch));
     setT('tn-f-atc-ic-pct', atc>0 ? ((ic/atc)*100).toFixed(0)+'%' : '—');
     setT('tn-f-ic-purch-pct', ic>0 ? ((purch/ic)*100).toFixed(0)+'%' : '—');
-    tnFunnelData = { atc, ic, purch, gastoMeta, roasMeta, roasReal, ventasTN };
+    tnFunnelData = { atc, ic, purch, gastoMeta: gastoMetaARS, roasMeta, roasReal, ventasTN };
   } catch(e) {
     toast('Error cargando embudo: '+e.message);
   }
