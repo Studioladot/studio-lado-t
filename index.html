@@ -268,6 +268,11 @@ body.focus-mode #main{margin-left:0}
   .an-card-grip{color:#52525b;transition:color .15s;font-size:14px}
 .an-dark:hover .an-card-grip{color:#a1a1aa}
 .an-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.an-skel{display:inline-block;height:21px;width:70px;border-radius:5px;background:linear-gradient(90deg,#111111 25%,#1c1c1c 37%,#111111 63%);background-size:400% 100%;animation:an-skel-pulse 1.4s ease infinite}
+@keyframes an-skel-pulse{0%{background-position:100% 50%}100%{background-position:0 50%}}
+#an-chart-tooltip{position:fixed;z-index:9999;background:#000000;color:#ffffff;border:1px solid #222222;border-radius:6px;padding:8px 12px;font-size:12px;pointer-events:none;display:none;white-space:nowrap;box-shadow:0 4px 20px rgba(0,0,0,.5)}
+.an-card{user-select:none;-webkit-user-drag:element}
+.an-card.dragging{opacity:.4}
 .an-card{
   background:var(--ad-surface);border:0.5px solid var(--ad-border);border-radius:12px;
   padding:14px 16px 12px;position:relative;overflow:hidden;min-height:108px;
@@ -5510,6 +5515,7 @@ async function loadAnalisis() {
   document.getElementById('an-not-connected').style.display = (hasMeta||hasTN) ? 'none' : 'block';
   document.getElementById('an-content').style.display = (hasMeta||hasTN) ? 'block' : 'none';
   if(!hasMeta && !hasTN) return;
+  anShowSkeletons();
 
   const { since, until } = anResolveDates();
   const prev = anPrevRange(since, until);
@@ -5604,14 +5610,19 @@ async function loadAnalisis() {
     card.dataset.swapInit = '1';
     card.draggable = true;
     card.style.cursor = 'grab';
-    card.addEventListener('dragstart', e => { e.dataTransfer.setData('text/plain', card.id); card.classList.add('dragging'); });
+    card.addEventListener('dragstart', e => {
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', card.id);
+      card.classList.add('dragging');
+    });
     card.addEventListener('dragend', () => card.classList.remove('dragging'));
-    card.addEventListener('dragover', e => e.preventDefault());
+    card.addEventListener('dragover', e => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; });
     card.addEventListener('drop', e => {
       e.preventDefault();
+      e.stopPropagation();
       const draggedId = e.dataTransfer.getData('text/plain');
       const dragged = document.getElementById(draggedId);
-      if (dragged && dragged !== card) {
+      if (dragged && dragged !== card && dragged.parentElement === grid) {
         const cards = [...grid.children];
         if (cards.indexOf(dragged) < cards.indexOf(card)) card.after(dragged);
         else card.before(dragged);
@@ -5695,9 +5706,24 @@ function anSparkSvg(series, isGood) {
   </svg>`;
 }
 
+function anShowSkeletons() {
+  ['anc-ordenes','anc-facturacion','anc-inversion','anc-fact-neta','anc-ganancia','anc-margen',
+   'anc-roas','anc-true-roas','anc-true-cpa','anc-tn-ordenes','anc-tn-fact','anc-tn-fact-neta',
+   'anc-tn-aov','anc-tn-aov-neto','anc-meta-inv','anc-meta-roas','anc-meta-cpa',
+   'anc-costo-productos','anc-costo-envio','anc-costo-adicional'].forEach(id=>{
+    const el = document.getElementById(id);
+    if(el && !el.dataset.rendered) el.innerHTML = `<div class="an-card-top"><span class="an-skel" style="width:90px;height:11px"></span></div><div class="an-card-val-row"><span class="an-skel"></span></div>`;
+  });
+  const chart = document.getElementById('an-chart-wrap');
+  if(chart) chart.innerHTML = `<div style="display:flex;align-items:flex-end;gap:4px;height:100%;padding:0 4px">${Array.from({length:14}).map(()=>`<div class="an-skel" style="flex:1;height:${30+Math.random()*60}%"></div>`).join('')}</div>`;
+}
+function anResetRenderedFlags() {
+  document.querySelectorAll('.an-card').forEach(el=>delete el.dataset.rendered);
+}
 function anRenderCard(id, label, value, deltaPct, series, type, invertGood, invertColor) {
   const el = document.getElementById(id);
   if(!el) return;
+  el.dataset.rendered = '1';
   const isAccent = el.classList.contains('accent');
   // Para metricas donde "menos es mejor" (costos, CPA), invertimos el sentido del color/flecha
   const goingUp = deltaPct > 0.05;
@@ -5862,7 +5888,7 @@ function renderAnChart(serie) {
     const x = i*(barW+gap);
     const barH = Math.max(2,((d.bruto/max)*(h-padBottom-padTop)));
     const y = h-padBottom-barH;
-    return `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${barW.toFixed(1)}" height="${barH.toFixed(1)}" rx="2" fill="var(--accent)" opacity="0.9"><title>${d.fecha}: ${fmtMoney(d.bruto)}</title></rect>`;
+    return `<rect class="an-bar" data-fecha="${d.fecha}" data-monto="${d.bruto}" x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${barW.toFixed(1)}" height="${barH.toFixed(1)}" rx="2" fill="var(--accent)" opacity="0.9" style="cursor:pointer"></rect>`;
   }).join('');
   const firstLabel = serie[0]?.fecha?.slice(5) || '';
   const lastLabel = serie[serie.length-1]?.fecha?.slice(5) || '';
@@ -5873,6 +5899,17 @@ function renderAnChart(serie) {
     <div style="display:flex;justify-content:space-between;font-size:10.5px;color:var(--ad-text3);margin-top:2px">
       <span>${firstLabel}</span><span>${lastLabel}</span>
     </div>`;
+
+  const tooltip = document.getElementById('an-chart-tooltip');
+  wrap.querySelectorAll('.an-bar').forEach(rect=>{
+    rect.addEventListener('mousemove', e=>{
+      tooltip.innerHTML = `<strong>${rect.dataset.fecha}</strong><br>${fmtMoney(+rect.dataset.monto)}`;
+      tooltip.style.left = (e.clientX+12)+'px';
+      tooltip.style.top  = (e.clientY+12)+'px';
+      tooltip.style.display = 'block';
+    });
+    rect.addEventListener('mouseleave', ()=>{ tooltip.style.display='none'; });
+  });
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -7556,5 +7593,6 @@ function renderBibAds() {
 
 
 </script>
+<div id="an-chart-tooltip"></div>
 </body>
 </html>
