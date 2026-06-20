@@ -129,6 +129,10 @@ tr:hover td{background:var(--surface2)}
 .scripts-list{background:var(--surface);border:0.5px solid var(--border);border-radius:var(--rl);display:flex;flex-direction:column;overflow:hidden}
 .scripts-list-hdr{padding:11px 14px;border-bottom:0.5px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
 .scripts-list-body{overflow-y:auto;flex:1}
+  body.focus-mode #sidebar{display:none}
+body.focus-mode .scripts-list{display:none}
+body.focus-mode .scripts-layout{grid-template-columns:1fr}
+body.focus-mode #main{margin-left:0}
 .script-item{padding:10px 14px;cursor:pointer;border-bottom:0.5px solid var(--border);transition:background .12s}
 .script-item:hover{background:var(--surface2)}
 .script-item.active{background:var(--accent-l);border-left:2px solid var(--accent)}
@@ -3296,11 +3300,21 @@ async function delSnap(id){
 }
 
 // ── SCRIPTS ───────────────────────────────────────────────────────────────────
+let scriptStatusFilter='all';
+function filterScriptsByStatus(f,el){
+  scriptStatusFilter=f;
+  document.querySelectorAll('#page-guiones .ft').forEach(t=>t.classList.remove('active'));
+  if(el) el.classList.add('active');
+  renderScripts();
+}
+function toggleFocusMode(){ document.body.classList.toggle('focus-mode'); }
+
 function renderScripts(){
-  document.getElementById('sc-count').textContent=scripts.length;
+  let list = scriptStatusFilter==='all' ? scripts : scripts.filter(s=>s.status===scriptStatusFilter);
+  document.getElementById('sc-count').textContent=list.length;
   const el=document.getElementById('sc-list');
-  if(!scripts.length){el.innerHTML='<div class="empty" style="padding:20px 12px"><div class="empty-msg">Sin guiones</div></div>';return;}
-  el.innerHTML=scripts.map(s=>`
+  if(!list.length){el.innerHTML='<div class="empty" style="padding:20px 12px"><div class="empty-msg">Sin guiones</div></div>';return;}
+  el.innerHTML=list.map(s=>`
     <div class="script-item ${s.id===selScript?'active':''}" onclick="selSc('${s.id}')">
       <div class="si-title">${s.title||'Sin titulo'}</div>
       <div class="si-meta"><span class="badge ${STS_BADGE[s.status]||'b-gray'}">${STS_LBL[s.status]||s.status}</span> · ${s.angle||'—'}</div>
