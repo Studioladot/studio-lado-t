@@ -7318,7 +7318,17 @@ async function loadBibAds() {
         }
       } catch(e) { console.error('[BibAds] fetch creative fallo', ad.id, e); }
     }));
-
+function openAdDetail(id){
+  const ad = bibAdsData.find(a=>a.id===id); if(!ad) return;
+  document.getElementById('ad-detail-name').textContent = ad.name;
+  document.getElementById('ad-detail-copy').textContent = ad.copy || 'Sin copy registrado';
+  document.getElementById('ad-detail-cta').textContent = ad.cta || '—';
+  const linkEl = document.getElementById('ad-detail-link');
+  linkEl.innerHTML = ad.link ? `<a href="${ad.link}" target="_blank" style="color:#ffffff;text-decoration:underline">${ad.link}</a>` : '—';
+  document.getElementById('ad-detail-overlay').style.display='flex';
+}
+function closeAdDetail(){ document.getElementById('ad-detail-overlay').style.display='none'; }
+    bibAdsData = allAds.map(ad => {
       const ins = ad.insights?.data?.[0] || {};
       const spend = parseFloat(ins.spend || 0);
       const purchases = parseFloat(ins.actions?.find(a => a.action_type==='purchase')?.value || 0);
