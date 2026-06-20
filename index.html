@@ -1126,29 +1126,24 @@ tr:hover td{background:var(--surface2)}
       </div>
     </div>
 
-   <div class="card" style="margin-top:14px">
-      <div class="card-title">ROAS Real vs ROAS de Meta</div>
-      <div id="tn-roas-empty" class="empty" style="display:none"><div class="empty-icon">&#128279;</div><div class="empty-msg">Conecta Meta Ads</div><div class="empty-sub">Para comparar el ROAS reportado contra las ventas reales</div></div>
-      <div id="tn-roas-content" style="display:none">
-        <div class="an-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:6px">
-          <div class="an-card">
-            <div class="an-card-top"><span class="an-card-label">Gasto Meta Ads</span></div>
-            <div class="an-card-val" id="tn-roas-gasto">$0</div>
-          </div>
-          <div class="an-card">
-            <div class="an-card-top"><span class="an-card-label">ROAS reportado (Meta)</span></div>
-            <div class="an-card-val" id="tn-roas-meta">0x</div>
-          </div>
-          <div class="an-card">
-            <div class="an-card-top"><span class="an-card-label">ROAS real (ventas TN / gasto)</span></div>
-            <div style="display:flex;align-items:center;gap:8px">
-              <div class="an-card-val" id="tn-roas-real">0x</div>
-              <span style="font-size:10px;font-weight:700;color:var(--green);background:var(--green-l);border:1px solid var(--green);border-radius:4px;padding:1px 6px">real</span>
-            </div>
-          </div>
+    <div class="card" style="margin-top:14px">
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text2);margin-bottom:10px" id="tn-resumen-label">Resumen — ultimos 30 dias</div>
+      <div class="an-grid" style="grid-template-columns:repeat(4,1fr)">
+        <div class="an-card">
+          <div class="an-card-top"><span class="an-card-label">Bruto (con envio)</span></div>
+          <div class="an-card-val" id="tn-bruto">$0</div>
         </div>
-        <div style="display:flex;align-items:center;gap:8px;margin-top:10px;padding-left:10px;border-left:2px solid var(--amber)">
-          <span style="font-size:13px;color:var(--text);font-weight:500" id="tn-roas-diff">—</span>
+        <div class="an-card">
+          <div class="an-card-top"><span class="an-card-label">Bruto (sin envio)</span></div>
+          <div class="an-card-val" id="tn-neto">$0</div>
+        </div>
+        <div class="an-card">
+          <div class="an-card-top"><span class="an-card-label">Envio cobrado</span></div>
+          <div class="an-card-val" id="tn-envio">$0</div>
+        </div>
+        <div class="an-card">
+          <div class="an-card-top"><span class="an-card-label">Ganancia real</span></div>
+          <div class="an-card-val" id="tn-ganancia-real">$0</div>
         </div>
       </div>
     </div>
@@ -2875,9 +2870,8 @@ function showPage(p){
   }
   if(p==='biblioteca')renderBib();
 if(p==='finanzas'){loadFinanzas();loadCotizacionUSD();}
- if(p==='tiendanube-connect'){
+  if(p==='tiendanube-connect'){
     loadTiendaNubeStatus();
-    loadCotizacionUSD();
     if(me) db.from('fin_config').select('*').eq('user_id', me.id).maybeSingle().then(({data})=>{ if(data) finConfig=data; renderTNOverview(); });
     if(me) db.from('expenses').select('*').eq('user_id', me.id).then(({data})=>{ gastos=data||[]; renderTNOverview(); });
   }
