@@ -3782,7 +3782,6 @@ function renderAdSnapCard(name, sorted, dateLabel, typeLbl, typeBdg){
     ${sorted.length>5?`<div style="padding:8px 16px;font-size:10px;color:#666666;border-top:1px solid #222222">Mostrando 5 mas recientes de ${sorted.length} — scroll interno para ver mas</div>`:''}
   </div>`;
 }
-}
 
 function snapCard(m){
   const tl=m.snap_time?new Date(m.snap_time).toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'}):fmtDate(m.created_at);
