@@ -1208,6 +1208,74 @@ tr:hover td{background:var(--surface2)}
         <div class="empty"><div class="empty-icon">&#128161;</div><div class="empty-msg">Sin datos suficientes todavia</div></div>
       </div>
     </div>
+    <!-- TIENDA NUBE — INTELIGENCIA AVANZADA -->
+    <div class="an-dark" style="margin-top:14px" id="tn-advanced-panel">
+      <div class="an-dark-hdr">
+        <div class="an-dark-title">
+          <span class="an-dark-ico">&#128722;</span>
+          Inteligencia de tienda
+        </div>
+        <button class="btn btn-outline btn-sm" onclick="toggleTNMetricsConfig()">&#9881; Metricas</button>
+      </div>
+
+      <!-- selector de metricas -->
+      <div id="tn-metrics-config" style="display:none;gap:14px;flex-wrap:wrap;margin-bottom:14px;padding:10px 12px;background:var(--surface2);border-radius:var(--r)">
+        <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2);cursor:pointer">
+          <input type="checkbox" checked data-metric="tn-m-abandonados" onchange="toggleTNMetricCard(this)"> Carritos abandonados
+        </label>
+        <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2);cursor:pointer">
+          <input type="checkbox" checked data-metric="tn-m-atc" onchange="toggleTNMetricCard(this)"> Agregados al carrito (ATC)
+        </label>
+        <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2);cursor:pointer">
+          <input type="checkbox" checked data-metric="tn-m-conv" onchange="toggleTNMetricCard(this)"> Ratio de conversion
+        </label>
+      </div>
+
+      <div class="an-grid" style="grid-template-columns:repeat(3,1fr)">
+        <div class="an-card" id="tn-m-abandonados">
+          <div class="an-card-top"><span class="an-card-label">Carritos abandonados</span></div>
+          <div class="an-card-val" id="tn-m-abandonados-val">0</div>
+        </div>
+        <div class="an-card" id="tn-m-atc">
+          <div class="an-card-top"><span class="an-card-label">Agregados al carrito (ATC)</span></div>
+          <div class="an-card-val" id="tn-m-atc-val">0</div>
+        </div>
+        <div class="an-card" id="tn-m-conv">
+          <div class="an-card-top"><span class="an-card-label">Ratio de conversion</span></div>
+          <div class="an-card-val" id="tn-m-conv-val">0%</div>
+        </div>
+      </div>
+
+      <!-- PRODUCTOS ESTRELLA + MUERTOS -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:16px">
+        <div>
+          <div style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">&#11088; Productos estrella</div>
+          <table style="width:100%;border-collapse:collapse;font-size:13px">
+            <thead>
+              <tr><th>Producto</th><th style="text-align:right">Unidades</th><th style="text-align:right">Facturacion</th></tr>
+            </thead>
+            <tbody id="tn-top-products">
+              <tr>
+                <td style="display:flex;align-items:center;gap:8px"><div style="width:26px;height:26px;border-radius:6px;background:var(--surface2);flex-shrink:0"></div> Producto ejemplo</td>
+                <td style="text-align:right">0</td>
+                <td style="text-align:right;font-weight:700">$0</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div>
+          <div style="font-size:11px;font-weight:700;color:var(--amber);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">&#9888; Alerta: productos muertos</div>
+          <div id="tn-dead-products" style="display:flex;flex-direction:column;gap:6px">
+            <div style="display:flex;align-items:center;justify-content:space-between;background:var(--amber-l);border-radius:var(--r);padding:10px 12px">
+              <span style="font-size:13px">Producto ejemplo</span>
+              <span class="b-amber" style="font-size:10px;font-weight:700;padding:3px 8px;border-radius:5px">Sin ventas 30d+</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
   </div>
 </div>
 
@@ -3262,7 +3330,14 @@ async function saveCardOrder(gridId) {
   const ids = [...grid.children].map(c => c.id).filter(Boolean);
   await db.from('card_order').upsert({ user_id: me.id, grid_id: gridId, card_ids: ids });
 }
-
+function toggleTNMetricsConfig() {
+  const el = document.getElementById('tn-metrics-config');
+  el.style.display = (el.style.display === 'none' || !el.style.display) ? 'flex' : 'none';
+}
+function toggleTNMetricCard(checkbox) {
+  const card = document.getElementById(checkbox.dataset.metric);
+  if (card) card.style.display = checkbox.checked ? '' : 'none';
+}
 
 
 // === PERSISTENCIA EN SUPABASE ===
