@@ -698,12 +698,25 @@ tr:hover td{background:var(--surface2)}
     </div>
   </div>
 
+  <!-- INSIGHTS AUTOMATICOS -->
+  <div id="meta-insights-panel" style="border:1px solid #222222;border-radius:8px;padding:14px 16px;margin-bottom:14px;display:none">
+    <div id="meta-insights-list" style="display:flex;flex-direction:column;gap:8px"></div>
+  </div>
+
   <!-- FILTROS STATUS -->
-  <div class="filters" style="margin-bottom:14px">
+  <div class="filters" style="margin-bottom:10px">
     <div class="ft active" onclick="filterMetaCamp('ALL',this)">Todas</div>
     <div class="ft" onclick="filterMetaCamp('ACTIVE',this)">&#9679; Activas</div>
     <div class="ft" onclick="filterMetaCamp('PAUSED',this)">&#9646;&#9646; Pausadas</div>
     <div class="ft" onclick="filterMetaCamp('ARCHIVED',this)">Archivadas</div>
+  </div>
+
+  <!-- FILTROS ESTRATEGIA -->
+  <div class="filters" id="meta-strategy-filters" style="margin-bottom:14px">
+    <div class="ft active" onclick="filterMetaStrategy('ALL',this)">Todas las estrategias</div>
+    <div class="ft" onclick="filterMetaStrategy('TEST',this)">Testeo de Drops</div>
+    <div class="ft" onclick="filterMetaStrategy('CBO',this)">Escalamiento (CBO)</div>
+    <div class="ft" onclick="filterMetaStrategy('RTG',this)">Retargeting / Liquidacion</div>
   </div>
 
   <!-- CAMPANAS TABLE -->
@@ -4229,14 +4242,52 @@ function filterMetaCamp(f, el) {
   if(el) el.classList.add('active');
   renderCampaigns();
 }
+let metaStrategyFilter = 'ALL';
+const META_STRATEGY_RX = { TEST:/TESTEO|TOFU/i, CBO:/CBO|ESCALADO/i, RTG:/BOFU|LIQUIDACION/i };
 
+function filterMetaStrategy(f, el) {
+  metaStrategyFilter = f;
+  document.querySelectorAll('#meta-strategy-filters .ft').forEach(t=>t.classList.remove('active'));
+  if(el) el.classList.add('active');
+  renderCampaigns();
+}
+
+function renderMetaInsights(list) {
+  const panel = document.getElementById('meta-insights-panel');
+  const box = document.getElementById('meta-insights-list');
+  if (!panel || !box) return;
+  const alerts = [];
+  const active = list.filter(c => (c.effective_status||c.status)==='ACTIVE' && +c.insights?.spend>0);
+  if (active.length) {
+    const avgCpa = active.reduce((s,c)=>s+(+c.insights.cpa||0),0) / active.length;
+    active.forEach(c => {
+      const ins = c.insights;
+      if (+ins.spend>=50 && avgCpa>0 && +ins.cpa>avgCpa*1.5)
+        alerts.push({ t:'a', txt:`${c.name}: gasto $${ins.spend} con CPA $${ins.cpa}, ${Math.round((ins.cpa/avgCpa-1)*100)}% sobre el promedio.` });
+      if (+ins.hook_rate>=90)
+        alerts.push({ t:'s', txt:`${c.name}: Hook ${ins.hook_rate}% — candidato a escalar presupuesto.` });
+    });
+  }
+  (metaAds||[]).forEach(a => {
+    if (+a.insights?.hook_rate>=90 && (a.effective_status||a.status)==='ACTIVE')
+      alerts.push({ t:'s', txt:`Anuncio "${a.name}": Hook ${a.insights.hook_rate}% — sugerido para escalar.` });
+  });
+  if (!alerts.length) { panel.style.display='none'; return; }
+  panel.style.display='block';
+  box.innerHTML = alerts.slice(0,5).map(al => `
+    <div style="display:flex;align-items:center;gap:8px;padding-left:10px;border-left:2px solid ${al.t==='a'?'#666666':'var(--green)'}">
+      <span style="font-size:12px;color:#cccccc">${al.txt}</span>
+    </div>`).join('');
+}
 function renderCampaigns() {
   const tbody = document.getElementById('meta-camp-tbody');
   let list = metaCampaigns;
   if(metaCampFilter !== 'ALL') list = list.filter(c => c.effective_status===metaCampFilter||c.status===metaCampFilter);
+  if(metaStrategyFilter !== 'ALL') list = list.filter(c => META_STRATEGY_RX[metaStrategyFilter].test(c.name||''));
   if(!list.length) {
     tbody.innerHTML = `<tr><td colspan="10" style="text-align:center;padding:24px;color:var(--text2)">Sin campanas con ese filtro</td></tr>`;
     return;
+    renderMetaInsights(list);
   }
   tbody.innerHTML = list.map(c => {
     const ins = c.insights||{};
