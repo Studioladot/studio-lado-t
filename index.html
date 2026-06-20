@@ -3346,7 +3346,7 @@ function renderScEditor(s){
     <div class="vm-card">
       <div class="vm-label">Hook Rate</div>
       <div style="display:flex;align-items:center;justify-content:center;gap:3px">
-        <input type="number" step="0.01" value="${s.hook_rate||''}" placeholder="0" style="width:55px;border:none;outline:none;background:transparent;font-size:18px;font-weight:700;text-align:center" onchange="updSc('${s.id}','hook_rate',this.value)"/>
+        <input type="number" step="0.01" value="${s.hook_rate||''}" placeholder="0" style="width:55px;border:none;outline:none;background:transparent;font-size:18px;font-weight:700;text-align:center;color:#ffffff" onchange="updSc('${s.id}','hook_rate',this.value)"/>
         <span style="font-size:13px;color:var(--text2)">%</span>
       </div>
       <div style="font-size:10px;color:var(--text3);margin-top:2px">3s / impr.</div>
@@ -3354,7 +3354,7 @@ function renderScEditor(s){
     <div class="vm-card">
       <div class="vm-label">P25</div>
       <div style="display:flex;align-items:center;justify-content:center;gap:3px">
-        <input type="number" step="0.01" value="${s.p25||''}" placeholder="0" style="width:55px;border:none;outline:none;background:transparent;font-size:18px;font-weight:700;text-align:center" onchange="updSc('${s.id}','p25',this.value)"/>
+       <input type="number" step="0.01" value="${s.p25||''}" placeholder="0" style="width:55px;border:none;outline:none;background:transparent;font-size:18px;font-weight:700;text-align:center;color:#ffffff" onchange="updSc('${s.id}','p25',this.value)"/>
         <span style="font-size:13px;color:var(--text2)">%</span>
       </div>
       <div style="font-size:10px;color:var(--text3);margin-top:2px">Thumbstop</div>
@@ -3362,16 +3362,14 @@ function renderScEditor(s){
     <div class="vm-card">
       <div class="vm-label">P75</div>
       <div style="display:flex;align-items:center;justify-content:center;gap:3px">
-        <input type="number" step="0.01" value="${s.p75||''}" placeholder="0" style="width:55px;border:none;outline:none;background:transparent;font-size:18px;font-weight:700;text-align:center" onchange="updSc('${s.id}','p75',this.value)"/>
-        <span style="font-size:13px;color:var(--text2)">%</span>
+<input type="number" step="0.01" value="${s.p75||''}" placeholder="0" style="width:55px;border:none;outline:none;background:transparent;font-size:18px;font-weight:700;text-align:center;color:#ffffff" onchange="updSc('${s.id}','p75',this.value)"/>        <span style="font-size:13px;color:var(--text2)">%</span>
       </div>
       <div style="font-size:10px;color:var(--text3);margin-top:2px">Retencion media</div>
     </div>
     <div class="vm-card">
       <div class="vm-label">P100</div>
       <div style="display:flex;align-items:center;justify-content:center;gap:3px">
-        <input type="number" step="0.01" value="${s.p100||''}" placeholder="0" style="width:55px;border:none;outline:none;background:transparent;font-size:18px;font-weight:700;text-align:center" onchange="updSc('${s.id}','p100',this.value)"/>
-        <span style="font-size:13px;color:var(--text2)">%</span>
+<input type="number" step="0.01" value="${s.p100||''}" placeholder="0" style="width:55px;border:none;outline:none;background:transparent;font-size:18px;font-weight:700;text-align:center;color:#ffffff" onchange="updSc('${s.id}','p100',this.value)"/>        <span style="font-size:13px;color:var(--text2)">%</span>
       </div>
       <div style="font-size:10px;color:var(--text3);margin-top:2px">Hold Rate</div>
     </div>
