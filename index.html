@@ -1250,11 +1250,13 @@ tr:hover td{background:var(--surface2)}
           <div class="an-card-top"><span class="an-card-label">Carritos abandonados</span></div>
           <div class="an-card-val" id="tn-carritos-abandonados">0</div>
         </div>
-        <div class="an-card accent" id="tn-card-conversion">
+       <div class="an-card" id="tn-card-conversion">
           <div class="an-card-top"><span class="an-card-label">Conversion de checkout</span></div>
-          <div class="an-card-val" id="tn-conversion-checkout">0%</div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <div class="an-card-val" id="tn-conversion-checkout">0%</div>
+            <span style="font-size:10px;font-weight:700;color:var(--green);background:var(--green-l);border:1px solid var(--green);border-radius:4px;padding:1px 6px">real</span>
+          </div>
         </div>
-      </div>
 
       <div style="margin-top:18px">
         <div style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">Embudo de checkout (real, via API Tienda Nube)</div>
