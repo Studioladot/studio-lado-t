@@ -5196,6 +5196,12 @@ async function loadAnalisis() {
   anRenderCard('anc-costo-productos','Costo de productos',cur.costoProductos,delta(cur.costoProductos,prv.costoProductos),flatSerie,'money',false,true);
   anRenderCard('anc-costo-envio','Costos de envio',cur.costoEnvioTotal,delta(cur.costoEnvioTotal,prv.costoEnvioTotal),flatSerie,'money',false,true);
   anRenderCard('anc-costo-adicional','Costos adicionales',costosAdicionalesTotal,0,flatSerie,'money',false,true);
+  await loadCardOrder('an-main-grid');
+  await loadCardOrder('an-tn-grid');
+  await loadCardOrder('an-meta-grid');
+  initCardDragDrop('an-main-grid');
+  initCardDragDrop('an-tn-grid');
+  initCardDragDrop('an-meta-grid');
   renderAnCostosAdicionalesList();
 
   // Canales de marketing
