@@ -60,9 +60,9 @@ export default async function handler(req, res) {
     }
 
     // 3. Guardar la conexion en Supabase (upsert por user_id de GOTIX)
-    const supabaseRes = await fetch(
-      `${process.env.SUPABASE_URL}/rest/v1/tiendanube_connections`,
-      {
+   const supabaseRes = await fetch(
+  `${process.env.SUPABASE_URL}/rest/v1/tiendanube_connections?on_conflict=user_id`,
+  {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
