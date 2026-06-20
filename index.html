@@ -1925,7 +1925,29 @@ tr:hover td{background:var(--surface2)}
     </div>
   </div>
 </div>
-
+<!-- DETALLE DE ANUNCIO -->
+  <div id="ad-detail-overlay" style="position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:300;display:none;align-items:center;justify-content:center;padding:20px" onclick="if(event.target===this)closeAdDetail()">
+    <div style="background:#111111;border:1px solid #222222;border-radius:10px;width:100%;max-width:520px;max-height:85vh;overflow-y:auto">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid #222222">
+        <div id="ad-detail-name" style="font-size:14px;font-weight:700;color:#ffffff">—</div>
+        <button class="btn btn-sm btn-ghost" onclick="closeAdDetail()">&#10005;</button>
+      </div>
+      <div style="padding:18px 20px;display:flex;flex-direction:column;gap:14px">
+        <div>
+          <div style="font-size:10px;color:#666666;text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px">Copy principal</div>
+          <div id="ad-detail-copy" style="font-size:13px;color:#ffffff;line-height:1.5;white-space:pre-wrap">—</div>
+        </div>
+        <div>
+          <div style="font-size:10px;color:#666666;text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px">CTA</div>
+          <div id="ad-detail-cta" style="font-size:13px;color:#ffffff;font-weight:600">—</div>
+        </div>
+        <div>
+          <div style="font-size:10px;color:#666666;text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px">URL de destino</div>
+          <div id="ad-detail-link" style="font-size:12px;color:#999999;word-break:break-all">—</div>
+        </div>
+      </div>
+    </div>
+  </div>
 
 
 <!-- IA -->
@@ -7251,7 +7273,7 @@ async function loadBibAds() {
 
   try {
     // Solo insights + datos básicos, SIN creative en este paso
-    const insFields = 'spend,actions,action_values,ctr,cpm,frequency,impressions,clicks';
+    const insFields = 'spend,actions,action_values,ctr,cpm,frequency,impressions,clicks,inline_link_click_ctr';
     const fields = [
       'id','name','status','effective_status',
       'adset{name}','campaign{name}',
@@ -7296,7 +7318,16 @@ async function loadBibAds() {
         }
       } catch(e) { console.error('[BibAds] fetch creative fallo', ad.id, e); }
     }));
-
+function openAdDetail(id){
+  const ad = bibAdsData.find(a=>a.id===id); if(!ad) return;
+  document.getElementById('ad-detail-name').textContent = ad.name;
+  document.getElementById('ad-detail-copy').textContent = ad.copy || 'Sin copy registrado';
+  document.getElementById('ad-detail-cta').textContent = ad.cta || '—';
+  const linkEl = document.getElementById('ad-detail-link');
+  linkEl.innerHTML = ad.link ? `<a href="${ad.link}" target="_blank" style="color:#ffffff;text-decoration:underline">${ad.link}</a>` : '—';
+  document.getElementById('ad-detail-overlay').style.display='flex';
+}
+function closeAdDetail(){ document.getElementById('ad-detail-overlay').style.display='none'; }
     bibAdsData = allAds.map(ad => {
       const ins = ad.insights?.data?.[0] || {};
       const spend = parseFloat(ins.spend || 0);
@@ -7322,6 +7353,10 @@ async function loadBibAds() {
         cpm:  parseFloat(ins.cpm       || 0),
         freq: parseFloat(ins.frequency || 0),
         clicks: parseInt(ins.clicks    || 0),
+        linkCtr: parseFloat(ins.inline_link_click_ctr || 0),
+        copy: cr.object_story_spec?.link_data?.message || cr.object_story_spec?.video_data?.message || '',
+        cta:  cr.object_story_spec?.link_data?.call_to_action?.type || cr.object_story_spec?.video_data?.call_to_action?.type || '',
+        link: cr.object_story_spec?.link_data?.link || cr.object_story_spec?.video_data?.call_to_action?.value?.link || '',
       };
     });
 
@@ -7332,7 +7367,16 @@ async function loadBibAds() {
     console.error('loadBibAds:', e);
   }
 }
-
+const AD_TAG_RULES = [
+  {rx:/campera|eme|paradise/i, tag:'Camperas'},
+  {rx:/jogging|baggy/i, tag:'Jeans Baggy'},
+  {rx:/testeo|tofu/i, tag:'Testeo'},
+  {rx:/cbo|escalado/i, tag:'Escalamiento'},
+  {rx:/bofu|liquidacion/i, tag:'Retargeting'},
+];
+function parseAdTags(name){
+  return AD_TAG_RULES.filter(r=>r.rx.test(name||'')).map(r=>r.tag);
+}
 function renderBibAds() {
   const grid    = document.getElementById('bibads-grid'); if(!grid) return;
   const search  = (document.getElementById('bibads-search')?.value||'').toLowerCase();
@@ -7373,7 +7417,7 @@ function renderBibAds() {
     const isActive = ad.status === 'ACTIVE';
     const rc = roasColor(ad.roas);
     return `
-    <div style="background:var(--surface);border:0.5px solid var(--border);border-radius:10px;overflow:hidden;transition:box-shadow .15s;cursor:default" onmouseover="this.style.boxShadow='0 4px 16px rgba(0,0,0,.1)'" onmouseout="this.style.boxShadow='none'">
+  <div style="background:#111111;border:1px solid #222222;border-radius:10px;overflow:hidden;transition:box-shadow .15s;cursor:pointer" onclick="openAdDetail('${ad.id}')" onmouseover="this.style.boxShadow='0 4px 16px rgba(0,0,0,.3)'" onmouseout="this.style.boxShadow='none'">
 
       <!-- THUMBNAIL — ratio 4:5, frame real del video/imagen -->
       <div style="position:relative;width:100%;padding-bottom:100%;background:var(--surface2);overflow:hidden">
@@ -7397,7 +7441,8 @@ function renderBibAds() {
         <!-- Nombre del anuncio -->
         <div style="font-size:11px;font-weight:700;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${ad.name}">${ad.name}</div>
         <!-- Campaña y conjunto -->
-        <div style="font-size:9.5px;color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:6px" title="${ad.campaignName}">${ad.campaignName||ad.adsetName||'—'}</div>
+        <div style="font-size:9.5px;color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:5px" title="${ad.campaignName}">${ad.campaignName||ad.adsetName||'—'}</div>
+        ${parseAdTags(ad.name+' '+ad.campaignName).length?`<div style="display:flex;gap:3px;flex-wrap:wrap;margin-bottom:6px">${parseAdTags(ad.name+' '+ad.campaignName).map(t=>`<span style="font-size:8.5px;color:#999999;background:rgba(255,255,255,.06);border:1px solid #222222;border-radius:4px;padding:1px 5px">${t}</span>`).join('')}</div>`:''}
 
         <!-- MÉTRICAS — lista vertical compacta -->
         <div style="display:flex;flex-direction:column;gap:2px">
@@ -7413,9 +7458,13 @@ function renderBibAds() {
             <span style="font-size:10px;color:var(--text2)">CPA</span>
             <span style="font-size:12px;font-weight:700;color:var(--text)">${ad.cpa>0?'$'+Math.round(ad.cpa):'—'}</span>
           </div>
-          <div style="display:flex;justify-content:space-between;align-items:baseline">
+          <<div style="display:flex;justify-content:space-between;align-items:baseline">
             <span style="font-size:10px;color:var(--text2)">Compras</span>
             <span style="font-size:12px;font-weight:700;color:var(--text)">${ad.purchases>0?Math.round(ad.purchases):'—'}</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:baseline">
+            <span style="font-size:10px;color:var(--text2)">CTR link</span>
+            <span style="font-size:12px;font-weight:700;color:var(--text)">${ad.linkCtr>0?ad.linkCtr.toFixed(2)+'%':'—'}</span>
           </div>
         </div>
       </div>
