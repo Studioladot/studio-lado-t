@@ -5272,7 +5272,7 @@ async function loadAnalisis() {
     if(data) finConfig = data;
   }
   if(!gastos.length) {
-  const { data } = await db.from('gastos').select('*').eq('user_id', me.id);
+  const { data } = await db.from('expenses').select('*').eq('user_id', me.id);
     if(data) gastos = data;
   }
   await loadAnCostosAdicionales();
