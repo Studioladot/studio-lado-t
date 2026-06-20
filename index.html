@@ -2870,7 +2870,11 @@ function showPage(p){
   }
   if(p==='biblioteca')renderBib();
 if(p==='finanzas'){loadFinanzas();loadCotizacionUSD();}
-  if(p==='tiendanube-connect')loadTiendaNubeStatus();
+  if(p==='tiendanube-connect'){
+    loadTiendaNubeStatus();
+    if(me) db.from('fin_config').select('*').eq('user_id', me.id).maybeSingle().then(({data})=>{ if(data) finConfig=data; renderTNOverview(); });
+    if(me) db.from('expenses').select('*').eq('user_id', me.id).then(({data})=>{ gastos=data||[]; renderTNOverview(); });
+  }
   if(p==='analisis')loadAnalisis();
   if(p==='notas')loadNotas();
   if(p==='campanas-contenido')loadCampanas();
@@ -5011,6 +5015,7 @@ async function loadTiendaNubeStatus() {
     if(conn) conn.style.display = 'block';
     if(dateCtrl) dateCtrl.style.display = 'flex';
     setT('tn-store-name', tnConnection.store_name || tnConnection.store_url || 'Tienda conectada');
+    loadTNCacheInstant();
     loadTNAll();
   } else {
     if(notConn) notConn.style.display = 'block';
@@ -5027,6 +5032,12 @@ async function loadTNAll() {
   await loadTNAdvancedPanel();
   renderTNOverview();
   renderTNInsights();
+  saveTNCache({ tnSalesSummary, tnFunnelData });
+}
+function renderTNOverview2(snap) {
+  if (snap.tnSalesSummary) tnSalesSummary = snap.tnSalesSummary;
+  if (snap.tnFunnelData) tnFunnelData = snap.tnFunnelData;
+  renderTNOverview();
 }
 
 async function loadTiendaNubeSales() {
