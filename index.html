@@ -1120,7 +1120,8 @@ tr:hover td{background:var(--surface2)}
         </div>
       </div>
       <div style="display:flex;gap:8px">
-        <button class="btn btn-outline btn-sm" onclick="loadTNAll()">&#8635; Sincronizar ventas ahora</button>
+       <button class="btn btn-accent" onclick="loadTNAll()">&#8635; Sincronizar ventas ahora</button>
+        <div style="font-size:11px;color:var(--text3);margin-top:6px" id="tn-last-sync">—</div>
         <button class="btn btn-red btn-sm" onclick="disconnectTiendaNube()">Desconectar</button>
       </div>
     </div>
@@ -1168,8 +1169,7 @@ tr:hover td{background:var(--surface2)}
             </div>
           </div>
         </div>
-        <div style="display:flex;align-items:flex-start;gap:8px;margin-top:10px;padding:10px 12px;background:var(--amber-l);border-radius:var(--r)">
-          <span style="color:var(--amber);font-weight:800;font-size:14px;line-height:1">&#9888;</span>
+        <div style="display:flex;align-items:center;gap:8px;margin-top:10px;padding-left:10px;border-left:2px solid var(--amber)">
           <span style="font-size:13px;color:var(--text);font-weight:500" id="tn-roas-diff">—</span>
         </div>
       </div>
@@ -5209,7 +5209,23 @@ async function disconnectTiendaNube() {
   renderFinPanel();
   toast('Tienda Nube desconectada');
 }
-
+async function loadTNCacheInstant() {
+  const { data } = await db.from('tn_cache').select('*').eq('user_id', me.id).maybeSingle();
+  if (data?.data) {
+    renderTNOverview2(data.data); // pinta los numeros guardados al instante
+    setTNLastSync(data.updated_at);
+  }
+}
+async function saveTNCache(snapshot) {
+  await db.from('tn_cache').upsert({ user_id: me.id, data: snapshot, updated_at: new Date().toISOString() });
+  setTNLastSync(new Date().toISOString());
+}
+function setTNLastSync(iso) {
+  const el = document.getElementById('tn-last-sync');
+  if (!el) return;
+  const mins = Math.round((Date.now() - new Date(iso).getTime()) / 60000);
+  el.textContent = 'Ultima sincronizacion: ' + (mins < 1 ? 'hace instantes' : mins < 60 ? `hace ${mins} min` : `hace ${Math.round(mins/60)} h`);
+}
 // ══════════════════════════════════════════════════════════════════════════════
 // ANALISIS — vision financiera real: Meta + Tienda Nube + costos
 // ══════════════════════════════════════════════════════════════════════════════
