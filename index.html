@@ -5594,7 +5594,7 @@ async function loadAnalisis() {
   await loadCardOrder('an-sec-row');
   initDragDrop('an-content', '.an-section');
   initCardSwap('an-main-grid');
-  function initCardSwap(gridId) {
+ function initCardSwap(gridId) {
   const grid = document.getElementById(gridId);
   if (!grid) return;
   grid.querySelectorAll(':scope > .an-card').forEach(card => {
