@@ -5593,6 +5593,7 @@ async function loadAnalisis() {
   await loadCardOrder('an-content');
   await loadCardOrder('an-sec-row');
   initDragDrop('an-content', '.an-section');
+  initDragDrop('an-sec-row', '.an-subsection');
   initCardSwap('an-main-grid');
  function initCardSwap(gridId) {
   const grid = document.getElementById(gridId);
