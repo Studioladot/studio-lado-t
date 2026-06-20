@@ -970,8 +970,8 @@ tr:hover td{background:var(--surface2)}
     <div class="an-dark an-subsection" id="an-sec-meta" style="margin-bottom:0">
         <div class="an-dark-hdr">
           <div class="an-dark-title">
-            <span class="an-dark-ico"><svg width="13" height="13" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M7.5 10.5a4 4 0 005.7 0
-           Meta
+            <span class="an-dark-ico"><svg width="13" height="13" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M7.5 10.5a4 4 0 005.7 0l2-2a4 4 0 00-5.7-5.7L8 4.3"/><path d="M10.5 7.5a4 4 0 00-5.7 0l-2 2a4 4 0 005.7 5.7L10 13.7"/></svg></span>
+            Meta
           </div>
           <span class="an-card-grip" style="cursor:grab">&#10247;</span>
         </div>
@@ -3265,15 +3265,7 @@ async function saveCardOrder(gridId) {
   await db.from('card_order').upsert({ user_id: me.id, grid_id: gridId, card_ids: ids });
 }
 
-async function loadCardOrder(gridId) {
-  const grid = document.getElementById(gridId);
-  if (!grid || !me) return;
-  const { data } = await db.from('card_order').select('card_ids').eq('user_id', me.id).eq('grid_id', gridId).maybeSingle();
-  if (data?.card_ids) data.card_ids.forEach(id => { const el = document.getElementById(id); if (el) grid.appendChild(el); });
-}
-    });
-  });
-}
+
 
 // === PERSISTENCIA EN SUPABASE ===
 async function saveCardOrder(gridId) {
@@ -3287,12 +3279,7 @@ async function loadCardOrder(gridId) {
   const grid = document.getElementById(gridId);
   if (!grid || !me) return;
   const { data } = await db.from('card_order').select('card_ids').eq('user_id', me.id).eq('grid_id', gridId).maybeSingle();
-  if (data?.card_ids) {
-    data.card_ids.forEach(id => {
-      const card = document.getElementById(id);
-      if (card) grid.appendChild(card);
-    });
-  }
+  if (data?.card_ids) data.card_ids.forEach(id => { const el = document.getElementById(id); if (el) grid.appendChild(el); });
 }
 
 // ── BIBLIOTECA ────────────────────────────────────────────────────────────────
