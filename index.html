@@ -265,14 +265,10 @@ body.focus-mode #main{margin-left:0}
 .an-dark-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;gap:8px}
 .an-dark-title{display:flex;align-items:center;gap:9px;font-size:14px;font-weight:700;color:var(--ad-text);letter-spacing:-.01em}
 .an-dark-ico{width:26px;height:26px;border-radius:7px;background:var(--ad-surface2);display:flex;align-items:center;justify-content:center;color:var(--ad-text2);flex-shrink:0}
-  .an-card-grip{color:#52525b;transition:color .15s;font-size:14px}
-.an-dark:hover .an-card-grip{color:#a1a1aa}
 .an-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
 .an-skel{display:inline-block;height:21px;width:70px;border-radius:5px;background:linear-gradient(90deg,#111111 25%,#1c1c1c 37%,#111111 63%);background-size:400% 100%;animation:an-skel-pulse 1.4s ease infinite}
 @keyframes an-skel-pulse{0%{background-position:100% 50%}100%{background-position:0 50%}}
 #an-chart-tooltip{position:fixed;z-index:9999;background:#000000;color:#ffffff;border:1px solid #222222;border-radius:6px;padding:8px 12px;font-size:12px;pointer-events:none;display:none;white-space:nowrap;box-shadow:0 4px 20px rgba(0,0,0,.5)}
-.an-card{user-select:none;-webkit-user-drag:element}
-.an-card.dragging{opacity:.4}
 .an-card{
   background:var(--ad-surface);border:0.5px solid var(--ad-border);border-radius:12px;
   padding:14px 16px 12px;position:relative;overflow:hidden;min-height:108px;
@@ -976,7 +972,6 @@ body.focus-mode #main{margin-left:0}
           <span class="an-dark-ico"><svg width="14" height="14" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 15h14"/><path d="M4 15V9l3-3 3 2.5L15 3"/></svg></span>
           Metricas principales
         </div>
-        <span class="an-card-grip" style="cursor:grab">&#10247;</span>
       </div>
       <div class="an-grid" id="an-main-grid">
         <div class="an-card" id="anc-ordenes" draggable="true">
@@ -1000,7 +995,6 @@ body.focus-mode #main{margin-left:0}
             <span class="an-dark-ico"><svg width="13" height="13" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6l1.5-3.5h9L15 6"/><path d="M3 6v8a1 1 0 001 1h10a1 1 0 001-1V6"/><path d="M7 15v-4a1 1 0 011-1h2a1 1 0 011 1v4"/><path d="M3 6h12"/></svg></span>
             Tienda online
           </div>
-          <span class="an-card-grip" style="cursor:grab">&#10247;</span>
         </div>
         <div class="an-grid" style="grid-template-columns:repeat(3,1fr)" id="an-tn-grid">
           <div class="an-card" id="anc-tn-ordenes"></div>
@@ -1016,7 +1010,6 @@ body.focus-mode #main{margin-left:0}
             <span class="an-dark-ico"><svg width="13" height="13" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M7.5 10.5a4 4 0 005.7 0l2-2a4 4 0 00-5.7-5.7L8 4.3"/><path d="M10.5 7.5a4 4 0 00-5.7 0l-2 2a4 4 0 005.7 5.7L10 13.7"/></svg></span>
             Meta
           </div>
-          <span class="an-card-grip" style="cursor:grab">&#10247;</span>
         </div>
         <div class="an-grid" style="grid-template-columns:1fr 1fr" id="an-meta-grid">
           <div class="an-card" style="grid-column:1/-1" id="anc-meta-inv"></div>
@@ -1035,7 +1028,6 @@ body.focus-mode #main{margin-left:0}
         </div>
         <div style="display:flex;align-items:center;gap:10px">
           <button class="btn btn-sm btn-outline" onclick="openModal('modal-an-costos-add')">+ Costo adicional</button>
-          <span class="an-card-grip" style="cursor:grab">&#10247;</span>
         </div>
       </div>
       <div class="an-grid" style="grid-template-columns:repeat(3,1fr)">
@@ -3404,46 +3396,6 @@ async function delSc(id){
   document.getElementById('sc-editor').innerHTML='<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:200px;color:var(--text2)"><div style="font-size:26px;margin-bottom:8px">&#9681;</div><div style="font-weight:600;color:var(--text)">Selecciona un guion</div></div>';
   renderScripts(); renderBib(); toast('Guion eliminado');
 }
-  function initDragDrop(gridId, itemSelector) {
-  const grid = document.getElementById(gridId);
-  if (!grid) return;
-  grid.querySelectorAll(itemSelector).forEach(item => {
-    if (item.dataset.dragInit) return;
-    item.dataset.dragInit = '1';
-    item.draggable = false;
-
-    const grip = item.querySelector('.an-card-grip');
-    if (grip) grip.addEventListener('mousedown', () => { item.draggable = true; });
-
-    item.addEventListener('dragstart', e => {
-      e.dataTransfer.setData('text/plain', item.id);
-      item.classList.add('dragging');
-    });
-    item.addEventListener('dragend', () => {
-      item.classList.remove('dragging');
-      item.draggable = false;
-    });
-    item.addEventListener('dragover', e => e.preventDefault());
-    item.addEventListener('drop', e => {
-      e.preventDefault();
-      const draggedId = e.dataTransfer.getData('text/plain');
-      const dragged = document.getElementById(draggedId);
-      if (dragged && dragged !== item) {
-        const items = [...grid.children];
-        if (items.indexOf(dragged) < items.indexOf(item)) item.after(dragged);
-        else item.before(dragged);
-        saveCardOrder(gridId);
-      }
-    });
-  });
-}
-
-async function saveCardOrder(gridId) {
-  const grid = document.getElementById(gridId);
-  if (!grid || !me) return;
-  const ids = [...grid.children].map(c => c.id).filter(Boolean);
-  await db.from('card_order').upsert({ user_id: me.id, grid_id: gridId, card_ids: ids });
-}
 function toggleTNMetricsConfig() {
   const el = document.getElementById('tn-metrics-config');
   el.style.display = (el.style.display === 'none' || !el.style.display) ? 'flex' : 'none';
@@ -3535,15 +3487,6 @@ async function loadTNAdvancedPanel() {
   } catch (e) { toast('Error al cargar inteligencia de tienda: ' + e.message); }
 }
 
-
-// === PERSISTENCIA EN SUPABASE ===
-
-async function loadCardOrder(gridId) {
-  const grid = document.getElementById(gridId);
-  if (!grid || !me) return;
-  const { data } = await db.from('card_order').select('card_ids').eq('user_id', me.id).eq('grid_id', gridId).maybeSingle();
-  if (data?.card_ids) data.card_ids.forEach(id => { const el = document.getElementById(id); if (el) grid.appendChild(el); });
-}
 
 // ── BIBLIOTECA ────────────────────────────────────────────────────────────────
 function filterBib(f,el){bibF=f;document.querySelectorAll('#bib-filters .ft').forEach(t=>t.classList.remove('active'));if(el)el.classList.add('active');renderBib();}
@@ -5597,43 +5540,6 @@ async function loadAnalisis() {
   anRenderCard('anc-costo-productos','Costo de productos',cur.costoProductos,delta(cur.costoProductos,prv.costoProductos),flatSerie,'money',false,true);
   anRenderCard('anc-costo-envio','Costos de envio',cur.costoEnvioTotal,delta(cur.costoEnvioTotal,prv.costoEnvioTotal),flatSerie,'money',false,true);
   anRenderCard('anc-costo-adicional','Costos adicionales',costosAdicionalesTotal,0,flatSerie,'money',false,true);
-  await loadCardOrder('an-content');
-  await loadCardOrder('an-sec-row');
-  initDragDrop('an-content', '.an-section');
-  initDragDrop('an-sec-row', '.an-subsection');
-  initCardSwap('an-main-grid');
- function initCardSwap(gridId) {
-  const grid = document.getElementById(gridId);
-  if (!grid) return;
-  grid.querySelectorAll(':scope > .an-card').forEach(card => {
-    if (card.dataset.swapInit) return;
-    card.dataset.swapInit = '1';
-    card.draggable = true;
-    card.style.cursor = 'grab';
-    card.addEventListener('dragstart', e => {
-      e.dataTransfer.effectAllowed = 'move';
-      e.dataTransfer.setData('text/plain', card.id);
-      card.classList.add('dragging');
-    });
-    card.addEventListener('dragend', () => card.classList.remove('dragging'));
-    card.addEventListener('dragover', e => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; });
-    card.addEventListener('drop', e => {
-      e.preventDefault();
-      e.stopPropagation();
-      const draggedId = e.dataTransfer.getData('text/plain');
-      const dragged = document.getElementById(draggedId);
-      if (dragged && dragged !== card && dragged.parentElement === grid) {
-        const cards = [...grid.children];
-        if (cards.indexOf(dragged) < cards.indexOf(card)) card.after(dragged);
-        else card.before(dragged);
-      }
-    });
-  });
-}
-  initDragDrop('an-sec-row', '.an-subsection');
-  await loadCardOrder('an-main-grid');
-  await loadCardOrder('an-tn-grid');
-  await loadCardOrder('an-meta-grid');
   renderAnCostosAdicionalesList();
 
   // Canales de marketing
