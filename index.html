@@ -3271,7 +3271,6 @@ async function loadCardOrder(gridId) {
   const { data } = await db.from('card_order').select('card_ids').eq('user_id', me.id).eq('grid_id', gridId).maybeSingle();
   if (data?.card_ids) data.card_ids.forEach(id => { const el = document.getElementById(id); if (el) grid.appendChild(el); });
 }
-      }
     });
   });
 }
