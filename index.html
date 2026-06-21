@@ -5302,6 +5302,7 @@ async function loadTNAll() {
   await loadTNCampaignOptions();
   await loadTNFunnel();
   await loadTNAdvancedPanel();
+  await loadPnLEngine();
   renderTNOverview();
   renderTNInsights();
   saveTNCache({ tnSalesSummary, tnFunnelData });
