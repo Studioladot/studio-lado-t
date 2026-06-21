@@ -66,7 +66,7 @@ export default async function handler(req, res) {
     let hasMore = true;
     while (hasMore && page <= 20) {
       const ordersRes = await fetch(
-        `https://api.tiendanube.com/v1/${conn.store_id}/orders?created_at_min=${sinceISO}&created_at_max=${untilISO}&per_page=50&page=${page}`,
+        `https://api.tiendanube.com/v1/${conn.store_id}/orders?created_at_min=${sinceISO}&created_at_max=${untilISO}&per_page=200&page=${page}
         {
           headers: {
             'Authentication': `bearer ${conn.access_token}`,
