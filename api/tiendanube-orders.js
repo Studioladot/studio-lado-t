@@ -75,6 +75,11 @@ export default async function handler(req, res) {
         }
       );
       if (!ordersRes.ok) {
+        if (ordersRes.status === 404) {
+          // Tienda Nube devuelve 404 cuando se pide una pagina que ya no existe (ej. "Last page is 1")
+          hasMore = false;
+          break;
+        }
         const errBody = await ordersRes.text();
         console.error('Tienda Nube API error:', ordersRes.status, errBody);
         return res.status(502).json({
@@ -89,7 +94,7 @@ export default async function handler(req, res) {
       } else {
         allOrders = allOrders.concat(orders);
         page++;
-        if (orders.length < 50) hasMore = false;
+        if (orders.length < 200) hasMore = false;
       }
     }
 
