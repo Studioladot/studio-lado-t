@@ -132,6 +132,7 @@ export default async function handler(req, res) {
         total: Math.round(orderBruto),
         shipping_cost: Math.round(shippingCost),
         line_items: orderLineItems,
+        payment_method: order.payment_details?.method || order.gateway || 'desconocido',
       });
     });
     const neto = bruto - envio;
@@ -186,7 +187,6 @@ let carritosAbandonados = 0, topProductos = [], productosMuertos = [];
       productosMuertos,
       orders: ordersOut.sort((a,b)=>new Date(b.created_at)-new Date(a.created_at)),
       line_items: lineItems,
-      payment_method: order.payment_details?.method || order.gateway || 'desconocido',
       serie_diaria: serieDiaria,
       periodo: { desde: sinceISO, hasta: untilISO },
     });
