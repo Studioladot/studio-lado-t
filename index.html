@@ -2823,6 +2823,112 @@ create policy "own" on contacts for all using (auth.uid()=user_id);</div>
 </div>
 
 <script>
+  let pnlGatewayFees = {};
+
+function togglePnlGatewayConfig(){
+  const el=document.getElementById('pnl-gateway-config');
+  el.style.display=(el.style.display==='none'||!el.style.display)?'flex':'none';
+}
+async function loadPaymentGatewayFees(){
+  const { data } = await db.from('payment_gateway_fees').select('*').eq('user_id', me.id);
+  pnlGatewayFees = {};
+  (data||[]).forEach(r=>{ pnlGatewayFees[r.gateway] = +r.fee_pct||0; });
+  renderPgwList();
+}
+async function savePaymentGatewayFee(){
+  const name = document.getElementById('pgw-name').value.trim();
+  const pct = +document.getElementById('pgw-pct').value||0;
+  if(!name) return;
+  await db.from('payment_gateway_fees').upsert({ user_id: me.id, gateway: name, fee_pct: pct });
+  document.getElementById('pgw-name').value=''; document.getElementById('pgw-pct').value='';
+  await loadPaymentGatewayFees();
+  loadPnLEngine();
+}
+function renderPgwList(){
+  const el=document.getElementById('pgw-list'); if(!el) return;
+  el.innerHTML = Object.entries(pnlGatewayFees).map(([g,p])=>`
+    <div style="display:flex;justify-content:space-between;font-size:12px;color:#cccccc;padding:4px 0;border-bottom:1px solid #1a1a1a">
+      <span>${g}</span><span style="font-weight:700;color:#ffffff">${p}%</span>
+    </div>`).join('');
+}
+
+async function loadPnLEngine(){
+  if(!tnConnection) return;
+  await loadPaymentGatewayFees();
+  const { since, until } = tnResolveDates();
+  const { data: sessionData } = await db.auth.getSession();
+  const jwt = sessionData?.session?.access_token;
+  const res = await fetch(`/api/tiendanube-orders?from=${since}&to=${until}`, { headers:{ Authorization:'Bearer '+jwt } });
+  const json = await res.json();
+  if(json.error) return;
+
+  const { data: costs } = await db.from('tn_product_costs').select('*').eq('user_id', me.id);
+  const costMap = {}; (costs||[]).forEach(r=>{ costMap[r.variant_id] = +r.cost||0; });
+
+  const gastosFijosMes = gastos.reduce((s,g)=>s+(+g.monto||0),0);
+  const gastoFijoDiario = gastosFijosMes/30;
+  const gastoMetaTotal = tnFunnelData.gastoMeta||0;
+  const ordenesTotales = (json.orders||[]).length || 1;
+  const gastoMetaPorOrden = gastoMetaTotal/ordenesTotales;
+
+  const byDay = {};
+  (json.orders||[]).forEach(o=>{
+    const day = (o.created_at||'').slice(0,10);
+    if(!byDay[day]) byDay[day]={bruto:0,costoProducto:0,costoPasarela:0,envio:0,meta:0,ordenes:0};
+    const d = byDay[day];
+    const costoProducto = (o.line_items||[]).reduce((s,li)=>s+((costMap[li.variant_id]||0)*li.qty),0);
+    const feePct = pnlGatewayFees[o.payment_method]||0;
+    const costoPasarela = o.total*(feePct/100);
+    d.bruto += o.total;
+    d.costoProducto += costoProducto;
+    d.costoPasarela += costoPasarela;
+    d.envio += o.shipping_cost||0;
+    d.meta += gastoMetaPorOrden;
+    d.ordenes += 1;
+  });
+
+  const days = Object.keys(byDay).sort().reverse();
+  let totBruto=0,totGross=0,totCostosOp=0,totNeto=0;
+  days.forEach(day=>{
+    const d=byDay[day];
+    const gross = d.bruto - d.costoProducto - d.costoPasarela - d.envio;
+    const neto = gross - d.meta - gastoFijoDiario;
+    totBruto+=d.bruto; totGross+=gross; totCostosOp+=(d.meta+gastoFijoDiario); totNeto+=neto;
+    d.gross=gross; d.neto=neto;
+  });
+  const poas = gastoMetaTotal>0 ? (totGross/gastoMetaTotal) : 0;
+
+  setT('pnl-bruto','$'+fmtN(Math.round(totBruto)));
+  setT('pnl-gross','$'+fmtN(Math.round(totGross)));
+  setT('pnl-costos','$'+fmtN(Math.round(totCostosOp)));
+  setT('pnl-neto','$'+fmtN(Math.round(totNeto)));
+  document.getElementById('pnl-neto').style.color = totNeto>=0 ? 'var(--green)' : 'var(--red)';
+  setT('pnl-poas', poas.toFixed(2)+'x');
+
+  const todayKey = new Date().toLocaleDateString('en-CA');
+  const todayD = byDay[todayKey] || {bruto:0,meta:0};
+  const breakEvenTarget = gastoFijoDiario + (todayD.meta||gastoMetaPorOrden);
+  const pct = breakEvenTarget>0 ? Math.min(100,(todayD.bruto/breakEvenTarget)*100) : 0;
+  document.getElementById('pnl-breakeven-bar').style.width = pct+'%';
+  setT('pnl-breakeven-label', `$${fmtN(Math.round(todayD.bruto||0))} / $${fmtN(Math.round(breakEvenTarget))}`);
+
+  const list = document.getElementById('pnl-daily-list');
+  list.innerHTML = days.map(day=>{
+    const d=byDay[day];
+    return `<div style="border:1px solid #222222;border-radius:8px;background:#111111">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;cursor:pointer" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none'">
+        <span style="font-size:13px;color:#ffffff;font-weight:600">${day}</span>
+        <span style="font-size:13px;font-weight:700;color:${d.neto>=0?'var(--green)':'var(--red)'}">$${fmtN(Math.round(d.neto))}</span>
+      </div>
+      <div style="display:none;padding:0 14px 12px;font-size:12px;color:#888888;display:flex;flex-direction:column;gap:4px">
+        <div style="display:flex;justify-content:space-between"><span>Producto</span><span style="color:#ffffff">$${fmtN(Math.round(d.costoProducto))}</span></div>
+        <div style="display:flex;justify-content:space-between"><span>Pasarela</span><span style="color:#ffffff">$${fmtN(Math.round(d.costoPasarela))}</span></div>
+        <div style="display:flex;justify-content:space-between"><span>Envio</span><span style="color:#ffffff">$${fmtN(Math.round(d.envio))}</span></div>
+        <div style="display:flex;justify-content:space-between"><span>Meta Ads</span><span style="color:#ffffff">$${fmtN(Math.round(d.meta))}</span></div>
+      </div>
+    </div>`;
+  }).join('');
+}
 // ── CONFIG ───────────────────────────────────────────────────────────────────
 let SBURL = 'https://vluoynizpvckjqomojxx.supabase.co';
 let SBKEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZsdW95bml6cHZja2pxb21vanh4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwMzE4MTQsImV4cCI6MjA5NjYwNzgxNH0.ItNRCYNzKYvs_S_ToOSOwKesRGZvniq0-kFNKcqZFPM';
