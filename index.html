@@ -7685,6 +7685,8 @@ async function loadFinVentasTabEsc() {
   const j = await r.json();
   if(j.error) { console.error('[Escalafy] error TN', j.error); finVentasCache=[]; renderFinVentasTabla(); return; }
   finVentasCache = j.orders || [];
+  console.log('[DEBUG] ordenes recibidas (paid):', j.ordenes);
+  if(j._debugOrders) console.table(j._debugOrders);
 
   finVentasMetaCpaProrrateado = 0;
   if(META_TOKEN && META_ACCOUNT && finVentasCache.length) {
