@@ -428,7 +428,8 @@ body.focus-mode #main{margin-left:0}
         <span id="dash-live-badge" style="display:none;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;background:var(--green-l);color:var(--green);text-transform:uppercase;letter-spacing:.06em">&#9679; En vivo</span>
       </div>
     </div>
-    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+   <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+      <button id="gx-currency-switch" onclick="gxToggleCurrency()" class="btn btn-outline btn-sm">MONEDA: ARS</button>
       <span id="dash-last-update" style="font-size:11px;color:var(--text3)"></span>
       <div id="dash-date-wrap" style="display:none;align-items:center;gap:6px">
         <select id="dash-range-select" onchange="dashChangePeriod(this.value)"
@@ -3010,6 +3011,7 @@ if(p==='finanzas'){loadFinanzas();loadCotizacionUSD();loadEscAll();}
 async function loadAll(){
   if(!me)return;
   const uid=me.id;
+  loadCotizacionUSD();
   try{
     const[a,b,e,f]=await Promise.all([
       db.from('metrics').select('*').eq('user_id',uid).order('created_at',{ascending:false}).limit(100),
@@ -5055,8 +5057,7 @@ rcEl.style.background = 'var(--red-l)'; rcEl.style.borderColor = 'var(--red)';
 }
 
 function setT(id, txt){ const e=document.getElementById(id); if(e) e.textContent=txt; }
-function fmtN(n){ return Math.round(n).toLocaleString('es-AR'); }
-
+function fmtN(n){ const v = gxCurrency==='USD' ? n/gxRate() : n; return Math.round(v).toLocaleString('es-AR'); }
 // ── GASTOS CRUD ───────────────────────────────────────────────────────────────
 async function saveGasto() {
   const nombre = document.getElementById('g-nombre').value.trim();
@@ -5855,11 +5856,22 @@ function calcAnCOGS(lineItems) {
   return total;
 }
 
+// ── MONEDA GLOBAL (ARS / USD) ─────────────────────────────────────────────────
+let gxCurrency = localStorage.getItem('gx_currency') || 'ARS';
+function gxRate() { return cotizacionUSD>0 ? cotizacionUSD : 1; }
+function gxToggleCurrency() {
+  gxCurrency = gxCurrency==='ARS' ? 'USD' : 'ARS';
+  localStorage.setItem('gx_currency', gxCurrency);
+  const btn = document.getElementById('gx-currency-switch');
+  if(btn) btn.textContent = gxCurrency==='ARS' ? 'MONEDA: ARS' : 'MONEDA: USD';
+  const activePage = document.querySelector('.nav-item.active')?.dataset.page;
+  if(activePage) showPage(activePage); // re-renderiza con los mismos datos ya cargados (cache), sin pedir nada nuevo
+}
 function fmtMoney(n) {
   if(n===null||n===undefined||isNaN(n)) return '—';
+  if(gxCurrency==='USD') return 'US$'+Math.round(n/gxRate()).toLocaleString('es-AR');
   return '$'+Math.round(n).toLocaleString('es-AR');
 }
-
 // ── COSTOS ADICIONALES MANUAL ───────────────────────────────────────────────
 async function loadAnCostosAdicionales() {
   const { data } = await db.from('an_costos_adicionales').select('*').eq('user_id', me.id);
