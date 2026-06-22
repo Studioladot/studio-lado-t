@@ -63,10 +63,24 @@ export default async function handler(req, res) {
     }
 
     // 4. Traer las ordenes del rango elegido
+    // Lanzar checkouts/productos en paralelo con la paginacion de ordenes
+    // (antes se esperaban en secuencia DESPUES de terminar las ordenes).
+    const wantAdvanced = req.query.advanced === '1';
+    const checkoutsPromise = wantAdvanced
+      ? fetch(`https://api.tiendanube.com/v1/${conn.store_id}/checkouts?created_at_min=${sinceISO}&created_at_max=${untilISO}&per_page=50`,
+          { headers: { 'Authentication': `bearer ${conn.access_token}`, 'User-Agent': 'GOTIX (contacto@gotix.app)' } })
+          .then(r => r.ok ? r.json() : []).catch(() => [])
+      : Promise.resolve([]);
+    const productsPromise = wantAdvanced
+      ? fetch(`https://api.tiendanube.com/v1/${conn.store_id}/products?published=true&per_page=50`,
+          { headers: { 'Authentication': `bearer ${conn.access_token}`, 'User-Agent': 'GOTIX (contacto@gotix.app)' } })
+          .then(r => r.ok ? r.json() : []).catch(() => [])
+      : Promise.resolve([]);
+
     let allOrders = [];
     let page = 1;
     let hasMore = true;
-    while (hasMore && page <= 20) {
+    while (hasMore && page <= 200) {
       const ordersRes = await fetch(
         `https://api.tiendanube.com/v1/${conn.store_id}/orders?created_at_min=${sinceISO}&created_at_max=${untilISO}&per_page=200&page=${page}`,
         {
