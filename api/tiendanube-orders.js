@@ -100,27 +100,11 @@ export default async function handler(req, res) {
 
     // 5. Calcular bruto, envio y neto. Tambien armamos detalle por orden (para la tabla de "Ultimas ventas")
     //    y un array plano de line items (para COGS agregado del periodo, ya usado en Analisis).
-// ── DEBUG TEMPORAL ──────────────────────────────────────────────────────
-    console.log('[DEBUG] keys de la primera orden:', allOrders[0] ? Object.keys(allOrders[0]) : 'sin ordenes');
-    allOrders.forEach(o => {
-      console.log(`[ORDEN] ${o.id} | payment_status:${o.payment_status} | status:${o.status} | created_at:${o.created_at} | paid_at:${o.paid_at}`);
-      if (o.payment_status === 'paid' && !o.paid_at) {
-        console.log(`  ALERTA: ORDEN PAGADA SIN PAID_AT (id ${o.id})`);
-      }
-    });
-    // ── FIN DEBUG ────────────────────────────────────────────────────────────
-
-    // 1. Filtrar primero las ordenes pagadas, EXCLUYENDO las sin paid_at,
-    // y verificando que la fecha de pago caiga dentro del rango real pedido.
-    const sinceTime = new Date(sinceISO).getTime();
-    const untilTime = new Date(untilISO).getTime();
-    const paidOrders = allOrders.filter(order => {
-      if (order.payment_status !== 'paid' || order.status === 'cancelled') return false;
-      if (!order.paid_at) return false; // sin fecha de pago -> se excluye
-      const paidTime = new Date(order.paid_at).getTime();
-      if (isNaN(paidTime)) return false;
-      return paidTime >= sinceTime && paidTime <= untilTime;
-    });
+// 1. Venta valida = status 'paid' O payment_status 'paid' (sin depender de paid_at,
+    // que Tienda Nube no devuelve de forma consistente). Se excluyen las canceladas.
+    const paidOrders = allOrders.filter(order =>
+      (order.status === 'paid' || order.payment_status === 'paid') && order.status !== 'cancelled'
+    );
     // ── DEBUG TEMPORAL ──────────────────────────────────────────────────────
     const debugOrders = allOrders.map(o => ({
       id: o.id,
