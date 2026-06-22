@@ -46,8 +46,10 @@ export default async function handler(req, res) {
     const { from, to } = req.query;
     let sinceISO, untilISO;
     if (from && to) {
-      const fromDate = new Date(`${from}T00:00:00`);
-      const toDate = new Date(`${to}T23:59:59`);
+     // Ancla explicitamente a horario Argentina (UTC-3), independiente
+      // de en que timezone corra el servidor (Vercel corre en UTC).
+      const fromDate = new Date(`${from}T00:00:00-03:00`);
+      const toDate = new Date(`${to}T23:59:59-03:00`);
       if (isNaN(fromDate.getTime()) || isNaN(toDate.getTime())) {
         return res.status(400).json({ error: 'Fechas invalidas. Formato esperado: YYYY-MM-DD' });
       }
