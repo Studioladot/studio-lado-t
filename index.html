@@ -1162,7 +1162,7 @@ body.focus-mode #main{margin-left:0}
         </div>
       </div>
       <div style="display:flex;gap:8px">
-       <button class="btn btn-accent" onclick="loadTNAll()">&#8635; Sincronizar ventas ahora</button>
+       <button class="btn btn-accent" onclick="invalidateTNCache();loadTNAll()">&#8635; Sincronizar ventas ahora</button>
         <div style="font-size:11px;color:var(--text3);margin-top:6px" id="tn-last-sync">—</div>
         <button class="btn btn-red btn-sm" onclick="disconnectTiendaNube()">Desconectar</button>
       </div>
@@ -2780,11 +2780,8 @@ async function loadPnLEngine(){
   if(!tnConnection) return;
   await loadPaymentGatewayFees();
   const { since, until } = tnResolveDates();
-  const { data: sessionData } = await db.auth.getSession();
-  const jwt = sessionData?.session?.access_token;
-  const res = await fetch(`/api/tiendanube-orders?from=${since}&to=${until}`, { headers:{ Authorization:'Bearer '+jwt } });
-  const json = await res.json();
-  if(json.error) return;
+  const json = await fetchTNOrdersShared(since, until);
+  if(!json || json.ordenes===undefined) return;
 
   const { data: costs } = await db.from('tn_product_costs').select('*').eq('user_id', me.id);
   const costMap = {}; (costs||[]).forEach(r=>{ costMap[r.variant_id] = +r.cost||0; });
@@ -3557,11 +3554,8 @@ async function loadTNAdvancedPanel() {
   if (!tnConnection) return;
   try {
     const { since, until } = tnResolveDates();
-    const { data: sessionData } = await db.auth.getSession();
-    const jwt = sessionData?.session?.access_token;
-    const res = await fetch(`/api/tiendanube-orders?from=${since}&to=${until}&advanced=1`, { headers: { Authorization: 'Bearer ' + jwt } });
-    const json = await res.json();
-    if (json.error) throw new Error(json.error);
+    const json = await fetchTNOrdersShared(since, until);
+    if (!json || json.ordenes===undefined) return;
 
     const prevRange = anPrevRange(since, until);
     const prevJson = await fetchTNOrders(prevRange.since, prevRange.until);
@@ -5262,11 +5256,8 @@ async function loadTiendaNubeStatus() {
 
 // Carga ventas TN + ROAS real + funnel, todo en el rango elegido
 async function loadTNAll() {
-  await loadTiendaNubeSales();
-  await loadTNCampaignOptions();
-  await loadTNFunnel();
-  await loadTNAdvancedPanel();
-  await loadPnLEngine();
+  await Promise.all([loadTiendaNubeSales(), loadTNCampaignOptions(), loadTNFunnel()]);
+  await Promise.all([loadTNAdvancedPanel(), loadPnLEngine()]);
   renderTNOverview();
   renderTNInsights();
   renderConsolidatedSales();
@@ -5344,13 +5335,8 @@ async function loadTiendaNubeSales() {
   try {
     const { since, until, val } = tnResolveDates();
     if(val==='custom' && (!since||!until)) return;
-    const { data: sessionData } = await db.auth.getSession();
-    const jwt = sessionData?.session?.access_token;
-    const res = await fetch(`/api/tiendanube-orders?from=${since}&to=${until}`, {
-      headers: { 'Authorization': 'Bearer ' + jwt }
-    });
-    const json = await res.json();
-    if(json.error) throw new Error(json.error);
+    const json = await fetchTNOrdersShared(since, until);
+    if(!json || json.ordenes===undefined) return;
     tnSalesSummary = { bruto: json.bruto||0, envio: json.envio||0, neto: json.neto||0, ordenes: json.ordenes||0 };
 
     // Periodo anterior, para mostrar variacion % (mismo patron que Analisis)
@@ -5604,15 +5590,34 @@ function anPrevRange(since, until) {
   return { since: fmt(prevSince), until: fmt(prevUntil) };
 }
 
+// ── CACHE COMPARTIDA DE PEDIDOS DE TIENDA NUBE ────────────────────────────────
+// Evita que cada bloque (Resumen, P&L, Inteligencia de tienda, Tabla consolidada,
+// Finanzas) le pida lo mismo a Tienda Nube por separado. Una sola llamada con
+// advanced=1 (superset de datos) por rango de fechas, reutilizada por todos.
+let _tnCache = {};
+const TN_CACHE_TTL_MS = 90 * 1000;
+async function fetchTNOrdersShared(since, until, force) {
+  const empty = { bruto:0, envio:0, neto:0, ordenes:0, orders:[], line_items:[], serie_diaria:[], carritosAbandonados:0, topProductos:[], productosMuertos:[] };
+  if(!tnConnection) return empty;
+  const key = `${since}|${until}`;
+  const cached = _tnCache[key];
+  if(!force && cached && (Date.now()-cached.ts) < TN_CACHE_TTL_MS) return cached.promise;
+  const promise = (async () => {
+    try {
+      const session = (await db.auth.getSession()).data.session;
+      const r = await fetch(`/api/tiendanube-orders?from=${since}&to=${until}&advanced=1`, { headers:{ Authorization: `Bearer ${session.access_token}` } });
+      const j = await r.json();
+      if(j.error) throw new Error(j.error);
+      return j;
+    } catch(e) { console.error('[TN] error fetchTNOrdersShared', e); return empty; }
+  })();
+  _tnCache[key] = { ts: Date.now(), promise };
+  return promise;
+}
+function invalidateTNCache() { _tnCache = {}; }
+
 async function fetchTNOrders(since, until) {
-  if(!tnConnection) return { bruto:0, envio:0, neto:0, ordenes:0, line_items:[], serie_diaria:[] };
-  try {
-    const session = (await db.auth.getSession()).data.session;
-    const r = await fetch(`/api/tiendanube-orders?from=${since}&to=${until}`, { headers: { Authorization: `Bearer ${session.access_token}` } });
-    const j = await r.json();
-    if(j.error) throw j.error;
-    return j;
-  } catch(e) { console.error('[Analisis] error TN orders', e); return { bruto:0, envio:0, neto:0, ordenes:0, line_items:[], serie_diaria:[] }; }
+  return fetchTNOrdersShared(since, until);
 }
 
 async function fetchMetaTotals(since, until) {
@@ -7776,13 +7781,9 @@ async function loadFinVentasTabEsc() {
   const { since, until } = escResolveDates();
   if(!since || !until) return;
 
-  const session = (await db.auth.getSession()).data.session;
-  const r = await fetch(`/api/tiendanube-orders?from=${since}&to=${until}`, { headers:{Authorization:`Bearer ${session.access_token}`} });
-  const j = await r.json();
-  if(j.error) { console.error('[GOTIX] error TN', j.error); finVentasCache=[]; renderFinVentasTabla(); return; }
+  const j = await fetchTNOrdersShared(since, until);
+  if(!j || j.ordenes===undefined) { finVentasCache=[]; renderFinVentasTabla(); return; }
   finVentasCache = j.orders || [];
-  console.log('[DEBUG] ordenes recibidas (paid):', j.ordenes);
-  if(j._debugOrders) console.table(j._debugOrders);
 
   finVentasMetaCpaProrrateado = 0;
   if(META_TOKEN && META_ACCOUNT && finVentasCache.length) {
