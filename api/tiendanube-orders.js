@@ -100,15 +100,15 @@ export default async function handler(req, res) {
 
     // 5. Calcular bruto, envio y neto. Tambien armamos detalle por orden (para la tabla de "Ultimas ventas")
     //    y un array plano de line items (para COGS agregado del periodo, ya usado en Analisis).
+   // 1. Filtrar primero solo las ordenes pagadas (payment_status, no status)
+    const paidOrders = allOrders.filter(order => order.payment_status === 'paid' && order.status !== 'cancelled');
+
     let bruto = 0;
     let envio = 0;
     const lineItems = [];
     const ordersOut = [];
     const byDay = {}; // { 'YYYY-MM-DD': { bruto, envio, ordenes } }
-    allOrders.forEach((order) => {
-      const paymentStatus = order.payment_status;
-      const orderStatus = order.status;
-      if (paymentStatus !== 'paid' || orderStatus === 'cancelled') return;
+    paidOrders.forEach((order) => {
       const subtotal = parseFloat(order.subtotal || 0);
       const discount = parseFloat(order.discount || 0);
       const shippingCost = parseFloat(order.shipping_cost_customer || 0);
