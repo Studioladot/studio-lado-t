@@ -107,9 +107,17 @@ export default async function handler(req, res) {
 
     // 5. Calcular bruto, envio y neto. Tambien armamos detalle por orden (para la tabla de "Ultimas ventas")
     //    y un array plano de line items (para COGS agregado del periodo, ya usado en Analisis).
-// 1. Filtrar primero solo las ordenes pagadas (payment_status, no status)
-    const paidOrders = allOrders.filter(order => order.payment_status === 'paid' && order.status !== 'cancelled');
-
+// 1. Filtrar primero las ordenes pagadas, EXCLUYENDO las sin paid_at,
+    // y verificando que la fecha de pago caiga dentro del rango real pedido.
+    const sinceTime = new Date(sinceISO).getTime();
+    const untilTime = new Date(untilISO).getTime();
+    const paidOrders = allOrders.filter(order => {
+      if (order.payment_status !== 'paid' || order.status === 'cancelled') return false;
+      if (!order.paid_at) return false; // sin fecha de pago -> se excluye
+      const paidTime = new Date(order.paid_at).getTime();
+      if (isNaN(paidTime)) return false;
+      return paidTime >= sinceTime && paidTime <= untilTime;
+    });
     // ── DEBUG TEMPORAL ──────────────────────────────────────────────────────
     const debugOrders = allOrders.map(o => ({
       id: o.id,
