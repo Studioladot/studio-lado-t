@@ -43,14 +43,11 @@ export default async function handler(req, res) {
     }
 
     // 3. Resolver el rango de fechas: personalizado (from/to) o ultimos 30 dias por defecto
-    // sinceISO/untilISO son el rango REAL, filtrado sobre paid_at (fecha de pago).
     const { from, to } = req.query;
     let sinceISO, untilISO;
     if (from && to) {
-     // Ancla explicitamente a horario Argentina (UTC-3), independiente
-      // de en que timezone corra el servidor (Vercel corre en UTC).
-      const fromDate = new Date(`${from}T00:00:00-03:00`);
-      const toDate = new Date(`${to}T23:59:59-03:00`);
+      const fromDate = new Date(`${from}T00:00:00`);
+      const toDate = new Date(`${to}T23:59:59`);
       if (isNaN(fromDate.getTime()) || isNaN(toDate.getTime())) {
         return res.status(400).json({ error: 'Fechas invalidas. Formato esperado: YYYY-MM-DD' });
       }
@@ -62,7 +59,8 @@ export default async function handler(req, res) {
       sinceISO = since.toISOString();
       untilISO = new Date().toISOString();
     }
-   // 4. Traer las ordenes del rango elegido
+
+    // 4. Traer las ordenes del rango elegido
     let allOrders = [];
     let page = 1;
     let hasMore = true;
@@ -90,7 +88,7 @@ export default async function handler(req, res) {
           store_id: conn.store_id,
         });
       }
-    const orders = await ordersRes.json();
+      const orders = await ordersRes.json();
       if (!Array.isArray(orders) || orders.length === 0) {
         hasMore = false;
       } else {
@@ -109,49 +107,21 @@ export default async function handler(req, res) {
       return true;
     });
 
-    // 5. Venta valida = payment_status 'paid' (el unico campo real de pago en
-    // Tienda Nube; "status" nunca vale 'paid', solo open/closed/cancelled).
-    // Se excluye cancelled por las dudas de una orden pagada y luego anulada.
+    // 5. Calcular bruto, envio y neto. Tambien armamos detalle por orden (para la tabla de "Ultimas ventas")
+    //    y un array plano de line items (para COGS agregado del periodo, ya usado en Analisis).
+    // Venta valida = status 'paid' O payment_status 'paid' (status en Tienda Nube nunca vale
+    // 'paid' en la practica -open/closed/cancelled-, pero se deja el OR por si la API lo cambia).
+    // Se excluye cancelled para no contar una venta pagada y luego anulada/reembolsada.
     const paidOrders = allOrders.filter(order =>
-      order.payment_status === 'paid' && order.status !== 'cancelled'
+      (order.status === 'paid' || order.payment_status === 'paid') && order.status !== 'cancelled'
     );
-
-    // ── DEBUG TEMPORAL: listado de IDs contados como 'paid' ───────────────────
-    const debugPaidList = paidOrders.map(o => ({
-      id: o.id,
-      number: o.number,
-      status: o.status,
-      payment_status: o.payment_status,
-      gateway: o.gateway,
-      channel: o.channel,
-      created_at: o.created_at,
-      total: o.total,
-    }));
-    console.log('[DEBUG] paidOrders count:', paidOrders.length);
-    console.log('[DEBUG] paidOrders list:', JSON.stringify(debugPaidList, null, 2));
-    // ── FIN DEBUG ───────────────────────────────────────────────────────────
-    // ── DEBUG TEMPORAL ──────────────────────────────────────────────────────
-    const debugOrders = allOrders.map(o => ({
-      id: o.id,
-      number: o.number,
-      payment_status: o.payment_status,
-      status: o.status,
-      total: o.total,
-      subtotal: o.subtotal,
-      shipping_cost_customer: o.shipping_cost_customer,
-      created_at: o.created_at,
-    }));
-    console.log('[DEBUG] total ordenes traidas de TN:', allOrders.length);
-    console.log('[DEBUG] total ordenes paidOrders:', paidOrders.length);
-    console.log('[DEBUG] detalle:', JSON.stringify(debugOrders, null, 2));
-    // ── FIN DEBUG ────────────────────────────────────────────────────────────
 
     let bruto = 0;
     let envio = 0;
     const lineItems = [];
     const ordersOut = [];
     const byDay = {}; // { 'YYYY-MM-DD': { bruto, envio, ordenes } }
-   paidOrders.forEach((order) => {
+    paidOrders.forEach((order) => {
       const subtotal = parseFloat(order.subtotal || 0);
       const discount = parseFloat(order.discount || 0);
       const shippingCost = parseFloat(order.shipping_cost_customer || 0);
@@ -173,10 +143,10 @@ export default async function handler(req, res) {
         price: parseFloat(it.price || 0),
       }));
       orderLineItems.forEach(li => lineItems.push(li));
-     ordersOut.push({
+      ordersOut.push({
         id: order.id,
         number: order.number,
-       created_at: order.created_at,
+        created_at: order.created_at,
         total: Math.round(orderBruto),
         shipping_cost: Math.round(shippingCost),
         line_items: orderLineItems,
@@ -225,17 +195,15 @@ let carritosAbandonados = 0, topProductos = [], productosMuertos = [];
         }
       } catch (e) { console.warn('productos error:', e.message); }
     }
-   res.status(200).json({
+    res.status(200).json({
      bruto: Math.round(bruto),
       envio: Math.round(envio),
       neto: Math.round(neto),
-   ordenes: paidOrders.length,
-      _debugPaidList: debugPaidList,
-      _debugOrders: debugOrders,
+      ordenes: paidOrders.length,
       carritosAbandonados,
       topProductos,
       productosMuertos,
-     orders: ordersOut.sort((a,b)=>new Date(b.created_at)-new Date(a.created_at)),
+      orders: ordersOut.sort((a,b)=>new Date(b.created_at)-new Date(a.created_at)),
       line_items: lineItems,
       serie_diaria: serieDiaria,
       periodo: { desde: sinceISO, hasta: untilISO },
