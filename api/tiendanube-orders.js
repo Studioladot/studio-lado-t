@@ -133,7 +133,7 @@ export default async function handler(req, res) {
       const orderBruto = (subtotal - discount) + shippingCost;
       bruto += orderBruto;
       envio += shippingCost;
-      const day = (order.paid_at || '').substring(0, 10);
+      const day = (order.created_at || '').substring(0, 10);
       if (day) {
         if (!byDay[day]) byDay[day] = { bruto: 0, envio: 0, ordenes: 0 };
         byDay[day].bruto += orderBruto;
@@ -151,8 +151,7 @@ export default async function handler(req, res) {
      ordersOut.push({
         id: order.id,
         number: order.number,
-        created_at: order.created_at,
-        paid_at: order.paid_at,
+       created_at: order.created_at,
         total: Math.round(orderBruto),
         shipping_cost: Math.round(shippingCost),
         line_items: orderLineItems,
