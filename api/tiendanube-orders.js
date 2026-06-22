@@ -177,17 +177,9 @@ export default async function handler(req, res) {
       ordenes: byDay[day].ordenes,
     }));
 let carritosAbandonados = 0, topProductos = [], productosMuertos = [];
-    if (req.query.advanced === '1') {
-      try {
-        const checkoutsRes = await fetch(
-          `https://api.tiendanube.com/v1/${conn.store_id}/checkouts?created_at_min=${sinceISO}&created_at_max=${untilISO}&per_page=50`,
-          { headers: { 'Authentication': `bearer ${conn.access_token}`, 'User-Agent': 'GOTIX (contacto@gotix.app)' } }
-        );
-        if (checkoutsRes.ok) {
-          const checkouts = await checkoutsRes.json();
-          carritosAbandonados = Array.isArray(checkouts) ? checkouts.length : 0;
-        }
-      } catch (e) { console.warn('checkouts error:', e.message); }
+    if (wantAdvanced) {
+      const [checkouts, productos] = await Promise.all([checkoutsPromise, productsPromise]);
+      carritosAbandonados = Array.isArray(checkouts) ? checkouts.length : 0;
 
       const porProducto = {};
       lineItems.forEach(li => {
@@ -198,18 +190,9 @@ let carritosAbandonados = 0, topProductos = [], productosMuertos = [];
       });
       topProductos = Object.values(porProducto).sort((a,b)=>b.facturacion-a.facturacion).slice(0,5);
 
-      try {
-        const prodRes = await fetch(
-          `https://api.tiendanube.com/v1/${conn.store_id}/products?published=true&per_page=50`,
-          { headers: { 'Authentication': `bearer ${conn.access_token}`, 'User-Agent': 'GOTIX (contacto@gotix.app)' } }
-        );
-        if (prodRes.ok) {
-          const productos = await prodRes.json();
-          const vendidosIds = new Set(Object.keys(porProducto).map(Number));
-          productosMuertos = productos.filter(p => !vendidosIds.has(p.id)).slice(0,10)
-            .map(p => ({ name: p.name?.es || p.name || 'Producto', diasSinVentas: '30+' }));
-        }
-      } catch (e) { console.warn('productos error:', e.message); }
+      const vendidosIds = new Set(Object.keys(porProducto).map(Number));
+      productosMuertos = (Array.isArray(productos) ? productos : []).filter(p => !vendidosIds.has(p.id)).slice(0,10)
+        .map(p => ({ name: p.name?.es || p.name || 'Producto', diasSinVentas: '30+' }));
     }
     res.status(200).json({
      bruto: Math.round(bruto),
