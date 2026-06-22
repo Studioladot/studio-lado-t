@@ -105,6 +105,21 @@ export default async function handler(req, res) {
     const paidOrders = allOrders.filter(order =>
       (order.status === 'paid' || order.payment_status === 'paid') && order.status !== 'cancelled'
     );
+
+    // ── DEBUG TEMPORAL: listado de IDs contados como 'paid' ───────────────────
+    const debugPaidList = paidOrders.map(o => ({
+      id: o.id,
+      number: o.number,
+      status: o.status,
+      payment_status: o.payment_status,
+      gateway: o.gateway,
+      channel: o.channel,
+      created_at: o.created_at,
+      total: o.total,
+    }));
+    console.log('[DEBUG] paidOrders count:', paidOrders.length);
+    console.log('[DEBUG] paidOrders list:', JSON.stringify(debugPaidList, null, 2));
+    // ── FIN DEBUG ───────────────────────────────────────────────────────────
     // ── DEBUG TEMPORAL ──────────────────────────────────────────────────────
     const debugOrders = allOrders.map(o => ({
       id: o.id,
@@ -204,7 +219,8 @@ let carritosAbandonados = 0, topProductos = [], productosMuertos = [];
      bruto: Math.round(bruto),
       envio: Math.round(envio),
       neto: Math.round(neto),
-    ordenes: paidOrders.length,
+   ordenes: paidOrders.length,
+      _debugPaidList: debugPaidList,
       _debugOrders: debugOrders,
       carritosAbandonados,
       topProductos,
