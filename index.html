@@ -19,6 +19,11 @@
   --sidebar-w:228px;--r:8px;--rl:14px;
   --gotix-blue:#22c55e;--gotix-blue-l:#0f1f15;--gotix-blue-d:#16a34a;
   --gotix-beige:#27272A;--gotix-beige-d:#3a3a40;
+  /* Fallback de variables --ad-* para que .an-card/.an-dark-* funcionen aunque
+     no esten anidadas dentro de un contenedor .an-dark (evita tarjetas "invisibles") */
+  --ad-bg:#0e0f12; --ad-surface:#15171b; --ad-surface2:#1c1f24; --ad-border:#262a30;
+  --ad-text:#f3f4f5; --ad-text2:#9a9fa8; --ad-text3:#5c6168;
+  --ad-up:#34d399; --ad-down:#f87171;
 }
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.55;min-height:100vh}
 button,input,textarea,select{font-family:inherit;font-size:14px}
