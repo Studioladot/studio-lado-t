@@ -69,7 +69,7 @@ a{color:inherit;text-decoration:none}
 .page-title{font-size:22px;font-weight:700;letter-spacing:-.03em}
 .page-sub{font-size:13px;color:var(--text2);margin-top:2px}
 .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:20px}
-stat-card{background:#18181B;border:1px solid #27272A;border-radius:var(--rl);padding:16px 18px}
+.stat-card{background:#18181B;border:1px solid #27272A;border-radius:var(--rl);padding:16px 18px}
 .stat-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text2);margin-bottom:5px}
 .stat-value{font-size:24px;font-weight:700;letter-spacing:-.03em}
 .stat-sub{font-size:12px;color:var(--text2);margin-top:2px}
@@ -282,7 +282,7 @@ body.focus-mode #main{margin-left:0}
 .an-card-delta{font-size:11px;font-weight:700;display:flex;align-items:center;gap:2px}
 .an-card-delta.up{color:var(--ad-up)}
 .an-card-delta.down{color:var(--ad-down)}
-..an-card-spark{position:absolute;right:12px;bottom:10px;left:auto;width:64px;height:22px;opacity:.75;pointer-events:none}
+.an-card-spark{position:absolute;right:12px;bottom:10px;left:auto;width:64px;height:22px;opacity:.75;pointer-events:none}
 .an-card-val-row{padding-right:70px}
 .an-card.accent{background:linear-gradient(135deg,var(--accent) 0%,var(--accent-d) 100%);border-color:var(--accent)}
 .an-card.accent .an-card-label,.an-card.accent .an-card-ico{color:rgba(255,255,255,.75)}
@@ -484,55 +484,55 @@ body.focus-mode #main{margin-left:0}
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
 
   <!-- Meta Ads -->
-  <div style="background:#18181B;border:1px solid #27272A;border-radius:var(--rl);padding:18px">
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);padding:18px">
     <div style="display:flex;align-items:center;justify-content:between;gap:8px;margin-bottom:14px">
-      <span style="font-size:11px;font-weight:700;color:#71717a;text-transform:uppercase;letter-spacing:.08em">Meta Ads</span>
+      <span style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.08em">Meta Ads</span>
     </div>
     <div style="display:flex;justify-content:space-between;align-items:flex-end">
       <div>
-        <div style="font-size:11px;color:#71717a;margin-bottom:4px">ROAS Promedio</div>
-        <div style="font-size:24px;font-weight:700;color:#fafafa">—</div>
+        <div style="font-size:11px;color:var(--text2);margin-bottom:4px">ROAS Promedio</div>
+        <div style="font-size:24px;font-weight:700;color:var(--text)" id="dbox-roas">—</div>
       </div>
       <div style="text-align:right">
-        <div style="font-size:11px;color:#71717a;margin-bottom:4px">Gasto del Mes</div>
-        <div style="font-size:16px;font-weight:600;color:#a1a1aa">$ —</div>
+        <div style="font-size:11px;color:var(--text2);margin-bottom:4px">Gasto del Mes</div>
+        <div style="font-size:16px;font-weight:600;color:var(--text2)" id="dbox-gasto">$ —</div>
       </div>
     </div>
   </div>
 
   <!-- Tienda Nube -->
-  <div style="background:#18181B;border:1px solid #27272A;border-radius:var(--rl);padding:18px">
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);padding:18px">
     <div style="margin-bottom:14px">
-      <span style="font-size:11px;font-weight:700;color:#71717a;text-transform:uppercase;letter-spacing:.08em">Tienda Nube</span>
+      <span style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.08em">Tienda Nube</span>
     </div>
     <div style="display:flex;justify-content:space-between;align-items:flex-end">
       <div>
-        <div style="font-size:11px;color:#71717a;margin-bottom:4px">Ventas Totales</div>
-        <div style="font-size:24px;font-weight:700;color:#fafafa">$ —</div>
+        <div style="font-size:11px;color:var(--text2);margin-bottom:4px">Ventas Totales</div>
+        <div style="font-size:24px;font-weight:700;color:var(--text)" id="dbox-ventas">$ —</div>
       </div>
       <div style="text-align:right">
-        <div style="font-size:11px;color:#71717a;margin-bottom:4px">Ticket Promedio</div>
-        <div style="font-size:16px;font-weight:600;color:#a1a1aa">$ —</div>
+        <div style="font-size:11px;color:var(--text2);margin-bottom:4px">Ticket Promedio</div>
+        <div style="font-size:16px;font-weight:600;color:var(--text2)" id="dbox-ticket">$ —</div>
       </div>
     </div>
   </div>
 
   <!-- Contenido -->
-  <div style="background:#18181B;border:1px solid #27272A;border-radius:var(--rl);padding:18px">
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);padding:18px">
     <div style="margin-bottom:14px">
-      <span style="font-size:11px;font-weight:700;color:#71717a;text-transform:uppercase;letter-spacing:.08em">Contenido</span>
+      <span style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.08em">Contenido</span>
     </div>
-    <div style="font-size:11px;color:#71717a;margin-bottom:4px">Piezas publicadas vs. planificadas (semana)</div>
-    <div style="font-size:24px;font-weight:700;color:#fafafa">— / —</div>
+    <div style="font-size:11px;color:var(--text2);margin-bottom:4px">Piezas publicadas vs. planificadas (semana)</div>
+    <div style="font-size:24px;font-weight:700;color:var(--text)" id="dbox-contenido">— / —</div>
   </div>
 
   <!-- Finanzas (destacado) -->
-  <div style="background:#18181B;border:1px solid #27272A;border-radius:var(--rl);padding:18px">
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);padding:18px">
     <div style="margin-bottom:14px">
-      <span style="font-size:11px;font-weight:700;color:#71717a;text-transform:uppercase;letter-spacing:.08em">Finanzas</span>
+      <span style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.08em">Finanzas</span>
     </div>
-    <div style="font-size:11px;color:#71717a;margin-bottom:4px">Profit estimado (neto real)</div>
-    <div style="font-size:30px;font-weight:800;color:#fafafa">$ —</div>
+    <div style="font-size:11px;color:var(--text2);margin-bottom:4px">Profit estimado (neto real)</div>
+    <div style="font-size:30px;font-weight:800;color:var(--text)" id="dbox-profit">$ —</div>
   </div>
 
 </div>
@@ -1167,22 +1167,10 @@ body.focus-mode #main{margin-left:0}
     <div class="card" style="margin-top:14px">
       <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text2);margin-bottom:10px" id="tn-resumen-label">Resumen — ultimos 30 dias</div>
       <div class="an-grid" style="grid-template-columns:repeat(4,1fr)">
-        <div class="an-card">
-          <div class="an-card-top"><span class="an-card-label">Bruto (con envio)</span></div>
-          <div class="an-card-val" id="tn-bruto">$0</div>
-        </div>
-        <div class="an-card">
-          <div class="an-card-top"><span class="an-card-label">Bruto (sin envio)</span></div>
-          <div class="an-card-val" id="tn-neto">$0</div>
-        </div>
-        <div class="an-card">
-          <div class="an-card-top"><span class="an-card-label">Envio cobrado</span></div>
-          <div class="an-card-val" id="tn-envio">$0</div>
-        </div>
-        <div class="an-card">
-          <div class="an-card-top"><span class="an-card-label">Ganancia real</span></div>
-          <div class="an-card-val" id="tn-ganancia-real">$0</div>
-        </div>
+        <div class="an-card" id="tn-bruto"></div>
+        <div class="an-card" id="tn-neto"></div>
+        <div class="an-card" id="tn-envio"></div>
+        <div class="an-card" id="tn-ganancia-real"></div>
       </div>
     </div>
     <!-- ROAS REAL -->
@@ -1191,21 +1179,9 @@ body.focus-mode #main{margin-left:0}
       <div id="tn-roas-empty" class="empty" style="display:none"><div class="empty-icon">&#128279;</div><div class="empty-msg">Conecta Meta Ads</div><div class="empty-sub">Para comparar el ROAS reportado contra las ventas reales</div></div>
       <div id="tn-roas-content" style="display:none">
        <div class="an-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:6px">
-          <div class="an-card">
-            <div class="an-card-top"><span class="an-card-label">Gasto Meta Ads</span></div>
-            <div class="an-card-val" id="tn-roas-gasto">$0</div>
-          </div>
-          <div class="an-card">
-            <div class="an-card-top"><span class="an-card-label">ROAS reportado (Meta)</span></div>
-            <div class="an-card-val" id="tn-roas-meta">0x</div>
-          </div>
-          <div class="an-card">
-            <div class="an-card-top"><span class="an-card-label">ROAS real (ventas TN / gasto)</span></div>
-            <div style="display:flex;align-items:center;gap:8px">
-              <div class="an-card-val" id="tn-roas-real">0x</div>
-              <span style="font-size:10px;font-weight:700;color:var(--green);background:var(--green-l);border:1px solid var(--green);border-radius:4px;padding:1px 6px">real</span>
-            </div>
-          </div>
+          <div class="an-card" id="tn-roas-gasto"></div>
+          <div class="an-card" id="tn-roas-meta"></div>
+          <div class="an-card" id="tn-roas-real"></div>
         </div>
         <div style="display:flex;align-items:center;gap:8px;margin-top:10px;padding-left:10px;border-left:2px solid var(--amber)">
           <span style="font-size:13px;color:var(--text);font-weight:500" id="tn-roas-diff">—</span>
@@ -1320,33 +1296,12 @@ body.focus-mode #main{margin-left:0}
       </div>
 
      <div class="an-grid" style="grid-template-columns:repeat(3,1fr)">
-        <div class="an-card" id="tn-card-ventas">
-          <div class="an-card-top"><span class="an-card-label">Ventas</span></div>
-          <div class="an-card-val" id="tn-ventas">0</div>
-        </div>
-        <div class="an-card" id="tn-card-facturacion">
-          <div class="an-card-top"><span class="an-card-label">Facturacion</span></div>
-          <div class="an-card-val" id="tn-facturacion">$0</div>
-        </div>
-        <div class="an-card" id="tn-card-ticket">
-          <div class="an-card-top"><span class="an-card-label">Ticket promedio</span></div>
-          <div class="an-card-val" id="tn-ticket-promedio">$0</div>
-        </div>
-        <div class="an-card" id="tn-card-creados">
-          <div class="an-card-top"><span class="an-card-label">Carritos creados</span></div>
-          <div class="an-card-val" id="tn-carritos-creados">0</div>
-        </div>
-        <div class="an-card" id="tn-card-abandonados">
-          <div class="an-card-top"><span class="an-card-label">Carritos abandonados</span></div>
-          <div class="an-card-val" id="tn-carritos-abandonados">0</div>
-        </div>
-        <div class="an-card" id="tn-card-conversion">
-          <div class="an-card-top"><span class="an-card-label">Conversion de checkout</span></div>
-          <div style="display:flex;align-items:center;gap:8px">
-            <div class="an-card-val" id="tn-conversion-checkout">0%</div>
-            <span style="font-size:10px;font-weight:700;color:var(--green);background:var(--green-l);border:1px solid var(--green);border-radius:4px;padding:1px 6px">real</span>
-          </div>
-        </div>
+        <div class="an-card" id="tn-card-ventas"></div>
+        <div class="an-card" id="tn-card-facturacion"></div>
+        <div class="an-card" id="tn-card-ticket"></div>
+        <div class="an-card" id="tn-card-creados"></div>
+        <div class="an-card" id="tn-card-abandonados"></div>
+        <div class="an-card" id="tn-card-conversion"></div>
       </div>
 
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:18px">
@@ -1377,7 +1332,7 @@ body.focus-mode #main{margin-left:0}
 <!-- FINANZAS -->
 <div id="page-finanzas" class="page">
   <div class="page-hdr">
-    <div><div class="page-title">Finanzas</div><div class="page-sub">Motor financiero Escalafy</div></div>
+    <div><div class="page-title">Finanzas</div><div class="page-sub">Motor financiero GOTIX</div></div>
     <div id="esc-date-controls" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
       <select id="esc-date-range" class="fg" style="margin:0;min-width:0" onchange="onEscDateRangeChange()">
         <option value="today">Hoy</option>
@@ -1444,7 +1399,7 @@ body.focus-mode #main{margin-left:0}
     </div>
   </div>
 
-  <!-- SUBMENU ESCALAFY -->
+  <!-- SUBMENU FINANZAS -->
   <div style="display:flex;gap:0;border-bottom:0.5px solid var(--border);margin-bottom:20px;flex-wrap:wrap">
     <button class="esc-tab active" onclick="escTab('dashboard',this)" id="esctab-dashboard" style="padding:9px 18px;border:none;background:transparent;font-size:13px;font-weight:600;color:var(--accent);border-bottom:2px solid var(--accent);cursor:pointer">Dashboard</button>
     <button class="esc-tab" onclick="escTab('productos',this)" id="esctab-productos" style="padding:9px 18px;border:none;background:transparent;font-size:13px;font-weight:500;color:var(--text2);border-bottom:2px solid transparent;cursor:pointer">Productos</button>
@@ -1458,7 +1413,7 @@ body.focus-mode #main{margin-left:0}
       <div class="card" style="max-width:560px;text-align:center;padding:36px 28px">
         <div style="font-size:36px;margin-bottom:14px">&#127968;</div>
         <div style="font-size:17px;font-weight:700;margin-bottom:8px">Conecta tu tienda</div>
-        <div style="font-size:13px;color:var(--text2);margin-bottom:22px;line-height:1.6">El motor financiero Escalafy necesita Tienda Nube conectada para traer tus ventas reales.</div>
+        <div style="font-size:13px;color:var(--text2);margin-bottom:22px;line-height:1.6">El motor financiero de GOTIX necesita Tienda Nube conectada para traer tus ventas reales.</div>
         <button class="btn btn-accent" onclick="showPage('tiendanube-connect')" style="padding:11px 24px">Ir a Conexiones</button>
       </div>
     </div>
@@ -3056,6 +3011,23 @@ function renderDash(){
   document.getElementById('ds-roas').textContent=avgRoas?avgRoas.toFixed(1)+'x':'—';
   document.getElementById('ds-compras').textContent=totP||'—';
   document.getElementById('ds-cpa').textContent=avgCPA?'$'+fmt(avgCPA):'—';
+  // Boxes superiores (Meta Ads / Tienda Nube / Contenido / Finanzas)
+  setT('dbox-roas', avgRoas?avgRoas.toFixed(1)+'x':'—');
+  setT('dbox-gasto', '$'+fmtN(tot));
+  if(tnConnection){
+    setT('dbox-ventas', '$'+fmtN(tnSalesSummary.neto||0));
+    setT('dbox-ticket', (tnSalesSummary.ordenes||0)>0 ? '$'+fmtN((tnSalesSummary.neto||0)/tnSalesSummary.ordenes) : '$ —');
+  }
+  const semanaAtras = new Date(); semanaAtras.setDate(semanaAtras.getDate()-7);
+  const postsSemana = posts.filter(p=>new Date(p.date) >= semanaAtras);
+  const publicados = postsSemana.filter(p=>p.status==='publicado'||p.status==='publicada').length;
+  setT('dbox-contenido', postsSemana.length ? `${publicados} / ${postsSemana.length}` : '— / —');
+  if(typeof finConfig!=='undefined' && gastos.length){
+    const gastosMes = gastos.reduce((s,g)=>s+(+g.monto||0),0);
+    const margen = (finConfig?.margen_bruto||48)/100;
+    const profitEst = ((tnSalesSummary.neto||0)*margen) - gastosMes;
+    setT('dbox-profit', '$'+fmtN(Math.round(profitEst)));
+  }
   renderObjs();
   // Ranking
   const sorted=[...metrics].filter(m=>+m.roas>0).sort((a,b)=>+b.roas-+a.roas).slice(0,5);
@@ -3485,12 +3457,18 @@ function toggleTNMetricCard(checkbox) {
 }
 
 function renderTNAdvancedPanel(d) {
-  setT('tn-ventas', d.ventas);
-  setT('tn-facturacion', '$'+fmtN(d.facturacion));
-  setT('tn-ticket-promedio', '$'+fmtN(d.ticketPromedio));
-  setT('tn-carritos-creados', d.carritosCreados);
-  setT('tn-carritos-abandonados', d.carritosAbandonados);
-  setT('tn-conversion-checkout', d.conversionCheckout.toFixed(1)+'%');
+  const gxDelta = (a,b) => b>0 ? ((a-b)/b*100) : (a>0?100:0);
+  const serie = d.serieDiaria || [];
+  const sOrdenes = serie.map(s=>s.ordenes);
+  const sFact = serie.map(s=>s.bruto);
+  const flatTn = sFact.length ? sFact.map(()=>1) : [1,1,1,1,1,1,1];
+  const p = d.prev || {};
+  anRenderCard('tn-card-ventas','Ventas',d.ventas,gxDelta(d.ventas,p.ventas||0),sOrdenes,'int');
+  anRenderCard('tn-card-facturacion','Facturacion',d.facturacion,gxDelta(d.facturacion,p.facturacion||0),sFact,'money');
+  anRenderCard('tn-card-ticket','Ticket promedio',d.ticketPromedio,gxDelta(d.ticketPromedio,p.ticketPromedio||0),flatTn,'money');
+  anRenderCard('tn-card-creados','Carritos creados',d.carritosCreados,gxDelta(d.carritosCreados,p.carritosCreados||0),flatTn,'int');
+  anRenderCard('tn-card-abandonados','Carritos abandonados',d.carritosAbandonados,gxDelta(d.carritosAbandonados,p.carritosAbandonados||0),flatTn,'int',false,true);
+  anRenderCard('tn-card-conversion','Conversion de checkout',d.conversionCheckout,gxDelta(d.conversionCheckout,p.conversionCheckout||0),flatTn,'pct');
   setT('tn-bar-creados-val', d.carritosCreados);
   setT('tn-bar-pagados-val', d.ventas);
   const pct = d.carritosCreados > 0 ? (d.ventas / d.carritosCreados * 100) : 0;
@@ -3553,6 +3531,12 @@ async function loadTNAdvancedPanel() {
     const res = await fetch(`/api/tiendanube-orders?from=${since}&to=${until}&advanced=1`, { headers: { Authorization: 'Bearer ' + jwt } });
     const json = await res.json();
     if (json.error) throw new Error(json.error);
+
+    const prevRange = anPrevRange(since, until);
+    const prevJson = await fetchTNOrders(prevRange.since, prevRange.until);
+    const prevOrdenes = prevJson.ordenes || 0;
+    const prevCarritos = (prevJson.carritosAbandonados || 0) + prevOrdenes;
+
     renderTNAdvancedPanel({
       ventas: json.ordenes || 0,
       facturacion: json.bruto || 0,
@@ -3561,7 +3545,16 @@ async function loadTNAdvancedPanel() {
       carritosAbandonados: json.carritosAbandonados || 0,
       conversionCheckout: ((json.carritosAbandonados || 0) + (json.ordenes || 0)) ? (json.ordenes / ((json.carritosAbandonados || 0) + (json.ordenes || 0)) * 100) : 0,
       topProductos: json.topProductos || [],
-      productosMuertos: json.productosMuertos || []
+      productosMuertos: json.productosMuertos || [],
+      serieDiaria: json.serie_diaria || [],
+      prev: {
+        ventas: prevOrdenes,
+        facturacion: prevJson.bruto || 0,
+        ticketPromedio: prevOrdenes ? (prevJson.bruto||0) / prevOrdenes : 0,
+        carritosCreados: prevCarritos,
+        carritosAbandonados: prevJson.carritosAbandonados || 0,
+        conversionCheckout: prevCarritos ? (prevOrdenes / prevCarritos * 100) : 0,
+      }
     });
   } catch (e) { toast('Error al cargar inteligencia de tienda: ' + e.message); }
 }
@@ -5113,7 +5106,7 @@ async function saveVentaDia() {
 
 function renderVentasDia() {
   const tbl0 = document.getElementById('ventas-dia-tbl');
-  if(!tbl0) return; // UI de "Ventas del dia" removida (reemplazada por el motor Escalafy)
+  if(!tbl0) return; // UI de "Ventas del dia" removida (reemplazada por el motor de Finanzas)
   const filter = document.getElementById('ventas-mes-filter')?.value || new Date().toISOString().substring(0,7);
   const list = ventasDia.filter(v => (v.fecha||'').startsWith(filter));
   const margen = (finConfig.margen_bruto||48)/100;
@@ -5266,9 +5259,20 @@ async function loadTiendaNubeSales() {
     const json = await res.json();
     if(json.error) throw new Error(json.error);
     tnSalesSummary = { bruto: json.bruto||0, envio: json.envio||0, neto: json.neto||0, ordenes: json.ordenes||0 };
-    setT('tn-bruto', '$'+fmtN(tnSalesSummary.bruto));
-    setT('tn-envio', '$'+fmtN(tnSalesSummary.envio));
-    setT('tn-neto',  '$'+fmtN(tnSalesSummary.neto));
+
+    // Periodo anterior, para mostrar variacion % (mismo patron que Analisis)
+    const prev = anPrevRange(since, until);
+    const prevData = await fetchTNOrders(prev.since, prev.until);
+    const gxDelta = (a,b) => b>0 ? ((a-b)/b*100) : (a>0?100:0);
+    const serie = json.serie_diaria || [];
+    const sBruto = serie.map(d=>d.bruto);
+    const sNeto = serie.map(d=>d.neto);
+    const sEnvio = serie.map(d=>Math.max(0,d.bruto-d.neto));
+
+    anRenderCard('tn-bruto','Bruto (con envio)',tnSalesSummary.bruto,gxDelta(tnSalesSummary.bruto,prevData.bruto||0),sBruto,'money');
+    anRenderCard('tn-neto','Bruto (sin envio)',tnSalesSummary.neto,gxDelta(tnSalesSummary.neto,prevData.neto||0),sNeto,'money');
+    anRenderCard('tn-envio','Envio cobrado',tnSalesSummary.envio,gxDelta(tnSalesSummary.envio,prevData.envio||0),sEnvio,'money',false,true);
+
     const rangeLabel = val==='custom' ? `${since} → ${until}` : (tnPeriodLabel[val]||val);
     setT('tn-resumen-label', `Resumen — ${rangeLabel}`);
     setT('tn-sub', `${tnSalesSummary.ordenes} pedidos pagados — ${rangeLabel}`);
@@ -5345,9 +5349,10 @@ async function loadTNFunnel() {
     const ventasTN = tnSalesSummary.neto || 0;
    const gastoMetaARS = convertirUSD(gastoMeta);
     const roasReal = gastoMetaARS>0 ? (ventasTN/gastoMetaARS) : 0;
-    setT('tn-roas-gasto', '$'+fmtN(gastoMeta));
-    setT('tn-roas-meta', roasMeta+'x');
-    setT('tn-roas-real', roasReal.toFixed(2)+'x');
+    const flatTn = [1,1,1,1,1,1,1];
+    anRenderCard('tn-roas-gasto','Gasto Meta Ads',gastoMeta,0,flatTn,'money');
+    anRenderCard('tn-roas-meta','ROAS reportado (Meta)',roasMeta,0,flatTn,'x');
+    anRenderCard('tn-roas-real','ROAS real (TN / gasto)',roasReal,0,flatTn,'x');
     const diffEl = document.getElementById('tn-roas-diff');
     if(diffEl) {
       if(gastoMeta<=0) diffEl.textContent = 'Sin gasto en el periodo seleccionado.';
@@ -5384,9 +5389,7 @@ function renderTNOverview() {
   const costoEnvioTotal = costoEnvioUnit * (tnSalesSummary.ordenes||0);
   const costosFinanzas = gastos.reduce((sum,g)=>sum+(+g.monto||0),0);
   const gananciaReal = (tnSalesSummary.neto||0) - costoEnvioTotal - (tnFunnelData.gastoMeta||0) - costosFinanzas;
-  setT('tn-ganancia-real', '$'+fmtN(Math.round(gananciaReal)));
-  const el = document.getElementById('tn-ganancia-real');
-  if(el) el.style.color = gananciaReal>=0 ? 'var(--green)' : 'var(--red)';
+  anRenderCard('tn-ganancia-real','Ganancia real',gananciaReal,0,[1,1,1,1,1,1,1],'money');
 }
 
 // Insights automaticos basados en reglas (no IA)
@@ -5497,7 +5500,7 @@ function onAnDateRangeChange() {
   }
 }
 
-// Devuelve el rango anterior equivalente en duracion (para comparar deltas, como Escalafy)
+// Devuelve el rango anterior equivalente en duracion (para comparar deltas)
 function anPrevRange(since, until) {
   const d1 = new Date(since+'T00:00:00');
   const d2 = new Date(until+'T00:00:00');
@@ -7581,7 +7584,7 @@ function renderBibAds() {
 
 
 // ══════════════════════════════════════════════════════════════════════════════
-// FINANZAS — MOTOR ESCALAFY
+// FINANZAS — MOTOR GOTIX
 // ══════════════════════════════════════════════════════════════════════════════
 let escVentasPage = 1;
 const ESC_PAGE_SIZE = 10;
@@ -7683,7 +7686,7 @@ async function loadFinVentasTabEsc() {
   const session = (await db.auth.getSession()).data.session;
   const r = await fetch(`/api/tiendanube-orders?from=${since}&to=${until}`, { headers:{Authorization:`Bearer ${session.access_token}`} });
   const j = await r.json();
-  if(j.error) { console.error('[Escalafy] error TN', j.error); finVentasCache=[]; renderFinVentasTabla(); return; }
+  if(j.error) { console.error('[GOTIX] error TN', j.error); finVentasCache=[]; renderFinVentasTabla(); return; }
   finVentasCache = j.orders || [];
   console.log('[DEBUG] ordenes recibidas (paid):', j.ordenes);
   if(j._debugOrders) console.table(j._debugOrders);
@@ -7694,7 +7697,7 @@ async function loadFinVentasTabEsc() {
       const mj = await metaGet(`act_${META_ACCOUNT}/insights`, { fields:'spend', time_range:JSON.stringify({since,until}), level:'account' });
       const spend = +(mj.data?.[0]?.spend || 0);
       finVentasMetaCpaProrrateado = finVentasCache.length>0 ? convertirUSD(spend/finVentasCache.length) : 0;
-    } catch(e) { console.error('[Escalafy] error Meta spend', e); }
+    } catch(e) { console.error('[GOTIX] error Meta spend', e); }
   }
   if(typeof loadAnProductosFromCache==='function') await loadAnProductosFromCache();
   renderFinVentasTabla();
@@ -7785,7 +7788,7 @@ async function escFetchMetaSummary() {
       ctr: +d.ctr || 0,
       purchases: +(d.actions?.find(a=>a.action_type==='purchase')?.value || 0),
     };
-  } catch(e) { console.error('[Escalafy] error Meta summary', e); }
+  } catch(e) { console.error('[GOTIX] error Meta summary', e); }
 }
 
 function escRenderMetricCards() {
