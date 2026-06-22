@@ -161,10 +161,11 @@ export default async function handler(req, res) {
         price: parseFloat(it.price || 0),
       }));
       orderLineItems.forEach(li => lineItems.push(li));
-      ordersOut.push({
+     ordersOut.push({
         id: order.id,
         number: order.number,
         created_at: order.created_at,
+        paid_at: order.paid_at,
         total: Math.round(orderBruto),
         shipping_cost: Math.round(shippingCost),
         line_items: orderLineItems,
