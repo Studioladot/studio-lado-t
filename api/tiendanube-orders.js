@@ -88,7 +88,7 @@ export default async function handler(req, res) {
           store_id: conn.store_id,
         });
       }
-      const orders = await ordersRes.json();
+    const orders = await ordersRes.json();
       if (!Array.isArray(orders) || orders.length === 0) {
         hasMore = false;
       } else {
@@ -98,12 +98,20 @@ export default async function handler(req, res) {
       }
     }
 
-    // 5. Calcular bruto, envio y neto. Tambien armamos detalle por orden (para la tabla de "Ultimas ventas")
-    //    y un array plano de line items (para COGS agregado del periodo, ya usado en Analisis).
-// 1. Venta valida = status 'paid' O payment_status 'paid' (sin depender de paid_at,
-    // que Tienda Nube no devuelve de forma consistente). Se excluyen las canceladas.
+    // 4b. Deduplicar por ID: la paginacion puede repetir una orden si se crea
+    // una venta nueva mientras se estan pidiendo las paginas siguientes.
+    const seenIds = new Set();
+    allOrders = allOrders.filter(o => {
+      if (seenIds.has(o.id)) return false;
+      seenIds.add(o.id);
+      return true;
+    });
+
+    // 5. Venta valida = payment_status 'paid' (el unico campo real de pago en
+    // Tienda Nube; "status" nunca vale 'paid', solo open/closed/cancelled).
+    // Se excluye cancelled por las dudas de una orden pagada y luego anulada.
     const paidOrders = allOrders.filter(order =>
-      (order.status === 'paid' || order.payment_status === 'paid') && order.status !== 'cancelled'
+      order.payment_status === 'paid' && order.status !== 'cancelled'
     );
 
     // ── DEBUG TEMPORAL: listado de IDs contados como 'paid' ───────────────────
