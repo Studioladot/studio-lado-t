@@ -3569,7 +3569,7 @@ async function loadTNAdvancedPanel() {
       serieDiaria: json.serie_diaria || [],
       prev: {}
     };
-    renderTNAdvancedPanel(baseData); // pinta YA, sin variacion %
+    renderTNAdvancedPanel(baseData);
 
     const prevRange = anPrevRange(since, until);
     fetchTNOrders(prevRange.since, prevRange.until).then(prevJson => {
@@ -5360,6 +5360,7 @@ async function loadTiendaNubeSales() {
       anRenderCard('tn-neto','Bruto (sin envio)',tnSalesSummary.neto,gxDelta(tnSalesSummary.neto,prevData.neto||0),sNeto,'money');
       anRenderCard('tn-envio','Envio cobrado',tnSalesSummary.envio,gxDelta(tnSalesSummary.envio,prevData.envio||0),sEnvio,'money',false,true);
     });
+
     const rangeLabel = val==='custom' ? `${since} → ${until}` : (tnPeriodLabel[val]||val);
     setT('tn-resumen-label', `Resumen — ${rangeLabel}`);
     setT('tn-sub', `${tnSalesSummary.ordenes} pedidos pagados — ${rangeLabel}`);
