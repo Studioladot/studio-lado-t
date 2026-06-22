@@ -5595,7 +5595,7 @@ function anPrevRange(since, until) {
 // Finanzas) le pida lo mismo a Tienda Nube por separado. Una sola llamada con
 // advanced=1 (superset de datos) por rango de fechas, reutilizada por todos.
 let _tnCache = {};
-const TN_CACHE_TTL_MS = 90 * 1000;
+const TN_CACHE_TTL_MS = 5 * 60 * 1000;
 async function fetchTNOrdersShared(since, until, force) {
   const empty = { bruto:0, envio:0, neto:0, ordenes:0, orders:[], line_items:[], serie_diaria:[], carritosAbandonados:0, topProductos:[], productosMuertos:[] };
   if(!tnConnection) return empty;
