@@ -3557,12 +3557,7 @@ async function loadTNAdvancedPanel() {
     const json = await fetchTNOrdersShared(since, until);
     if (!json || json.ordenes===undefined) return;
 
-    const prevRange = anPrevRange(since, until);
-    const prevJson = await fetchTNOrders(prevRange.since, prevRange.until);
-    const prevOrdenes = prevJson.ordenes || 0;
-    const prevCarritos = (prevJson.carritosAbandonados || 0) + prevOrdenes;
-
-    renderTNAdvancedPanel({
+    const baseData = {
       ventas: json.ordenes || 0,
       facturacion: json.bruto || 0,
       ticketPromedio: json.ordenes ? json.bruto / json.ordenes : 0,
@@ -3572,14 +3567,22 @@ async function loadTNAdvancedPanel() {
       topProductos: json.topProductos || [],
       productosMuertos: json.productosMuertos || [],
       serieDiaria: json.serie_diaria || [],
-      prev: {
+      prev: {}
+    };
+    renderTNAdvancedPanel(baseData); // pinta YA, sin variacion %
+
+    const prevRange = anPrevRange(since, until);
+    fetchTNOrders(prevRange.since, prevRange.until).then(prevJson => {
+      const prevOrdenes = prevJson.ordenes || 0;
+      const prevCarritos = (prevJson.carritosAbandonados || 0) + prevOrdenes;
+      renderTNAdvancedPanel({ ...baseData, prev: {
         ventas: prevOrdenes,
         facturacion: prevJson.bruto || 0,
         ticketPromedio: prevOrdenes ? (prevJson.bruto||0) / prevOrdenes : 0,
         carritosCreados: prevCarritos,
         carritosAbandonados: prevJson.carritosAbandonados || 0,
         conversionCheckout: prevCarritos ? (prevOrdenes / prevCarritos * 100) : 0,
-      }
+      }});
     });
   } catch (e) { toast('Error al cargar inteligencia de tienda: ' + e.message); }
 }
@@ -5339,19 +5342,24 @@ async function loadTiendaNubeSales() {
     if(!json || json.ordenes===undefined) return;
     tnSalesSummary = { bruto: json.bruto||0, envio: json.envio||0, neto: json.neto||0, ordenes: json.ordenes||0 };
 
-    // Periodo anterior, para mostrar variacion % (mismo patron que Analisis)
-    const prev = anPrevRange(since, until);
-    const prevData = await fetchTNOrders(prev.since, prev.until);
+    // Pintar YA con lo que tenemos (sin esperar al periodo anterior)
     const gxDelta = (a,b) => b>0 ? ((a-b)/b*100) : (a>0?100:0);
     const serie = json.serie_diaria || [];
     const sBruto = serie.map(d=>d.bruto);
     const sNeto = serie.map(d=>d.neto);
     const sEnvio = serie.map(d=>Math.max(0,d.bruto-d.neto));
 
-    anRenderCard('tn-bruto','Bruto (con envio)',tnSalesSummary.bruto,gxDelta(tnSalesSummary.bruto,prevData.bruto||0),sBruto,'money');
-    anRenderCard('tn-neto','Bruto (sin envio)',tnSalesSummary.neto,gxDelta(tnSalesSummary.neto,prevData.neto||0),sNeto,'money');
-    anRenderCard('tn-envio','Envio cobrado',tnSalesSummary.envio,gxDelta(tnSalesSummary.envio,prevData.envio||0),sEnvio,'money',false,true);
+    anRenderCard('tn-bruto','Bruto (con envio)',tnSalesSummary.bruto,0,sBruto,'money');
+    anRenderCard('tn-neto','Bruto (sin envio)',tnSalesSummary.neto,0,sNeto,'money');
+    anRenderCard('tn-envio','Envio cobrado',tnSalesSummary.envio,0,sEnvio,'money',false,true);
 
+    // Periodo anterior (solo para la variacion %) en segundo plano, no bloquea el pintado
+    const prev = anPrevRange(since, until);
+    fetchTNOrders(prev.since, prev.until).then(prevData => {
+      anRenderCard('tn-bruto','Bruto (con envio)',tnSalesSummary.bruto,gxDelta(tnSalesSummary.bruto,prevData.bruto||0),sBruto,'money');
+      anRenderCard('tn-neto','Bruto (sin envio)',tnSalesSummary.neto,gxDelta(tnSalesSummary.neto,prevData.neto||0),sNeto,'money');
+      anRenderCard('tn-envio','Envio cobrado',tnSalesSummary.envio,gxDelta(tnSalesSummary.envio,prevData.envio||0),sEnvio,'money',false,true);
+    });
     const rangeLabel = val==='custom' ? `${since} → ${until}` : (tnPeriodLabel[val]||val);
     setT('tn-resumen-label', `Resumen — ${rangeLabel}`);
     setT('tn-sub', `${tnSalesSummary.ordenes} pedidos pagados — ${rangeLabel}`);
