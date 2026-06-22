@@ -186,7 +186,7 @@ let carritosAbandonados = 0, topProductos = [], productosMuertos = [];
      bruto: Math.round(bruto),
       envio: Math.round(envio),
       neto: Math.round(neto),
-      ordenes: ordersOut.length,
+     ordenes: paidOrders.length,
       carritosAbandonados,
       topProductos,
       productosMuertos,
