@@ -1,11 +1,22 @@
 // api/tiendanube-orders.js
 // Acepta ?from=YYYY-MM-DD&to=YYYY-MM-DD como query params.
 // Si no se pasan, usa los ultimos 30 dias por defecto (comportamiento anterior).
-export default async function handler(req, res) {
-  const authHeader = req.headers.authorization || '';
+// Corre en Edge Runtime: arranca en milisegundos, sin cold-start de Node.
+export const config = { runtime: 'edge' };
+
+function json(data, status = 200) {
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: { 'content-type': 'application/json' },
+  });
+}
+
+export default async function handler(req) {
+  const url = new URL(req.url);
+  const authHeader = req.headers.get('authorization') || '';
   const jwt = authHeader.replace('Bearer ', '');
   if (!jwt) {
-    return res.status(401).json({ error: 'Falta autenticacion' });
+    return json({ error: 'Falta autenticacion' }, 401);
   }
   try {
     // 1. Verificar el JWT contra Supabase y obtener el user_id
@@ -18,7 +29,7 @@ export default async function handler(req, res) {
     const userData = await userRes.json();
     const userId = userData?.id;
     if (!userId) {
-      return res.status(401).json({ error: 'Sesion invalida' });
+      return json({ error: 'Sesion invalida' }, 401);
     }
 
     // 2. Buscar la conexion de Tienda Nube de este usuario
@@ -34,24 +45,26 @@ export default async function handler(req, res) {
     if (!connRes.ok) {
       const errText = await connRes.text();
       console.error('Error consultando tiendanube_connections:', connRes.status, errText);
-      return res.status(500).json({ error: 'Error consultando la conexion en Supabase', detalle: errText });
+      return json({ error: 'Error consultando la conexion en Supabase', detalle: errText }, 500);
     }
     const connections = await connRes.json();
     const conn = connections?.[0];
     if (!conn) {
-      return res.status(404).json({ error: 'Tienda Nube no conectada' });
+      return json({ error: 'Tienda Nube no conectada' }, 404);
     }
 
     // 3. Resolver el rango de fechas: personalizado (from/to) o ultimos 30 dias por defecto
-    const { from, to } = req.query;
+    const from = url.searchParams.get('from');
+    const to = url.searchParams.get('to');
+    const wantAdvanced = url.searchParams.get('advanced') === '1';
     let sinceISO, untilISO;
     if (from && to) {
-     // Ancla explicitamente a horario Argentina (UTC-3), independiente
-      // de en que timezone corra el servidor (Vercel corre en UTC).
+      // Ancla explicitamente a horario Argentina (UTC-3), independiente de en
+      // que timezone corra la funcion.
       const fromDate = new Date(`${from}T00:00:00-03:00`);
       const toDate = new Date(`${to}T23:59:59-03:00`);
       if (isNaN(fromDate.getTime()) || isNaN(toDate.getTime())) {
-        return res.status(400).json({ error: 'Fechas invalidas. Formato esperado: YYYY-MM-DD' });
+        return json({ error: 'Fechas invalidas. Formato esperado: YYYY-MM-DD' }, 400);
       }
       sinceISO = fromDate.toISOString();
       untilISO = toDate.toISOString();
@@ -62,10 +75,8 @@ export default async function handler(req, res) {
       untilISO = new Date().toISOString();
     }
 
-    // 4. Traer las ordenes del rango elegido
-    // Lanzar checkouts/productos en paralelo con la paginacion de ordenes
+    // 4. Lanzar checkouts/productos en paralelo con la paginacion de ordenes
     // (antes se esperaban en secuencia DESPUES de terminar las ordenes).
-    const wantAdvanced = req.query.advanced === '1';
     const checkoutsPromise = wantAdvanced
       ? fetch(`https://api.tiendanube.com/v1/${conn.store_id}/checkouts?created_at_min=${sinceISO}&created_at_max=${untilISO}&per_page=50`,
           { headers: { 'Authentication': `bearer ${conn.access_token}`, 'User-Agent': 'GOTIX (contacto@gotix.app)' } })
@@ -77,10 +88,11 @@ export default async function handler(req, res) {
           .then(r => r.ok ? r.json() : []).catch(() => [])
       : Promise.resolve([]);
 
+    // 5. Traer las ordenes del rango elegido
     let allOrders = [];
     let page = 1;
     let hasMore = true;
-    while (hasMore && page <= 200) {
+    while (hasMore && page <= 20) {
       const ordersRes = await fetch(
         `https://api.tiendanube.com/v1/${conn.store_id}/orders?created_at_min=${sinceISO}&created_at_max=${untilISO}&per_page=200&page=${page}`,
         {
@@ -92,17 +104,16 @@ export default async function handler(req, res) {
       );
       if (!ordersRes.ok) {
         if (ordersRes.status === 404) {
-          // Tienda Nube devuelve 404 cuando se pide una pagina que ya no existe (ej. "Last page is 1")
           hasMore = false;
           break;
         }
         const errBody = await ordersRes.text();
         console.error('Tienda Nube API error:', ordersRes.status, errBody);
-        return res.status(502).json({
+        return json({
           error: `Tienda Nube respondio con error ${ordersRes.status}`,
           detalle: errBody,
           store_id: conn.store_id,
-        });
+        }, 502);
       }
       const orders = await ordersRes.json();
       if (!Array.isArray(orders) || orders.length === 0) {
@@ -114,8 +125,7 @@ export default async function handler(req, res) {
       }
     }
 
-    // 4b. Deduplicar por ID: la paginacion puede repetir una orden si se crea
-    // una venta nueva mientras se estan pidiendo las paginas siguientes.
+    // 5b. Deduplicar por ID
     const seenIds = new Set();
     allOrders = allOrders.filter(o => {
       if (seenIds.has(o.id)) return false;
@@ -123,11 +133,7 @@ export default async function handler(req, res) {
       return true;
     });
 
-    // 5. Calcular bruto, envio y neto. Tambien armamos detalle por orden (para la tabla de "Ultimas ventas")
-    //    y un array plano de line items (para COGS agregado del periodo, ya usado en Analisis).
-    // Venta valida = status 'paid' O payment_status 'paid' (status en Tienda Nube nunca vale
-    // 'paid' en la practica -open/closed/cancelled-, pero se deja el OR por si la API lo cambia).
-    // Se excluye cancelled para no contar una venta pagada y luego anulada/reembolsada.
+    // 6. Venta valida = status 'paid' O payment_status 'paid', excluyendo cancelled.
     const paidOrders = allOrders.filter(order =>
       (order.status === 'paid' || order.payment_status === 'paid') && order.status !== 'cancelled'
     );
@@ -136,7 +142,7 @@ export default async function handler(req, res) {
     let envio = 0;
     const lineItems = [];
     const ordersOut = [];
-    const byDay = {}; // { 'YYYY-MM-DD': { bruto, envio, ordenes } }
+    const byDay = {};
     paidOrders.forEach((order) => {
       const subtotal = parseFloat(order.subtotal || 0);
       const discount = parseFloat(order.discount || 0);
@@ -176,7 +182,8 @@ export default async function handler(req, res) {
       neto: Math.round(byDay[day].bruto - byDay[day].envio),
       ordenes: byDay[day].ordenes,
     }));
-let carritosAbandonados = 0, topProductos = [], productosMuertos = [];
+
+    let carritosAbandonados = 0, topProductos = [], productosMuertos = [];
     if (wantAdvanced) {
       const [checkouts, productos] = await Promise.all([checkoutsPromise, productsPromise]);
       carritosAbandonados = Array.isArray(checkouts) ? checkouts.length : 0;
@@ -188,27 +195,28 @@ let carritosAbandonados = 0, topProductos = [], productosMuertos = [];
         porProducto[key].unidades += li.qty;
         porProducto[key].facturacion += li.qty * li.price;
       });
-      topProductos = Object.values(porProducto).sort((a,b)=>b.facturacion-a.facturacion).slice(0,5);
+      topProductos = Object.values(porProducto).sort((a, b) => b.facturacion - a.facturacion).slice(0, 5);
 
       const vendidosIds = new Set(Object.keys(porProducto).map(Number));
-      productosMuertos = (Array.isArray(productos) ? productos : []).filter(p => !vendidosIds.has(p.id)).slice(0,10)
+      productosMuertos = (Array.isArray(productos) ? productos : []).filter(p => !vendidosIds.has(p.id)).slice(0, 10)
         .map(p => ({ name: p.name?.es || p.name || 'Producto', diasSinVentas: '30+' }));
     }
-    res.status(200).json({
-     bruto: Math.round(bruto),
+
+    return json({
+      bruto: Math.round(bruto),
       envio: Math.round(envio),
       neto: Math.round(neto),
       ordenes: paidOrders.length,
       carritosAbandonados,
       topProductos,
       productosMuertos,
-      orders: ordersOut.sort((a,b)=>new Date(b.created_at)-new Date(a.created_at)),
+      orders: ordersOut.sort((a, b) => new Date(b.created_at) - new Date(a.created_at)),
       line_items: lineItems,
       serie_diaria: serieDiaria,
       periodo: { desde: sinceISO, hasta: untilISO },
     });
   } catch (err) {
     console.error('Error en tiendanube-orders:', err);
-    res.status(500).json({ error: err.message });
+    return json({ error: err.message }, 500);
   }
 }
