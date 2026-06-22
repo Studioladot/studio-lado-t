@@ -182,11 +182,11 @@ let carritosAbandonados = 0, topProductos = [], productosMuertos = [];
         }
       } catch (e) { console.warn('productos error:', e.message); }
     }
-    res.status(200).json({
+   res.status(200).json({
      bruto: Math.round(bruto),
       envio: Math.round(envio),
       neto: Math.round(neto),
-      ordenes: allOrders.length,
+      ordenes: ordersOut.length,
       carritosAbandonados,
       topProductos,
       productosMuertos,
