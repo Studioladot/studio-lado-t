@@ -139,14 +139,14 @@ export default async function handler(req, res) {
     const lineItems = [];
     const ordersOut = [];
     const byDay = {}; // { 'YYYY-MM-DD': { bruto, envio, ordenes } }
-    paidOrders.forEach((order) => {
+   paidOrders.forEach((order) => {
       const subtotal = parseFloat(order.subtotal || 0);
       const discount = parseFloat(order.discount || 0);
       const shippingCost = parseFloat(order.shipping_cost_customer || 0);
       const orderBruto = (subtotal - discount) + shippingCost;
       bruto += orderBruto;
       envio += shippingCost;
-      const day = (order.created_at || '').substring(0, 10);
+      const day = (order.paid_at || '').substring(0, 10);
       if (day) {
         if (!byDay[day]) byDay[day] = { bruto: 0, envio: 0, ordenes: 0 };
         byDay[day].bruto += orderBruto;
