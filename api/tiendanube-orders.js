@@ -209,7 +209,7 @@ let carritosAbandonados = 0, topProductos = [], productosMuertos = [];
       carritosAbandonados,
       topProductos,
       productosMuertos,
-      orders: ordersOut.sort((a,b)=>new Date(b.paid_at)-new Date(a.paid_at)),
+     orders: ordersOut.sort((a,b)=>new Date(b.created_at)-new Date(a.created_at)),
       line_items: lineItems,
       serie_diaria: serieDiaria,
       periodo: { desde: sinceISO, hasta: untilISO },
