@@ -75,6 +75,22 @@ export default async function handler(req) {
       untilISO = new Date().toISOString();
     }
 
+    // 3b. Cache en Supabase: si ya tenemos una respuesta reciente para este
+    // mismo rango de fechas, la devolvemos al instante sin tocar Tienda Nube.
+    const cacheKey = `${sinceISO}|${untilISO}|${wantAdvanced ? 1 : 0}`;
+    const CACHE_TTL_MS = 4 * 60 * 1000;
+    try {
+      const cacheRes = await fetch(
+        `${process.env.SUPABASE_URL}/rest/v1/tn_orders_cache?user_id=eq.${userId}&cache_key=eq.${encodeURIComponent(cacheKey)}&select=data,updated_at`,
+        { headers: { 'apikey': process.env.SUPABASE_SERVICE_ROLE_KEY, 'Authorization': `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}` } }
+      );
+      const cacheRows = cacheRes.ok ? await cacheRes.json() : [];
+      const hit = cacheRows?.[0];
+      if (hit && (Date.now() - new Date(hit.updated_at).getTime()) < CACHE_TTL_MS) {
+        return json(hit.data);
+      }
+    } catch (e) { console.warn('tn_orders_cache read error:', e.message); }
+
     // 4. Lanzar checkouts/productos en paralelo con la paginacion de ordenes
     // (antes se esperaban en secuencia DESPUES de terminar las ordenes).
     const checkoutsPromise = wantAdvanced
@@ -202,7 +218,7 @@ export default async function handler(req) {
         .map(p => ({ name: p.name?.es || p.name || 'Producto', diasSinVentas: '30+' }));
     }
 
-    return json({
+    const responseData = {
       bruto: Math.round(bruto),
       envio: Math.round(envio),
       neto: Math.round(neto),
@@ -214,7 +230,22 @@ export default async function handler(req) {
       line_items: lineItems,
       serie_diaria: serieDiaria,
       periodo: { desde: sinceISO, hasta: untilISO },
-    });
+    };
+
+    try {
+      await fetch(`${process.env.SUPABASE_URL}/rest/v1/tn_orders_cache?on_conflict=user_id,cache_key`, {
+        method: 'POST',
+        headers: {
+          'apikey': process.env.SUPABASE_SERVICE_ROLE_KEY,
+          'Authorization': `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'resolution=merge-duplicates',
+        },
+        body: JSON.stringify({ user_id: userId, cache_key: cacheKey, data: responseData, updated_at: new Date().toISOString() }),
+      });
+    } catch (e) { console.warn('tn_orders_cache write error:', e.message); }
+
+    return json(responseData);
   } catch (err) {
     console.error('Error en tiendanube-orders:', err);
     return json({ error: err.message }, 500);
