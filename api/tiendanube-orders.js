@@ -60,20 +60,13 @@ export default async function handler(req, res) {
       sinceISO = since.toISOString();
       untilISO = new Date().toISOString();
     }
-    // La API de Tienda Nube solo filtra por created_at/updated_at, no por paid_at.
-    // Por eso traemos con un margen extra hacia atras (60 dias) por created_at,
-    // y despues filtramos en memoria por paid_at dentro del rango real.
-    const fetchSinceDate = new Date(sinceISO);
-    fetchSinceDate.setDate(fetchSinceDate.getDate() - 60);
-    const fetchSinceISO = fetchSinceDate.toISOString();
-
-    // 4. Traer las ordenes del rango elegido (con margen)
+   // 4. Traer las ordenes del rango elegido
     let allOrders = [];
     let page = 1;
     let hasMore = true;
     while (hasMore && page <= 20) {
       const ordersRes = await fetch(
-        `https://api.tiendanube.com/v1/${conn.store_id}/orders?created_at_min=${fetchSinceISO}&created_at_max=${untilISO}&per_page=200&page=${page}`,
+        `https://api.tiendanube.com/v1/${conn.store_id}/orders?created_at_min=${sinceISO}&created_at_max=${untilISO}&per_page=200&page=${page}`,
         {
           headers: {
             'Authentication': `bearer ${conn.access_token}`,
