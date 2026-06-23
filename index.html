@@ -411,6 +411,7 @@ body.focus-mode #main{margin-left:0}
     <div class="nav-item" id="nav-admin" style="display:none" onclick="showPage('admin')" data-page="admin"><span class="ni"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 1l7 3v5c0 4.5-7 8-7 8S2 13.5 2 9V4z"/><path d="M6.5 9l2 2 3.5-3.5"/></svg></span><span>Admin</span></div>
   </nav>
   <div class="sb-footer">
+    <button id="gx-currency-switch" onclick="gxToggleCurrency()" class="btn btn-outline btn-sm" style="width:100%;margin-bottom:10px">MONEDA: ARS</button>
     <div class="sb-user" id="sb-email">—</div>
     <button class="sb-signout" onclick="signOut()">Cerrar sesion</button>
   </div>
@@ -428,8 +429,7 @@ body.focus-mode #main{margin-left:0}
         <span id="dash-live-badge" style="display:none;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;background:var(--green-l);color:var(--green);text-transform:uppercase;letter-spacing:.06em">&#9679; En vivo</span>
       </div>
     </div>
-   <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-      <button id="gx-currency-switch" onclick="gxToggleCurrency()" class="btn btn-outline btn-sm">MONEDA: ARS</button>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
       <span id="dash-last-update" style="font-size:11px;color:var(--text3)"></span>
       <div id="dash-date-wrap" style="display:none;align-items:center;gap:6px">
         <select id="dash-range-select" onchange="dashChangePeriod(this.value)"
@@ -438,9 +438,9 @@ body.focus-mode #main{margin-left:0}
           <option value="yesterday">Ayer</option>
           <option value="last_7d">7 dias</option>
           <option value="last_14d">14 dias</option>
-          <option value="last_30d" selected>30 dias</option>
+          <option value="last_30d">30 dias</option>
           <option value="last_90d">90 dias</option>
-          <option value="this_month">Este mes</option>
+          <option value="this_month" selected>Este mes</option>
           <option value="last_month">Mes pasado</option>
           <option value="maximum">Historico</option>
           <option value="custom">Personalizado...</option>
@@ -693,9 +693,9 @@ body.focus-mode #main{margin-left:0}
         <option value="yesterday">Ayer</option>
         <option value="last_7d">Ultimos 7 dias</option>
         <option value="last_14d">Ultimos 14 dias</option>
-        <option value="last_30d" selected>Ultimos 30 dias</option>
+        <option value="last_30d">Ultimos 30 dias</option>
         <option value="last_90d">Ultimos 90 dias</option>
-        <option value="this_month">Este mes</option>
+        <option value="this_month" selected>Este mes</option>
         <option value="last_month">Mes pasado</option>
         <option value="maximum">Maximo historico</option>
         <option value="custom">Personalizado...</option>
@@ -944,9 +944,9 @@ body.focus-mode #main{margin-left:0}
         <option value="yesterday">Ayer</option>
         <option value="last_7d">7 dias</option>
         <option value="last_14d">14 dias</option>
-        <option value="last_30d" selected>30 dias</option>
+        <option value="last_30d">30 dias</option>
         <option value="last_90d">90 dias</option>
-        <option value="this_month">Este mes</option>
+        <option value="this_month" selected>Este mes</option>
         <option value="last_month">Mes pasado</option>
         <option value="custom">Personalizado...</option>
       </select>
@@ -1122,9 +1122,9 @@ body.focus-mode #main{margin-left:0}
         <option value="yesterday">Ayer</option>
         <option value="last_7d">Ultimos 7 dias</option>
         <option value="last_14d">Ultimos 14 dias</option>
-        <option value="last_30d" selected>Ultimos 30 dias</option>
+        <option value="last_30d">Ultimos 30 dias</option>
         <option value="last_90d">Ultimos 90 dias</option>
-        <option value="this_month">Este mes</option>
+        <option value="this_month" selected>Este mes</option>
         <option value="last_month">Mes pasado</option>
         <option value="custom">Personalizado...</option>
       </select>
@@ -1370,9 +1370,9 @@ body.focus-mode #main{margin-left:0}
         <option value="yesterday">Ayer</option>
         <option value="last_7d">Ultimos 7 dias</option>
         <option value="last_14d">Ultimos 14 dias</option>
-        <option value="last_30d" selected>Ultimos 30 dias</option>
+        <option value="last_30d">Ultimos 30 dias</option>
         <option value="last_90d">Ultimos 90 dias</option>
-        <option value="this_month">Este mes</option>
+        <option value="this_month" selected>Este mes</option>
         <option value="last_month">Mes pasado</option>
         <option value="custom">Personalizado...</option>
       </select>
@@ -1829,9 +1829,9 @@ body.focus-mode #main{margin-left:0}
         <option value="today">Hoy</option>
         <option value="last_7d">Ultimos 7 dias</option>
         <option value="last_14d">Ultimos 14 dias</option>
-        <option value="last_30d" selected>Ultimos 30 dias</option>
+        <option value="last_30d">Ultimos 30 dias</option>
         <option value="last_90d">Ultimos 90 dias</option>
-        <option value="this_month">Este mes</option>
+        <option value="this_month" selected>Este mes</option>
         <option value="last_month">Mes pasado</option>
         <option value="maximum">Historico</option>
       </select>
@@ -3012,6 +3012,8 @@ async function loadAll(){
   if(!me)return;
   const uid=me.id;
   loadCotizacionUSD();
+  const gxBtn = document.getElementById('gx-currency-switch');
+  if(gxBtn) gxBtn.textContent = gxCurrency==='ARS' ? 'MONEDA: ARS' : 'MONEDA: USD';
   try{
     const[a,b,e,f]=await Promise.all([
       db.from('metrics').select('*').eq('user_id',uid).order('created_at',{ascending:false}).limit(100),
@@ -5058,6 +5060,7 @@ rcEl.style.background = 'var(--red-l)'; rcEl.style.borderColor = 'var(--red)';
 
 function setT(id, txt){ const e=document.getElementById(id); if(e) e.textContent=txt; }
 function fmtN(n){ const v = gxCurrency==='USD' ? n/gxRate() : n; return Math.round(v).toLocaleString('es-AR'); }
+
 // ── GASTOS CRUD ───────────────────────────────────────────────────────────────
 async function saveGasto() {
   const nombre = document.getElementById('g-nombre').value.trim();
@@ -5865,13 +5868,14 @@ function gxToggleCurrency() {
   const btn = document.getElementById('gx-currency-switch');
   if(btn) btn.textContent = gxCurrency==='ARS' ? 'MONEDA: ARS' : 'MONEDA: USD';
   const activePage = document.querySelector('.nav-item.active')?.dataset.page;
-  if(activePage) showPage(activePage); // re-renderiza con los mismos datos ya cargados (cache), sin pedir nada nuevo
+  if(activePage) showPage(activePage);
 }
 function fmtMoney(n) {
   if(n===null||n===undefined||isNaN(n)) return '—';
   if(gxCurrency==='USD') return 'US$'+Math.round(n/gxRate()).toLocaleString('es-AR');
   return '$'+Math.round(n).toLocaleString('es-AR');
 }
+
 // ── COSTOS ADICIONALES MANUAL ───────────────────────────────────────────────
 async function loadAnCostosAdicionales() {
   const { data } = await db.from('an_costos_adicionales').select('*').eq('user_id', me.id);
