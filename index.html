@@ -4324,14 +4324,21 @@ function statusBadge(s) {
 function fmtNum(n) { return n?Number(n).toLocaleString('es-AR'):'—'; }
 
 // ── CONFIG ───────────────────────────────────────────────────────────────────
-function saveMetaConfig() {
+async function saveMetaConfig() {
   const token = document.getElementById('meta-token-input').value.trim();
   const account = document.getElementById('meta-account-input').value.trim().replace('act_','');
   if(!token||!account) { toast('Ingresa token y account ID'); return; }
-  META_TOKEN = token;
+  const session = (await db.auth.getSession()).data.session;
+  const res = await fetch('/api/meta-save', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+    body: JSON.stringify({ access_token: token, account_id: account }),
+  });
+  const j = await res.json();
+  if(j.error) { toast('Error: '+j.error); return; }
+  META_TOKEN = 'server'; // ya no se usa el valor real en el cliente, solo marca "conectado"
   META_ACCOUNT = account;
-  localStorage.setItem('gx_meta_token', token);
-  localStorage.setItem('lt_meta_account', account);
+  localStorage.setItem('lt_meta_account', account); // el token YA NO se guarda en localStorage
   verifyMetaConnection();
 }
 
