@@ -18,12 +18,12 @@ export default async function handler(req) {
     if (!userId) return json({ error: 'Sesion invalida' }, 401);
 
     const connRes = await fetch(
-      `${process.env.SUPABASE_URL}/rest/v1/meta_connections?user_id=eq.${userId}&select=account_id`,
+      `${process.env.SUPABASE_URL}/rest/v1/meta_connections?user_id=eq.${userId}&select=account_id,token&order=created_at.desc&limit=1`,
       { headers: { apikey: process.env.SUPABASE_SERVICE_ROLE_KEY, Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}` } }
     );
     const conns = await connRes.json();
     const conn = conns?.[0];
-    if (!conn) return json({ connected: false });
+    if (!conn || !conn.token) return json({ connected: false });
 
     return json({ connected: true, account_id: String(conn.account_id).replace(/^act_/, '') });
   } catch (err) {
