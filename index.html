@@ -4254,7 +4254,7 @@ function renderRanking() {
 // META ADS INTEGRATION
 // ══════════════════════════════════════════════════════════════════════════════
 
-let META_TOKEN = localStorage.getItem('gx_meta_token')||'';
+let META_TOKEN = localStorage.getItem('lt_meta_account') ? 'server' : '';
 let META_ACCOUNT = localStorage.getItem('lt_meta_account')||'';
 let metaCampaigns = [], metaAdsets = [], metaAds = [];
 let metaCampFilter = 'ALL';
@@ -4824,7 +4824,7 @@ async function delSnap(id){
 
 // ── INIT META AL CARGAR ───────────────────────────────────────────────────────
 function initMeta() {
-  META_TOKEN = localStorage.getItem('gx_meta_token')||'';
+  META_TOKEN = localStorage.getItem('lt_meta_account') ? 'server' : '';
   META_ACCOUNT = localStorage.getItem('lt_meta_account')||'';
   if(META_TOKEN && META_ACCOUNT) {
     // Pre-llenar campos si existen
