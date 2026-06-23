@@ -48,6 +48,7 @@ export default async function handler(req) {
     // por un selector real en el frontend en vez de un ID fijo.
     const account = accounts.find(a => a.id.replace('act_', '') === '770215768688778') || accounts[0];
     const accountId = account.id.replace('act_', '');
+
     // Borrar conexion previa de este usuario (no hay unique constraint sobre user_id, "id" es la PK)
     await fetch(`${process.env.SUPABASE_URL}/rest/v1/meta_connections?user_id=eq.${userId}`, {
       method: 'DELETE',
