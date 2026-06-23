@@ -26,15 +26,15 @@ export default async function handler(req) {
     if (!conn) return json({ error: 'Meta Ads no conectado' }, 404);
 
     const url = new URL(req.url);
-    let path = url.searchParams.get('path'); // ej: "act_123/campaigns"
+    let path = url.searchParams.get('path');
     if (!path) return json({ error: 'Falta path' }, 400);
-    path = path.replace(/^act_act_/, 'act_'); // corrige el doble prefijo si llego mal desde el cliente
+    path = path.replace(/^act_act_/, 'act_');
 
-    // Forzar que el path solo pueda referirse a LA CUENTA QUE ESTE USUARIO CONECTO,
-    // nunca a otra cuenta de Meta (aunque su token tenga acceso a otras).
     const cleanAccountId = String(conn.account_id).replace(/^act_/, '');
     const isOwnAccountPath = path === `act_${cleanAccountId}` || path.startsWith(`act_${cleanAccountId}/`);
-    if (!isOwnAccountPath) return json({ error: 'Path no autorizado', path, expected: cleanAccountId }, 403);403);
+    if (!isOwnAccountPath) {
+      return json({ error: 'Path no autorizado', path: path, expected: cleanAccountId }, 403);
+    }
 
     const graphParams = new URLSearchParams(url.searchParams);
     graphParams.delete('path');
