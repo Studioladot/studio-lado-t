@@ -6810,7 +6810,7 @@ function renderPublicaciones(){
     const isCamp = p.source === 'campana';
     const statusLabel = isCamp ? (PZ_LABEL[p.pzStatus]||p.pzStatus) : p.status;
     const statusColor = isCamp ? (PZ_COLOR[p.pzStatus]||'var(--text2)') : '';
-   const toggleFn = isCamp ? `cyclePiezaStatus('${p.id}')` : `togglePostStatus('${p.id}','${p.status}')`;
+    const toggleFn = isCamp ? `cyclePiezaStatus('${p.id}')` : `togglePostStatus('${p.id}','${p.status}')`;
     const delFn    = isCamp ? `delPieza('${p.id}')` : `delPost('${p.id}')`;
     const editFn   = isCamp ? `openViewPieza('${p.id}')` : `openEditPost('${p.id}')`;
     return `
@@ -6820,11 +6820,10 @@ function renderPublicaciones(){
         : `<img src="${p.media_url}" style="width:100%;height:140px;object-fit:cover" alt=""/>`):''}
       <div style="padding:14px">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-      <div style="display:flex;gap:5px">
-          <button class="btn btn-sm btn-outline" onclick="openVerItem('${p.id}', ${isCamp})">Ver</button>
-          <button class="btn btn-sm btn-outline" onclick="${editFn}">Editar</button>
-          <button class="btn btn-sm btn-ghost" onclick="${toggleFn}" title="Cambiar estado">&#10003;</button>
-          <button class="btn btn-sm btn-red" onclick="${delFn}">&#10005;</button>
+        <div style="display:flex;gap:5px;flex-wrap:wrap">
+          <span class="badge" style="background:${pColors[p.platform]||'var(--surface2)'};color:#fff;font-size:9px">${p.platform}</span>
+          <span class="badge b-gray" style="font-size:9px">${p.format}</span>
+          ${isCamp?`<span class="badge" style="background:${p.campaignColor}22;color:${p.campaignColor};font-size:9px;border:0.5px solid ${p.campaignColor}">&#127775; ${p.campaignName}</span>`:''}
         </div>
         <span style="font-size:11px;color:var(--text3)">${p.date||''}</span>
       </div>
@@ -6832,6 +6831,7 @@ function renderPublicaciones(){
       <div style="display:flex;align-items:center;justify-content:space-between">
         <span class="badge ${isCamp?'':(sBadge[p.status]||'b-gray')}" ${isCamp?`style="background:${statusColor}22;color:${statusColor};border:0.5px solid ${statusColor}"`:''}>${statusLabel}</span>
         <div style="display:flex;gap:5px">
+          <button class="btn btn-sm btn-outline" onclick="openVerItem('${p.id}', ${isCamp})">Ver</button>
           <button class="btn btn-sm btn-outline" onclick="${editFn}">Editar</button>
           <button class="btn btn-sm btn-ghost" onclick="${toggleFn}" title="Cambiar estado">&#10003;</button>
           <button class="btn btn-sm btn-red" onclick="${delFn}">&#10005;</button>
@@ -6842,7 +6842,6 @@ function renderPublicaciones(){
     </div>`;
   }).join('');
 }
-
 async function togglePostStatus(id, current){
   const next = current==='pendiente'?'publicado':current==='publicado'?'borrador':'pendiente';
   const {error} = await db.from('content_posts').update({status:next}).eq('id',id);
@@ -7516,9 +7515,10 @@ function openDiaPiezas(date){
     list.innerHTML = '<div style="text-align:center;color:var(--text2);font-size:13px;padding:20px">Sin publicaciones este dia</div>';
   } else {
     list.innerHTML = items.map(p=>{
-      const isCamp = p.source==='campana';
+     const isCamp = p.source==='campana';
       const editFn = isCamp ? `openEditPieza('${p.id}')` : `openEditPost('${p.id}')`;
       const delFn  = isCamp ? `delPieza('${p.id}');closeModal('modal-dia-piezas')` : `delPost('${p.id}');closeModal('modal-dia-piezas')`;
+      const verFn  = `openVerItem('${p.id}', ${isCamp})`;
       return `
       <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:12px;display:flex;flex-direction:column;gap:6px">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
@@ -7527,6 +7527,7 @@ function openDiaPiezas(date){
         </div>
         <div style="font-size:11px;color:var(--text2)">${p.platform||''} · ${p.format||''}${isCamp?' · '+p.campaignName:''}</div>
         <div style="display:flex;gap:6px;margin-top:4px">
+          <button class="btn btn-sm btn-outline" onclick="${verFn}">Ver</button>
           <button class="btn btn-sm btn-outline" onclick="${editFn}">Editar</button>
           <button class="btn btn-sm btn-red btn-ghost" onclick="${delFn}">Eliminar</button>
         </div>
