@@ -31,7 +31,8 @@ export default async function handler(req) {
 
     // Forzar que el path solo pueda referirse a LA CUENTA QUE ESTE USUARIO CONECTO,
     // nunca a otra cuenta de Meta (aunque su token tenga acceso a otras).
-    const isOwnAccountPath = path === `act_${conn.account_id}` || path.startsWith(`act_${conn.account_id}/`);
+    const cleanAccountId = String(conn.account_id).replace('act_', '');
+    const isOwnAccountPath = path === `act_${cleanAccountId}` || path.startsWith(`act_${cleanAccountId}/`);
     if (!isOwnAccountPath) return json({ error: 'Path no autorizado' }, 403);
 
     const graphParams = new URLSearchParams(url.searchParams);
