@@ -2907,6 +2907,11 @@ async function showApp(){
   // IA key warning
   if(!APIKEY) document.getElementById('ia-key-warn').style.display='block';
   // Verificar acceso del usuario
+  if (new URLSearchParams(location.search).get('meta_connected') === '1') {
+  localStorage.setItem('lt_meta_account', 'connected'); // marca generica, el account_id real ya esta guardado en Supabase
+  META_TOKEN = 'server';
+  toast('Meta Ads conectado ✓');
+}
   const hasAccess = await checkUserAccess();
   if(!hasAccess) return;
   // Poner fecha de hoy en ventas
@@ -4254,6 +4259,7 @@ function renderRanking() {
 // META ADS INTEGRATION
 // ══════════════════════════════════════════════════════════════════════════════
 
+const META_APP_ID = 'TU_APP_ID_DE_META'; // reemplazar por el App ID real de tu app en Meta Developers
 let META_TOKEN = localStorage.getItem('lt_meta_account') ? 'server' : '';
 let META_ACCOUNT = localStorage.getItem('lt_meta_account')||'';
 let metaCampaigns = [], metaAdsets = [], metaAds = [];
@@ -4322,6 +4328,21 @@ function statusBadge(s) {
 }
 
 function fmtNum(n) { return n?Number(n).toLocaleString('es-AR'):'—'; }
+ 
+  // ── CONECTAR META (OAuth, sin token manual) ───────────────────────────────────
+async function connectMetaOAuth() {
+  const session = (await db.auth.getSession()).data.session;
+  if (!session) { toast('Iniciá sesion primero'); return; }
+  const redirectUri = 'https://gotixsystem.vercel.app/api/meta-oauth-callback';
+  const params = new URLSearchParams({
+    client_id: META_APP_ID, // App ID, NO es secreto, va en el cliente sin problema
+    redirect_uri: redirectUri,
+    scope: 'ads_read,ads_management,business_management',
+    state: session.access_token, // viaja firmado por Supabase, el callback lo verifica
+    response_type: 'code',
+  });
+  window.location.href = `https://www.facebook.com/v19.0/dialog/oauth?${params}`;
+}
 
 // ── CONFIG ───────────────────────────────────────────────────────────────────
 async function saveMetaConfig() {
