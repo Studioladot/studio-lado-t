@@ -7608,10 +7608,9 @@ async function loadBibAds() {
       `insights.date_preset(${datePreset}){${insFields}}`
     ].join(',');
 
-    const filterParam = encodeURIComponent(JSON.stringify([
+   const filterParam = JSON.stringify([
       {field:'effective_status',operator:'IN',value:['ACTIVE','PAUSED']}
-    ]));
-
+    ]);
     // Máx 25 anuncios — suficiente y seguro
     const j1 = await metaGet(`act_${META_ACCOUNT}/ads`, { fields, filtering: filterParam, limit: 25 });
     if(j1.error) throw new Error(j1.error.message);
