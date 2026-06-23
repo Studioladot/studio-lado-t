@@ -6800,8 +6800,9 @@ function renderPublicaciones(){
     const isCamp = p.source === 'campana';
     const statusLabel = isCamp ? (PZ_LABEL[p.pzStatus]||p.pzStatus) : p.status;
     const statusColor = isCamp ? (PZ_COLOR[p.pzStatus]||'var(--text2)') : '';
-    const toggleFn = isCamp ? `cyclePiezaStatus('${p.id}')` : `togglePostStatus('${p.id}','${p.status}')`;
+   const toggleFn = isCamp ? `cyclePiezaStatus('${p.id}')` : `togglePostStatus('${p.id}','${p.status}')`;
     const delFn    = isCamp ? `delPieza('${p.id}')` : `delPost('${p.id}')`;
+    const editFn   = isCamp ? `openViewPieza('${p.id}')` : `openEditPost('${p.id}')`;
     return `
     <div style="background:var(--surface);border:0.5px solid var(--border);border-radius:var(--rl);overflow:hidden;transition:border-color .15s" onmouseover="this.style.borderColor='var(--border2)'" onmouseout="this.style.borderColor='var(--border)'">
       ${p.media_url?(p.media_type==='video'
@@ -6820,6 +6821,7 @@ function renderPublicaciones(){
       <div style="display:flex;align-items:center;justify-content:space-between">
         <span class="badge ${isCamp?'':(sBadge[p.status]||'b-gray')}" ${isCamp?`style="background:${statusColor}22;color:${statusColor};border:0.5px solid ${statusColor}"`:''}>${statusLabel}</span>
         <div style="display:flex;gap:5px">
+          <button class="btn btn-sm btn-outline" onclick="${editFn}">Editar</button>
           <button class="btn btn-sm btn-ghost" onclick="${toggleFn}" title="Cambiar estado">&#10003;</button>
           <button class="btn btn-sm btn-red" onclick="${delFn}">&#10005;</button>
         </div>
