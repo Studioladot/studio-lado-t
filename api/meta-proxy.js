@@ -32,10 +32,12 @@ export default async function handler(req) {
 
     const cleanAccountId = String(conn.account_id).replace(/^act_/, '');
     const isOwnAccountPath = path === `act_${cleanAccountId}` || path.startsWith(`act_${cleanAccountId}/`);
-    // Tambien permitir IDs de objeto puro (anuncio/conjunto/campana/creative individual,
-    // ej: "120211234567890"), necesarios para traer miniaturas y detalle de un anuncio.
-    const isPlainObjectId = /^\d+$/.test(path);
-    if (!isOwnAccountPath && !isPlainObjectId) {
+    // Permitir tambien cualquier ID de objeto numerico (anuncio/conjunto/campana),
+    // con o sin sub-recurso despues (ej: "120211.../adsets", "120211.../ads").
+    // Esto NUNCA permite leer otra cuenta publicitaria (act_OTRACUENTA sigue bloqueado),
+    // solo objetos individuales a los que el token del usuario ya tiene acceso.
+    const isObjectIdPath = /^\d+(\/.*)?$/.test(path);
+    if (!isOwnAccountPath && !isObjectIdPath) {
       return json({ error: 'Path no autorizado', path: path, expected: cleanAccountId }, 403);
     }
 
