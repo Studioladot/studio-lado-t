@@ -662,16 +662,11 @@ body.focus-mode #main{margin-left:0}
   </div>
   <div class="grid-2">
     <div class="card">
-      <div class="card-title">Access Token de Meta</div>
-      <div style="font-size:13px;color:var(--text2);margin-bottom:14px;line-height:1.7">
-        1. Andá a <a href="https://developers.facebook.com/tools/explorer/" target="_blank" style="color:var(--accent)">Graph API Explorer →</a><br>
-        2. Seleccioná tu app → Generate Access Token<br>
-        3. Permisos necesarios: <code style="background:var(--surface2);padding:1px 5px;border-radius:3px">ads_read</code> <code style="background:var(--surface2);padding:1px 5px;border-radius:3px">ads_management</code><br>
-        4. Pegá el token acá abajo
+      <div class="card-title">Meta Ads</div>
+      <div style="font-size:13px;color:var(--text2);margin-bottom:18px;line-height:1.7">
+        Conectá tu cuenta publicitaria con un click. No necesitás generar ningún token manualmente.
       </div>
-      <div class="fg" style="margin-bottom:10px"><label>Access Token</label><input id="meta-token-input" type="password" placeholder="EAAxxxxx..."/></div>
-      <div class="fg" style="margin-bottom:14px"><label>Ad Account ID (sin "act_")</label><input id="meta-account-input" type="text" placeholder="123456789"/></div>
-      <button class="btn btn-accent" onclick="saveMetaConfig()">Conectar y verificar</button>
+      <button class="btn btn-accent" onclick="connectMetaOAuth()">Conectar con Meta</button>
       <div id="meta-connect-status" style="margin-top:12px;font-size:13px"></div>
     </div>
     <div class="card">
