@@ -18,12 +18,12 @@ export default async function handler(req) {
     if (!userId) return json({ error: 'Sesion invalida' }, 401);
 
     const connRes = await fetch(
-      `${process.env.SUPABASE_URL}/rest/v1/meta_connections?user_id=eq.${userId}&select=access_token,account_id`,
+      `${process.env.SUPABASE_URL}/rest/v1/meta_connections?user_id=eq.${userId}&select=token,account_id&order=created_at.desc&limit=1`,
       { headers: { apikey: process.env.SUPABASE_SERVICE_ROLE_KEY, Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}` } }
     );
     const conns = await connRes.json();
     const conn = conns?.[0];
-    if (!conn) return json({ error: 'Meta Ads no conectado' }, 404);
+    if (!conn || !conn.token) return json({ error: 'Meta Ads no conectado' }, 404);
 
     const url = new URL(req.url);
     let path = url.searchParams.get('path');
@@ -38,7 +38,7 @@ export default async function handler(req) {
 
     const graphParams = new URLSearchParams(url.searchParams);
     graphParams.delete('path');
-    graphParams.set('access_token', conn.access_token);
+    graphParams.set('access_token', conn.token);
 
     const graphRes = await fetch(`https://graph.facebook.com/v19.0/${path}?${graphParams}`);
     const data = await graphRes.json();
