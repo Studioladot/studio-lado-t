@@ -32,7 +32,10 @@ export default async function handler(req) {
 
     const cleanAccountId = String(conn.account_id).replace(/^act_/, '');
     const isOwnAccountPath = path === `act_${cleanAccountId}` || path.startsWith(`act_${cleanAccountId}/`);
-    if (!isOwnAccountPath) {
+    // Tambien permitir IDs de objeto puro (anuncio/conjunto/campana/creative individual,
+    // ej: "120211234567890"), necesarios para traer miniaturas y detalle de un anuncio.
+    const isPlainObjectId = /^\d+$/.test(path);
+    if (!isOwnAccountPath && !isPlainObjectId) {
       return json({ error: 'Path no autorizado', path: path, expected: cleanAccountId }, 403);
     }
 
