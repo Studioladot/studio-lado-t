@@ -25,15 +25,24 @@ export default async function handler(req) {
     const checkData = await check.json();
     if (checkData.error) return json({ error: 'Token o cuenta invalida: ' + checkData.error.message }, 400);
 
-    await fetch(`${process.env.SUPABASE_URL}/rest/v1/meta_connections?on_conflict=user_id`, {
+    await fetch(`${process.env.SUPABASE_URL}/rest/v1/meta_connections?user_id=eq.${userId}`, {
+      method: 'DELETE',
+      headers: { apikey: process.env.SUPABASE_SERVICE_ROLE_KEY, Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}` },
+    });
+
+    await fetch(`${process.env.SUPABASE_URL}/rest/v1/meta_connections`, {
       method: 'POST',
       headers: {
         apikey: process.env.SUPABASE_SERVICE_ROLE_KEY,
         Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
         'Content-Type': 'application/json',
-        Prefer: 'resolution=merge-duplicates',
       },
-      body: JSON.stringify({ user_id: userId, access_token, account_id, updated_at: new Date().toISOString() }),
+      body: JSON.stringify({
+        user_id: userId,
+        token: access_token,
+        account_id,
+        expires_at: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString(),
+      }),
     });
 
     return json({ ok: true });
