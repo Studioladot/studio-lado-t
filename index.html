@@ -3021,16 +3021,28 @@ async function loadAll(){
       db.from('content_posts').select('*').eq('user_id',uid).order('date',{ascending:false}),
       db.from('contacts').select('*').eq('user_id',uid).order('created_at',{ascending:false}),
     ]);
-    metrics=a.data||[]; scripts=b.data||[];
+   metrics=a.data||[]; scripts=b.data||[];
     posts=e.data||[]; contacts=f.data||[];
     // objectives y finances se cargan por separado en sus respectivas paginas
     renderDash(); renderScripts();
+
+    // Precarga liviana para que las cajas de Tienda Nube/Finanzas del Dashboard
+    // tengan datos sin necesidad de visitar "Ventas y Operaciones" primero.
+    const [connRes, gastosRes, finRes] = await Promise.all([
+      db.from('tiendanube_connections').select('*').eq('user_id', uid).maybeSingle(),
+      db.from('expenses').select('*').eq('user_id', uid),
+      db.from('fin_config').select('*').eq('user_id', uid).maybeSingle(),
+    ]);
+    tnConnection = connRes.data || null;
+    gastos = gastosRes.data || [];
+    if (finRes.data) finConfig = finRes.data;
+    if (tnConnection) await loadTiendaNubeSales();
+    refreshDashboardTopBoxes();
   }catch(e){
     console.error(e);
     if(e.message&&e.message.includes('relation'))toast('Tablas no encontradas — ver Configuracion → SQL');
   }
 }
-
 // ── DASHBOARD ────────────────────────────────────────────────────────────────
 function renderDash(){
   const tot=metrics.reduce((a,m)=>a+(+m.spend||0),0);
