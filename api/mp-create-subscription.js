@@ -36,7 +36,16 @@ export default async function handler(req) {
       }),
     });
     const data = await r.json();
-    if (data.error) return json({ error: data.message || data.error }, r.status);
+
+    // Mercado Pago no siempre devuelve "error" en sus respuestas fallidas —
+    // a veces solo viene "message" + "status". La validacion real es:
+    // la request no fue ok, O no vino init_point (sin eso no hay nada que hacer).
+    if (!r.ok || !data.init_point) {
+      return json({
+        error: data.message || data.error || 'Error al crear suscripcion',
+        details: data,
+      }, r.status !== 200 ? r.status : 400);
+    }
 
     return json({ init_point: data.init_point, preapproval_id: data.id });
   } catch (err) {
