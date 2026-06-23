@@ -7599,9 +7599,7 @@ async function loadBibAds() {
     ]));
 
     // Máx 25 anuncios — suficiente y seguro
-    const url = `https://graph.facebook.com/v19.0/act_${META_ACCOUNT}/ads?fields=${encodeURIComponent(fields)}&filtering=${filterParam}&limit=25&access_token=${META_TOKEN}`;
-    const r1 = await fetch(url);
-    const j1 = await r1.json();
+    const j1 = await metaGet(`act_${META_ACCOUNT}/ads`, { fields, filtering: filterParam, limit: 25 });
     if(j1.error) throw new Error(j1.error.message);
     const allAds = j1.data || [];
 
@@ -7611,8 +7609,7 @@ async function loadBibAds() {
     const thumbMap = {};
     await Promise.all(allAds.map(async ad => {
       try {
-        const r = await fetch(`https://graph.facebook.com/v19.0/${ad.id}?fields=${encodeURIComponent('creative{object_type,video_id,image_url,thumbnail_url,object_story_spec,asset_feed_spec{images,videos}}')}&thumbnail_width=1200&thumbnail_height=1200&access_token=${META_TOKEN}`);
-        const j = await r.json();
+        const j = await metaGet(ad.id, { fields: 'creative{object_type,video_id,image_url,thumbnail_url,object_story_spec,asset_feed_spec{images,videos}}', thumbnail_width: 1200, thumbnail_height: 1200 });
         if(j.error) { console.error('[BibAds] error creative', ad.id, j.error); return; }
         if(!j.creative) return;
         const cr = j.creative;
@@ -7625,8 +7622,7 @@ async function loadBibAds() {
         if(storyImg) thumbMap[ad.id].videoThumb = storyImg;
         else if(cr.video_id || cr.object_story_spec?.video_data?.video_id) {
           try {
-            const rb = await fetch(`https://graph.facebook.com/v19.0/${ad.id}?fields=${encodeURIComponent('creative{thumbnail_url}')}&thumbnail_width=1200&thumbnail_height=1200&access_token=${META_TOKEN}`);
-            const jb = await rb.json();
+           const jb = await metaGet(ad.id, { fields: 'creative{thumbnail_url}', thumbnail_width: 1200, thumbnail_height: 1200 });
             if(!jb.error && jb.creative?.thumbnail_url) thumbMap[ad.id].videoThumb = jb.creative.thumbnail_url;
           } catch(e) { console.warn('[BibAds] thumbnail_url grande fallo', ad.id, e); }
         }
