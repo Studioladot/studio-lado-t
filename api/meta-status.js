@@ -25,7 +25,7 @@ export default async function handler(req) {
     const conn = conns?.[0];
     if (!conn) return json({ connected: false });
 
-    return json({ connected: true, account_id: conn.account_id });
+    return json({ connected: true, account_id: String(conn.account_id).replace(/^act_/, '') });
   } catch (err) {
     return json({ error: err.message }, 500);
   }
