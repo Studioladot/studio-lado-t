@@ -3822,16 +3822,16 @@ function loadConfigPage(){
   const st=document.getElementById('api-status');
   if(st){APIKEY=localStorage.getItem('gx_anthropic_key')||'';st.textContent=APIKEY?'API key configurada':'Sin API key — IA desactivada';st.style.color=APIKEY?'var(--green)':'var(--amber)';}
 }
-  async function suscribirseGotix() {
+ async function suscribirseGotix() {
   const session = (await db.auth.getSession()).data.session;
   if (!session) { toast('Iniciá sesion primero'); return; }
-  setT('sub-status', 'Generando link de pago...');
+  setT('fact-status', 'Generando link de pago...');
   const r = await fetch('/api/mp-create-subscription', {
     method: 'POST',
     headers: { Authorization: `Bearer ${session.access_token}` },
   });
   const j = await r.json();
-  if (j.error) { setT('sub-status', 'Error: ' + j.error); return; }
+  if (j.error) { setT('fact-status', 'Error: ' + j.error); return; }
   window.location.href = j.init_point;
 }
 function saveSupabaseConfig(){
