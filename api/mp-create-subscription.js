@@ -32,7 +32,6 @@ export default async function handler(req) {
         payer_email: email,
         external_reference: userId, // clave: asi el webhook sabe a que usuario de GOTIX corresponde
         back_url: 'https://gotixsystem.vercel.app/?mp_subscribed=1',
-        status: 'pending',
       }),
     });
     const data = await r.json();
