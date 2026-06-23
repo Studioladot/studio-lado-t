@@ -5107,7 +5107,9 @@ rcEl.style.background = 'var(--red-l)'; rcEl.style.borderColor = 'var(--red)';
     }
   }
 }
-
+function escapeHtml(s) {
+  return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
 function setT(id, txt){ const e=document.getElementById(id); if(e) e.textContent=txt; }
 function fmtN(n){ const v = gxCurrency==='USD' ? n/gxRate() : n; return Math.round(v).toLocaleString('es-AR'); }
 
@@ -5146,7 +5148,7 @@ function renderGastos() {
   if(!list.length){ tbl.innerHTML='<tr><td colspan="7" style="text-align:center;color:var(--text2);padding:24px">Sin gastos</td></tr>'; }
   else {
     tbl.innerHTML = list.map(g=>`<tr>
-      <td style="font-weight:600">${g.nombre}<br><span style="font-size:11px;color:var(--text2)">${g.notas||''}</span></td>
+      <td style="font-weight:600">${escapeHtml(g.nombre)}<br><span style="font-size:11px;color:var(--text2)">${escapeHtml(g.notas)}</span></td>
       <td><span class="badge ${catColors[g.categoria]||'b-gray'}">${g.categoria}</span></td>
       <td><span class="badge b-gray">${g.tipo}</span></td>
       <td style="font-weight:700">$${fmtN(g.monto)}</td>
@@ -5343,7 +5345,7 @@ async function renderConsolidatedSales() {
   const manualRows = (ventasDia||[]).map(v=>({
     origen: 'manual', origenLabel: v.canal||'Manual / Showroom',
     fecha: v.fecha,
-    detalle: v.notas || (v.unidades?`${v.unidades} unidades`:'Venta manual'),
+  detalle: escapeHtml(v.notas) || (v.unidades?`${v.unidades} unidades`:'Venta manual'),
     total: +v.monto||0,
     id: v.id,
   }));
