@@ -4064,9 +4064,11 @@ function renderDash(){
     </tr>`).join('')
     :'<tr><td colspan="10" style="text-align:center;color:var(--text2);padding:24px">Sin datos — conecta Meta Ads o carga metricas manualmente</td></tr>';
   }
-  renderRanking();
+ renderRanking();
   renderObjs();
   renderDashMetaWidget();
+  refreshDashboardTopBoxes();
+  renderBHS();
 }
 
 // ── DASHBOARD META WIDGET ─────────────────────────────────────────────────────
