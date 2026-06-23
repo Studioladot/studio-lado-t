@@ -2902,9 +2902,23 @@ async function showApp(){
   // IA key warning
   if(!APIKEY) document.getElementById('ia-key-warn').style.display='block';
   // Verificar acceso del usuario
-  if (new URLSearchParams(location.search).get('meta_connected') === '1') {
-  localStorage.setItem('lt_meta_account', 'connected'); // marca generica, el account_id real ya esta guardado en Supabase
-  META_TOKEN = 'server';
+ async function syncMetaStatus() {
+  const session = (await db.auth.getSession()).data.session;
+  if (!session) return;
+  const r = await fetch('/api/meta-status', { headers: { Authorization: `Bearer ${session.access_token}` } });
+  const j = await r.json();
+  if (j.connected) {
+    META_TOKEN = 'server';
+    META_ACCOUNT = j.account_id;
+    localStorage.setItem('lt_meta_account', j.account_id);
+  } else {
+    META_TOKEN = '';
+    META_ACCOUNT = '';
+    localStorage.removeItem('lt_meta_account');
+  }
+}
+await syncMetaStatus();
+if (new URLSearchParams(location.search).get('meta_connected') === '1') {
   toast('Meta Ads conectado ✓');
 }
   const hasAccess = await checkUserAccess();
