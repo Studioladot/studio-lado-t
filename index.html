@@ -4267,9 +4267,11 @@ const ADSET_FIELDS = 'id,name,status,effective_status,daily_budget,targeting';
 const AD_INFO_FIELDS = 'id,name,status,effective_status,creative{id,name,thumbnail_url}';
 
 // ── HELPERS ──────────────────────────────────────────────────────────────────
-function metaGet(path, params={}) {
-  const p = new URLSearchParams({...params, access_token: META_TOKEN});
-  return fetch(`${GRAPH}/${path}?${p}`).then(r=>r.json());
+async function metaGet(path, params={}) {
+  const session = (await db.auth.getSession()).data.session;
+  const p = new URLSearchParams({...params, path});
+  const r = await fetch(`/api/meta-proxy?${p}`, { headers: { Authorization: `Bearer ${session.access_token}` } });
+  return r.json();
 }
 
 function parseInsights(ins) {
@@ -4862,14 +4864,12 @@ async function checkUserAccess() {
       return false;
     }
     return true;
-  } catch(e) {
-    // Si la tabla no existe, dejar pasar (el admin puede configurarla después)
-    console.warn('user_profiles:', e.message);
-    isAdmin = true;
-    const nav = document.getElementById('nav-admin');
-    if (nav) nav.style.display = 'flex';
-    const navCfg = document.getElementById('nav-config');
-    if (navCfg) navCfg.style.display = 'flex';
+ } catch(e) {
+    // Ante cualquier error, NUNCA dar admin por defecto — fail-closed, no fail-open.
+    console.error('user_profiles:', e.message);
+    isAdmin = false;
+    toast('No se pudo verificar tu acceso. Reintentá o contacta al administrador.');
+    return false;
     return true;
   }
 }
