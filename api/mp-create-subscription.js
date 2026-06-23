@@ -21,6 +21,10 @@ export default async function handler(req) {
     const email = userData?.email;
     if (!userId) return json({ error: 'Sesion invalida' }, 401);
 
+    if (!process.env.MP_PLAN_ID) {
+      return json({ error: 'Falta la variable de entorno MP_PLAN_ID en Vercel (esta vacia o no se guardo).' }, 500);
+    }
+
     const r = await fetch('https://api.mercadopago.com/preapproval', {
       method: 'POST',
       headers: {
