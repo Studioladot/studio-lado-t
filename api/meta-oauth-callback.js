@@ -39,12 +39,15 @@ export default async function handler(req) {
     const expiresInSec = longData.expires_in || 60 * 24 * 60 * 60;
     const expiresAt = new Date(Date.now() + expiresInSec * 1000).toISOString();
 
-    const accRes = await fetch(`${GRAPH}/me/adaccounts?fields=id,name&access_token=${longLivedToken}`);
+    const accRes = await fetch(`${GRAPH}/me/adaccounts?fields=id,name&access_token=${longLivedToken}&limit=200`);
     const accData = await accRes.json();
-    const account = accData?.data?.[0];
-    if (!account) return redirectWithError('No se encontro ninguna cuenta publicitaria');
+    const accounts = accData?.data || [];
+    if (!accounts.length) return redirectWithError('No se encontro ninguna cuenta publicitaria');
+    // Si el usuario tiene varias cuentas, preferir la cuenta conocida de Kiriz.
+    // TODO: cuando haya mas clientes con varias cuentas cada uno, reemplazar esto
+    // por un selector real en el frontend en vez de un ID fijo.
+    const account = accounts.find(a => a.id.replace('act_', '') === '770215768688778') || accounts[0];
     const accountId = account.id.replace('act_', '');
-
     // Borrar conexion previa de este usuario (no hay unique constraint sobre user_id, "id" es la PK)
     await fetch(`${process.env.SUPABASE_URL}/rest/v1/meta_connections?user_id=eq.${userId}`, {
       method: 'DELETE',
