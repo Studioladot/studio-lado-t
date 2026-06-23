@@ -2851,43 +2851,6 @@ async function loadPnLEngine(){
     </div>`;
   }).join('');
 }
-  // ── DASHBOARD: motor de datos de las 4 cajas superiores + Business Health Score ──
-function refreshDashboardTopBoxes(){
-  // META ADS — usa lo mismo que la tarjeta ROAS del dashboard live (metaCampaigns)
-  const liveCamps = metaCampaigns.filter(c=>parseFloat(c.insights?.spend)>0);
-  let avgRoas = 0, gastoMeta = 0;
-  if(liveCamps.length){
-    gastoMeta = liveCamps.reduce((a,c)=>a+parseFloat(c.insights.spend||0),0);
-    const totalRev = liveCamps.reduce((a,c)=>a+parseFloat(c.insights.revenue||0),0);
-    avgRoas = gastoMeta>0 && totalRev>0 ? totalRev/gastoMeta : 0;
-  } else if(metrics.length){
-    const roasList = metrics.filter(m=>+m.roas>0);
-    avgRoas = roasList.length ? roasList.reduce((a,m)=>a+(+m.roas),0)/roasList.length : 0;
-    gastoMeta = metrics.reduce((a,m)=>a+(+m.spend||0),0);
-  }
-  setT('dbox-roas', avgRoas ? avgRoas.toFixed(1)+'x' : '—');
-  setT('dbox-gasto', '$'+fmtN(gastoMeta));
-
-  // TIENDA NUBE
-  if(tnConnection){
-    setT('dbox-ventas', '$'+fmtN(tnSalesSummary.neto||0));
-    setT('dbox-ticket', (tnSalesSummary.ordenes||0)>0 ? '$'+fmtN((tnSalesSummary.neto||0)/tnSalesSummary.ordenes) : '$ —');
-  }
-
-  // CONTENIDO — piezas publicadas vs planificadas, ultimos 7 dias
-  const semanaAtras = new Date(); semanaAtras.setDate(semanaAtras.getDate()-7);
-  const postsSemana = posts.filter(p=>new Date(p.date) >= semanaAtras);
-  const publicados = postsSemana.filter(p=>p.status==='publicado'||p.status==='publicada').length;
-  setT('dbox-contenido', postsSemana.length ? `${publicados} / ${postsSemana.length}` : '— / —');
-
-  // FINANZAS — profit estimado (neto real de Tienda Nube con margen, menos gastos fijos)
-  if(finConfig && gastos.length){
-    const gastosMes = gastos.reduce((s,g)=>s+(+g.monto||0),0);
-    const margen = (finConfig?.margen_bruto||48)/100;
-    const profitEst = ((tnSalesSummary.neto||0)*margen) - gastosMes;
-    setT('dbox-profit', '$'+fmtN(Math.round(profitEst)));
-  }
-}
 // ── CONFIG ───────────────────────────────────────────────────────────────────
 let SBURL = 'https://vluoynizpvckjqomojxx.supabase.co';
 let SBKEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZsdW95bml6cHZja2pxb21vanh4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwMzE4MTQsImV4cCI6MjA5NjYwNzgxNH0.ItNRCYNzKYvs_S_ToOSOwKesRGZvniq0-kFNKcqZFPM';
@@ -3995,7 +3958,43 @@ async function saveSnapNote(id){
   const m=metrics.find(x=>x.id===id); if(m)m.notes=note;
   toggleSnapNote(id); toast('Nota guardada ✓');
 }
+// ── DASHBOARD: motor de datos de las 4 cajas superiores + Business Health Score ──
+function refreshDashboardTopBoxes(){
+  // META ADS — usa lo mismo que la tarjeta ROAS del dashboard live (metaCampaigns)
+  const liveCamps = metaCampaigns.filter(c=>parseFloat(c.insights?.spend)>0);
+  let avgRoas = 0, gastoMeta = 0;
+  if(liveCamps.length){
+    gastoMeta = liveCamps.reduce((a,c)=>a+parseFloat(c.insights.spend||0),0);
+    const totalRev = liveCamps.reduce((a,c)=>a+parseFloat(c.insights.revenue||0),0);
+    avgRoas = gastoMeta>0 && totalRev>0 ? totalRev/gastoMeta : 0;
+  } else if(metrics.length){
+    const roasList = metrics.filter(m=>+m.roas>0);
+    avgRoas = roasList.length ? roasList.reduce((a,m)=>a+(+m.roas),0)/roasList.length : 0;
+    gastoMeta = metrics.reduce((a,m)=>a+(+m.spend||0),0);
+  }
+  setT('dbox-roas', avgRoas ? avgRoas.toFixed(1)+'x' : '—');
+  setT('dbox-gasto', '$'+fmtN(gastoMeta));
 
+  // TIENDA NUBE
+  if(tnConnection){
+    setT('dbox-ventas', '$'+fmtN(tnSalesSummary.neto||0));
+    setT('dbox-ticket', (tnSalesSummary.ordenes||0)>0 ? '$'+fmtN((tnSalesSummary.neto||0)/tnSalesSummary.ordenes) : '$ —');
+  }
+
+  // CONTENIDO — piezas publicadas vs planificadas, ultimos 7 dias
+  const semanaAtras = new Date(); semanaAtras.setDate(semanaAtras.getDate()-7);
+  const postsSemana = posts.filter(p=>new Date(p.date) >= semanaAtras);
+  const publicados = postsSemana.filter(p=>p.status==='publicado'||p.status==='publicada').length;
+  setT('dbox-contenido', postsSemana.length ? `${publicados} / ${postsSemana.length}` : '— / —');
+
+  // FINANZAS — profit estimado (neto real de Tienda Nube con margen, menos gastos fijos)
+  if(finConfig && gastos.length){
+    const gastosMes = gastos.reduce((s,g)=>s+(+g.monto||0),0);
+    const margen = (finConfig?.margen_bruto||48)/100;
+    const profitEst = ((tnSalesSummary.neto||0)*margen) - gastosMes;
+    setT('dbox-profit', '$'+fmtN(Math.round(profitEst)));
+  }
+}
 // ══════════════════════════════════════════════════════════════════════════════
 // DASHBOARD — renderDash con datos live de Meta
 // ══════════════════════════════════════════════════════════════════════════════
