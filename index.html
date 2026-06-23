@@ -2909,9 +2909,12 @@ function init(){
   try{
     const {createClient}=supabase;
     db=createClient(SBURL,SBKEY);
+    let appBooted = false;
     db.auth.onAuthStateChange((_,session)=>{
-      if(session){ me=session.user; showApp(); }
-      else showAuth();
+      if(session){
+        me=session.user;
+        if(!appBooted){ appBooted = true; showApp(); }
+      } else { appBooted = false; showAuth(); }
     });
   }catch(e){ showSetup(); }
 }
