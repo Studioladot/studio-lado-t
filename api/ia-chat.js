@@ -1,7 +1,5 @@
 // api/ia-chat.js
-// Agente de IA gratuito server-side (Google Gemini, capa gratis).
-// La clave nunca toca el navegador -- a diferencia del flujo viejo con
-// Anthropic, donde el usuario pegaba su propia API key en el cliente.
+// Agente de IA gratuito server-side (Groq) -- mismo contrato de respuesta que la version Gemini.
 export const config = { runtime: 'edge' };
 
 function json(data, status = 200) {
@@ -20,28 +18,32 @@ export default async function handler(req) {
     const userData = await userRes.json();
     if (!userData?.id) return json({ error: 'Sesion invalida' }, 401);
 
-    if (!process.env.GEMINI_API_KEY) {
-      return json({ error: 'Falta GEMINI_API_KEY en las variables de entorno de Vercel.' }, 500);
+    if (!process.env.GROQ_API_KEY) {
+      return json({ error: 'Falta GROQ_API_KEY en las variables de entorno de Vercel.' }, 500);
     }
 
     const { message, system } = await req.json();
     if (!message) return json({ error: 'Falta el mensaje' }, 400);
 
-    const r = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ role: 'user', parts: [{ text: message }] }],
-          systemInstruction: system ? { parts: [{ text: system }] } : undefined,
-        }),
-      }
-    );
-    const data = await r.json();
-    if (data.error) return json({ error: data.error.message || 'Error de Gemini' }, r.status);
+    const messages = [];
+    if (system) messages.push({ role: 'system', content: system });
+    messages.push({ role: 'user', content: message });
 
-    const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    const r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
+      },
+      body: JSON.stringify({
+        model: 'llama-3.1-8b-instant',
+        messages,
+      }),
+    });
+    const data = await r.json();
+    if (data.error) return json({ error: data.error.message || 'Error de Groq' }, r.status);
+
+    const reply = data?.choices?.[0]?.message?.content || '';
     return json({ reply });
   } catch (err) {
     return json({ error: err.message }, 500);
