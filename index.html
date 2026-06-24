@@ -2948,7 +2948,7 @@ async function showApp(){
   document.getElementById('ms-date').value=today;
   document.getElementById('post-date').value=today;
   // IA key warning
-  if(!APIKEY) document.getElementById('ia-key-warn').style.display='block';
+ // La IA ya funciona sin API key propia (agente gratuito server-side) -- se quita el cartel de advertencia.
   // Verificar acceso del usuario
  async function syncMetaStatus() {
   const session = (await db.auth.getSession()).data.session;
@@ -3774,16 +3774,32 @@ async function askIA(msg){
   appendMsg('user',msg); iaHistory.push({role:'user',content:msg});
   const typing=appendMsg('typing','<span class="ld"></span><span class="ld"></span><span class="ld"></span>');
   APIKEY=localStorage.getItem('gx_anthropic_key')||'';
-  if(!APIKEY){typing.remove();appendMsg('assistant','Para usar la IA, configura tu API key en Configuracion (menu lateral).');return;}
+  async function askIA(msg){
+  appendMsg('user',msg); iaHistory.push({role:'user',content:msg});
+  const typing=appendMsg('typing','<span class="ld"></span><span class="ld"></span><span class="ld"></span>');
   const ctx=buildCtx();
+  const systemPrompt='Sos un experto en Meta Ads, ecommerce y estrategia de negocio digital. Trabajes con Rodri y Tizi de KIRIZ (ropa streetwear argentina, Laferrere, Buenos Aires) y Lado T (consultoria de marketing). Referencias clave: ROAS breakeven 2x, margen ~49%, tipo de cambio ~$1500 ARS/USD. Respondé siempre en español rioplatense, directo y accionable. No des rodeos ni introducciones innecesarias. '+ctx;
+
+  APIKEY=localStorage.getItem('gx_anthropic_key')||'';
   try{
-    const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':APIKEY,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-      body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:1000,
-        system:'Sos un experto en Meta Ads, ecommerce y estrategia de negocio digital. Trabajes con Rodri y Tizi de KIRIZ (ropa streetwear argentina, Laferrere, Buenos Aires) y Lado T (consultoria de marketing). Referencias clave: ROAS breakeven 2x, margen ~49%, tipo de cambio ~$1500 ARS/USD. Respondé siempre en español rioplatense, directo y accionable. No des rodeos ni introducciones innecesarias. '+ctx,
-        messages:iaHistory.slice(-12)})});
-    const data=await res.json(); typing.remove();
-    if(data.error){appendMsg('assistant','Error de API: '+data.error.message);return;}
-    const reply=data.content?.[0]?.text||'Sin respuesta.';
+    let reply;
+    if(APIKEY){
+      // Clave propia de Anthropic (opcional, mejor calidad) -- se mantiene como opcion avanzada
+      const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':APIKEY,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+        body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:1000,system:systemPrompt,messages:iaHistory.slice(-12)})});
+      const data=await res.json();
+      if(data.error){typing.remove();appendMsg('assistant','Error de API: '+data.error.message);return;}
+      reply=data.content?.[0]?.text||'Sin respuesta.';
+    } else {
+      // Agente gratuito por default -- no requiere ninguna clave del usuario
+      const session=(await db.auth.getSession()).data.session;
+      const res=await fetch('/api/ia-chat',{method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${session.access_token}`},
+        body:JSON.stringify({message:msg, system:systemPrompt})});
+      const data=await res.json();
+      if(data.error){typing.remove();appendMsg('assistant','Error de IA: '+data.error);return;}
+      reply=data.reply||'Sin respuesta.';
+    }
+    typing.remove();
     iaHistory.push({role:'assistant',content:reply});
     appendMsg('assistant',reply.replace(/\n/g,'<br>'));
   }catch(e){typing.remove();appendMsg('assistant','Error de conexion: '+e.message);}
