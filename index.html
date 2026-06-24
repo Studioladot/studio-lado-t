@@ -1175,7 +1175,7 @@ body.focus-mode #main{margin-left:0}
 
       <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">
     <button class="btn btn-outline btn-sm" onclick="showPage('finanzas')">&#9881; Productos, Inventario y Ajustes</button>
-    <button class="btn btn-accent btn-sm" onclick="openModal('modal-venta-dia')">+ Venta manual / showroom</button>
+   <button class="btn btn-accent btn-sm" onclick="populateVProductoSelect();openModal('modal-venta-dia')">+ Venta manual / showroom</button>
   </div>
 
 <!-- TIENDA NUBE — INTELIGENCIA AVANZADA (100% datos reales via API) -->
@@ -1261,8 +1261,8 @@ body.focus-mode #main{margin-left:0}
 
   <div class="an-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:14px">
     <div class="an-card"><div class="an-card-top"><span class="an-card-label">Ingresos Brutos</span></div><div class="an-card-val" id="pnl-bruto">$0</div></div>
-    <div class="an-card"><div class="an-card-top"><span class="an-card-label">Margen Bruto</span></div><div class="an-card-val" id="pnl-gross">$0</div></div>
-    <div class="an-card"><div class="an-card-top"><span class="an-card-label">Ads + Gastos Fijos</span></div><div class="an-card-val" id="pnl-costos">$0</div></div>
+   <div class="an-card"><div class="an-card-top"><span class="an-card-label">Margen Bruto</span></div><div class="an-card-val" id="pnl-gross">$0</div><div style="font-size:10px;color:#71717a;margin-top:2px">(Ingresos - Costo de producto)</div></div>
+    <div class="an-card"><div class="an-card-top"><span class="an-card-label">Ads + Gastos Fijos</span></div><div class="an-card-val" id="pnl-costos">$0</div><div style="font-size:10px;color:#71717a;margin-top:2px">(Meta Ads + Comisiones + Envíos)</div></div>
     <div class="an-card"><div class="an-card-top"><span class="an-card-label">Resultado Neto Real</span></div><div class="an-card-val" id="pnl-neto" style="color:#ffffff">$0</div></div>
   </div>
 
@@ -2252,8 +2252,17 @@ create policy "own" on contacts for all using (auth.uid()=user_id);</div>
       <div class="fg"><label>Fecha</label><input id="v-fecha" type="date"/></div>
       <div class="fg"><label>Monto total (ARS)</label><input id="v-monto" type="number" placeholder="0"/></div>
     </div>
+   <div class="form-row">
+      <div class="fg full">
+        <label>Producto (Tienda Nube)</label>
+        <select id="v-producto" onchange="recalcVentaManual()">
+          <option value="">Venta sin producto vinculado (manual)</option>
+        </select>
+      </div>
+    </div>
+    <input type="hidden" id="v-costo-unit" value="0">
     <div class="form-row">
-      <div class="fg"><label>Unidades vendidas</label><input id="v-unidades" type="number" placeholder="0"/></div>
+      <div class="fg"><label>Unidades vendidas</label><input id="v-unidades" type="number" placeholder="0" oninput="recalcVentaManual()"/></div>
       <div class="fg"><label>Canal</label>
         <select id="v-canal">
           <option>Local / Showroom</option>
@@ -2265,13 +2274,6 @@ create policy "own" on contacts for all using (auth.uid()=user_id);</div>
         </select>
       </div>
     </div>
-    <div class="form-row"><div class="fg full"><label>Notas</label><input id="v-notas" type="text" placeholder="Que vendiste, contexto..."/></div></div>
-    <div class="modal-footer">
-      <button class="btn btn-outline" onclick="closeModal('modal-venta-dia')">Cancelar</button>
-      <button class="btn btn-accent" onclick="saveVentaDia()">Guardar</button>
-    </div>
-  </div>
-</div>
 
 <!-- Modal Costo adicional manual (Analisis) -->
 <div class="modal-backdrop" id="modal-an-costos-add">
@@ -2899,10 +2901,13 @@ async function loadPnLEngine(){
   setT('pnl-neto','$'+fmtN(Math.round(totNeto)));
   document.getElementById('pnl-neto').style.color = totNeto>=0 ? 'var(--green)' : 'var(--red)';
   setT('pnl-poas', poas.toFixed(2)+'x');
-// --- UNIFICADO WEB + SHOWROOM ---
+// --- UNIFICADO WEB + SHOWROOM (con COGS real cuando esta vinculado) ---
   const showroomList = (ventasDia||[]).filter(v => v.fecha >= since && v.fecha <= until);
   const showroomTotal = showroomList.reduce((s,v)=>s+(+v.monto||0),0);
-  const showroomGanancia = showroomTotal * margen;
+  const showroomGanancia = showroomList.reduce((s,v)=>{
+    const costoTotal = (+v.costo_unitario||0)*(+v.unidades||1);
+    return s + (costoTotal>0 ? ((+v.monto||0)-costoTotal) : (+v.monto||0)*margen);
+  },0);
   const ventasTotalesUnif = totBruto + showroomTotal;
   const gananciaTotalUnif = totNeto + showroomGanancia;
   const pctWeb = ventasTotalesUnif>0 ? (totBruto/ventasTotalesUnif*100) : 0;
@@ -2916,13 +2921,6 @@ async function loadPnLEngine(){
   const barWeb = document.getElementById('unif-bar-web');
   if(barWeb) barWeb.style.width = pctWeb+'%';
   setT('unif-pct-label', `${pctWeb.toFixed(0)}% Web · ${pctLocal.toFixed(0)}% Local`);
-  const todayKey = new Date().toLocaleDateString('en-CA');
-  const todayD = byDay[todayKey] || {bruto:0,meta:0};
-  const breakEvenTarget = gastoFijoDiario + (todayD.meta||gastoMetaPorOrden);
-  const pct = breakEvenTarget>0 ? Math.min(100,(todayD.bruto/breakEvenTarget)*100) : 0;
-  document.getElementById('pnl-breakeven-bar').style.width = pct+'%';
-  setT('pnl-breakeven-label', `$${fmtN(Math.round(todayD.bruto||0))} / $${fmtN(Math.round(breakEvenTarget))}`);
-
   const list = document.getElementById('pnl-daily-list');
   const listLbl = document.getElementById('pnl-daily-sub');
   if(listLbl) listLbl.textContent = 'Desglose de rentabilidad por pedido reciente';
@@ -5373,21 +5371,50 @@ async function delGasto(id) {
 }
 
 // ── VENTAS DEL DIA ────────────────────────────────────────────────────────────
+  function populateVProductoSelect(){
+  const sel = document.getElementById('v-producto');
+  if(!sel) return;
+  const opts = ['<option value="">Venta sin producto vinculado (manual)</option>'];
+  (anProductos||[]).forEach(p=>{
+    (p.variants||[]).forEach(v=>{
+      opts.push(`<option value="${p.product_id}::${v.variant_id}" data-price="${v.price||0}" data-cost="${v.cost||0}">${p.product_name}${v.variant_name&&v.variant_name!=='Unica'?' — '+v.variant_name:''}</option>`);
+    });
+  });
+  sel.innerHTML = opts.join('');
+}
+function recalcVentaManual(){
+  const sel = document.getElementById('v-producto');
+  const opt = sel?.selectedOptions[0];
+  const price = +opt?.dataset.price || 0;
+  const cost  = +opt?.dataset.cost  || 0;
+  document.getElementById('v-costo-unit').value = cost;
+  const unidadesEl = document.getElementById('v-unidades');
+  if(opt && opt.value){
+    if(!unidadesEl.value) unidadesEl.value = 1;
+    document.getElementById('v-monto').value = (price*(+unidadesEl.value||1)).toFixed(2);
+  }
+}
 async function saveVentaDia() {
   const fecha = document.getElementById('v-fecha').value;
   const monto = +document.getElementById('v-monto').value||0;
   if(!fecha||monto<=0){ toast('Ingresa fecha y monto'); return; }
+  const productoSel = document.getElementById('v-producto')?.value || '';
+  const [productId, variantId] = productoSel.split('::');
   const rec = {
     user_id: me.id, fecha, monto,
     unidades: +document.getElementById('v-unidades').value||0,
     canal: document.getElementById('v-canal').value,
-    notas: document.getElementById('v-notas').value.trim()
+    notas: document.getElementById('v-notas').value.trim(),
+    costo_unitario: +document.getElementById('v-costo-unit').value||0,
+    tn_product_id: productId||null,
+    tn_variant_id: variantId||null,
   };
   const { data, error } = await db.from('daily_sales').insert([rec]).select();
   if(error){ toast('Error: '+error.message); return; }
   ventasDia.unshift(data[0]);
   renderVentasDia(); renderFinPanel(); renderConsolidatedSales(); closeModal('modal-venta-dia');
   ['v-fecha','v-monto','v-unidades','v-notas'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('v-producto').value=''; document.getElementById('v-costo-unit').value=0;
   document.getElementById('v-fecha').value = new Date().toISOString().split('T')[0];
   toast('Venta registrada ✓');
 }
