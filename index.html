@@ -3770,24 +3770,18 @@ async function delContact(id){await db.from('contacts').delete().eq('id',id);con
 
 // ── IA ────────────────────────────────────────────────────────────────────────
 async function sendIA(){const inp=document.getElementById('ia-inp');const msg=inp.value.trim();if(!msg)return;askIA(msg);inp.value='';inp.style.height='auto';}
+
 async function askIA(msg){
   appendMsg('user',msg); iaHistory.push({role:'user',content:msg});
   const typing=appendMsg('typing','<span class="ld"></span><span class="ld"></span><span class="ld"></span>');
   const ctx=buildCtx();
   const systemPrompt=`Sos el estratega interno de GOTIX para KIRIZ (streetwear, Laferrere, Buenos Aires) y Lado T. Cuatro areas, con reglas concretas en cada una -- nunca generico, siempre con numeros y accion:
-
-FINANZAS: breakeven ROAS ~2x, margen bruto objetivo ~48-49%. Si te preguntan por rentabilidad, calculá con los datos reales que te paso abajo (facturacion neta, gastos, comisiones) en vez de dar formulas teoricas. Si falta un dato para calcular algo, pedilo puntual, no asumas.
-
-META ADS: estructura correcta es 1 ad set CBO/ADV+ con 3 anuncios adentro; nuevo ad set solo para audiencia distinta. CPA breakeven ~USD 14-18. Si el ROAS reportado por Meta no coincide con las ventas reales de Tienda Nube, señalalo explicitamente (es el bug mas comun: ROAS inflado por atribucion).
-
-ESCALAR/OPTIMIZAR: subidas de presupuesto incrementales (no mas de 20-30% por vez) para no resetear el aprendizaje del algoritmo. Ante fatiga de creativo (frequency alta, CTR cayendo), proponé refrescar el gancho/hook antes que tocar presupuesto.
-
-CONTENIDO: la filosofia es contenido nativo que entretiene primero y vende encubierto -- nunca arrancar un gancho desde un lugar negativo/dolor, CTA liviano al final. Si te piden ideas de contenido, dame formatos concretos (no "hagan mas reels"), basados en lo que ya viene funcionando segun los guiones activos/ganadores de abajo.
-
-Respondé en español rioplatense, directo, sin preambulo. Si los datos de abajo no alcanzan para responder con precision, decilo y pedi el dato exacto que falta en vez de generalizar.
-
+FINANZAS: breakeven ROAS ~2x, margen bruto objetivo ~48-49%. Si te preguntan por rentabilidad, calcula con los datos reales que te paso abajo (facturacion neta, gastos, comisiones) en vez de dar formulas teoricas. Si falta un dato para calcular algo, pedilo puntual, no asumas.
+META ADS: estructura correcta es 1 ad set CBO/ADV+ con 3 anuncios adentro; nuevo ad set solo para audiencia distinta. CPA breakeven ~USD 14-18. Si el ROAS reportado por Meta no coincide con las ventas reales de Tienda Nube, senalalo explicitamente (es el bug mas comun: ROAS inflado por atribucion).
+ESCALAR/OPTIMIZAR: subidas de presupuesto incrementales (no mas de 20-30% por vez) para no resetear el aprendizaje del algoritmo. Ante fatiga de creativo (frequency alta, CTR cayendo), propone refrescar el gancho/hook antes que tocar presupuesto.
+CONTENIDO: la filosofia es contenido nativo que entretiene primero y vende encubierto -- nunca arrancar un gancho desde un lugar negativo/dolor, CTA liviano al final. Si te piden ideas de contenido, da formatos concretos, basados en lo que ya viene funcionando segun los guiones activos/ganadores de abajo.
+Responde en espanol rioplatense, directo, sin preambulo. Si los datos de abajo no alcanzan para responder con precision, decilo y pedi el dato exacto que falta en vez de generalizar.
 ${ctx}`;
-
   APIKEY=localStorage.getItem('gx_anthropic_key')||'';
   try{
     let reply;
@@ -3810,22 +3804,21 @@ ${ctx}`;
     appendMsg('assistant',reply.replace(/\n/g,'<br>'));
   }catch(e){typing.remove();appendMsg('assistant','Error de conexion: '+e.message);}
 }
-}
 function buildCtx(){
   const parts=[];
-  if(tnConnection && tnSalesSummary?.ordenes){
-    parts.push(`Tienda Nube (periodo actual): ${tnSalesSummary.ordenes} ordenes pagadas, bruto $${Math.round(tnSalesSummary.bruto||0)}, neto $${Math.round(tnSalesSummary.neto||0)} ARS.`);
+  if(tnConnection && tnSalesSummary && tnSalesSummary.ordenes){
+    parts.push('Tienda Nube (periodo actual): '+tnSalesSummary.ordenes+' ordenes pagadas, bruto $'+Math.round(tnSalesSummary.bruto||0)+', neto $'+Math.round(tnSalesSummary.neto||0)+' ARS.');
   }
-  if(tnFunnelData?.gastoMeta){
-    parts.push(`Meta Ads: gasto $${Math.round(tnFunnelData.gastoMeta)} ARS, ROAS reportado por Meta ${tnFunnelData.roasMeta}x, ROAS real (ventas TN/gasto) ${tnFunnelData.roasReal?.toFixed?.(2)||tnFunnelData.roasReal}x.`);
+  if(tnFunnelData && tnFunnelData.gastoMeta){
+    parts.push('Meta Ads: gasto $'+Math.round(tnFunnelData.gastoMeta)+' ARS, ROAS reportado por Meta '+tnFunnelData.roasMeta+'x, ROAS real (ventas TN/gasto) '+tnFunnelData.roasReal+'x.');
   }
   if(typeof metaCampaigns!=='undefined' && metaCampaigns.length){
     const activas=metaCampaigns.filter(c=>c.status==='ACTIVE').slice(0,8);
-    if(activas.length)parts.push('Campanas activas: '+activas.map(c=>c.name+' (gasto $'+Math.round(parseFloat(c.insights?.spend||0))+')').join(', ')+'.');
+    if(activas.length)parts.push('Campanas activas: '+activas.map(c=>c.name+' (gasto $'+Math.round(parseFloat(c.insights&&c.insights.spend||0))+')').join(', ')+'.');
   }
   if(typeof gastos!=='undefined' && gastos.length){
     const totalGastos=gastos.reduce((a,g)=>a+(+g.monto||0),0);
-    parts.push(`Gastos fijos cargados este mes: $${Math.round(totalGastos)} ARS.`);
+    parts.push('Gastos fijos cargados este mes: $'+Math.round(totalGastos)+' ARS.');
   }
   if(metrics.length){const r=metrics.slice(0,5);parts.push('Ultimas metricas guardadas: '+r.map(m=>m.name+': ROAS '+m.roas+'x, gasto $'+m.spend+', compras '+m.purchases+', CTR '+m.ctr+'%, CPA $'+m.cpa+', hook '+m.hook_rate+'%, P25 '+m.p25+'%, P100 '+m.p100+'%').join(' | '));}
   if(objectives.length)parts.push('Objetivos del mes: '+objectives.map(o=>o.name+' ('+o.current_val+'/'+o.target+' '+o.unit+')').join(', '));
