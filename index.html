@@ -2253,11 +2253,13 @@ create policy "own" on contacts for all using (auth.uid()=user_id);</div>
       <div class="fg"><label>Monto total (ARS)</label><input id="v-monto" type="number" placeholder="0"/></div>
     </div>
    <div class="form-row">
-      <div class="fg full">
+      <div class="fg full" style="position:relative">
         <label>Producto (Tienda Nube)</label>
-        <select id="v-producto" onchange="recalcVentaManual()">
-          <option value="">Venta sin producto vinculado (manual)</option>
-        </select>
+        <input type="text" id="v-producto-search" autocomplete="off" placeholder="Buscar por nombre, talle o color..."
+          oninput="filterVProductoOptions(this.value)" onfocus="filterVProductoOptions(this.value)"
+          style="width:100%;border:0.5px solid var(--border);border-radius:var(--r);padding:9px 12px;font-size:13px;background:var(--surface);color:var(--text);outline:none">
+        <input type="hidden" id="v-producto" value="">
+        <div id="v-producto-list" style="display:none;position:absolute;z-index:50;top:100%;left:0;right:0;max-height:220px;overflow-y:auto;background:var(--surface);border:0.5px solid var(--border);border-radius:var(--r);margin-top:4px;box-shadow:0 8px 24px rgba(0,0,0,.25)"></div>
       </div>
     </div>
     <input type="hidden" id="v-costo-unit" value="0">
@@ -5372,35 +5374,69 @@ async function delGasto(id) {
 }
 
 // ── VENTAS DEL DIA ────────────────────────────────────────────────────────────
- async function populateVProductoSelect(){
-  const sel = document.getElementById('v-producto');
-  if(!sel) return;
-  sel.innerHTML = '<option value="">Cargando productos...</option>';
+let vProductoOptions = [];
+async function populateVProductoSelect(){
+  const searchEl = document.getElementById('v-producto-search');
+  if(searchEl) searchEl.placeholder = 'Cargando productos...';
   if(!anProductos.length && typeof loadAnProductosFromCache==='function') {
     await loadAnProductosFromCache();
   }
   if(!anProductos.length && tnConnection && typeof loadAnProductos==='function') {
     await loadAnProductos(false);
   }
-  const opts = ['<option value="">Venta sin producto vinculado (manual)</option>'];
+  vProductoOptions = [];
   (anProductos||[]).forEach(p=>{
     (p.variants||[]).forEach(v=>{
-      opts.push(`<option value="${p.product_id}::${v.variant_id}" data-price="${v.price||0}" data-cost="${v.cost||0}">${p.product_name}${v.variant_name&&v.variant_name!=='Unica'?' — '+v.variant_name:''}</option>`);
+      const label = p.product_name + (v.variant_name && v.variant_name!=='Unica' ? ' — '+v.variant_name : '');
+      vProductoOptions.push({ label, productId:p.product_id, variantId:v.variant_id, price:+v.price||0, cost:+v.cost||0 });
     });
   });
-  sel.innerHTML = opts.join('');
+  if(searchEl) searchEl.placeholder = 'Buscar por nombre, talle o color...';
+  document.getElementById('v-producto-search').value = '';
+  document.getElementById('v-producto').value = '';
 }
-function recalcVentaManual(){
-  const sel = document.getElementById('v-producto');
-  const opt = sel?.selectedOptions[0];
-  const price = +opt?.dataset.price || 0;
-  const cost  = +opt?.dataset.cost  || 0;
-  document.getElementById('v-costo-unit').value = cost;
-  const unidadesEl = document.getElementById('v-unidades');
-  if(opt && opt.value){
-    if(!unidadesEl.value) unidadesEl.value = 1;
-    document.getElementById('v-monto').value = (price*(+unidadesEl.value||1)).toFixed(2);
+  function filterVProductoOptions(q){
+  const list = document.getElementById('v-producto-list');
+  if(!list) return;
+  const term = (q||'').toLowerCase().trim();
+  const matches = term ? vProductoOptions.filter(o=>o.label.toLowerCase().includes(term)) : vProductoOptions;
+  if(!matches.length){
+    list.innerHTML = '<div style="padding:10px 12px;font-size:12px;color:var(--text2)">Sin coincidencias</div>';
+  } else {
+    list.innerHTML = matches.slice(0,50).map((o,i)=>`
+      <div onclick="selectVProducto(${matches.indexOf ? matches.indexOf(o) : i})" data-idx="${vProductoOptions.indexOf(o)}"
+        style="padding:9px 12px;font-size:13px;cursor:pointer;border-bottom:0.5px solid var(--border)"
+        onmouseover="this.style.background='var(--surface2)'" onmouseout="this.style.background='transparent'">
+        ${o.label}
+      </div>`).join('');
   }
+  list.style.display = 'block';
+}
+function selectVProducto(idx){
+  const list = document.getElementById('v-producto-list');
+  const el = list?.querySelector(`[data-idx="${idx}"]`);
+  const o = vProductoOptions[idx];
+  if(!o) return;
+  document.getElementById('v-producto').value = o.productId+'::'+o.variantId;
+  document.getElementById('v-producto-search').value = o.label;
+  document.getElementById('v-costo-unit').value = o.cost;
+  const unidadesEl = document.getElementById('v-unidades');
+  if(!unidadesEl.value) unidadesEl.value = 1;
+  document.getElementById('v-monto').value = (o.price*(+unidadesEl.value||1)).toFixed(2);
+  if(list) list.style.display = 'none';
+}
+document.addEventListener('click', e=>{
+  const wrap = document.getElementById('v-producto-list');
+  if(wrap && !e.target.closest('#v-producto-search') && !e.target.closest('#v-producto-list')) wrap.style.display='none';
+});
+function recalcVentaManualUnidades(){
+  const val = document.getElementById('v-producto').value;
+  if(!val) return;
+  const [productId, variantId] = val.split('::');
+  const o = vProductoOptions.find(x=>x.productId===productId && x.variantId===variantId);
+  if(!o) return;
+  const unidadesEl = document.getElementById('v-unidades');
+  document.getElementById('v-monto').value = (o.price*(+unidadesEl.value||1)).toFixed(2);
 }
 async function saveVentaDia() {
   const fecha = document.getElementById('v-fecha').value;
