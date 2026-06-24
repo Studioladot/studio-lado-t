@@ -1,8 +1,6 @@
 // api/mp-create-subscription.js
-// Devuelve el link de checkout hospedado de Mercado Pago para que el usuario
-// autorice la suscripcion (carga su tarjeta EN la pagina de Mercado Pago).
-// No llama a POST /preapproval -- ese endpoint es para cuando ya se tiene un
-// card_token_id (tarjeta tokenizada de antemano), que no es nuestro caso.
+// Devuelve el init_point REAL del plan, consultandolo directo a Mercado Pago
+// (en vez de armar la URL del checkout a mano).
 export const config = { runtime: 'edge' };
 
 function json(data, status = 200) {
@@ -26,11 +24,18 @@ export default async function handler(req) {
       return json({ error: 'Falta la variable de entorno MP_PLAN_ID en Vercel.' }, 500);
     }
 
-    // El external_reference se pasa como query param: cuando el webhook recibe
-    // la notificacion, vuelve a consultar este preapproval a la API de MP y ahi
-    // SI viene el external_reference guardado (Mercado Pago lo toma de esta URL
-    // al crear el preapproval desde el checkout hospedado).
-    const checkoutUrl = `https://www.mercadopago.com/subscriptions/checkout?preapproval_plan_id=${process.env.MP_PLAN_ID}&external_reference=${userId}`;
+    const planRes = await fetch(`https://api.mercadopago.com/preapproval_plan/${process.env.MP_PLAN_ID}`, {
+      headers: { Authorization: `Bearer ${process.env.MP_ACCESS_TOKEN}` },
+    });
+    const plan = await planRes.json();
+
+    if (!planRes.ok || !plan.init_point) {
+      return json({ error: plan.message || 'No se pudo obtener el link de pago del plan.', details: plan }, planRes.status !== 200 ? planRes.status : 400);
+    }
+
+    // Le agregamos external_reference por si Mercado Pago lo respeta en este link
+    // (si no lo respeta, el webhook tiene un fallback por email igual).
+    const checkoutUrl = `${plan.init_point}${plan.init_point.includes('?') ? '&' : '?'}external_reference=${userId}`;
 
     return json({ init_point: checkoutUrl });
   } catch (err) {
