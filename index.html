@@ -1175,7 +1175,7 @@ body.focus-mode #main{margin-left:0}
 
       <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">
     <button class="btn btn-outline btn-sm" onclick="showPage('finanzas')">&#9881; Productos, Inventario y Ajustes</button>
-   <button class="btn btn-accent btn-sm" onclick="populateVProductoSelect();openModal('modal-venta-dia')">+ Venta manual / showroom</button>
+  <button class="btn btn-accent btn-sm" onclick="openModal('modal-venta-dia');populateVProductoSelect()">+ Venta manual / showroom</button>
   </div>
 
 <!-- TIENDA NUBE — INTELIGENCIA AVANZADA (100% datos reales via API) -->
@@ -2902,11 +2902,12 @@ async function loadPnLEngine(){
   document.getElementById('pnl-neto').style.color = totNeto>=0 ? 'var(--green)' : 'var(--red)';
   setT('pnl-poas', poas.toFixed(2)+'x');
 // --- UNIFICADO WEB + SHOWROOM (con COGS real cuando esta vinculado) ---
+  const margenUnif = (finConfig?.margen_bruto||48)/100;
   const showroomList = (ventasDia||[]).filter(v => v.fecha >= since && v.fecha <= until);
   const showroomTotal = showroomList.reduce((s,v)=>s+(+v.monto||0),0);
   const showroomGanancia = showroomList.reduce((s,v)=>{
     const costoTotal = (+v.costo_unitario||0)*(+v.unidades||1);
-    return s + (costoTotal>0 ? ((+v.monto||0)-costoTotal) : (+v.monto||0)*margen);
+    return s + (costoTotal>0 ? ((+v.monto||0)-costoTotal) : (+v.monto||0)*margenUnif);
   },0);
   const ventasTotalesUnif = totBruto + showroomTotal;
   const gananciaTotalUnif = totNeto + showroomGanancia;
@@ -5371,9 +5372,16 @@ async function delGasto(id) {
 }
 
 // ── VENTAS DEL DIA ────────────────────────────────────────────────────────────
-  function populateVProductoSelect(){
+ async function populateVProductoSelect(){
   const sel = document.getElementById('v-producto');
   if(!sel) return;
+  sel.innerHTML = '<option value="">Cargando productos...</option>';
+  if(!anProductos.length && typeof loadAnProductosFromCache==='function') {
+    await loadAnProductosFromCache();
+  }
+  if(!anProductos.length && tnConnection && typeof loadAnProductos==='function') {
+    await loadAnProductos(false);
+  }
   const opts = ['<option value="">Venta sin producto vinculado (manual)</option>'];
   (anProductos||[]).forEach(p=>{
     (p.variants||[]).forEach(v=>{
