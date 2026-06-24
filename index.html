@@ -1236,7 +1236,7 @@ body.focus-mode #main{margin-left:0}
       Facturacion por dia
     </div>
   </div>
-  <div id="an-chart-wrap" style="height:200px"></div>
+  <div id="an-chart-wrap-vop" style="height:200px"></div>
 </div>
 <!-- P&L AUTOMATIZADO -->
 <div class="card" id="pnl-engine" style="margin-top:14px" draggable="true">
@@ -1370,6 +1370,7 @@ body.focus-mode #main{margin-left:0}
     </table></div>
     <div id="vc-pager" style="display:flex;justify-content:center;align-items:center;gap:6px;margin-top:12px;padding-top:12px;border-top:0.5px solid var(--ad-border)"></div>
   </div>
+</div>
 </div>
 
 <!-- FINANZAS -->
@@ -5585,7 +5586,7 @@ async function loadTiendaNubeSales() {
     anRenderCard('tn-bruto','Bruto (con envio)',tnSalesSummary.bruto,0,sBruto,'money');
     anRenderCard('tn-neto','Bruto (sin envio)',tnSalesSummary.neto,0,sNeto,'money');
     anRenderCard('tn-envio','Envio cobrado',tnSalesSummary.envio,0,sEnvio,'money',false,true);
-    renderAnChart(serie);
+   renderAnChart(serie, 'an-chart-wrap-vop');
 
     // Periodo anterior (solo para la variacion %) en segundo plano, no bloquea el pintado
     const prev = anPrevRange(since, until);
@@ -6217,8 +6218,8 @@ function anBuildEllipsisPager(current, total, fnName){
 }
 
 // ── GRAFICO FACTURACION POR DIA — barras SVG con la serie diaria real de TN ──
-function renderAnChart(serie) {
-  const wrap = document.getElementById('an-chart-wrap');
+function renderAnChart(serie, wrapId='an-chart-wrap') {
+  const wrap = document.getElementById(wrapId);
   if(!wrap) return;
   if(!serie || !serie.length) {
     wrap.innerHTML = '<div style="height:100%;display:flex;align-items:center;justify-content:center;color:var(--ad-text3);font-size:13px">Sin datos para graficar</div>';
