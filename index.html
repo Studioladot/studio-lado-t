@@ -305,7 +305,7 @@ body.focus-mode #main{margin-left:0}
 
 /* ── BUSINESS HEALTH SCORE ────────────────────────────────────────────────── */
 .bhs-dim{display:flex;align-items:center;gap:10px}
-.bhs-dim-label{font-size:11.5px;color:var(--ad-text2);width:160px;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bhs-dim-label{font-size:11.5px;color:var(--ad-text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
 .bhs-dim-bar-bg{flex:1;height:5px;background:var(--ad-surface2);border-radius:3px;overflow:hidden}
 .bhs-dim-bar{height:100%;border-radius:3px;transition:width 1.2s cubic-bezier(.4,0,.2,1)}
 .bhs-dim-val{font-size:11.5px;font-weight:700;color:var(--ad-text);width:32px;text-align:right;flex-shrink:0}
@@ -352,7 +352,13 @@ body.focus-mode #main{margin-left:0}
     </div>
   </div>
 </div>
-
+.bhs-grid{display:flex;flex-direction:column;gap:24px}
+@media(min-width:768px){.bhs-grid{flex-direction:row;align-items:center;gap:32px}}
+.bhs-gauge-col{flex:0 0 auto}
+.bhs-dims-col{flex:1;min-width:0;width:100%}
+.bhs-dim-label-wrap{display:flex;flex-direction:column;width:170px;flex-shrink:0}
+.bhs-dim-desc{font-size:10px;color:var(--ad-text3);line-height:1.25;margin-top:1px}
+@media(max-width:480px){.bhs-dim-label-wrap{width:110px}}
 <!-- AUTH -->
 <div id="auth-screen" style="display:none">
   <div class="auth-card">
@@ -544,12 +550,12 @@ body.focus-mode #main{margin-left:0}
 
 </div>
   
-  <!-- BUSINESS HEALTH SCORE ─────────────────────────────────────────────── -->
+ <!-- BUSINESS HEALTH SCORE ─────────────────────────────────────────────── -->
   <div class="an-dark" id="bhs-panel" style="margin-bottom:14px">
-    <div style="display:grid;grid-template-columns:220px 1fr;gap:32px;align-items:center">
+    <div class="bhs-grid">
 
       <!-- GAUGE CIRCULAR -->
-      <div style="display:flex;flex-direction:column;align-items:center">
+      <div class="bhs-gauge-col" style="display:flex;flex-direction:column;align-items:center">
         <div style="position:relative;width:168px;height:168px">
           <svg viewBox="0 0 168 168" style="width:168px;height:168px;transform:rotate(-90deg)">
             <circle cx="84" cy="84" r="70" fill="none" stroke="#1c1f24" stroke-width="11"/>
@@ -569,8 +575,8 @@ body.focus-mode #main{margin-left:0}
       </div>
 
       <!-- DIMENSIONES + ACCIONES -->
-      <div>
-        <div style="font-size:10px;font-weight:700;color:var(--ad-text3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:14px">Business Health Score — ultimos 30 dias</div>
+      <div class="bhs-dims-col">
+        <div id="bhs-title" style="font-size:10px;font-weight:700;color:var(--ad-text3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:14px">Business Health Score — ultimos 30 dias</div>
         <div id="bhs-dims" style="display:flex;flex-direction:column;gap:9px"></div>
         <div id="bhs-actions" style="margin-top:16px;display:flex;flex-direction:column;gap:7px"></div>
       </div>
@@ -3257,12 +3263,19 @@ function computeBHS() {
   } else sImpulso = null;
 
   // --- SCORE TOTAL ponderado (omitiendo dimensiones sin datos) ---
+ const BHS_DESC = {
+    rentabilidad: 'Margen neto real sobre la facturación',
+    publicidad:   'True ROAS vs. breakeven y objetivo',
+    ventas:       'Volumen y crecimiento de ventas',
+    eficiencia:   'Costos totales sobre la facturación',
+    crecimiento:  'Tendencia de ROAS, últimos 7 días vs. anteriores',
+  };
   const dims = [
-    { label:'Rentabilidad',    peso:30, score:sRentabilidad, icon:'M3 12l3-3 3 3 3-3 3 3', color:'#34d399', action: margenReal!==null && margenReal<15 ? 'El margen neto es bajo. Revisá costos o subí el ticket promedio.' : margenReal!==null && margenReal<0 ? 'Estás perdiendo dinero. Los costos superan los ingresos.' : null },
-    { label:'Publicidad',      peso:25, score:sPublicidad,   icon:'M2 15V9l4-4 4 4 4-5',   color:'#60a5fa', action: trueRoas!==null && trueRoas<breakevenRoas ? `True ROAS (${trueRoas.toFixed(1)}x) está bajo el breakeven (${breakevenRoas.toFixed(1)}x). Pausá lo que no convierte.` : trueRoas!==null && trueRoas<targetRoas ? `True ROAS (${trueRoas.toFixed(1)}x) por debajo del objetivo de ${targetRoas}x. Escalar con cautela.` : null },
-    { label:'Ventas',          peso:20, score:sVentas,       icon:'M4 6h16M4 12h8M4 18h4', color:'#a78bfa', action: sVentas!==null && sVentas<40 ? 'Ventas bajas. Revisá campañas activas y rotá creativos.' : null },
-    { label:'Eficiencia',      peso:15, score:sEficiencia,   icon:'M9 7h6M9 11h6M9 15h4',  color:'#fbbf24', action: sEficiencia!==null && sEficiencia<40 ? 'Costos altos en relación a las ventas. Revisá gastos fijos.' : null },
-    { label:'Impulso',         peso:10, score:sImpulso,      icon:'M2 12l4-4 4 4 4-2 4 2', color:'#f472b6', action: sImpulso!==null && sImpulso<40 ? 'ROAS en caída. Analizá creativos y audiencias actuales.' : null },
+    { key:'rentabilidad', label:'Rentabilidad',           peso:30, score:sRentabilidad, icon:'M3 12l3-3 3 3 3-3 3 3', color:'#34d399', action: margenReal!==null && margenReal<15 ? 'El margen neto es bajo. Revisá costos o subí el ticket promedio.' : margenReal!==null && margenReal<0 ? 'Estás perdiendo dinero. Los costos superan los ingresos.' : null },
+    { key:'publicidad',   label:'Publicidad',             peso:25, score:sPublicidad,   icon:'M2 15V9l4-4 4 4 4-5',   color:'#60a5fa', action: trueRoas!==null && trueRoas<breakevenRoas ? `True ROAS (${trueRoas.toFixed(1)}x) está bajo el breakeven (${breakevenRoas.toFixed(1)}x). Pausá lo que no convierte.` : trueRoas!==null && trueRoas<targetRoas ? `True ROAS (${trueRoas.toFixed(1)}x) por debajo del objetivo de ${targetRoas}x. Escalar con cautela.` : null },
+    { key:'ventas',       label:'Ventas',                 peso:20, score:sVentas,       icon:'M4 6h16M4 12h8M4 18h4', color:'#a78bfa', action: sVentas!==null && sVentas<40 ? 'Ventas bajas. Revisá campañas activas y rotá creativos.' : null },
+    { key:'eficiencia',   label:'Eficiencia',             peso:15, score:sEficiencia,   icon:'M9 7h6M9 11h6M9 15h4',  color:'#fbbf24', action: sEficiencia!==null && sEficiencia<40 ? 'Costos altos en relación a las ventas. Revisá gastos fijos.' : null },
+    { key:'crecimiento',  label:'Crecimiento (Tracción)', peso:10, score:sImpulso,      icon:'M2 12l4-4 4 4 4-2 4 2', color:'#f472b6', action: sImpulso!==null && sImpulso<40 ? 'ROAS en caída. Analizá creativos y audiencias actuales.' : null },
   ];
 
   const withData = dims.filter(d=>d.score!==null);
@@ -3301,34 +3314,37 @@ function renderBHS() {
   if(labelEl) { labelEl.textContent=label; labelEl.style.color=score>=75?'#34d399':score>=50?'#60a5fa':score>=30?'#fbbf24':'#f87171'; }
   if(subEl)     subEl.textContent=sublabel;
 
+ // --- TITULO SINCRONIZADO CON EL FILTRO GLOBAL DE FECHAS ---
+  const titleEl = document.getElementById('bhs-title');
+  if(titleEl){
+    const rv = document.getElementById('meta-date-range')?.value || 'last_30d';
+    const rl = {today:'hoy',yesterday:'ayer',last_7d:'ultimos 7 dias',last_14d:'ultimos 14 dias',last_30d:'ultimos 30 dias',last_90d:'ultimos 90 dias',this_month:'este mes',last_month:'mes pasado',maximum:'historico'}[rv] || rv;
+    titleEl.textContent = 'Business Health Score — ' + rl;
+  }
+
   // --- DIMENSIONES ---
   const dimsEl = document.getElementById('bhs-dims');
   if(dimsEl) {
     dimsEl.innerHTML = dims.map(d=>{
-      if(d.score===null) return `
-        <div class="bhs-dim">
-          <span class="bhs-dim-label">${d.label}</span>
-          <div class="bhs-dim-bar-bg"><div class="bhs-dim-bar" style="width:0%;background:${d.color}"></div></div>
-          <span class="bhs-dim-val" style="color:var(--ad-text3)">—</span>
-        </div>`;
-      const pct = Math.round(d.score);
+      const pct = Math.round(d.score ?? 0);
+      const sinDatos = d.score===null || d.score===undefined;
       return `
         <div class="bhs-dim">
-          <span class="bhs-dim-label">${d.label}</span>
-          <div class="bhs-dim-bar-bg"><div class="bhs-dim-bar" id="bhsbar-${d.label.toLowerCase().replace(/\s+/g,'')}" style="width:0%;background:${d.color}"></div></div>
-          <span class="bhs-dim-val">${pct}</span>
+          <div class="bhs-dim-label-wrap">
+            <span class="bhs-dim-label">${d.label}</span>
+            <span class="bhs-dim-desc">${BHS_DESC[d.key]||''}</span>
+          </div>
+          <div class="bhs-dim-bar-bg"><div class="bhs-dim-bar" id="bhsbar-${d.key}" style="width:0%;background:${d.color}"></div></div>
+          <span class="bhs-dim-val" ${sinDatos?'style="color:var(--ad-text3)"':''}>${sinDatos?'—':pct}</span>
         </div>`;
     }).join('');
-    // Animar barras
     setTimeout(()=>{
       dims.forEach(d=>{
-        if(d.score===null) return;
-        const bar = document.getElementById('bhsbar-'+d.label.toLowerCase().replace(/\s+/g,''));
-        if(bar) bar.style.width = Math.round(d.score)+'%';
+        const bar = document.getElementById('bhsbar-'+d.key);
+        if(bar) bar.style.width = Math.round(d.score ?? 0)+'%';
       });
     },80);
   }
-
   // --- ACCIONES ---
   const actionsEl = document.getElementById('bhs-actions');
   if(actionsEl) {
