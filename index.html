@@ -1238,6 +1238,23 @@ body.focus-mode #main{margin-left:0}
   </div>
   <div id="an-chart-wrap-vop" style="height:200px"></div>
 </div>
+    <!-- UTILIDAD NETA DEL NEGOCIO (Web + Showroom) -->
+<div class="card" id="unif-pnl" style="margin-top:14px">
+  <div class="card-title">Utilidad Neta del Negocio (Web + Showroom)</div>
+  <div class="an-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:14px">
+    <div class="an-card"><div class="an-card-top"><span class="an-card-label">Ventas Totales</span></div><div class="an-card-val" id="unif-ventas-totales">$0</div></div>
+    <div class="an-card"><div class="an-card-top"><span class="an-card-label">Ganancia Neta Total</span></div><div class="an-card-val" id="unif-ganancia-total">$0</div></div>
+    <div class="an-card"><div class="an-card-top"><span class="an-card-label">Ventas Showroom</span></div><div class="an-card-val" id="unif-ventas-showroom">$0</div></div>
+  </div>
+  <div>
+    <div style="display:flex;justify-content:space-between;font-size:11px;color:#888888;margin-bottom:5px" id="unif-pct-label">
+      <span>0% Web</span><span>0% Local</span>
+    </div>
+    <div style="height:6px;border-radius:3px;background:#7c3aed;overflow:hidden;display:flex">
+      <div id="unif-bar-web" style="height:100%;background:var(--accent);width:0%;transition:width .4s"></div>
+    </div>
+  </div>
+</div>
 <!-- P&L AUTOMATIZADO -->
 <div class="card" id="pnl-engine" style="margin-top:14px" draggable="true">
   <div class="card-title">Ganancias y Pérdidas Reales (P&amp;L)</div>
@@ -2882,7 +2899,23 @@ async function loadPnLEngine(){
   setT('pnl-neto','$'+fmtN(Math.round(totNeto)));
   document.getElementById('pnl-neto').style.color = totNeto>=0 ? 'var(--green)' : 'var(--red)';
   setT('pnl-poas', poas.toFixed(2)+'x');
+// --- UNIFICADO WEB + SHOWROOM ---
+  const showroomList = (ventasDia||[]).filter(v => v.fecha >= since && v.fecha <= until);
+  const showroomTotal = showroomList.reduce((s,v)=>s+(+v.monto||0),0);
+  const showroomGanancia = showroomTotal * margen;
+  const ventasTotalesUnif = totBruto + showroomTotal;
+  const gananciaTotalUnif = totNeto + showroomGanancia;
+  const pctWeb = ventasTotalesUnif>0 ? (totBruto/ventasTotalesUnif*100) : 0;
+  const pctLocal = 100 - pctWeb;
 
+  setT('unif-ventas-totales','$'+fmtN(Math.round(ventasTotalesUnif)));
+  setT('unif-ganancia-total','$'+fmtN(Math.round(gananciaTotalUnif)));
+  const gananciaUnifEl = document.getElementById('unif-ganancia-total');
+  if(gananciaUnifEl) gananciaUnifEl.style.color = gananciaTotalUnif>=0 ? 'var(--green)' : 'var(--red)';
+  setT('unif-ventas-showroom','$'+fmtN(Math.round(showroomTotal)));
+  const barWeb = document.getElementById('unif-bar-web');
+  if(barWeb) barWeb.style.width = pctWeb+'%';
+  setT('unif-pct-label', `${pctWeb.toFixed(0)}% Web · ${pctLocal.toFixed(0)}% Local`);
   const todayKey = new Date().toLocaleDateString('en-CA');
   const todayD = byDay[todayKey] || {bruto:0,meta:0};
   const breakEvenTarget = gastoFijoDiario + (todayD.meta||gastoMetaPorOrden);
@@ -5546,7 +5579,7 @@ function renderConsolidatedSalesPage() {
       <td style="font-weight:600">${r.idOrden}</td>
       <td><span class="an-pill" style="${badgeStyle}">${r.origenLabel}</span></td>
       <td style="color:var(--ad-text2)">${r.estado}</td>
-      <td style="color:var(--ad-text2)">${new Date(r.fecha).toLocaleDateString('es-AR',{day:'2-digit',month:'short'})}</td>
+      <td style="color:var(--ad-text2)">${new Date(r.fecha.length===10?r.fecha+'T12:00:00':r.fecha).toLocaleDateString('es-AR',{day:'2-digit',month:'short'})}</td>
       <td>${fmtMoney(r.total)}</td>
       <td style="font-weight:700">${fmtMoney(r.neto)}</td>
       <td>${r.origen==='manual'?`<span onclick="delVentaDia('${r.id}').then(()=>renderConsolidatedSales())" style="color:var(--red);cursor:pointer;font-size:12px;font-weight:600">Eliminar</span>`:''}</td>
