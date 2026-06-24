@@ -3180,6 +3180,13 @@ function renderDash(){
 //   Eficiencia      15% — ratio (costos totales) / facturacion
 //   Impulso         10% — tendencia ultimos 7 dias vs 7 anteriores en gasto/ROAS
 // ══════════════════════════════════════════════════════════════════════════════
+const BHS_DESC = {
+  rentabilidad: 'Margen neto real sobre la facturación',
+  publicidad:   'True ROAS vs. breakeven y objetivo',
+  ventas:       'Volumen y crecimiento de ventas',
+  eficiencia:   'Costos totales sobre la facturación',
+  crecimiento:  'Tendencia de ROAS, últimos 7 días vs. anteriores',
+};
 function computeBHS() {
   const breakeven = +finConfig?.margen_bruto || 50; // % margen bruto de config
   const breakevenRoas = 100 / breakeven;            // ROAS de equilibrio
@@ -3264,13 +3271,7 @@ function computeBHS() {
   } else sImpulso = null;
 
   // --- SCORE TOTAL ponderado (omitiendo dimensiones sin datos) ---
- const BHS_DESC = {
-    rentabilidad: 'Margen neto real sobre la facturación',
-    publicidad:   'True ROAS vs. breakeven y objetivo',
-    ventas:       'Volumen y crecimiento de ventas',
-    eficiencia:   'Costos totales sobre la facturación',
-    crecimiento:  'Tendencia de ROAS, últimos 7 días vs. anteriores',
-  };
+ 
   const dims = [
     { key:'rentabilidad', label:'Rentabilidad',           peso:30, score:sRentabilidad, icon:'M3 12l3-3 3 3 3-3 3 3', color:'#34d399', action: margenReal!==null && margenReal<15 ? 'El margen neto es bajo. Revisá costos o subí el ticket promedio.' : margenReal!==null && margenReal<0 ? 'Estás perdiendo dinero. Los costos superan los ingresos.' : null },
     { key:'publicidad',   label:'Publicidad',             peso:25, score:sPublicidad,   icon:'M2 15V9l4-4 4 4 4-5',   color:'#60a5fa', action: trueRoas!==null && trueRoas<breakevenRoas ? `True ROAS (${trueRoas.toFixed(1)}x) está bajo el breakeven (${breakevenRoas.toFixed(1)}x). Pausá lo que no convierte.` : trueRoas!==null && trueRoas<targetRoas ? `True ROAS (${trueRoas.toFixed(1)}x) por debajo del objetivo de ${targetRoas}x. Escalar con cautela.` : null },
