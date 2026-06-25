@@ -7577,7 +7577,6 @@ async function savePieza(){
   document.getElementById('modal-pieza-titulo').textContent = 'Agregar pieza';
   if(btn){ btn.disabled=false; btn.dataset.loading='0'; btn.textContent='Agregar pieza'; }
   toast(editId ? 'Pieza actualizada ✓' : 'Pieza agregada ✓');
-  async function cyclePiezaStatus(id){
 }
 async function cyclePiezaStatus(id){
   const p=contentPiezas.find(x=>x.id===id);if(!p)return;
