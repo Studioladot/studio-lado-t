@@ -2242,7 +2242,7 @@ create policy "own" on contacts for all using (auth.uid()=user_id);</div>
 </div>
 
 <!-- Modal Venta del dia -->
-<<div class="modal-backdrop" id="modal-venta-dia">
+<div class="modal-backdrop" id="modal-venta-dia">
   <div class="modal" style="max-width:420px">
     <div class="modal-title" style="display:flex;justify-content:space-between;align-items:center">
       <span>Registrar venta manual</span>
@@ -2268,7 +2268,7 @@ create policy "own" on contacts for all using (auth.uid()=user_id);</div>
     <input type="hidden" id="v-costo-unit" value="0">
     <div class="form-row">
       <div class="fg"><label>Unidades vendidas</label><input id="v-unidades" type="number" placeholder="0" oninput="recalcVentaManual()"/></div>
-      <div class="fg"><label>Canal</label>
+      <div class="fg">
         <select id="v-canal">
           <option>Local / Showroom</option>
           <option>Instagram Direct</option>
@@ -2279,6 +2279,15 @@ create policy "own" on contacts for all using (auth.uid()=user_id);</div>
         </select>
       </div>
     </div>
+    <div class="form-row">
+      <div class="fg full"><label>Notas</label><input id="v-notas" type="text" placeholder="Opcional"/></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-venta-dia')">Cancelar</button>
+      <button class="btn btn-accent" onclick="saveVentaDia()">Guardar venta</button>
+    </div>
+  </div>
+</div>
 
 <!-- Modal Costo adicional manual (Analisis) -->
 <div class="modal-backdrop" id="modal-an-costos-add">
