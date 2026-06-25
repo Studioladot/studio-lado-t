@@ -7044,7 +7044,7 @@ function renderPublicaciones(){
     const isCamp = p.source === 'campana';
     const statusLabel = isCamp ? (PZ_LABEL[p.pzStatus]||p.pzStatus) : p.status;
     const statusColor = isCamp ? (PZ_COLOR[p.pzStatus]||'var(--text2)') : '';
-    const toggleFn = isCamp ? `cyclePiezaStatus('${p.id}')` : `togglePostStatus('${p.id}','${p.status}')`;
+ const toggleFn = isCamp ? `openPzStatusMenu(event,'${p.id}')` : `togglePostStatus('${p.id}','${p.status}')`;
     const delFn    = isCamp ? `delPieza('${p.id}')` : `delPost('${p.id}')`;
     const editFn   = isCamp ? `openViewPieza('${p.id}')` : `openEditPost('${p.id}')`;
     return `
@@ -7421,7 +7421,7 @@ function renderCampsList() {
           </div>
           ${pz.length?pz.map(p=>`
           <div style="display:flex;align-items:center;gap:10px;padding:8px 10px;border-bottom:1px solid var(--border);margin-bottom:0">
-            <button onclick="cyclePiezaStatus('${p.id}')" title="Click para cambiar estado"
+           <button onclick="openPzStatusMenu(event,'${p.id}')" title="Click para cambiar estado"
               style="width:26px;height:26px;border-radius:50%;border:2px solid ${PZ_COLOR[p.status]};background:${p.status==='publicado'?PZ_COLOR[p.status]:'transparent'};color:${p.status==='publicado'?'#fff':PZ_COLOR[p.status]};font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:700">
               ${PZ_ICON[p.status]||'◌'}
             </button>
@@ -7577,6 +7577,7 @@ async function savePieza(){
   document.getElementById('modal-pieza-titulo').textContent = 'Agregar pieza';
   if(btn){ btn.disabled=false; btn.dataset.loading='0'; btn.textContent='Agregar pieza'; }
   toast(editId ? 'Pieza actualizada ✓' : 'Pieza agregada ✓');
+  async function cyclePiezaStatus(id){
 }
 async function cyclePiezaStatus(id){
   const p=contentPiezas.find(x=>x.id===id);if(!p)return;
