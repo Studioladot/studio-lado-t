@@ -2330,354 +2330,7 @@ create policy "own" on contacts for all using (auth.uid()=user_id);</div>
     </div>
   </div>
 </div>
-<div class="modal-backdrop" id="modal-dia-piezas">
-  <div class="modal" style="max-width:480px">
-    <div class="modal-title" id="dia-piezas-titulo">Publicaciones del dia</div>
-    <div id="dia-piezas-list" style="display:flex;flex-direction:column;gap:8px;max-height:380px;overflow-y:auto;margin-bottom:14px"></div>
-    <div class="modal-footer" style="justify-content:space-between">
-      <button class="btn btn-outline" onclick="closeModal('modal-dia-piezas')">Cerrar</button>
-      <button class="btn btn-accent" id="dia-piezas-add-btn" onclick="">+ Agregar pieza</button>
-    </div>
-  </div>
-</div>
-  
-<!-- Modal Config Financiera -->
-<div class="modal-backdrop" id="modal-fin-config">
-  <div class="modal" style="max-width:420px">
-    <div class="modal-title">Configuracion financiera</div>
-    <div style="font-size:13px;color:var(--text2);margin-bottom:14px">Estos valores se usan para calcular tu meta diaria automaticamente.</div>
-    <div class="form-row">
-      <div class="fg"><label>Margen bruto %</label><input id="fc-margen" type="number" placeholder="48" step="0.1"/></div>
-      <div class="fg"><label>Dias operativos / mes</label><input id="fc-dias" type="number" placeholder="26"/></div>
-    </div>
-    <div class="form-row">
-      <div class="fg"><label>Objetivo de ganancia %</label><input id="fc-objetivo" type="number" placeholder="20" step="0.1"/></div>
-      <div class="fg"><label>Costo de envio promedio $</label><input id="fc-envio" type="number" placeholder="0" step="1"/></div>
-      <div class="fg"><label>Comision Tienda Nube %</label><input id="fc-comision-tn" type="number" placeholder="2" step="0.1"/></div>
-      <div class="fg"><label>Meta Ads factura en</label>
-  <select id="fc-meta-moneda">
-    <option value="ARS">Pesos (ARS)</option>
-    <option value="USD">Dolares (USD)</option>
-  </select>
-</div>
-<div class="fg"><label>Cotizacion USD manual (opcional, $0 = usar API)</label><input id="fc-usd-manual" type="number" placeholder="0" step="1"/></div>
-    </div>
-    <div style="font-size:11px;color:var(--text2);margin:-8px 0 4px">Promedio por pedido (no por producto). Se usa para calcular la ganancia real en Tienda Nube.</div>
-    <div style="background:var(--surface2);border-radius:var(--r);padding:12px;font-size:12px;color:var(--text2);margin-top:4px;line-height:1.7">
-      Con margen <strong>48%</strong> y gastos de $1.200.000/mes:<br>
-      &#8594; Breakeven: $2.500.000 en ventas ($96.154/dia)<br>
-      &#8594; Con 20% ganancia: $3.000.000 en ventas ($115.385/dia)
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-outline" onclick="closeModal('modal-fin-config')">Cancelar</button>
-      <button class="btn btn-accent" onclick="saveFinConfig()">Guardar</button>
-    </div>
-  </div>
-</div>
 
-
-<!-- Modal Nueva Campana -->
-<div class="modal-backdrop" id="modal-campana">
-  <div class="modal" style="max-width:600px">
-    <div class="modal-title">&#127341; Nueva campana organica</div>
-    <div class="form-row">
-      <div class="fg wide"><label>Nombre de la campana</label><input id="camp-nombre" type="text" placeholder="Ej: Campana Mundial, Drop Invierno 2026..."/></div>
-      <div class="fg"><label>Color en calendario</label>
-        <select id="camp-color" style="border:0.5px solid var(--border);border-radius:var(--r);padding:9px 11px;background:var(--surface);color:var(--text);outline:none">
-          <option value="#b03311">Rojo Lado T</option>
-          <option value="#1a5fa5">Azul</option>
-          <option value="#2d7a3a">Verde</option>
-          <option value="#8a5c0a">Dorado</option>
-          <option value="#6fa398">Teal</option>
-          <option value="#7a3fa5">Violeta</option>
-          <option value="#c45c00">Naranja</option>
-        </select>
-      </div>
-    </div>
-    <div class="form-row">
-      <div class="fg"><label>Estado</label>
-        <select id="camp-status">
-          <option value="planificacion">En planificacion</option>
-          <option value="activa">Activa</option>
-          <option value="terminada">Terminada</option>
-        </select>
-      </div>
-      <div class="fg"><label>Fecha inicio</label><input id="camp-inicio" type="date"/></div>
-      <div class="fg"><label>Fecha fin</label><input id="camp-fin" type="date"/></div>
-      <div class="fg"><label>Periodo</label><input id="camp-periodo" type="text" placeholder="Ej: Julio 2026..."/></div>
-    </div>
-    <div class="divider"></div>
-    <div class="fg" style="margin-bottom:10px"><label>Objetivo de la campana</label><textarea id="camp-objetivo" rows="2" placeholder="Que queres lograr con esta campana? Ej: Posicionar el producto antes del invierno, generar 50 ventas en 2 semanas..."></textarea></div>
-    <div class="fg" style="margin-bottom:10px">
-      <label>Concepto estrategico <span style="font-size:10px;color:var(--text3);font-weight:400">— La promesa funcional, corta y literal</span></label>
-      <textarea id="camp-estrategico" rows="2" placeholder="Ej: Campera reversible al precio mas bajo de Argentina"></textarea>
-    </div>
-    <div class="fg" style="margin-bottom:10px">
-      <label>Concepto creativo <span style="font-size:10px;color:var(--text3);font-weight:400">— La frase evocadora que atraviesa todos los formatos</span></label>
-      <textarea id="camp-creativo" rows="2" placeholder="Ej: Dos camperas, una historia"></textarea>
-    </div>
-    <div class="fg" style="margin-bottom:10px">
-      <label>Desarrollo y fases <span style="font-size:10px;color:var(--text3);font-weight:400">— Escribi libremente: Fase 1, Fase 2, lo que sea</span></label>
-      <textarea id="camp-desarrollo" rows="5" placeholder="Fase 1 (semana 1): Teaser en historias mostrando el producto sin revelar...&#10;Fase 2 (semana 2): Lanzamiento con reel principal + carrusel de outfits...&#10;Fase 3 (semana 3): UGC y prueba social, stories con clientes..."></textarea>
-    </div>
-    <div class="fg" style="margin-bottom:10px">
-      <label>Formatos a utilizar</label>
-      <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:4px">
-        <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:13px"><input type="checkbox" name="camp-fmt" value="Reel" style="accent-color:var(--accent)"> Reel</label>
-        <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:13px"><input type="checkbox" name="camp-fmt" value="TikTok" style="accent-color:var(--accent)"> TikTok</label>
-        <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:13px"><input type="checkbox" name="camp-fmt" value="Carrusel" style="accent-color:var(--accent)"> Carrusel</label>
-        <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:13px"><input type="checkbox" name="camp-fmt" value="Historia" style="accent-color:var(--accent)"> Historia</label>
-        <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:13px"><input type="checkbox" name="camp-fmt" value="Post" style="accent-color:var(--accent)"> Post</label>
-        <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:13px"><input type="checkbox" name="camp-fmt" value="Live" style="accent-color:var(--accent)"> Live</label>
-      </div>
-    </div>
-    <div class="fg"><label>Notas e ideas libres</label><textarea id="camp-notas" rows="3" placeholder="Ideas sueltas, referencias, inspiracion... todo lo que se te ocurra"></textarea></div>
-    <div class="modal-footer">
-      <button class="btn btn-outline" onclick="closeModal('modal-campana')">Cancelar</button>
-      <button class="btn btn-accent" onclick="saveCampana()">Crear campana</button>
-    </div>
-  </div>
-</div>
-
-<!-- Modal Nueva Pieza -->
-<div class="modal-backdrop" id="modal-pieza">
-  <div class="modal" style="max-width:440px">
-   <div class="modal-title" id="modal-pieza-titulo">Agregar pieza</div>
-    <input type="hidden" id="pieza-camp-id"/>
-    <input type="hidden" id="pieza-edit-id"/>
-    <div class="form-row">
-      <div class="fg wide"><label>Titulo</label><input id="pieza-titulo" type="text" placeholder="Ej: Reel unboxing, Carrusel 5 outfits..."/></div>
-    </div>
-    <div class="form-row">
-      <div class="fg"><label>Formato</label>
-        <select id="pieza-formato">
-          <option>Reel</option><option>TikTok</option><option>Carrusel</option>
-          <option>Historia</option><option>Post</option><option>Video largo</option><option>Otro</option>
-        </select>
-      </div>
-      <div class="fg"><label>Plataforma</label>
-        <select id="pieza-plataforma">
-          <option>Instagram</option><option>TikTok</option><option>Ambas</option><option>YouTube</option>
-        </select>
-      </div>
-    </div>
-    <div class="form-row">
-      <div class="fg"><label>Fecha planificada</label><input id="pieza-fecha" type="date"/></div>
-      <div class="fg"><label>Estado</label>
-        <select id="pieza-status">
-          <option value="pendiente">Pendiente</option>
-          <option value="en_produccion">En produccion</option>
-          <option value="filmado">Filmado</option>
-          <option value="editado">Editado</option>
-          <option value="publicado">Publicado</option>
-        </select>
-      </div>
-    </div>
-    <div class="form-row"><div class="fg full"><label>Notas</label><textarea id="pieza-notas" rows="3" placeholder="Hook, guion, referencia, idea... todo lo que quieras anotar"></textarea></div></div>
-    <div class="form-row"><div class="fg full">
-      <label>Foto o video de referencia (opcional)</label>
-      <input id="pieza-media-file" type="file" accept="image/*,video/*" style="font-size:12px"/>
-      <div style="font-size:11px;color:var(--text3);margin-top:3px">Util para mostrar un ejemplo de como tiene que quedar la pieza, o para que otra persona del equipo entienda la idea.</div>
-    </div></div>
-    <div class="modal-footer">
-      <button class="btn btn-outline" onclick="closeModal('modal-pieza')">Cancelar</button>
-      <button class="btn btn-accent" id="btn-pieza-guardar" onclick="savePieza()">Agregar pieza</button>
-    </div>
-  </div>
-</div>
-
-<!-- Modal Ver/Editar Pieza -->
- <div class="modal-backdrop" id="modal-ver-item">
-  <div class="modal" style="max-width:420px">
-    <div class="modal-title" id="ver-item-titulo">Ver publicacion</div>
-    <div id="ver-item-media" style="margin-bottom:12px"></div>
-    <div style="font-size:13px;line-height:1.6;color:var(--text);white-space:pre-wrap" id="ver-item-notas"></div>
-    <div class="modal-footer">
-      <button class="btn btn-outline" onclick="closeModal('modal-ver-item')">Cerrar</button>
-    </div>
-  </div>
-</div>
-<div class="modal-backdrop" id="modal-pieza-view">
-  <div class="modal" style="max-width:480px">
-    <div class="modal-title">&#9998; Ver / Editar pieza</div>
-    <input type="hidden" id="pv-id"/>
-    <div class="form-row">
-      <div class="fg wide"><label>Titulo</label><input id="pv-titulo" type="text" placeholder="Titulo de la pieza"/></div>
-    </div>
-    <div class="form-row">
-      <div class="fg"><label>Formato</label>
-        <select id="pv-formato">
-          <option>Reel</option><option>TikTok</option><option>Carrusel</option>
-          <option>Historia</option><option>Post</option><option>Video largo</option><option>Otro</option>
-        </select>
-      </div>
-      <div class="fg"><label>Plataforma</label>
-        <select id="pv-plataforma">
-          <option>Instagram</option><option>TikTok</option><option>Ambas</option><option>YouTube</option>
-        </select>
-      </div>
-    </div>
-    <div class="form-row">
-      <div class="fg"><label>Fecha planificada</label><input id="pv-fecha" type="date"/></div>
-      <div class="fg"><label>Estado</label>
-        <select id="pv-status">
-          <option value="pendiente">Pendiente</option>
-          <option value="en_produccion">En produccion</option>
-          <option value="filmado">Filmado</option>
-          <option value="editado">Editado</option>
-          <option value="publicado">Publicado</option>
-        </select>
-      </div>
-    </div>
-    <div class="form-row"><div class="fg full"><label>Notas, guion o hook</label><textarea id="pv-notas" rows="5" placeholder="Lo que escribiste para esta pieza aparece aca..." style="font-size:13px;line-height:1.6"></textarea></div></div>
-
-    <div class="form-row"><div class="fg full">
-      <label>Foto o video de referencia</label>
-      <input type="hidden" id="pv-media-url"/>
-      <input type="hidden" id="pv-media-type"/>
-      <div id="pv-media-preview" style="display:none;margin-bottom:8px"></div>
-      <input id="pv-media-file" type="file" accept="image/*,video/*" style="font-size:12px"/>
-      <div id="pv-media-remove" style="display:none;margin-top:6px">
-        <button type="button" class="btn btn-sm btn-outline" onclick="removePiezaMedia()">&#10005; Quitar referencia actual</button>
-      </div>
-    </div></div>
-
-    <div style="font-size:11px;color:var(--text3);margin-bottom:4px" id="pv-meta-info"></div>
-    <div class="modal-footer">
-      <button class="btn btn-outline" onclick="closeModal('modal-pieza-view')">Cancelar</button>
-      <button class="btn btn-red" onclick="delPiezaFromView()">Eliminar</button>
-      <button class="btn btn-accent" onclick="updatePieza()">Guardar cambios</button>
-    </div>
-  </div>
-</div>
-  <!-- Modal Post suelto (sin campaña) -->
-<div class="modal-backdrop" id="modal-post">
-  <div class="modal" style="max-width:420px">
-    <div class="modal-title" id="modal-post-titulo">Editar publicacion</div>
-    <input type="hidden" id="post-edit-id"/>
-    <div class="form-row">
-      <div class="fg wide"><label>Texto / Caption</label><textarea id="post-caption" rows="3" placeholder="Texto de la publicacion..."></textarea></div>
-    </div>
-    <div class="form-row">
-      <div class="fg"><label>Plataforma</label>
-        <select id="post-platform">
-          <option>Instagram</option><option>TikTok</option><option>Ambas</option><option>YouTube</option>
-        </select>
-      </div>
-      <div class="fg"><label>Formato</label>
-        <select id="post-format">
-          <option>Reel</option><option>TikTok</option><option>Carrusel</option>
-          <option>Historia</option><option>Post</option><option>Video largo</option><option>Otro</option>
-        </select>
-      </div>
-    </div>
-    <div class="form-row">
-      <div class="fg"><label>Fecha</label><input id="post-date" type="date"/></div>
-      <div class="fg"><label>Estado</label>
-        <select id="post-status">
-        <option value="pendiente">Pendiente</option>
-          <option value="borrador">Borrador</option>
-          <option value="publicado">Publicado</option>
-        </select>
-      </div>
-    </div>
-    <div class="form-row">
-      <div class="fg full">
-        <label>Imagen o video de referencia</label>
-        <input id="post-media-file" type="file" accept="image/*,video/*" style="font-size:12px"/>
-        <div style="font-size:11px;color:var(--text3);margin-top:3px">Util para mostrar un ejemplo de como tiene que quedar la pieza, o para que otra persona del equipo entienda la idea.</div>
-      </div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-outline" onclick="closeModal('modal-post')">Cancelar</button>
-      <button class="btn btn-accent" onclick="saveEditPost()">Guardar cambios</button>
-    </div>
-  </div>
-</div>
-
-<!-- Modal Editar Campana -->
-<div class="modal-backdrop" id="modal-camp-edit">
-  <div class="modal" style="max-width:600px">
-    <div class="modal-title">Editar campana organica</div>
-    <input type="hidden" id="camp-edit-id"/>
-    <div class="form-row">
-      <div class="fg wide"><label>Nombre</label><input id="camp-edit-nombre" type="text"/></div>
-      <div class="fg"><label>Color</label>
-        <select id="camp-edit-color">
-          <option value="#b03311">Rojo Lado T</option>
-          <option value="#1a5fa5">Azul</option>
-          <option value="#2d7a3a">Verde</option>
-          <option value="#8a5c0a">Dorado</option>
-          <option value="#6fa398">Teal</option>
-          <option value="#7a3fa5">Violeta</option>
-          <option value="#c45c00">Naranja</option>
-        </select>
-      </div>
-      <div class="fg"><label>Estado</label>
-        <select id="camp-edit-status">
-          <option value="planificacion">En planificacion</option>
-          <option value="activa">Activa</option>
-          <option value="terminada">Terminada</option>
-        </select>
-      </div>
-    </div>
-    <div class="form-row">
-      <div class="fg"><label>Fecha inicio</label><input id="camp-edit-inicio" type="date"/></div>
-      <div class="fg"><label>Fecha fin</label><input id="camp-edit-fin" type="date"/></div>
-      <div class="fg"><label>Periodo</label><input id="camp-edit-periodo" type="text"/></div>
-    </div>
-    <div class="divider"></div>
-    <div class="fg" style="margin-bottom:10px"><label>Objetivo</label><textarea id="camp-edit-objetivo" rows="2"></textarea></div>
-    <div class="fg" style="margin-bottom:10px"><label>Concepto estrategico</label><textarea id="camp-edit-estrategico" rows="2"></textarea></div>
-    <div class="fg" style="margin-bottom:10px"><label>Concepto creativo</label><textarea id="camp-edit-creativo" rows="2"></textarea></div>
-    <div class="fg" style="margin-bottom:10px"><label>Desarrollo y fases</label><textarea id="camp-edit-desarrollo" rows="5"></textarea></div>
-    <div class="fg" style="margin-bottom:10px">
-      <label>Formatos</label>
-      <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:4px">
-        <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:13px"><input type="checkbox" name="camp-edit-fmt" value="Reel" style="accent-color:var(--accent)"> Reel</label>
-        <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:13px"><input type="checkbox" name="camp-edit-fmt" value="TikTok" style="accent-color:var(--accent)"> TikTok</label>
-        <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:13px"><input type="checkbox" name="camp-edit-fmt" value="Carrusel" style="accent-color:var(--accent)"> Carrusel</label>
-        <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:13px"><input type="checkbox" name="camp-edit-fmt" value="Historia" style="accent-color:var(--accent)"> Historia</label>
-        <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:13px"><input type="checkbox" name="camp-edit-fmt" value="Post" style="accent-color:var(--accent)"> Post</label>
-        <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:13px"><input type="checkbox" name="camp-edit-fmt" value="Live" style="accent-color:var(--accent)"> Live</label>
-      </div>
-    </div>
-    <div class="fg"><label>Notas e ideas libres</label><textarea id="camp-edit-notas" rows="3"></textarea></div>
-    <div class="modal-footer">
-      <button class="btn btn-outline" onclick="closeModal('modal-camp-edit')">Cancelar</button>
-      <button class="btn btn-red" onclick="delCampana(document.getElementById('camp-edit-id').value)">Eliminar</button>
-      <button class="btn btn-accent" onclick="updateCampana()">Guardar cambios</button>
-    </div>
-  </div>
-</div>
-
-<!-- Modal Nueva Idea -->
-<div class="modal-backdrop" id="modal-idea">
-  <div class="modal" style="max-width:460px">
-    <div class="modal-title">&#128161; Nueva idea de contenido</div>
-    <div class="form-row"><div class="fg full"><label>La idea</label><textarea id="idea-texto" rows="3" placeholder="Describí la idea. Ej: Mostrar cómo queda la campera con distintos outfits..."></textarea></div></div>
-    <div class="form-row">
-      <div class="fg"><label>Formato</label>
-        <select id="idea-formato">
-          <option>Reel</option><option>TikTok</option><option>Carrusel</option>
-          <option>Historia</option><option>Post</option><option>Otro</option>
-        </select>
-      </div>
-      <div class="fg"><label>Angulo / Tipo</label>
-        <select id="idea-angulo">
-          <option>Entretenimiento</option><option>Detras de escena</option>
-          <option>Prueba social</option><option>Educativo</option>
-          <option>Producto</option><option>Personal</option><option>Otro</option>
-        </select>
-      </div>
-    </div>
-    <div class="form-row"><div class="fg full"><label>Hook (primeras palabras / apertura)</label><input id="idea-hook" type="text" placeholder="Ej: No esperabamos que pase esto..."/></div></div>
-    <div class="modal-footer">
-      <button class="btn btn-outline" onclick="closeModal('modal-idea')">Cancelar</button>
-      <button class="btn btn-accent" onclick="saveIdea()">Guardar idea</button>
-    </div>
-  </div>
-</div>
 
 <!-- Modal Editar perfil de usuario (admin) -->
 <div class="modal-backdrop" id="modal-adm-user">
@@ -8472,5 +8125,353 @@ function escRenderPgwList2() {
 }
 </script>
 <div id="an-chart-tooltip"></div>
+    <div class="modal-backdrop" id="modal-dia-piezas">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-title" id="dia-piezas-titulo">Publicaciones del dia</div>
+    <div id="dia-piezas-list" style="display:flex;flex-direction:column;gap:8px;max-height:380px;overflow-y:auto;margin-bottom:14px"></div>
+    <div class="modal-footer" style="justify-content:space-between">
+      <button class="btn btn-outline" onclick="closeModal('modal-dia-piezas')">Cerrar</button>
+      <button class="btn btn-accent" id="dia-piezas-add-btn" onclick="">+ Agregar pieza</button>
+    </div>
+  </div>
+</div>
+  
+<!-- Modal Config Financiera -->
+<div class="modal-backdrop" id="modal-fin-config">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-title">Configuracion financiera</div>
+    <div style="font-size:13px;color:var(--text2);margin-bottom:14px">Estos valores se usan para calcular tu meta diaria automaticamente.</div>
+    <div class="form-row">
+      <div class="fg"><label>Margen bruto %</label><input id="fc-margen" type="number" placeholder="48" step="0.1"/></div>
+      <div class="fg"><label>Dias operativos / mes</label><input id="fc-dias" type="number" placeholder="26"/></div>
+    </div>
+    <div class="form-row">
+      <div class="fg"><label>Objetivo de ganancia %</label><input id="fc-objetivo" type="number" placeholder="20" step="0.1"/></div>
+      <div class="fg"><label>Costo de envio promedio $</label><input id="fc-envio" type="number" placeholder="0" step="1"/></div>
+      <div class="fg"><label>Comision Tienda Nube %</label><input id="fc-comision-tn" type="number" placeholder="2" step="0.1"/></div>
+      <div class="fg"><label>Meta Ads factura en</label>
+  <select id="fc-meta-moneda">
+    <option value="ARS">Pesos (ARS)</option>
+    <option value="USD">Dolares (USD)</option>
+  </select>
+</div>
+<div class="fg"><label>Cotizacion USD manual (opcional, $0 = usar API)</label><input id="fc-usd-manual" type="number" placeholder="0" step="1"/></div>
+    </div>
+    <div style="font-size:11px;color:var(--text2);margin:-8px 0 4px">Promedio por pedido (no por producto). Se usa para calcular la ganancia real en Tienda Nube.</div>
+    <div style="background:var(--surface2);border-radius:var(--r);padding:12px;font-size:12px;color:var(--text2);margin-top:4px;line-height:1.7">
+      Con margen <strong>48%</strong> y gastos de $1.200.000/mes:<br>
+      &#8594; Breakeven: $2.500.000 en ventas ($96.154/dia)<br>
+      &#8594; Con 20% ganancia: $3.000.000 en ventas ($115.385/dia)
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-fin-config')">Cancelar</button>
+      <button class="btn btn-accent" onclick="saveFinConfig()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- Modal Nueva Campana -->
+<div class="modal-backdrop" id="modal-campana">
+  <div class="modal" style="max-width:600px">
+    <div class="modal-title">&#127341; Nueva campana organica</div>
+    <div class="form-row">
+      <div class="fg wide"><label>Nombre de la campana</label><input id="camp-nombre" type="text" placeholder="Ej: Campana Mundial, Drop Invierno 2026..."/></div>
+      <div class="fg"><label>Color en calendario</label>
+        <select id="camp-color" style="border:0.5px solid var(--border);border-radius:var(--r);padding:9px 11px;background:var(--surface);color:var(--text);outline:none">
+          <option value="#b03311">Rojo Lado T</option>
+          <option value="#1a5fa5">Azul</option>
+          <option value="#2d7a3a">Verde</option>
+          <option value="#8a5c0a">Dorado</option>
+          <option value="#6fa398">Teal</option>
+          <option value="#7a3fa5">Violeta</option>
+          <option value="#c45c00">Naranja</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="fg"><label>Estado</label>
+        <select id="camp-status">
+          <option value="planificacion">En planificacion</option>
+          <option value="activa">Activa</option>
+          <option value="terminada">Terminada</option>
+        </select>
+      </div>
+      <div class="fg"><label>Fecha inicio</label><input id="camp-inicio" type="date"/></div>
+      <div class="fg"><label>Fecha fin</label><input id="camp-fin" type="date"/></div>
+      <div class="fg"><label>Periodo</label><input id="camp-periodo" type="text" placeholder="Ej: Julio 2026..."/></div>
+    </div>
+    <div class="divider"></div>
+    <div class="fg" style="margin-bottom:10px"><label>Objetivo de la campana</label><textarea id="camp-objetivo" rows="2" placeholder="Que queres lograr con esta campana? Ej: Posicionar el producto antes del invierno, generar 50 ventas en 2 semanas..."></textarea></div>
+    <div class="fg" style="margin-bottom:10px">
+      <label>Concepto estrategico <span style="font-size:10px;color:var(--text3);font-weight:400">— La promesa funcional, corta y literal</span></label>
+      <textarea id="camp-estrategico" rows="2" placeholder="Ej: Campera reversible al precio mas bajo de Argentina"></textarea>
+    </div>
+    <div class="fg" style="margin-bottom:10px">
+      <label>Concepto creativo <span style="font-size:10px;color:var(--text3);font-weight:400">— La frase evocadora que atraviesa todos los formatos</span></label>
+      <textarea id="camp-creativo" rows="2" placeholder="Ej: Dos camperas, una historia"></textarea>
+    </div>
+    <div class="fg" style="margin-bottom:10px">
+      <label>Desarrollo y fases <span style="font-size:10px;color:var(--text3);font-weight:400">— Escribi libremente: Fase 1, Fase 2, lo que sea</span></label>
+      <textarea id="camp-desarrollo" rows="5" placeholder="Fase 1 (semana 1): Teaser en historias mostrando el producto sin revelar...&#10;Fase 2 (semana 2): Lanzamiento con reel principal + carrusel de outfits...&#10;Fase 3 (semana 3): UGC y prueba social, stories con clientes..."></textarea>
+    </div>
+    <div class="fg" style="margin-bottom:10px">
+      <label>Formatos a utilizar</label>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:4px">
+        <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:13px"><input type="checkbox" name="camp-fmt" value="Reel" style="accent-color:var(--accent)"> Reel</label>
+        <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:13px"><input type="checkbox" name="camp-fmt" value="TikTok" style="accent-color:var(--accent)"> TikTok</label>
+        <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:13px"><input type="checkbox" name="camp-fmt" value="Carrusel" style="accent-color:var(--accent)"> Carrusel</label>
+        <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:13px"><input type="checkbox" name="camp-fmt" value="Historia" style="accent-color:var(--accent)"> Historia</label>
+        <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:13px"><input type="checkbox" name="camp-fmt" value="Post" style="accent-color:var(--accent)"> Post</label>
+        <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:13px"><input type="checkbox" name="camp-fmt" value="Live" style="accent-color:var(--accent)"> Live</label>
+      </div>
+    </div>
+    <div class="fg"><label>Notas e ideas libres</label><textarea id="camp-notas" rows="3" placeholder="Ideas sueltas, referencias, inspiracion... todo lo que se te ocurra"></textarea></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-campana')">Cancelar</button>
+      <button class="btn btn-accent" onclick="saveCampana()">Crear campana</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Nueva Pieza -->
+<div class="modal-backdrop" id="modal-pieza">
+  <div class="modal" style="max-width:440px">
+   <div class="modal-title" id="modal-pieza-titulo">Agregar pieza</div>
+    <input type="hidden" id="pieza-camp-id"/>
+    <input type="hidden" id="pieza-edit-id"/>
+    <div class="form-row">
+      <div class="fg wide"><label>Titulo</label><input id="pieza-titulo" type="text" placeholder="Ej: Reel unboxing, Carrusel 5 outfits..."/></div>
+    </div>
+    <div class="form-row">
+      <div class="fg"><label>Formato</label>
+        <select id="pieza-formato">
+          <option>Reel</option><option>TikTok</option><option>Carrusel</option>
+          <option>Historia</option><option>Post</option><option>Video largo</option><option>Otro</option>
+        </select>
+      </div>
+      <div class="fg"><label>Plataforma</label>
+        <select id="pieza-plataforma">
+          <option>Instagram</option><option>TikTok</option><option>Ambas</option><option>YouTube</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="fg"><label>Fecha planificada</label><input id="pieza-fecha" type="date"/></div>
+      <div class="fg"><label>Estado</label>
+        <select id="pieza-status">
+          <option value="pendiente">Pendiente</option>
+          <option value="en_produccion">En produccion</option>
+          <option value="filmado">Filmado</option>
+          <option value="editado">Editado</option>
+          <option value="publicado">Publicado</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row"><div class="fg full"><label>Notas</label><textarea id="pieza-notas" rows="3" placeholder="Hook, guion, referencia, idea... todo lo que quieras anotar"></textarea></div></div>
+    <div class="form-row"><div class="fg full">
+      <label>Foto o video de referencia (opcional)</label>
+      <input id="pieza-media-file" type="file" accept="image/*,video/*" style="font-size:12px"/>
+      <div style="font-size:11px;color:var(--text3);margin-top:3px">Util para mostrar un ejemplo de como tiene que quedar la pieza, o para que otra persona del equipo entienda la idea.</div>
+    </div></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-pieza')">Cancelar</button>
+      <button class="btn btn-accent" id="btn-pieza-guardar" onclick="savePieza()">Agregar pieza</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Ver/Editar Pieza -->
+ <div class="modal-backdrop" id="modal-ver-item">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-title" id="ver-item-titulo">Ver publicacion</div>
+    <div id="ver-item-media" style="margin-bottom:12px"></div>
+    <div style="font-size:13px;line-height:1.6;color:var(--text);white-space:pre-wrap" id="ver-item-notas"></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-ver-item')">Cerrar</button>
+    </div>
+  </div>
+</div>
+<div class="modal-backdrop" id="modal-pieza-view">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-title">&#9998; Ver / Editar pieza</div>
+    <input type="hidden" id="pv-id"/>
+    <div class="form-row">
+      <div class="fg wide"><label>Titulo</label><input id="pv-titulo" type="text" placeholder="Titulo de la pieza"/></div>
+    </div>
+    <div class="form-row">
+      <div class="fg"><label>Formato</label>
+        <select id="pv-formato">
+          <option>Reel</option><option>TikTok</option><option>Carrusel</option>
+          <option>Historia</option><option>Post</option><option>Video largo</option><option>Otro</option>
+        </select>
+      </div>
+      <div class="fg"><label>Plataforma</label>
+        <select id="pv-plataforma">
+          <option>Instagram</option><option>TikTok</option><option>Ambas</option><option>YouTube</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="fg"><label>Fecha planificada</label><input id="pv-fecha" type="date"/></div>
+      <div class="fg"><label>Estado</label>
+        <select id="pv-status">
+          <option value="pendiente">Pendiente</option>
+          <option value="en_produccion">En produccion</option>
+          <option value="filmado">Filmado</option>
+          <option value="editado">Editado</option>
+          <option value="publicado">Publicado</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row"><div class="fg full"><label>Notas, guion o hook</label><textarea id="pv-notas" rows="5" placeholder="Lo que escribiste para esta pieza aparece aca..." style="font-size:13px;line-height:1.6"></textarea></div></div>
+
+    <div class="form-row"><div class="fg full">
+      <label>Foto o video de referencia</label>
+      <input type="hidden" id="pv-media-url"/>
+      <input type="hidden" id="pv-media-type"/>
+      <div id="pv-media-preview" style="display:none;margin-bottom:8px"></div>
+      <input id="pv-media-file" type="file" accept="image/*,video/*" style="font-size:12px"/>
+      <div id="pv-media-remove" style="display:none;margin-top:6px">
+        <button type="button" class="btn btn-sm btn-outline" onclick="removePiezaMedia()">&#10005; Quitar referencia actual</button>
+      </div>
+    </div></div>
+
+    <div style="font-size:11px;color:var(--text3);margin-bottom:4px" id="pv-meta-info"></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-pieza-view')">Cancelar</button>
+      <button class="btn btn-red" onclick="delPiezaFromView()">Eliminar</button>
+      <button class="btn btn-accent" onclick="updatePieza()">Guardar cambios</button>
+    </div>
+  </div>
+</div>
+  <!-- Modal Post suelto (sin campaña) -->
+<div class="modal-backdrop" id="modal-post">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-title" id="modal-post-titulo">Editar publicacion</div>
+    <input type="hidden" id="post-edit-id"/>
+    <div class="form-row">
+      <div class="fg wide"><label>Texto / Caption</label><textarea id="post-caption" rows="3" placeholder="Texto de la publicacion..."></textarea></div>
+    </div>
+    <div class="form-row">
+      <div class="fg"><label>Plataforma</label>
+        <select id="post-platform">
+          <option>Instagram</option><option>TikTok</option><option>Ambas</option><option>YouTube</option>
+        </select>
+      </div>
+      <div class="fg"><label>Formato</label>
+        <select id="post-format">
+          <option>Reel</option><option>TikTok</option><option>Carrusel</option>
+          <option>Historia</option><option>Post</option><option>Video largo</option><option>Otro</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="fg"><label>Fecha</label><input id="post-date" type="date"/></div>
+      <div class="fg"><label>Estado</label>
+        <select id="post-status">
+        <option value="pendiente">Pendiente</option>
+          <option value="borrador">Borrador</option>
+          <option value="publicado">Publicado</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="fg full">
+        <label>Imagen o video de referencia</label>
+        <input id="post-media-file" type="file" accept="image/*,video/*" style="font-size:12px"/>
+        <div style="font-size:11px;color:var(--text3);margin-top:3px">Util para mostrar un ejemplo de como tiene que quedar la pieza, o para que otra persona del equipo entienda la idea.</div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-post')">Cancelar</button>
+      <button class="btn btn-accent" onclick="saveEditPost()">Guardar cambios</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Editar Campana -->
+<div class="modal-backdrop" id="modal-camp-edit">
+  <div class="modal" style="max-width:600px">
+    <div class="modal-title">Editar campana organica</div>
+    <input type="hidden" id="camp-edit-id"/>
+    <div class="form-row">
+      <div class="fg wide"><label>Nombre</label><input id="camp-edit-nombre" type="text"/></div>
+      <div class="fg"><label>Color</label>
+        <select id="camp-edit-color">
+          <option value="#b03311">Rojo Lado T</option>
+          <option value="#1a5fa5">Azul</option>
+          <option value="#2d7a3a">Verde</option>
+          <option value="#8a5c0a">Dorado</option>
+          <option value="#6fa398">Teal</option>
+          <option value="#7a3fa5">Violeta</option>
+          <option value="#c45c00">Naranja</option>
+        </select>
+      </div>
+      <div class="fg"><label>Estado</label>
+        <select id="camp-edit-status">
+          <option value="planificacion">En planificacion</option>
+          <option value="activa">Activa</option>
+          <option value="terminada">Terminada</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="fg"><label>Fecha inicio</label><input id="camp-edit-inicio" type="date"/></div>
+      <div class="fg"><label>Fecha fin</label><input id="camp-edit-fin" type="date"/></div>
+      <div class="fg"><label>Periodo</label><input id="camp-edit-periodo" type="text"/></div>
+    </div>
+    <div class="divider"></div>
+    <div class="fg" style="margin-bottom:10px"><label>Objetivo</label><textarea id="camp-edit-objetivo" rows="2"></textarea></div>
+    <div class="fg" style="margin-bottom:10px"><label>Concepto estrategico</label><textarea id="camp-edit-estrategico" rows="2"></textarea></div>
+    <div class="fg" style="margin-bottom:10px"><label>Concepto creativo</label><textarea id="camp-edit-creativo" rows="2"></textarea></div>
+    <div class="fg" style="margin-bottom:10px"><label>Desarrollo y fases</label><textarea id="camp-edit-desarrollo" rows="5"></textarea></div>
+    <div class="fg" style="margin-bottom:10px">
+      <label>Formatos</label>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:4px">
+        <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:13px"><input type="checkbox" name="camp-edit-fmt" value="Reel" style="accent-color:var(--accent)"> Reel</label>
+        <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:13px"><input type="checkbox" name="camp-edit-fmt" value="TikTok" style="accent-color:var(--accent)"> TikTok</label>
+        <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:13px"><input type="checkbox" name="camp-edit-fmt" value="Carrusel" style="accent-color:var(--accent)"> Carrusel</label>
+        <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:13px"><input type="checkbox" name="camp-edit-fmt" value="Historia" style="accent-color:var(--accent)"> Historia</label>
+        <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:13px"><input type="checkbox" name="camp-edit-fmt" value="Post" style="accent-color:var(--accent)"> Post</label>
+        <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:13px"><input type="checkbox" name="camp-edit-fmt" value="Live" style="accent-color:var(--accent)"> Live</label>
+      </div>
+    </div>
+    <div class="fg"><label>Notas e ideas libres</label><textarea id="camp-edit-notas" rows="3"></textarea></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-camp-edit')">Cancelar</button>
+      <button class="btn btn-red" onclick="delCampana(document.getElementById('camp-edit-id').value)">Eliminar</button>
+      <button class="btn btn-accent" onclick="updateCampana()">Guardar cambios</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Nueva Idea -->
+<div class="modal-backdrop" id="modal-idea">
+  <div class="modal" style="max-width:460px">
+    <div class="modal-title">&#128161; Nueva idea de contenido</div>
+    <div class="form-row"><div class="fg full"><label>La idea</label><textarea id="idea-texto" rows="3" placeholder="Describí la idea. Ej: Mostrar cómo queda la campera con distintos outfits..."></textarea></div></div>
+    <div class="form-row">
+      <div class="fg"><label>Formato</label>
+        <select id="idea-formato">
+          <option>Reel</option><option>TikTok</option><option>Carrusel</option>
+          <option>Historia</option><option>Post</option><option>Otro</option>
+        </select>
+      </div>
+      <div class="fg"><label>Angulo / Tipo</label>
+        <select id="idea-angulo">
+          <option>Entretenimiento</option><option>Detras de escena</option>
+          <option>Prueba social</option><option>Educativo</option>
+          <option>Producto</option><option>Personal</option><option>Otro</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row"><div class="fg full"><label>Hook (primeras palabras / apertura)</label><input id="idea-hook" type="text" placeholder="Ej: No esperabamos que pase esto..."/></div></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-idea')">Cancelar</button>
+      <button class="btn btn-accent" onclick="saveIdea()">Guardar idea</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>
