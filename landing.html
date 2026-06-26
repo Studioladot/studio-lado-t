@@ -139,12 +139,15 @@
  <!-- AUTH MODAL -->
 <div id="authModal" class="hidden fixed inset-0 z-[100] flex items-center justify-center p-4">
   <div id="authOverlay" class="absolute inset-0 bg-black/80 backdrop-blur-sm"></div>
-  <div class="relative bg-zinc-900/90 backdrop-blur-md ring-1 ring-emerald-500/50 shadow-[0_0_25px_rgba(16,185,129,0.25)] rounded-3xl p-8 md:p-10 max-w-md w-full text-center">
+  <div class="relative bg-zinc-900 bg-gradient-to-br from-emerald-900/10 to-zinc-900/90 backdrop-blur-md ring-1 ring-emerald-500/50 shadow-[0_0_25px_rgba(16,185,129,0.25)] rounded-3xl p-8 md:p-10 max-w-md w-full text-center">
     <button onclick="closeAuthModal()" class="absolute top-5 right-5 text-zinc-500 hover:text-white transition-colors">
       <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
     </button>
 
-    <h3 class="text-2xl md:text-3xl font-extrabold tracking-tight text-white mb-2">El control de tu marca empieza acá.</h3>
+    <h3 class="text-2xl md:text-3xl font-extrabold tracking-tight mb-2">
+      <span class="text-emerald-400">El control de tu marca</span>
+      <span class="text-white"> empieza acá.</span>
+    </h3>
     <p class="text-sm text-zinc-400 mb-8">Prueba 7 días gratis. Sin tarjeta de crédito.</p>
 
     <button id="googleSignInBtn" type="button" class="w-full flex items-center justify-center gap-3 bg-white border border-white/10 hover:bg-zinc-900 hover:text-white text-zinc-900 font-semibold px-6 py-4 rounded-xl transition-colors duration-300">
