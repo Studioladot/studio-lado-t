@@ -4,12 +4,10 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>GOTIX — El Sistema Operativo de tu marca</title>
-<meta name="description" content="Conecta Tienda Nube y Meta Ads en 1 clic. Conoce tu rentabilidad real y deja que la IA te diga qué escalar." />
+<meta name="description" content="Conectá tu Tienda Nube y Meta Ads en 1 clic. Conocé tu rentabilidad real y dejá que la IA te diga qué escalar." />
 <script src="https://cdn.tailwindcss.com"></script>
 <style>
   body { font-family: -apple-system, BlinkMacSystemFont, "Inter", system-ui, sans-serif; }
-  @keyframes marquee { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
-  .animate-marquee { animation: marquee 28s linear infinite; }
   @keyframes pulseGlow {
     0%, 100% { box-shadow: 0 0 0 0 rgba(16,185,129,0.45), 0 10px 30px -10px rgba(16,185,129,0.4); }
     50% { box-shadow: 0 0 0 6px rgba(16,185,129,0.08), 0 10px 30px -5px rgba(16,185,129,0.55); }
@@ -17,7 +15,7 @@
   .glow-btn { animation: pulseGlow 2.8s ease-in-out infinite; }
   .card-glow { position: relative; }
   .card-glow::before {
-    content: ""; position: absolute; inset: -1px; border-radius: 1rem;
+    content: ""; position: absolute; inset: -1px; border-radius: 1.5rem;
     background: linear-gradient(135deg, rgba(16,185,129,0.35), transparent 40%, transparent 60%, rgba(16,185,129,0.15));
     opacity: 0; transition: opacity .3s ease; pointer-events: none;
   }
@@ -40,8 +38,8 @@
         <a href="#faq" class="hover:text-white transition-colors">FAQ</a>
       </div>
       <div class="hidden md:flex items-center gap-3">
-       <button onclick="openAuthModal()" class="text-sm font-semibold text-zinc-300 hover:text-white transition-colors px-3 py-2">Iniciar Sesión</button>
-       <button onclick="openAuthModal()" class="text-sm font-semibold bg-emerald-500 hover:bg-emerald-400 text-zinc-950 px-4 py-2 rounded-lg transition-colors">Empezá gratis</button>
+        <button onclick="openAuthModal()" class="text-sm font-semibold text-zinc-300 hover:text-white transition-colors px-3 py-2">Iniciar Sesión</button>
+        <button onclick="openAuthModal()" class="text-sm font-semibold bg-emerald-500 hover:bg-emerald-400 text-zinc-950 px-4 py-2 rounded-lg transition-colors">Empezá gratis</button>
       </div>
       <button id="menuBtn" class="md:hidden text-zinc-300">
         <svg id="iconMenu" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/></svg>
@@ -52,8 +50,8 @@
       <a href="#producto">Producto</a>
       <a href="#beneficios">Beneficios</a>
       <a href="#faq">FAQ</a>
-     <button onclick="openAuthModal()" class="text-left">Iniciar Sesión</button>
-   <button onclick="openAuthModal()" class="bg-emerald-500 text-zinc-950 px-4 py-2 rounded-lg text-center">Empezá gratis</button>
+      <button onclick="openAuthModal()" class="text-left">Iniciar Sesión</button>
+      <button onclick="openAuthModal()" class="bg-emerald-500 text-zinc-950 px-4 py-2 rounded-lg text-center">Empezá gratis</button>
     </div>
   </header>
 
@@ -63,26 +61,25 @@
     <div class="relative max-w-6xl mx-auto text-center">
       <div class="inline-flex items-center gap-2 bg-zinc-900 border border-zinc-800 rounded-full px-4 py-1.5 text-xs font-medium text-zinc-300 mb-8">
         <svg class="w-3.5 h-3.5 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="M12 15l-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/></svg>
-       Validado por más de 100 marcas
+        Validado por más de 100 marcas
       </div>
-     <h1 class="text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight text-white leading-[1.1] mb-6">
+      <h1 class="text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight text-white leading-[1.1] mb-6">
         El control absoluto de tu marca.
         <span class="text-emerald-400 block">La base para escalar tu negocio.</span>
       </h1>
-      </h1>
-     <p class="max-w-2xl mx-auto text-lg text-zinc-400 leading-relaxed mb-10">
+      <p class="max-w-2xl mx-auto text-lg text-zinc-400 leading-relaxed mb-10">
         Conectá tu Tienda Nube y Meta Ads en 1 clic. Conocé tu rentabilidad real, planificá tu contenido orgánico mensual y dejá que nuestra IA Estratégica te dé el plan de acción exacto para crecer.
       </p>
       <div class="flex flex-col sm:flex-row items-center justify-center gap-4 mb-10">
-    <button type="button" onclick="openAuthModal()" class="glow-btn inline-flex items-center justify-center bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-semibold px-7 py-3.5 rounded-xl transition-colors w-full sm:w-auto">
+        <button type="button" onclick="openAuthModal()" class="glow-btn inline-flex items-center justify-center bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-semibold px-7 py-3.5 rounded-xl transition-colors w-full sm:w-auto">
           Empezá gratis
         </button>
-        <a href="#demo" class="inline-flex items-center justify-center gap-2 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-200 font-semibold px-7 py-3.5 rounded-xl transition-colors w-full sm:w-auto">
+        <a href="#producto" class="inline-flex items-center justify-center gap-2 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-200 font-semibold px-7 py-3.5 rounded-xl transition-colors w-full sm:w-auto">
           <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M10 8l6 4-6 4V8z" fill="currentColor" stroke="none"/></svg>
           Ver cómo funciona
         </a>
       </div>
-     <div class="flex flex-wrap items-center justify-center gap-3">
+      <div class="flex flex-wrap items-center justify-center gap-3">
         <span class="inline-flex items-center gap-1.5 bg-zinc-900/80 border border-zinc-800 rounded-full px-3.5 py-1.5 text-xs font-medium text-zinc-300">
           <svg class="w-3.5 h-3.5 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
           Rentabilidad real
@@ -111,9 +108,10 @@
   <section id="producto" class="py-28 px-6">
     <div class="max-w-6xl mx-auto">
       <div class="text-center max-w-2xl mx-auto mb-16">
-       <h2 class="text-4xl md:text-5xl font-extrabold tracking-tight text-white mb-5">La mano derecha de tu negocio. La base para un crecimiento ordenado.</h2>
+        <h2 class="text-4xl md:text-5xl font-extrabold tracking-tight text-white mb-5">La mano derecha de tu negocio. La base para un crecimiento ordenado.</h2>
         <p class="text-zinc-400 text-lg leading-relaxed">Cada función cubre una pata estratégica de tu e-commerce para que tengas absolutamente todo bajo control.</p>
-      <<div id="beneficios" class="grid grid-cols-1 md:grid-cols-2 gap-6"><div id="cardsGrid" class="contents"></div></div>
+      </div>
+      <div id="beneficios" class="grid grid-cols-1 md:grid-cols-2 gap-6"><div id="cardsGrid" class="contents"></div></div>
     </div>
   </section>
 
@@ -133,10 +131,37 @@
       <p class="text-emerald-400 font-semibold text-lg mb-6">Resultados exactos. Decisiones claras.</p>
       <p class="text-zinc-400 text-base leading-relaxed mb-10 max-w-xl mx-auto">Conectás en un clic. GOTIX audita tus números 24/7 y te da el plan de acción para escalar tu facturación sin perder horas del día.</p>
       <button type="button" onclick="openAuthModal()" class="glow-btn inline-flex items-center justify-center bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-semibold px-8 py-4 rounded-xl transition-colors">
-            Empezá gratis
-          </button>
+        Empezá gratis
+      </button>
     </div>
   </section>
+
+  <!-- AUTH MODAL -->
+  <div id="authModal" class="hidden fixed inset-0 z-[100] flex items-center justify-center p-4">
+    <div id="authOverlay" class="absolute inset-0 bg-black/70 backdrop-blur-sm"></div>
+    <div class="relative bg-zinc-900 border border-zinc-800 rounded-3xl p-8 md:p-10 max-w-md w-full text-center">
+      <button onclick="closeAuthModal()" class="absolute top-5 right-5 text-zinc-500 hover:text-white transition-colors">
+        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+
+      <h3 class="text-2xl font-extrabold tracking-tight text-white mb-2">El control de tu marca empieza acá.</h3>
+      <p class="text-sm text-zinc-400 mb-8">Prueba 7 días gratis. Sin tarjeta de crédito.</p>
+
+      <button id="googleSignInBtn" type="button" class="w-full flex items-center justify-center gap-3 bg-white hover:bg-zinc-100 text-zinc-900 font-semibold px-6 py-3.5 rounded-xl transition-colors">
+        <svg class="w-5 h-5" viewBox="0 0 24 24">
+          <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+          <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.99.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+          <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/>
+          <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+        </svg>
+        Continuar con Google
+      </button>
+
+      <button class="mt-5 text-xs text-zinc-500 hover:text-zinc-300 transition-colors underline">
+        O continuar con email
+      </button>
+    </div>
+  </div>
 
 <script>
   // Mobile menu toggle
@@ -152,14 +177,14 @@
 
   // Product cards
   const cards = [
-   { icon: '<path d="M19 7h-3V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z" stroke="currentColor" fill="none" stroke-width="2"/>', title: "Controlá tus ingresos en tu web y en tu local.", text: "Vendés todos los días, pero ¿sabés cuánto te queda en el bolsillo? GOTIX suma la caja de Tienda Nube y tu showroom, descuenta costos de fabricación y te muestra tu ganancia neta al instante." },
+    { icon: '<path d="M19 7h-3V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z" stroke="currentColor" fill="none" stroke-width="2"/>', title: "Controlá tus ingresos en tu web y en tu local.", text: "Vendés todos los días, pero ¿sabés cuánto te queda en el bolsillo? GOTIX suma la caja de Tienda Nube y tu showroom, descuenta costos de fabricación y te muestra tu ganancia neta al instante." },
     { icon: '<circle cx="12" cy="12" r="9" stroke="currentColor" fill="none" stroke-width="2"/><circle cx="12" cy="12" r="4" stroke="currentColor" fill="none" stroke-width="2"/>', title: "Qué escalar y qué apagar — con ganancia real.", text: "Meta se adjudica ventas falsas. GOTIX cruza pedidos reales con el gasto en anuncios y te dice exactamente qué campaña pausar y a cuál inyectarle presupuesto." },
     { icon: '<path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" stroke="currentColor" fill="none" stroke-width="2"/><path d="M3 6h18M16 10a4 4 0 0 1-8 0" stroke="currentColor" fill="none" stroke-width="2"/>', title: "El que más vende no siempre es el más rentable.", text: "Ese producto estrella quizás te come el margen por costos ocultos. Descubrí qué prenda te deja plata de verdad y cuándo reponer stock." },
     { icon: '<rect x="3" y="4" width="18" height="18" rx="2" stroke="currentColor" fill="none" stroke-width="2"/><path d="M16 2v4M8 2v4M3 10h18" stroke="currentColor" stroke-width="2"/>', title: "Dejá de adivinar qué subir a Instagram.", text: "El Excel no te ayuda a vender. GOTIX incluye un calendario integrado para planificar tus drops, reels y contenido orgánico en la misma pantalla." },
     { icon: '<path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" stroke="currentColor" fill="none" stroke-width="2"/>', title: "Tu stock unificado: Web + Showroom.", text: "GOTIX centraliza tu inventario multicanal para que siempre sepas qué tenés, qué falta y te avisa antes de que te quedes sin stock." },
     { icon: '<rect x="3" y="11" width="18" height="10" rx="2" stroke="currentColor" fill="none" stroke-width="2"/><circle cx="12" cy="5" r="2" stroke="currentColor" fill="none" stroke-width="2"/><path d="M12 7v4M8 16h.01M16 16h.01" stroke="currentColor" stroke-width="2"/>', title: "Tu director de marketing funciona con IA.", text: "Nuestra IA Estratégica audita tus números 24/7 y te tira el plan de acción: 'Apagá esta campaña', 'Este producto está muerto', 'Grabá este tipo de reel'." },
   ];
- const grid = document.getElementById('cardsGrid');
+  const grid = document.getElementById('cardsGrid');
   cards.forEach(c => {
     const div = document.createElement('div');
     div.className = "card-glow bg-zinc-900 border border-zinc-800 rounded-3xl p-8 md:p-10 text-left hover:border-emerald-500/40 transition-colors";
@@ -196,32 +221,8 @@
     });
     faqList.appendChild(item);
   });
-  <!-- AUTH MODAL -->
-  <div id="authModal" class="hidden fixed inset-0 z-[100] flex items-center justify-center p-4">
-    <div id="authOverlay" class="absolute inset-0 bg-black/70 backdrop-blur-sm"></div>
-    <div class="relative bg-zinc-900 border border-zinc-800 rounded-3xl p-8 md:p-10 max-w-md w-full text-center">
-      <button onclick="closeAuthModal()" class="absolute top-5 right-5 text-zinc-500 hover:text-white transition-colors">
-        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
-      </button>
 
-      <h3 class="text-2xl font-extrabold tracking-tight text-white mb-2">El control de tu marca empieza acá.</h3>
-      <p class="text-sm text-zinc-400 mb-8">Prueba 7 días gratis. Sin tarjeta de crédito.</p>
-
-     <button id="googleSignInBtn" type="button" class="w-full flex items-center justify-center gap-3 bg-white hover:bg-zinc-100 text-zinc-900 font-semibold px-6 py-3.5 rounded-xl transition-colors">
-        <svg class="w-5 h-5" viewBox="0 0 24 24">
-          <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-          <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.99.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-          <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/>
-          <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-        </svg>
-        Continuar con Google
-      </button>
-
-      <button class="mt-5 text-xs text-zinc-500 hover:text-zinc-300 transition-colors underline">
-        O continuar con email
-      </button>
-    </div>
-  </div>
+  // Auth modal open/close
   function openAuthModal() {
     document.getElementById('authModal').classList.remove('hidden');
   }
@@ -229,24 +230,25 @@
     document.getElementById('authModal').classList.add('hidden');
   }
   document.getElementById('authOverlay').addEventListener('click', closeAuthModal);
-  <script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.x.x/firebase-app.js";
+</script>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
   import {
     getAuth,
     GoogleAuthProvider,
     signInWithPopup
-  } from "https://www.gstatic.com/firebasejs/10.x.x/firebase-auth.js";
+  } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
- // Your web app's Firebase configuration
-const firebaseConfig = {
-  apiKey: "AIzaSyA1koRPwZ9NxtKsWKhyy8YFkU2ZDcsF5kE",
-  authDomain: "gotix-399ec.firebaseapp.com",
-  projectId: "gotix-399ec",
-  storageBucket: "gotix-399ec.firebasestorage.app",
-  messagingSenderId: "771047447788",
-  appId: "1:771047447788:web:a5059948042e62c85119c9"
-};
-
+  // Configuración real de tu proyecto Firebase
+  const firebaseConfig = {
+    apiKey: "AIzaSyA1koRPwZ9NxtKsWKhyy8YFkU2ZDcsF5kE",
+    authDomain: "gotix-399ec.firebaseapp.com",
+    projectId: "gotix-399ec",
+    storageBucket: "gotix-399ec.firebasestorage.app",
+    messagingSenderId: "771047447788",
+    appId: "1:771047447788:web:a5059948042e62c85119c9"
+  };
 
   const app = initializeApp(firebaseConfig);
   const auth = getAuth(app);
@@ -258,11 +260,11 @@ const firebaseConfig = {
       const user = result.user;
       // TODO: acá conectamos con Supabase para crear el registro del trial de 7 días
       console.log("Usuario logueado:", user);
+      window.location.href = "/"; // redirige a tu app (gotix-v2 / index.html) tras loguear
     } catch (error) {
       console.error("Error en login con Google:", error);
     }
   });
-</script>
 </script>
 </body>
 </html>
