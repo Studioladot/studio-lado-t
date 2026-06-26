@@ -74,7 +74,7 @@
         Conectá tu Tienda Nube y Meta Ads en 1 clic. Conocé tu rentabilidad real, planificá tu contenido orgánico mensual y dejá que nuestra IA Estratégica te dé el plan de acción exacto para crecer.
       </p>
       <div class="flex flex-col sm:flex-row items-center justify-center gap-4 mb-10">
-     <button onclick="openAuthModal()" class="glow-btn inline-flex items-center justify-center bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-semibold px-7 py-3.5 rounded-xl transition-colors w-full sm:w-auto">
+    <button type="button" onclick="openAuthModal()" class="glow-btn inline-flex items-center justify-center bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-semibold px-7 py-3.5 rounded-xl transition-colors w-full sm:w-auto">
           Empezá gratis
         </button>
         <a href="#demo" class="inline-flex items-center justify-center gap-2 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-200 font-semibold px-7 py-3.5 rounded-xl transition-colors w-full sm:w-auto">
@@ -132,7 +132,7 @@
       <h2 class="text-4xl md:text-6xl font-extrabold tracking-tight text-white mb-4 leading-[1.05]">Menos planillas de Excel.<br>Más ventas reales.</h2>
       <p class="text-emerald-400 font-semibold text-lg mb-6">Resultados exactos. Decisiones claras.</p>
       <p class="text-zinc-400 text-base leading-relaxed mb-10 max-w-xl mx-auto">Conectás en un clic. GOTIX audita tus números 24/7 y te da el plan de acción para escalar tu facturación sin perder horas del día.</p>
-      <button onclick="openAuthModal()" class="glow-btn inline-flex items-center justify-center bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-semibold px-8 py-4 rounded-xl transition-colors">
+      <button type="button" onclick="openAuthModal()" class="glow-btn inline-flex items-center justify-center bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-semibold px-8 py-4 rounded-xl transition-colors">
             Empezá gratis
           </button>
     </div>
@@ -207,7 +207,7 @@
       <h3 class="text-2xl font-extrabold tracking-tight text-white mb-2">El control de tu marca empieza acá.</h3>
       <p class="text-sm text-zinc-400 mb-8">Prueba 7 días gratis. Sin tarjeta de crédito.</p>
 
-      <button class="w-full flex items-center justify-center gap-3 bg-white hover:bg-zinc-100 text-zinc-900 font-semibold px-6 py-3.5 rounded-xl transition-colors">
+     <button id="googleSignInBtn" type="button" class="w-full flex items-center justify-center gap-3 bg-white hover:bg-zinc-100 text-zinc-900 font-semibold px-6 py-3.5 rounded-xl transition-colors">
         <svg class="w-5 h-5" viewBox="0 0 24 24">
           <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
           <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.99.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
@@ -229,6 +229,40 @@
     document.getElementById('authModal').classList.add('hidden');
   }
   document.getElementById('authOverlay').addEventListener('click', closeAuthModal);
+  <script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.x.x/firebase-app.js";
+  import {
+    getAuth,
+    GoogleAuthProvider,
+    signInWithPopup
+  } from "https://www.gstatic.com/firebasejs/10.x.x/firebase-auth.js";
+
+ // Your web app's Firebase configuration
+const firebaseConfig = {
+  apiKey: "AIzaSyA1koRPwZ9NxtKsWKhyy8YFkU2ZDcsF5kE",
+  authDomain: "gotix-399ec.firebaseapp.com",
+  projectId: "gotix-399ec",
+  storageBucket: "gotix-399ec.firebasestorage.app",
+  messagingSenderId: "771047447788",
+  appId: "1:771047447788:web:a5059948042e62c85119c9"
+};
+
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const provider = new GoogleAuthProvider();
+
+  document.getElementById('googleSignInBtn').addEventListener('click', async () => {
+    try {
+      const result = await signInWithPopup(auth, provider);
+      const user = result.user;
+      // TODO: acá conectamos con Supabase para crear el registro del trial de 7 días
+      console.log("Usuario logueado:", user);
+    } catch (error) {
+      console.error("Error en login con Google:", error);
+    }
+  });
+</script>
 </script>
 </body>
 </html>
