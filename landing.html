@@ -235,38 +235,21 @@
   document.getElementById('authOverlay').addEventListener('click', closeAuthModal);
 </script>
 
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-  import {
-    getAuth,
-    GoogleAuthProvider,
-    signInWithPopup
-  } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script>
+  const SUPABASE_URL = "https://TU_PROYECTO.supabase.co"; // pegá tu URL real de Supabase
+  const SUPABASE_ANON_KEY = "TU_ANON_KEY"; // pegá tu Anon/Public key real de Supabase
 
-  // Configuración real de tu proyecto Firebase
-  const firebaseConfig = {
-    apiKey: "AIzaSyA1koRPwZ9NxtKsWKhyy8YFkU2ZDcsF5kE",
-    authDomain: "gotix-399ec.firebaseapp.com",
-    projectId: "gotix-399ec",
-    storageBucket: "gotix-399ec.firebasestorage.app",
-    messagingSenderId: "771047447788",
-    appId: "1:771047447788:web:a5059948042e62c85119c9"
-  };
-
-  const app = initializeApp(firebaseConfig);
-  const auth = getAuth(app);
-  const provider = new GoogleAuthProvider();
+  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
   document.getElementById('googleSignInBtn').addEventListener('click', async () => {
-    try {
-      const result = await signInWithPopup(auth, provider);
-      const user = result.user;
-      // TODO: acá conectamos con Supabase para crear el registro del trial de 7 días
-      console.log("Usuario logueado:", user);
-      window.location.href = "/"; // redirige a tu app (gotix-v2 / index.html) tras loguear
-    } catch (error) {
-      console.error("Error en login con Google:", error);
-    }
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: window.location.origin + '/' // a dónde vuelve el usuario tras loguearse (tu app/index.html)
+      }
+    });
+    if (error) console.error("Error en login con Google:", error);
   });
 </script>
 </body>
