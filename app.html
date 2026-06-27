@@ -2717,8 +2717,12 @@ await syncMetaStatus();
 if (new URLSearchParams(location.search).get('meta_connected') === '1') {
   toast('Meta Ads conectado ✓');
 }
-  const hasAccess = await checkUserAccess();
+ const hasAccess = await checkUserAccess();
   if(!hasAccess) return;
+  window.scrollTo(0,0);
+  if (location.hash.includes('access_token')) {
+    history.replaceState(null, '', location.pathname);
+  }
   // Poner fecha de hoy en ventas
   const vf = document.getElementById('v-fecha');
   if(vf) vf.value = new Date().toISOString().split('T')[0];
