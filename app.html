@@ -717,11 +717,11 @@ body.focus-mode #main{margin-left:0}
         <option value="custom">Personalizado...</option>
       </select>
       <div id="custom-date-wrap" style="display:none;display:flex;gap:6px;align-items:center">
-       <input type="date" id="meta-date-since" class="fg" style="margin:0;max-width:140px" onchange="refreshMetaData()">
+       <input type="date" id="meta-date-since" class="fg" style="margin:0;max-width:140px">
         <span style="font-size:12px;color:var(--text2)">→</span>
-        <input type="date" id="meta-date-until" class="fg" style="margin:0;max-width:140px" onchange="refreshMetaData()">
+        <input type="date" id="meta-date-until" class="fg" style="margin:0;max-width:140px">
       </div>
-      <button class="btn btn-outline" onclick="refreshMetaData()">&#8635; Actualizar</button>
+      <button class="btn btn-outline" onclick="applyMetaDateRange()">&#8635; Actualizar</button>
       <button class="btn btn-outline" onclick="openMetaColumnsModal()" title="Personalizar columnas">&#9881; Columnas</button>
       <button class="btn btn-accent" onclick="autoSnapshot()">&#128248; Auto-snapshot</button>
     </div>
@@ -4374,22 +4374,50 @@ function presetToRange(preset) {
   return { since, until };
 }
 
+const DATE_FMT_RX = /^\d{4}-\d{2}-\d{2}$/;
+
 function getMetaDateRange() {
+  // SIEMPRE lee el DOM en el momento exacto en que se llama — nunca usa un valor guardado de antes
   const preset = document.getElementById('meta-date-range')?.value || 'last_30d';
+
   if(preset === 'custom') {
-    const since = document.getElementById('meta-date-since')?.value;
-    const until = document.getElementById('meta-date-until')?.value;
-    return { since, until, valid: !!(since && until) };
+    const since = (document.getElementById('meta-date-since')?.value || '').trim();
+    const until = (document.getElementById('meta-date-until')?.value || '').trim();
+    if(!DATE_FMT_RX.test(since) || !DATE_FMT_RX.test(until)) {
+      return { since:null, until:null, valid:false, reason:'Las fechas deben tener formato YYYY-MM-DD' };
+    }
+    if(since > until) {
+      return { since:null, until:null, valid:false, reason:'La fecha "desde" no puede ser posterior a "hasta"' };
+    }
+    return { since, until, valid:true };
   }
   const { since, until } = presetToRange(preset);
-  return { since, until, valid: true };
+  return { since, until, valid:true };
 }
 
 // Construye el modificador de insights SIEMPRE con time_range — nunca con date_preset crudo
 function buildMetaInsightsField(fieldsStr) {
-  const { since, until } = getMetaDateRange();
+  const { since, until, valid } = getMetaDateRange();
+  if(!valid) return null;
   return `insights.time_range({"since":"${since}","until":"${until}"}){${fieldsStr}}`;
 }
+
+// Punto de entrada UNICO: valida y recien ahi dispara la consulta a la API
+function applyMetaDateRange() {
+  const { valid, reason } = getMetaDateRange();
+  if(!valid) { toast(reason || 'Revisa el rango de fechas personalizado'); return; }
+  refreshMetaData();
+}
+  ['meta-date-since','meta-date-until'].forEach(id => {
+  const el = document.getElementById(id);
+  if(!el) return;
+  el.addEventListener('change', applyMetaDateRange);     // cubre la mayoria de navegadores
+  el.addEventListener('input', () => {                   // cubre mobile/Safari, donde 'change' a veces no dispara
+    const since = document.getElementById('meta-date-since')?.value || '';
+    const until = document.getElementById('meta-date-until')?.value || '';
+    if(DATE_FMT_RX.test(since) && DATE_FMT_RX.test(until)) applyMetaDateRange();
+  });
+});
 // ── LOAD CAMPAIGNS ───────────────────────────────────────────────────────────
 function onDateRangeChange() {
   const val = document.getElementById('meta-date-range').value;
@@ -4401,7 +4429,7 @@ function onDateRangeChange() {
     const firstDay = today.substring(0,8)+'01';
     document.getElementById('meta-date-since').value = firstDay;
     document.getElementById('meta-date-until').value = today;
-  } else {
+ } else {
     wrap.style.display = 'none';
     refreshMetaData();
   }
