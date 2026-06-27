@@ -374,7 +374,7 @@ body.focus-mode #main{margin-left:0}
     </div>
     <div class="field"><label>Email</label><input id="auth-email" type="email" placeholder="tu@email.com" onkeydown="if(event.key==='Enter')doAuth()"/></div>
     <div class="field"><label>Contrasena</label><input id="auth-pwd" type="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')doAuth()"/></div>
-    <button class="btn-primary" onclick="doAuth()">Ingresar</button>
+    <button id="googleSignInBtn2" type="button" class="btn-outline" style="margin-top:10px;width:100%">Continuar con Google</button>
     <div class="auth-msg" id="auth-msg"></div>
     <div style="margin-top:10px;font-size:12px;color:var(--text2);text-align:center">
       <span onclick="showSetup()" style="cursor:pointer;color:var(--gotix-blue)">Cambiar configuracion de Supabase</span>
@@ -2715,6 +2715,13 @@ async function doAuth(){
   }catch(e){msg.textContent=e.message;}
 }
 async function signOut(){ await db.auth.signOut(); }
+  document.getElementById('googleSignInBtn2').addEventListener('click', async () => {
+  await db.auth.signInWithOAuth({
+    provider: 'google',
+    options: { redirectTo: window.location.origin + '/' }
+  });
+});
+  
 
 // ── NAV ──────────────────────────────────────────────────────────────────────
 function showPage(p){
