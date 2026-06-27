@@ -4574,11 +4574,13 @@ tbody.innerHTML = list.map(a => {
 function closeAdsets() {
   document.getElementById('meta-adsets-section').style.display='none';
   document.getElementById('meta-ads-section').style.display='none';
+  currentCampaignId = null; currentCampaignName = '';
+  currentAdsetId = null; currentAdsetName = '';
 }
 function closeAds() {
   document.getElementById('meta-ads-section').style.display='none';
+  currentAdsetId = null; currentAdsetName = '';
 }
-
 // ── SNAPSHOTS AUTOMATICOS ────────────────────────────────────────────────────
 async function autoSnapshot() {
   if(!META_TOKEN||!META_ACCOUNT) { toast('Conecta Meta primero'); showPage('meta-connect'); return; }
