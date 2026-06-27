@@ -8531,13 +8531,12 @@ function escRenderPgwList2() {
     </div>
   </div>
 </div>
-  <script>
+ <script>
   window.addEventListener('load', () => {
     setTimeout(() => window.scrollTo(0, 0), 400);
   });
   </script>
   <script>init();</script>
-      <script>
 (async () => {
   const { data } = await db.auth.getUser();
   const currentEmail = data?.user?.email;
