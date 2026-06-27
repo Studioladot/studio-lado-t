@@ -2188,7 +2188,18 @@ create policy "own" on contacts for all using (auth.uid()=user_id);</div>
     </table></div>
   </div>
 </div>
-
+<div id="page-userlist" class="page">
+  <div class="page-hdr">
+    <div><div class="page-title">👥 Lista de Usuarios</div><div class="page-sub">Aprobar y gestionar roles</div></div>
+    <button class="btn btn-outline btn-sm" onclick="cargarUsuarios()">⟲ Actualizar</button>
+  </div>
+  <div class="card" style="padding:0;overflow:hidden">
+    <div class="tbl-wrap"><table>
+      <thead><tr><th>Nombre</th><th>Email</th><th>Estado</th><th>Rol</th><th>Acciones</th></tr></thead>
+      <tbody id="tbody-usuarios"><tr><td colspan="5" style="text-align:center;color:var(--text2);padding:24px">Cargando...</td></tr></tbody>
+    </table></div>
+  </div>
+</div>
  
 <!-- PANTALLA DE ESPERA (usuario pendiente de aprobacion) -->
 <div id="pending-screen" style="display:none;position:fixed;inset:0;background:var(--bg);z-index:500;align-items:center;justify-content:center">
