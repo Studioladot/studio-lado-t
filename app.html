@@ -4751,7 +4751,6 @@ async function checkUserAccess() {
       const navCfg = document.getElementById('nav-config');
       if (navCfg) navCfg.style.display = 'flex';
     }
-    }
     // Verificar expiración
     if (!data.is_admin && data.expires_at && new Date(data.expires_at) < new Date()) {
       showPending('Tu acceso expiró. Contacta a Lado T para renovar.');
