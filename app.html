@@ -722,6 +722,7 @@ body.focus-mode #main{margin-left:0}
         <input type="date" id="meta-date-until" class="fg" style="margin:0;max-width:140px" onchange="refreshMetaData()">
       </div>
       <button class="btn btn-outline" onclick="refreshMetaData()">&#8635; Actualizar</button>
+      <button class="btn btn-outline" onclick="openMetaColumnsModal()" title="Personalizar columnas">&#9881; Columnas</button>
       <button class="btn btn-accent" onclick="autoSnapshot()">&#128248; Auto-snapshot</button>
     </div>
   </div>
@@ -751,12 +752,12 @@ body.focus-mode #main{margin-left:0}
   <div class="card" style="padding:0;overflow:hidden">
     <div class="tbl-wrap">
       <table id="meta-camp-table">
-        <thead><tr>
+        <thead><tr id="meta-camp-thead-row">
           <th>Campana</th><th>Estado</th><th>Gasto</th><th>ROAS</th>
           <th>Compras</th><th>CPA</th><th>CTR</th><th>CPM</th><th>Impr.</th><th></th>
         </tr></thead>
         <tbody id="meta-camp-tbody">
-          <tr><td colspan="10" style="text-align:center;padding:32px;color:var(--text2)">
+          <tr><td colspan="14" style="text-align:center;padding:32px;color:var(--text2)">
             <span id="meta-camp-empty-msg">Conecta tu cuenta Meta para ver campanas</span>
           </td></tr>
         </tbody>
@@ -2471,7 +2472,17 @@ create policy "own" on contacts for all using (auth.uid()=user_id);</div>
     </div>
   </div>
 </div>
-
+<div class="modal-backdrop" id="modal-meta-cols">
+  <div class="modal" style="max-width:380px">
+    <div class="modal-title">Personalizar columnas</div>
+    <div style="font-size:12px;color:var(--text2);margin-bottom:14px">Elegí qué métricas mostrar en la tabla de Campañas. El orden queda fijo (de izquierda a derecha, como en esta lista).</div>
+    <div id="meta-cols-list" style="display:flex;flex-direction:column;gap:10px"></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-meta-cols')">Cancelar</button>
+      <button class="btn btn-accent" onclick="saveMetaColumns()">Guardar</button>
+    </div>
+  </div>
+</div>
 <div class="modal-backdrop" id="modal-upd-obj">
   <div class="modal" style="max-width:340px">
     <div class="modal-title">Actualizar progreso</div>
@@ -2807,7 +2818,7 @@ function showPage(p){
   }
   if(p==='bib-ads')loadBibAds();
   if(p==='meta-live')renderSnaps();
-  if(p==='meta-campanas'){ if(META_TOKEN&&META_ACCOUNT&&!metaCampaigns.length)loadMetaCampaigns(); }
+  if(p==='meta-campanas'){ renderMetaCampHeader(); if(META_TOKEN&&META_ACCOUNT&&!metaCampaigns.length)loadMetaCampaigns(); }
   if(p==='meta-connect'){
     const ti=document.getElementById('meta-token-input');
     const ai=document.getElementById('meta-account-input');
@@ -4155,6 +4166,61 @@ let metaCampFilter = 'ALL';
 let currentCampaignId = null, currentAdsetId = null;
 let currentCampaignName = '', currentAdsetName = '';
 
+// ── METRICAS PERSONALIZABLES (tabla de Campanas) ─────────────────────────────
+const META_METRIC_DEFS = {
+  spend:       { label:'Gasto',             render: ins => ins.spend ? `<span style="font-weight:600">$${ins.spend}</span>` : '—' },
+  roas:        { label:'ROAS',              render: ins => ins.roas ? `<span style="font-weight:700;color:${roasColor(ins.roas)}">${ins.roas}x</span>` : '—' },
+  purchases:   { label:'Compras',           render: ins => ins.purchases || '—' },
+  cpa:         { label:'CPA',               render: ins => ins.cpa ? '$'+ins.cpa : '—' },
+  ctr:         { label:'CTR',               render: ins => ins.ctr ? ins.ctr+'%' : '—' },
+  cpm:         { label:'CPM',               render: ins => ins.cpm ? '$'+ins.cpm : '—' },
+  impressions: { label:'Impresiones',       render: ins => ins.impressions ? fmtNum(ins.impressions) : '—' },
+  atc:         { label:'Add to Cart',       render: ins => ins.atc ? fmtNum(ins.atc) : '—' },
+  ic:          { label:'Checkout Iniciado', render: ins => ins.ic ? fmtNum(ins.ic) : '—' },
+  frequency:   { label:'Frecuencia',        render: ins => ins.frequency ? ins.frequency : '—' },
+};
+const META_METRIC_ORDER = ['spend','roas','purchases','cpa','ctr','cpm','impressions','atc','ic','frequency'];
+const META_COLS_STORAGE_KEY = 'gotix_meta_cols_v1';
+
+function loadMetaColumns() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(META_COLS_STORAGE_KEY));
+    if(Array.isArray(saved) && saved.length) return saved.filter(id => META_METRIC_DEFS[id]);
+  } catch(e) {}
+  return ['spend','roas','purchases','cpa','ctr','cpm','impressions'];
+}
+let metaActiveColumns = loadMetaColumns();
+
+function openMetaColumnsModal() {
+  const box = document.getElementById('meta-cols-list');
+  box.innerHTML = META_METRIC_ORDER.map(id => {
+    const checked = metaActiveColumns.includes(id) ? 'checked' : '';
+    return `<label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text);cursor:pointer">
+      <input type="checkbox" value="${id}" ${checked} style="accent-color:var(--accent)" class="meta-col-chk"> ${META_METRIC_DEFS[id].label}
+    </label>`;
+  }).join('');
+  openModal('modal-meta-cols');
+}
+
+function saveMetaColumns() {
+  const checked = Array.from(document.querySelectorAll('.meta-col-chk:checked')).map(c=>c.value);
+  if(!checked.length) { toast('Elegi al menos una metrica'); return; }
+  metaActiveColumns = META_METRIC_ORDER.filter(id => checked.includes(id));
+  localStorage.setItem(META_COLS_STORAGE_KEY, JSON.stringify(metaActiveColumns));
+  closeModal('modal-meta-cols');
+  renderMetaCampHeader();
+  renderCampaigns();
+  toast('Columnas actualizadas');
+}
+
+function renderMetaCampHeader() {
+  const row = document.getElementById('meta-camp-thead-row');
+  if(!row) return;
+  row.innerHTML = `<th>Campana</th><th>Estado</th>` +
+    metaActiveColumns.map(id => `<th>${META_METRIC_DEFS[id].label}</th>`).join('') +
+    `<th></th>`;
+}
+
 const GRAPH = 'https://graph.facebook.com/v19.0';
 const AD_FIELDS = 'spend,actions,action_values,impressions,clicks,ctr,cpm,cpc,frequency,video_thruplay_watched_actions,video_p25_watched_actions,video_p75_watched_actions,video_p100_watched_actions,video_play_actions';
 const CAMP_FIELDS = 'id,name,status,effective_status,daily_budget,lifetime_budget,objective';
@@ -4298,6 +4364,7 @@ function onDateRangeChange() {
   }
 }
 async function loadMetaCampaigns(keepDrilldown=false) {
+  renderMetaCampHeader();
   if(!META_TOKEN||!META_ACCOUNT) {
     document.getElementById('meta-camp-empty-msg').textContent = 'Conecta tu cuenta en "Conectar Meta" primero';
     return;
@@ -4418,20 +4485,14 @@ function renderCampaigns() {
     return;
     renderMetaInsights(list);
   }
-  tbody.innerHTML = list.map(c => {
+ tbody.innerHTML = list.map(c => {
     const ins = c.insights||{};
-    const hasData = ins.spend>0;
+    const metricTds = metaActiveColumns.map(id => `<td>${META_METRIC_DEFS[id].render(ins)}</td>`).join('');
     return `<tr style="cursor:pointer" onclick="loadAdsets('${c.id}','${(c.name||'').replace(/'/g,"\'")}')">
       <td><div style="font-weight:600;font-size:13px;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${c.name}">${c.name}</div>
           <div style="font-size:10px;color:var(--text3);margin-top:1px">${c.objective||''}</div></td>
       <td>${statusBadge(c.effective_status||c.status)}</td>
-      <td style="font-weight:600">${hasData?'$'+ins.spend:'—'}</td>
-      <td><span style="font-weight:700;color:${roasColor(ins.roas)}">${ins.roas?ins.roas+'x':'—'}</span></td>
-      <td>${ins.purchases||'—'}</td>
-      <td>${ins.cpa?'$'+ins.cpa:'—'}</td>
-      <td>${ins.ctr?ins.ctr+'%':'—'}</td>
-      <td>${ins.cpm?'$'+ins.cpm:'—'}</td>
-      <td>${ins.impressions?fmtNum(ins.impressions):'—'}</td>
+      ${metricTds}
       <td>
         <button class="btn btn-sm btn-outline" onclick="event.stopPropagation();snapshotCampaign('${c.id}','${(c.name||'').replace(/'/g,"\'")}')">&#128248;</button>
       </td>
