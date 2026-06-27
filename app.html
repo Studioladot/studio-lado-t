@@ -4614,9 +4614,9 @@ async function loadAds(adsetId, adsetName, silent=false) {
     <span class="ld"></span><span class="ld"></span><span class="ld"></span></td></tr>`;
   if(!silent) section.scrollIntoView({behavior:'smooth',block:'start'});
   try {
-    const insParamAds = days==='custom'
-      ? `insights.time_range({"since":"${since}","until":"${until}"}){${AD_FIELDS}}`
-      : `insights.date_preset(${days}){${AD_FIELDS}}`;
+    const { valid } = getMetaDateRange();
+    if(!valid) { tbody.innerHTML = `<tr><td colspan="14" style="text-align:center;padding:20px;color:var(--text2)">Seleccioná las fechas del rango personalizado</td></tr>`; return; }
+    const insParamAds = buildMetaInsightsField(AD_FIELDS);
     const data = await metaGet(`${adsetId}/ads`, {
       fields: `${AD_INFO_FIELDS},${insParamAds}`,
       limit: 50,
