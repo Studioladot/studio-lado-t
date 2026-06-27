@@ -4368,6 +4368,8 @@ function filterMetaCamp(f, el) {
   document.querySelectorAll('#page-meta-campanas .ft').forEach(t=>t.classList.remove('active'));
   if(el) el.classList.add('active');
   renderCampaigns();
+  if(document.getElementById('meta-adsets-section').style.display !== 'none') renderAdsets(currentCampaignName);
+  if(document.getElementById('meta-ads-section').style.display !== 'none') renderAds(currentAdsetName);
 }
 let metaStrategyFilter = 'ALL';
 const META_STRATEGY_RX = { TEST:/TESTEO|TOFU/i, CBO:/CBO|ESCALADO/i, RTG:/BOFU|LIQUIDACION/i };
@@ -4438,8 +4440,9 @@ function renderCampaigns() {
 }
 
 // ── LOAD ADSETS ──────────────────────────────────────────────────────────────
-async function loadAdsets(campaignId, campaignName) {
+async function loadAdsets(campaignId, campaignName, silent=false) {
   currentCampaignId = campaignId;
+  currentCampaignName = campaignName;
   const days = document.getElementById('meta-date-range')?.value||'last_30d';
   const since = document.getElementById('meta-date-since')?.value;
   const until = document.getElementById('meta-date-until')?.value;
@@ -4451,7 +4454,7 @@ async function loadAdsets(campaignId, campaignName) {
   document.getElementById('meta-adsets-sub').textContent = 'Cargando...';
   tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:24px;color:var(--text2)">
     <span class="ld"></span><span class="ld"></span><span class="ld"></span></td></tr>`;
-  section.scrollIntoView({behavior:'smooth',block:'start'});
+ if(!silent) section.scrollIntoView({behavior:'smooth',block:'start'});
 
   try {
     const insParam = days==='custom'
@@ -4472,11 +4475,15 @@ async function loadAdsets(campaignId, campaignName) {
 
 function renderAdsets(campName) {
   const tbody = document.getElementById('meta-adsets-tbody');
-  if(!metaAdsets.length) {
-    tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:20px;color:var(--text2)">Sin conjuntos</td></tr>`;
+  let list = metaAdsets;
+  if(metaCampFilter !== 'ALL') list = list.filter(s => (s.effective_status||s.status)===metaCampFilter);
+  const subEl = document.getElementById('meta-adsets-sub');
+  if(subEl) subEl.textContent = metaCampFilter==='ALL' ? `${metaAdsets.length} conjuntos` : `${list.length} de ${metaAdsets.length} conjuntos (filtro activo)`;
+  if(!list.length) {
+    tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:20px;color:var(--text2)">Sin conjuntos con ese filtro</td></tr>`;
     return;
   }
-  tbody.innerHTML = metaAdsets.map(s => {
+  tbody.innerHTML = list.map(s => {
     const ins = s.insights||{};
     return `<tr style="cursor:pointer" onclick="loadAds('${s.id}','${(s.name||'').replace(/'/g,"\'")}')">
       <td><div style="font-weight:600;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${s.name}">${s.name}</div></td>
@@ -4493,8 +4500,9 @@ function renderAdsets(campName) {
 }
 
 // ── LOAD ADS ─────────────────────────────────────────────────────────────────
-async function loadAds(adsetId, adsetName) {
+async function loadAds(adsetId, adsetName, silent=false) {
   currentAdsetId = adsetId;
+  currentAdsetName = adsetName;
   const days = document.getElementById('meta-date-range')?.value||'last_30d';
   const since = document.getElementById('meta-date-since')?.value;
   const until = document.getElementById('meta-date-until')?.value;
@@ -4505,8 +4513,7 @@ async function loadAds(adsetId, adsetName) {
   document.getElementById('meta-ads-sub').textContent = 'Cargando...';
   tbody.innerHTML = `<tr><td colspan="10" style="text-align:center;padding:24px;color:var(--text2)">
     <span class="ld"></span><span class="ld"></span><span class="ld"></span></td></tr>`;
-  section.scrollIntoView({behavior:'smooth',block:'start'});
-
+  if(!silent) section.scrollIntoView({behavior:'smooth',block:'start'});
   try {
     const insParamAds = days==='custom'
       ? `insights.time_range({"since":"${since}","until":"${until}"}){${AD_FIELDS}}`
@@ -4526,11 +4533,15 @@ async function loadAds(adsetId, adsetName) {
 
 function renderAds(adsetName) {
   const tbody = document.getElementById('meta-ads-tbody');
-  if(!metaAds.length) {
-    tbody.innerHTML = `<tr><td colspan="10" style="text-align:center;padding:20px;color:var(--text2)">Sin anuncios</td></tr>`;
+  let list = metaAds;
+  if(metaCampFilter !== 'ALL') list = list.filter(a => (a.effective_status||a.status)===metaCampFilter);
+  const subEl = document.getElementById('meta-ads-sub');
+  if(subEl) subEl.textContent = metaCampFilter==='ALL' ? `${metaAds.length} anuncios` : `${list.length} de ${metaAds.length} anuncios (filtro activo)`;
+  if(!list.length) {
+    tbody.innerHTML = `<tr><td colspan="10" style="text-align:center;padding:20px;color:var(--text2)">Sin anuncios con ese filtro</td></tr>`;
     return;
   }
-tbody.innerHTML = metaAds.map(a => {
+tbody.innerHTML = list.map(a => {
     const ins = a.insights||{};
     const thumb = a.creative?.thumbnail_url;
     const freq = +ins.frequency||0, ctrv = +ins.ctr||0;
