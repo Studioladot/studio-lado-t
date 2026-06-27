@@ -8537,6 +8537,7 @@ function escRenderPgwList2() {
   });
   </script>
   <script>init();</script>
+  <script>
 (async () => {
   const { data } = await db.auth.getUser();
   const currentEmail = data?.user?.email;
