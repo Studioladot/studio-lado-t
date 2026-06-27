@@ -2719,7 +2719,8 @@ if (new URLSearchParams(location.search).get('meta_connected') === '1') {
 }
  const hasAccess = await checkUserAccess();
   if(!hasAccess) return;
-  window.scrollTo(0,0);
+ window.scrollTo(0,0);
+  document.getElementById('main')?.scrollTo(0,0);
   if (location.hash.includes('access_token')) {
     history.replaceState(null, '', location.pathname);
   }
@@ -8535,7 +8536,10 @@ function escRenderPgwList2() {
 </div>
  <script>
   window.addEventListener('load', () => {
-    setTimeout(() => window.scrollTo(0, 0), 400);
+    setTimeout(() => {
+      window.scrollTo(0, 0);
+      document.getElementById('main')?.scrollTo(0, 0);
+    }, 400);
   });
   </script>
   <script>init();</script>
