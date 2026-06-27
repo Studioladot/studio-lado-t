@@ -2760,6 +2760,8 @@ async function signOut(){ await db.auth.signOut(); }
 
 // ── NAV ──────────────────────────────────────────────────────────────────────
 function showPage(p){
+  window.scrollTo(0,0);
+  document.getElementById('main')?.scrollTo(0,0);
   // ADMIN-ONLY: Configuracion y Admin son exclusivos del administrador,
   // sin importar los permisos de plan que tenga el usuario.
  if(p==='config' && !isAdmin){
