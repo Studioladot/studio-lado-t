@@ -777,7 +777,7 @@ body.focus-mode #main{margin-left:0}
     <div class="card" style="padding:0;overflow:hidden">
       <div class="tbl-wrap">
         <table>
-          <thead><tr><th>Conjunto</th><th>Estado</th><th>Gasto</th><th>ROAS</th><th>Compras</th><th>CPA</th><th>CTR</th><th>CPM</th><th></th></tr></thead>
+         <thead><tr id="meta-adsets-thead-row"><th>Conjunto</th><th>Estado</th><th>Gasto</th><th>ROAS</th><th>Compras</th><th>CPA</th><th>CTR</th><th>CPM</th><th></th></tr></thead>
           <tbody id="meta-adsets-tbody"></tbody>
         </table>
       </div>
@@ -795,7 +795,7 @@ body.focus-mode #main{margin-left:0}
       <div class="card" style="padding:0;overflow:hidden">
         <div class="tbl-wrap">
           <table>
-            <thead><tr><th>Anuncio</th><th>Estado</th><th>Gasto</th><th>ROAS</th><th>Compras</th><th>CPA</th><th>CTR</th><th>Hook%</th><th>CPM</th><th></th></tr></thead>
+          <thead><tr id="meta-ads-thead-row"><th>Anuncio</th><th>Estado</th><th>Gasto</th><th>ROAS</th><th>Compras</th><th>CPA</th><th>CTR</th><th>Hook%</th><th>CPM</th><th></th></tr></thead>
             <tbody id="meta-ads-tbody"></tbody>
           </table>
         </div>
@@ -4175,11 +4175,12 @@ const META_METRIC_DEFS = {
   ctr:         { label:'CTR',               render: ins => ins.ctr ? ins.ctr+'%' : '—' },
   cpm:         { label:'CPM',               render: ins => ins.cpm ? '$'+ins.cpm : '—' },
   impressions: { label:'Impresiones',       render: ins => ins.impressions ? fmtNum(ins.impressions) : '—' },
+  hook_rate:   { label:'Hook Rate %',       render: ins => ins.hook_rate ? `<span style="font-weight:600;color:${+ins.hook_rate>=15?'var(--green)':+ins.hook_rate>=8?'var(--blue)':'var(--amber)'}">${ins.hook_rate}%</span>` : '—' },
   atc:         { label:'Add to Cart',       render: ins => ins.atc ? fmtNum(ins.atc) : '—' },
   ic:          { label:'Checkout Iniciado', render: ins => ins.ic ? fmtNum(ins.ic) : '—' },
   frequency:   { label:'Frecuencia',        render: ins => ins.frequency ? ins.frequency : '—' },
 };
-const META_METRIC_ORDER = ['spend','roas','purchases','cpa','ctr','cpm','impressions','atc','ic','frequency'];
+const META_METRIC_ORDER = ['spend','roas','purchases','cpa','ctr','cpm','impressions','hook_rate','atc','ic','frequency'];
 const META_COLS_STORAGE_KEY = 'gotix_meta_cols_v1';
 
 function loadMetaColumns() {
@@ -4187,10 +4188,9 @@ function loadMetaColumns() {
     const saved = JSON.parse(localStorage.getItem(META_COLS_STORAGE_KEY));
     if(Array.isArray(saved) && saved.length) return saved.filter(id => META_METRIC_DEFS[id]);
   } catch(e) {}
-  return ['spend','roas','purchases','cpa','ctr','cpm','impressions'];
+  return ['spend','roas','purchases','cpa','ctr','cpm','impressions','hook_rate'];
 }
 let metaActiveColumns = loadMetaColumns();
-
 function openMetaColumnsModal() {
   const box = document.getElementById('meta-cols-list');
   box.innerHTML = META_METRIC_ORDER.map(id => {
@@ -4208,19 +4208,22 @@ function saveMetaColumns() {
   metaActiveColumns = META_METRIC_ORDER.filter(id => checked.includes(id));
   localStorage.setItem(META_COLS_STORAGE_KEY, JSON.stringify(metaActiveColumns));
   closeModal('modal-meta-cols');
-  renderMetaCampHeader();
   renderCampaigns();
+  if(document.getElementById('meta-adsets-section').style.display !== 'none') renderAdsets(currentCampaignName);
+  if(document.getElementById('meta-ads-section').style.display !== 'none') renderAds(currentAdsetName);
   toast('Columnas actualizadas');
 }
 
-function renderMetaCampHeader() {
-  const row = document.getElementById('meta-camp-thead-row');
+function renderMetaTableHeader(rowId, firstColLabel) {
+  const row = document.getElementById(rowId);
   if(!row) return;
-  row.innerHTML = `<th>Campana</th><th>Estado</th>` +
+  row.innerHTML = `<th>${firstColLabel}</th><th>Estado</th>` +
     metaActiveColumns.map(id => `<th>${META_METRIC_DEFS[id].label}</th>`).join('') +
     `<th></th>`;
 }
-
+function renderMetaCampHeader()   { renderMetaTableHeader('meta-camp-thead-row',   'Campana'); }
+function renderMetaAdsetsHeader() { renderMetaTableHeader('meta-adsets-thead-row', 'Conjunto'); }
+function renderMetaAdsHeader()    { renderMetaTableHeader('meta-ads-thead-row',    'Anuncio'); }
 const GRAPH = 'https://graph.facebook.com/v19.0';
 const AD_FIELDS = 'spend,actions,action_values,impressions,clicks,ctr,cpm,cpc,frequency,video_thruplay_watched_actions,video_p25_watched_actions,video_p75_watched_actions,video_p100_watched_actions,video_play_actions';
 const CAMP_FIELDS = 'id,name,status,effective_status,daily_budget,lifetime_budget,objective';
@@ -4476,6 +4479,7 @@ function renderMetaInsights(list) {
     </div>`).join('');
 }
 function renderCampaigns() {
+  renderMetaCampHeader();
   const tbody = document.getElementById('meta-camp-tbody');
   let list = metaCampaigns;
   if(metaCampFilter !== 'ALL') list = list.filter(c => c.effective_status===metaCampFilter||c.status===metaCampFilter);
@@ -4513,7 +4517,7 @@ async function loadAdsets(campaignId, campaignName, silent=false) {
   section.style.display='block';
   document.getElementById('meta-adsets-title').textContent = 'Conjuntos — '+campaignName;
   document.getElementById('meta-adsets-sub').textContent = 'Cargando...';
-  tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:24px;color:var(--text2)">
+  tbody.innerHTML = `<tr><td colspan="14" style="text-align:center;padding:24px;color:var(--text2)">
     <span class="ld"></span><span class="ld"></span><span class="ld"></span></td></tr>`;
  if(!silent) section.scrollIntoView({behavior:'smooth',block:'start'});
 
@@ -4530,36 +4534,32 @@ async function loadAdsets(campaignId, campaignName, silent=false) {
     document.getElementById('meta-adsets-sub').textContent = `${metaAdsets.length} conjuntos`;
     renderAdsets(campaignName);
   } catch(e) {
-    tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;color:var(--red);padding:16px">Error: ${e.message}</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="14" style="text-align:center;color:var(--red);padding:16px">Error: ${e.message}</td></tr>`;
   }
 }
 
 function renderAdsets(campName) {
+  renderMetaAdsetsHeader();
   const tbody = document.getElementById('meta-adsets-tbody');
   let list = metaAdsets;
   if(metaCampFilter !== 'ALL') list = list.filter(s => (s.effective_status||s.status)===metaCampFilter);
   const subEl = document.getElementById('meta-adsets-sub');
   if(subEl) subEl.textContent = metaCampFilter==='ALL' ? `${metaAdsets.length} conjuntos` : `${list.length} de ${metaAdsets.length} conjuntos (filtro activo)`;
   if(!list.length) {
-    tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:20px;color:var(--text2)">Sin conjuntos con ese filtro</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="14" style="text-align:center;padding:20px;color:var(--text2)">Sin conjuntos con ese filtro</td></tr>`;
     return;
   }
   tbody.innerHTML = list.map(s => {
     const ins = s.insights||{};
+    const metricTds = metaActiveColumns.map(id => `<td>${META_METRIC_DEFS[id].render(ins)}</td>`).join('');
     return `<tr style="cursor:pointer" onclick="loadAds('${s.id}','${(s.name||'').replace(/'/g,"\'")}')">
       <td><div style="font-weight:600;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${s.name}">${s.name}</div></td>
       <td>${statusBadge(s.effective_status||s.status)}</td>
-      <td style="font-weight:600">${ins.spend?'$'+ins.spend:'—'}</td>
-      <td><span style="font-weight:700;color:${roasColor(ins.roas)}">${ins.roas?ins.roas+'x':'—'}</span></td>
-      <td>${ins.purchases||'—'}</td>
-      <td>${ins.cpa?'$'+ins.cpa:'—'}</td>
-      <td>${ins.ctr?ins.ctr+'%':'—'}</td>
-      <td>${ins.cpm?'$'+ins.cpm:'—'}</td>
+      ${metricTds}
       <td><button class="btn btn-sm btn-outline" onclick="event.stopPropagation();snapshotAdset('${s.id}','${(s.name||'').replace(/'/g,"\'")}')">&#128248;</button></td>
     </tr>`;
   }).join('');
 }
-
 // ── LOAD ADS ─────────────────────────────────────────────────────────────────
 async function loadAds(adsetId, adsetName, silent=false) {
   currentAdsetId = adsetId;
@@ -4572,7 +4572,7 @@ async function loadAds(adsetId, adsetName, silent=false) {
   section.style.display='block';
   document.getElementById('meta-ads-title').textContent = 'Anuncios — '+adsetName;
   document.getElementById('meta-ads-sub').textContent = 'Cargando...';
-  tbody.innerHTML = `<tr><td colspan="10" style="text-align:center;padding:24px;color:var(--text2)">
+  tbody.innerHTML = `<tr><td colspan="14" style="text-align:center;padding:24px;color:var(--text2)">
     <span class="ld"></span><span class="ld"></span><span class="ld"></span></td></tr>`;
   if(!silent) section.scrollIntoView({behavior:'smooth',block:'start'});
   try {
@@ -4588,18 +4588,19 @@ async function loadAds(adsetId, adsetName, silent=false) {
     document.getElementById('meta-ads-sub').textContent = `${metaAds.length} anuncios`;
     renderAds(adsetName);
   } catch(e) {
-    tbody.innerHTML = `<tr><td colspan="10" style="text-align:center;color:var(--red);padding:16px">Error: ${e.message}</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="14" style="text-align:center;color:var(--red);padding:16px">Error: ${e.message}</td></tr>`;
   }
 }
 
 function renderAds(adsetName) {
+  renderMetaAdsHeader();
   const tbody = document.getElementById('meta-ads-tbody');
   let list = metaAds;
   if(metaCampFilter !== 'ALL') list = list.filter(a => (a.effective_status||a.status)===metaCampFilter);
   const subEl = document.getElementById('meta-ads-sub');
   if(subEl) subEl.textContent = metaCampFilter==='ALL' ? `${metaAds.length} anuncios` : `${list.length} de ${metaAds.length} anuncios (filtro activo)`;
   if(!list.length) {
-    tbody.innerHTML = `<tr><td colspan="10" style="text-align:center;padding:20px;color:var(--text2)">Sin anuncios con ese filtro</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="14" style="text-align:center;padding:20px;color:var(--text2)">Sin anuncios con ese filtro</td></tr>`;
     return;
   }
 tbody.innerHTML = list.map(a => {
@@ -4607,6 +4608,7 @@ tbody.innerHTML = list.map(a => {
     const thumb = a.creative?.thumbnail_url;
     const freq = +ins.frequency||0, ctrv = +ins.ctr||0;
     const fatigued = freq>=3 && ctrv>0 && ctrv<1;
+    const metricTds = metaActiveColumns.map(id => `<td>${META_METRIC_DEFS[id].render(ins)}</td>`).join('');
     return `<tr>
       <td>
         <div style="display:flex;align-items:center;gap:8px">
@@ -4618,13 +4620,7 @@ tbody.innerHTML = list.map(a => {
         </div>
       </td>
       <td>${statusBadge(a.effective_status||a.status)}</td>
-      <td style="font-weight:600">${ins.spend?'$'+ins.spend:'—'}</td>
-      <td><span style="font-weight:700;color:${roasColor(ins.roas)}">${ins.roas?ins.roas+'x':'—'}</span></td>
-      <td>${ins.purchases||'—'}</td>
-      <td>${ins.cpa?'$'+ins.cpa:'—'}</td>
-      <td>${ins.ctr?ins.ctr+'%':'—'}</td>
-      <td><span style="font-weight:600;color:${+ins.hook_rate>=15?'var(--green)':+ins.hook_rate>=8?'var(--blue)':'var(--amber)'}">${ins.hook_rate?ins.hook_rate+'%':'—'}</span></td>
-      <td>${ins.cpm?'$'+ins.cpm:'—'}</td>
+      ${metricTds}
       <td>
         <button class="btn btn-sm btn-accent" onclick="snapshotAd('${a.id}','${(a.name||'').replace(/'/g,"\'")}')">&#128248; Snap</button>
       </td>
