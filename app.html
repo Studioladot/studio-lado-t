@@ -4349,7 +4349,47 @@ async function verifyMetaConnection() {
     infoEl.innerHTML = `<div class="empty"><div class="empty-icon">⚠️</div><div class="empty-msg">Error de conexion</div><div class="empty-sub">${e.message}</div></div>`;
   }
 }
+// ── FECHAS: SIEMPRE time_range EXPLICITO, NUNCA date_preset CRUDO ────────────
+function presetToRange(preset) {
+  const fmt = d => d.toISOString().split('T')[0];
+  const today = new Date();
+  const today_s = fmt(today);
+  let since = today_s, until = today_s;
+  switch(preset) {
+    case 'today': break;
+    case 'yesterday': { const d=new Date(today); d.setDate(d.getDate()-1); since=fmt(d); until=fmt(d); break; }
+    case 'last_7d':  { const d=new Date(today); d.setDate(d.getDate()-7);  since=fmt(d); break; }
+    case 'last_14d': { const d=new Date(today); d.setDate(d.getDate()-14); since=fmt(d); break; }
+    case 'last_30d': { const d=new Date(today); d.setDate(d.getDate()-30); since=fmt(d); break; }
+    case 'last_90d': { const d=new Date(today); d.setDate(d.getDate()-90); since=fmt(d); break; }
+    case 'this_month': since = fmt(new Date(today.getFullYear(), today.getMonth(), 1)); break;
+    case 'last_month': {
+      since = fmt(new Date(today.getFullYear(), today.getMonth()-1, 1));
+      until = fmt(new Date(today.getFullYear(), today.getMonth(), 0));
+      break;
+    }
+    case 'maximum': since = '2010-01-01'; break; // historico real, a proposito
+    default: { const d=new Date(today); d.setDate(d.getDate()-30); since=fmt(d); }
+  }
+  return { since, until };
+}
 
+function getMetaDateRange() {
+  const preset = document.getElementById('meta-date-range')?.value || 'last_30d';
+  if(preset === 'custom') {
+    const since = document.getElementById('meta-date-since')?.value;
+    const until = document.getElementById('meta-date-until')?.value;
+    return { since, until, valid: !!(since && until) };
+  }
+  const { since, until } = presetToRange(preset);
+  return { since, until, valid: true };
+}
+
+// Construye el modificador de insights SIEMPRE con time_range — nunca con date_preset crudo
+function buildMetaInsightsField(fieldsStr) {
+  const { since, until } = getMetaDateRange();
+  return `insights.time_range({"since":"${since}","until":"${until}"}){${fieldsStr}}`;
+}
 // ── LOAD CAMPAIGNS ───────────────────────────────────────────────────────────
 function onDateRangeChange() {
   const val = document.getElementById('meta-date-range').value;
@@ -4385,19 +4425,17 @@ async function loadMetaCampaigns(keepDrilldown=false) {
     document.getElementById('meta-ads-section').style.display='none';
   }
 
-  const isCustom = days === 'custom';
+ const isCustom = days === 'custom';
   const since = document.getElementById('meta-date-since')?.value;
   const until = document.getElementById('meta-date-until')?.value;
   if(isCustom && (!since||!until)) { 
-    document.getElementById('meta-camp-tbody').innerHTML = '<tr><td colspan="10" style="text-align:center;padding:24px;color:var(--text2)">Seleccioná las fechas del rango personalizado</td></tr>';
+    document.getElementById('meta-camp-tbody').innerHTML = '<tr><td colspan="14" style="text-align:center;padding:24px;color:var(--text2)">Seleccioná las fechas del rango personalizado</td></tr>';
     return;
   }
 
   try {
-    // Traer campañas con sus insights
-    const insightsParam = isCustom
-      ? `insights.time_range({"since":"${since}","until":"${until}"}){${AD_FIELDS}}`
-      : `insights.date_preset(${days}){${AD_FIELDS}}`;
+    // Traer campañas con sus insights — SIEMPRE time_range explicito (since/until reales)
+    const insightsParam = buildMetaInsightsField(AD_FIELDS);
 
     const data = await metaGet(`act_${META_ACCOUNT}/campaigns`, {
       fields: `${CAMP_FIELDS},${insightsParam}`,
@@ -4522,9 +4560,9 @@ async function loadAdsets(campaignId, campaignName, silent=false) {
  if(!silent) section.scrollIntoView({behavior:'smooth',block:'start'});
 
   try {
-    const insParam = days==='custom'
-      ? `insights.time_range({"since":"${since}","until":"${until}"}){${AD_FIELDS}}`
-      : `insights.date_preset(${days}){${AD_FIELDS}}`;
+    const { valid } = getMetaDateRange();
+    if(!valid) { tbody.innerHTML = `<tr><td colspan="14" style="text-align:center;padding:20px;color:var(--text2)">Seleccioná las fechas del rango personalizado</td></tr>`; return; }
+    const insParam = buildMetaInsightsField(AD_FIELDS);
     const data = await metaGet(`${campaignId}/adsets`, {
       fields: `${ADSET_FIELDS},${insParam}`,
       limit: 50,
