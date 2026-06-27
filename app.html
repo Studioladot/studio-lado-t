@@ -4827,11 +4827,18 @@ async function quickApprove(uid) {
   await db.from('user_profiles').update({ is_approved: true }).eq('id', uid);
   toast('Usuario aprobado ✓'); loadAdmin();
 }
-function editUser(uid) {
-  const u = userProfile; // find from loaded list
+async function editUser(uid) {
+  const { data: u } = await db.from('user_profiles').select('*').eq('id', uid).maybeSingle();
+  if (!u) { toast('Usuario no encontrado'); return; }
   document.getElementById('adm-uid').value = uid;
-  document.getElementById('adm-expires').value = '';
-  document.getElementById('adm-notas').value = '';
+  document.getElementById('adm-status').value = u.is_admin ? 'active' : (u.is_approved ? 'active' : 'pending');
+  document.getElementById('adm-expires').value = u.expires_at ? u.expires_at.substring(0,10) : '';
+  document.getElementById('adm-notas').value = u.notas || '';
+  const allowed = Array.isArray(u.permissions) ? u.permissions : ALL_SECTIONS;
+  ALL_SECTIONS.forEach(s => {
+    const el = document.getElementById('perm-'+s);
+    if (el) el.checked = allowed.includes(s);
+  });
   openModal('modal-adm-user');
 }
 async function saveUserAdmin() {
