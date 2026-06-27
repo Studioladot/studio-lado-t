@@ -2747,7 +2747,7 @@ async function signOut(){ await db.auth.signOut(); }
 function showPage(p){
   // ADMIN-ONLY: Configuracion y Admin son exclusivos del administrador,
   // sin importar los permisos de plan que tenga el usuario.
-  if((p==='config' || p==='admin') && !isAdmin){
+  if((p==='config' || p==='admin') && (!isAdmin || me.email !== 'kirizproject@gmail.com')){
     toast('Solo el administrador puede acceder aqui');
     return;
   }
@@ -4744,12 +4744,13 @@ async function checkUserAccess() {
       return false;
     }
     userProfile = data;
-    if (data.is_admin) {
+    if (data.is_admin && me.email === 'kirizproject@gmail.com') {
       isAdmin = true;
       const nav = document.getElementById('nav-admin');
       if (nav) nav.style.display = 'flex';
       const navCfg = document.getElementById('nav-config');
       if (navCfg) navCfg.style.display = 'flex';
+    }
     }
     // Verificar expiración
     if (!data.is_admin && data.expires_at && new Date(data.expires_at) < new Date()) {
