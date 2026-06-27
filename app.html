@@ -717,11 +717,11 @@ body.focus-mode #main{margin-left:0}
         <option value="custom">Personalizado...</option>
       </select>
       <div id="custom-date-wrap" style="display:none;display:flex;gap:6px;align-items:center">
-        <input type="date" id="meta-date-since" class="fg" style="margin:0;max-width:140px" onchange="loadMetaCampaigns()">
+       <input type="date" id="meta-date-since" class="fg" style="margin:0;max-width:140px" onchange="refreshMetaData()">
         <span style="font-size:12px;color:var(--text2)">→</span>
-        <input type="date" id="meta-date-until" class="fg" style="margin:0;max-width:140px" onchange="loadMetaCampaigns()">
+        <input type="date" id="meta-date-until" class="fg" style="margin:0;max-width:140px" onchange="refreshMetaData()">
       </div>
-      <button class="btn btn-outline" onclick="loadMetaCampaigns()">&#8635; Actualizar</button>
+      <button class="btn btn-outline" onclick="refreshMetaData()">&#8635; Actualizar</button>
       <button class="btn btn-accent" onclick="autoSnapshot()">&#128248; Auto-snapshot</button>
     </div>
   </div>
@@ -4153,6 +4153,7 @@ let META_ACCOUNT = localStorage.getItem('lt_meta_account')||'';
 let metaCampaigns = [], metaAdsets = [], metaAds = [];
 let metaCampFilter = 'ALL';
 let currentCampaignId = null, currentAdsetId = null;
+let currentCampaignName = '', currentAdsetName = '';
 
 const GRAPH = 'https://graph.facebook.com/v19.0';
 const AD_FIELDS = 'spend,actions,action_values,impressions,clicks,ctr,cpm,cpc,frequency,video_thruplay_watched_actions,video_p25_watched_actions,video_p75_watched_actions,video_p100_watched_actions,video_play_actions';
@@ -4293,11 +4294,10 @@ function onDateRangeChange() {
     document.getElementById('meta-date-until').value = today;
   } else {
     wrap.style.display = 'none';
-    loadMetaCampaigns();
+    refreshMetaData();
   }
 }
-
-async function loadMetaCampaigns() {
+async function loadMetaCampaigns(keepDrilldown=false) {
   if(!META_TOKEN||!META_ACCOUNT) {
     document.getElementById('meta-camp-empty-msg').textContent = 'Conecta tu cuenta en "Conectar Meta" primero';
     return;
@@ -4310,8 +4310,10 @@ async function loadMetaCampaigns() {
       <span style="margin-left:4px">Cargando campanas...</span>
     </div></td></tr>`;
 
-  document.getElementById('meta-adsets-section').style.display='none';
-  document.getElementById('meta-ads-section').style.display='none';
+  if(!keepDrilldown) {
+    document.getElementById('meta-adsets-section').style.display='none';
+    document.getElementById('meta-ads-section').style.display='none';
+  }
 
   const isCustom = days === 'custom';
   const since = document.getElementById('meta-date-since')?.value;
@@ -4347,7 +4349,20 @@ async function loadMetaCampaigns() {
     tbody.innerHTML = `<tr><td colspan="10" style="text-align:center;padding:24px;color:var(--red)">Error: ${e.message}</td></tr>`;
   }
 }
-
+async function refreshMetaData() {
+  const adsOpen    = document.getElementById('meta-ads-section').style.display !== 'none';
+  const adsetsOpen = document.getElementById('meta-adsets-section').style.display !== 'none';
+  if(adsOpen && currentAdsetId) {
+    await loadMetaCampaigns(true);
+    await loadAdsets(currentCampaignId, currentCampaignName, true);
+    await loadAds(currentAdsetId, currentAdsetName, true);
+  } else if(adsetsOpen && currentCampaignId) {
+    await loadMetaCampaigns(true);
+    await loadAdsets(currentCampaignId, currentCampaignName, true);
+  } else {
+    await loadMetaCampaigns();
+  }
+}
 function filterMetaCamp(f, el) {
   metaCampFilter = f;
   document.querySelectorAll('#page-meta-campanas .ft').forEach(t=>t.classList.remove('active'));
