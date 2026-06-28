@@ -108,6 +108,7 @@ tr:hover td{background:var(--surface2)}
   .focus-card{background:var(--surface);border:0.5px solid var(--border);border-radius:var(--rl);padding:24px 22px}
 .focus-card-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);margin-bottom:10px}
 .focus-card-value{font-size:32px;font-weight:700;letter-spacing:-.02em;line-height:1.1;color:var(--text)}
+  .focus-card-sub{font-size:12px;color:var(--text2);margin-top:8px}
 @media (max-width:900px){.focus-grid{grid-template-columns:repeat(2,1fr)!important}}
 @media (max-width:560px){.focus-grid{grid-template-columns:1fr!important}}
   .meta-switch{position:relative;width:30px;height:16px;border-radius:9px;background:var(--surface2);border:1px solid var(--border);cursor:pointer;padding:0;flex-shrink:0;transition:background .15s,border-color .15s}
@@ -753,13 +754,14 @@ body.focus-mode #main{margin-left:0}
         <div class="focus-card-label">Ventas totales</div>
         <div class="focus-card-value" id="mfc-revenue">$0</div>
       </div>
-      <div class="focus-card">
-        <div class="focus-card-label">CPA promedio</div>
+     <div class="focus-card">
+        <div class="focus-card-label">CPA real (con costos)</div>
         <div class="focus-card-value" id="mfc-cpa">—</div>
       </div>
       <div class="focus-card">
-        <div class="focus-card-label">Beneficio neto estimado</div>
+        <div class="focus-card-label">Beneficio neto real</div>
         <div class="focus-card-value" id="mfc-beneficio">—</div>
+        <div class="focus-card-sub" id="mfc-beneficio-margen"></div>
       </div>
     </div>
   </div>
@@ -4497,28 +4499,42 @@ function getMetaFocusAggregates() {
     revenue += +ins.revenue || 0;
     purchases += +ins.purchases || 0;
   });
-  const cpa = purchases > 0 ? spend / purchases : 0;
-  const beneficio = revenue - spend; // Ventas - Gasto (ver nota sobre el calculo)
-  return { spend, revenue, purchases, cpa, beneficio, count: active.length };
+
+  // Costos reales: mismo fallback que usa GOTIX en el motor de P&L (loadPnLEngine)
+  // cuando no hay costo especifico por producto vinculado a la venta.
+  const margenPct        = (+finConfig?.margen_bruto || 48) / 100;   // % margen bruto de producto, de Finanzas
+  const costoEnvioUnit    = +finConfig?.costo_envio_promedio || 0;    // $ envio promedio por orden, de Finanzas
+  const gananciaProducto  = revenue * margenPct;                      // Revenue ya neto de costo de producto
+  const costoProductoEst  = revenue - gananciaProducto;                // solo para el trueCpa
+  const costoEnvioTotal   = costoEnvioUnit * purchases;
+
+  const beneficio    = gananciaProducto - spend - costoEnvioTotal;
+  const margenRealPct = revenue > 0 ? (beneficio / revenue) * 100 : 0;
+  const trueCpa       = purchases > 0 ? (spend + costoProductoEst + costoEnvioTotal) / purchases : 0;
+
+  return { spend, revenue, purchases, beneficio, margenRealPct, trueCpa, count: active.length };
 }
 
 function renderMetaFocusCards() {
-  const { spend, revenue, cpa, beneficio, count } = getMetaFocusAggregates();
+  const { spend, revenue, beneficio, margenRealPct, trueCpa, count } = getMetaFocusAggregates();
   const rangeLabel = document.getElementById('meta-sub')?.textContent || '';
   const targetCpa = +metaTargets.default.targetCpa;
+  const margenCfg = +finConfig?.margen_bruto || 48;
+  const envioCfg = +finConfig?.costo_envio_promedio || 0;
 
   document.getElementById('mfc-spend').textContent = '$' + spend.toFixed(2);
   document.getElementById('mfc-revenue').textContent = '$' + revenue.toFixed(2);
 
-  const cpaColor = cpa <= 0 ? 'var(--text)' : cpa <= targetCpa ? 'var(--green)' : 'var(--red)';
-  document.getElementById('mfc-cpa').innerHTML = cpa > 0 ? `<span style="color:${cpaColor}">$${cpa.toFixed(2)}</span>` : '—';
+  const cpaColor = trueCpa <= 0 ? 'var(--text)' : trueCpa <= targetCpa ? 'var(--green)' : 'var(--red)';
+  document.getElementById('mfc-cpa').innerHTML = trueCpa > 0 ? `<span style="color:${cpaColor}">$${trueCpa.toFixed(2)}</span>` : '—';
 
   const benColor = beneficio >= 0 ? 'var(--green)' : 'var(--red)';
   document.getElementById('mfc-beneficio').innerHTML = `<span style="color:${benColor}">${beneficio>=0?'+':''}$${beneficio.toFixed(2)}</span>`;
+  document.getElementById('mfc-beneficio-margen').textContent = revenue>0 ? `Margen real: ${margenRealPct.toFixed(1)}%` : '';
 
-  document.getElementById('meta-focus-sub').textContent = `${count} campana${count===1?'':'s'} activa${count===1?'':'s'} — ${rangeLabel}`;
+  document.getElementById('meta-focus-sub').textContent =
+    `${count} campana${count===1?'':'s'} activa${count===1?'':'s'} — ${rangeLabel} · supuestos: margen producto ${margenCfg}% + envio $${envioCfg}/orden`;
 }
-
 function toggleMetaFocusMode() {
   metaFocusMode = !metaFocusMode;
   document.getElementById('meta-focus-switch').classList.toggle('on', metaFocusMode);
