@@ -2034,7 +2034,16 @@ body.focus-mode #main{margin-left:0}
         <div class="card-title">Supabase</div>
         <div class="fg" style="margin-bottom:10px"><label>URL del proyecto</label><input id="cfg2-url" type="url" placeholder="https://xxxx.supabase.co"/></div>
         <div class="fg" style="margin-bottom:14px"><label>Anon Key</label><input id="cfg2-key" type="password" placeholder="eyJhbGci..."/></div>
-        <button class="btn btn-accent" onclick="saveSupabaseConfig()">Guardar Supabase</button>
+       <button class="btn btn-accent" onclick="saveSupabaseConfig()">Guardar Supabase</button>
+      </div>
+      <div class="card">
+        <div class="card-title">Reglas de decision — Meta Ads</div>
+        <div style="font-size:13px;color:var(--text2);margin-bottom:14px;line-height:1.6">Valores por defecto para toda la cuenta. Los podés pisar por campaña individual haciendo clic en la etiqueta "Estado Estratégico" dentro de la tabla de Meta Ads.</div>
+        <div class="form-row">
+          <div class="fg"><label>Target CPA (USD)</label><input id="cfg-target-cpa" type="number" step="0.01" placeholder="18"/></div>
+          <div class="fg"><label>Break-Even ROAS</label><input id="cfg-breakeven-roas" type="number" step="0.01" placeholder="2"/></div>
+        </div>
+        <button class="btn btn-accent" onclick="saveMetaDefaultTargets()">Guardar reglas</button>
       </div>
       <div class="card">
         <div class="card-title">IA Estrategica — Anthropic API Key</div>
@@ -2480,6 +2489,21 @@ create policy "own" on contacts for all using (auth.uid()=user_id);</div>
     <div class="modal-footer">
       <button class="btn btn-outline" onclick="closeModal('modal-meta-cols')">Cancelar</button>
       <button class="btn btn-accent" onclick="saveMetaColumns()">Guardar</button>
+    </div>
+  </div>
+</div>
+  <div class="modal-backdrop" id="modal-meta-rule-override">
+  <div class="modal" style="max-width:360px">
+    <div class="modal-title">Objetivo para <span id="mro-camp-name" style="color:var(--text2);font-weight:400"></span></div>
+    <div style="font-size:12px;color:var(--text2);margin-bottom:14px">Dejá un campo vacío para usar el valor por defecto de la cuenta.</div>
+    <div class="form-row">
+      <div class="fg"><label>Target CPA (USD)</label><input id="mro-cpa" type="number" step="0.01" placeholder="Default de cuenta"/></div>
+      <div class="fg"><label>Break-Even ROAS</label><input id="mro-roas" type="number" step="0.01" placeholder="Default de cuenta"/></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="clearMetaRuleOverride()">Usar default</button>
+      <button class="btn btn-outline" onclick="closeModal('modal-meta-rule-override')">Cancelar</button>
+      <button class="btn btn-accent" onclick="saveMetaRuleOverride()">Guardar</button>
     </div>
   </div>
 </div>
@@ -4214,16 +4238,111 @@ function saveMetaColumns() {
   toast('Columnas actualizadas');
 }
 
-function renderMetaTableHeader(rowId, firstColLabel) {
+function renderMetaTableHeader(rowId, firstColLabel, includeStrategic=false) {
   const row = document.getElementById(rowId);
   if(!row) return;
   row.innerHTML = `<th>${firstColLabel}</th><th>Estado</th>` +
     metaActiveColumns.map(id => `<th>${META_METRIC_DEFS[id].label}</th>`).join('') +
-    `<th></th>`;
+    `<th></th>` +
+    (includeStrategic ? `<th>Estado Estrategico</th>` : '');
 }
-function renderMetaCampHeader()   { renderMetaTableHeader('meta-camp-thead-row',   'Campana'); }
-function renderMetaAdsetsHeader() { renderMetaTableHeader('meta-adsets-thead-row', 'Conjunto'); }
+function renderMetaCampHeader()   { renderMetaTableHeader('meta-camp-thead-row',   'Campana',  true); }
+function renderMetaAdsetsHeader() { renderMetaTableHeader('meta-adsets-thead-row', 'Conjunto', true); }
 function renderMetaAdsHeader()    { renderMetaTableHeader('meta-ads-thead-row',    'Anuncio'); }
+  // ── REGLAS DE DECISION: Target CPA / Break-Even ROAS ─────────────────────────
+const META_TARGETS_KEY = 'gotix_meta_targets_v1';
+
+function loadMetaTargets() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(META_TARGETS_KEY));
+    if(saved && typeof saved === 'object') {
+      return {
+        default: { targetCpa: +saved.default?.targetCpa || 18, breakEvenRoas: +saved.default?.breakEvenRoas || 2 },
+        perCampaign: saved.perCampaign || {}
+      };
+    }
+  } catch(e) {}
+  return { default: { targetCpa: 18, breakEvenRoas: 2 }, perCampaign: {} };
+}
+let metaTargets = loadMetaTargets();
+function saveMetaTargets() { localStorage.setItem(META_TARGETS_KEY, JSON.stringify(metaTargets)); }
+
+function getMetaTargetsFor(campaignId) {
+  const ov = metaTargets.perCampaign[campaignId];
+  return {
+    targetCpa:     ov?.targetCpa != null     ? +ov.targetCpa     : +metaTargets.default.targetCpa,
+    breakEvenRoas: ov?.breakEvenRoas != null ? +ov.breakEvenRoas : +metaTargets.default.breakEvenRoas,
+  };
+}
+
+function metaStrategicStatus(ins, campaignId) {
+  const spend = +ins.spend || 0;
+  if(spend <= 0) return { label:'SIN DATOS', cls:'b-gray' };
+
+  const { targetCpa, breakEvenRoas } = getMetaTargetsFor(campaignId);
+  const roas = +ins.roas || 0;
+  const purchases = +ins.purchases || 0;
+  const cpa = purchases > 0 ? (+ins.cpa || 0) : null;
+
+  if(roas >= breakEvenRoas) return { label:'ESCALAR', cls:'b-green' };
+  if(cpa !== null && cpa > targetCpa) return { label:'KILL', cls:'b-red' };
+  return { label:'OPTIMIZAR', cls:'b-amber' };
+}
+
+function metaStatusBadgeHtml(ins, campaignId, campaignName) {
+  const { label, cls } = metaStrategicStatus(ins, campaignId);
+  return `<span class="badge ${cls}" style="cursor:pointer" onclick="event.stopPropagation();openMetaRuleOverride('${campaignId}','${(campaignName||'').replace(/'/g,"\\'")}')" title="Click para ajustar el objetivo de esta campana">${label}</span>`;
+}
+
+let mroCampaignId = null;
+function openMetaRuleOverride(campaignId, campaignName) {
+  mroCampaignId = campaignId;
+  document.getElementById('mro-camp-name').textContent = campaignName;
+  const ov = metaTargets.perCampaign[campaignId] || {};
+  document.getElementById('mro-cpa').value  = ov.targetCpa     ?? '';
+  document.getElementById('mro-roas').value = ov.breakEvenRoas ?? '';
+  openModal('modal-meta-rule-override');
+}
+function refreshMetaStrategicViews() {
+  renderCampaigns();
+  if(document.getElementById('meta-adsets-section').style.display !== 'none') renderAdsets(currentCampaignName);
+}
+function saveMetaRuleOverride() {
+  if(!mroCampaignId) return;
+  const cpa  = document.getElementById('mro-cpa').value;
+  const roas = document.getElementById('mro-roas').value;
+  if(!cpa && !roas) delete metaTargets.perCampaign[mroCampaignId];
+  else metaTargets.perCampaign[mroCampaignId] = {
+    targetCpa: cpa ? +cpa : undefined,
+    breakEvenRoas: roas ? +roas : undefined,
+  };
+  saveMetaTargets();
+  closeModal('modal-meta-rule-override');
+  refreshMetaStrategicViews();
+  toast('Objetivo guardado');
+}
+function clearMetaRuleOverride() {
+  if(!mroCampaignId) return;
+  delete metaTargets.perCampaign[mroCampaignId];
+  saveMetaTargets();
+  closeModal('modal-meta-rule-override');
+  refreshMetaStrategicViews();
+  toast('Vuelto al default de cuenta');
+}
+function saveMetaDefaultTargets() {
+  const cpa  = +document.getElementById('cfg-target-cpa').value     || metaTargets.default.targetCpa;
+  const roas = +document.getElementById('cfg-breakeven-roas').value || metaTargets.default.breakEvenRoas;
+  metaTargets.default = { targetCpa: cpa, breakEvenRoas: roas };
+  saveMetaTargets();
+  refreshMetaStrategicViews();
+  toast('Reglas por defecto guardadas');
+}
+function populateMetaDefaultTargetsInputs() {
+  const cpaEl  = document.getElementById('cfg-target-cpa');
+  const roasEl = document.getElementById('cfg-breakeven-roas');
+  if(cpaEl)  cpaEl.value  = metaTargets.default.targetCpa;
+  if(roasEl) roasEl.value = metaTargets.default.breakEvenRoas;
+}
 const GRAPH = 'https://graph.facebook.com/v19.0';
 const AD_FIELDS = 'spend,actions,action_values,impressions,clicks,ctr,cpm,cpc,frequency,video_thruplay_watched_actions,video_p25_watched_actions,video_p75_watched_actions,video_p100_watched_actions,video_play_actions';
 const CAMP_FIELDS = 'id,name,status,effective_status,daily_budget,lifetime_budget,objective';
@@ -4558,7 +4677,9 @@ function renderCampaigns() {
  tbody.innerHTML = list.map(c => {
     const ins = c.insights||{};
     const metricTds = metaActiveColumns.map(id => `<td>${META_METRIC_DEFS[id].render(ins)}</td>`).join('');
-    return `<tr style="cursor:pointer" onclick="loadAdsets('${c.id}','${(c.name||'').replace(/'/g,"\'")}')">
+    const strat = metaStrategicStatus(ins, c.id);
+    const rowAccent = strat.label==='KILL' ? 'border-left:3px solid var(--red)' : strat.label==='ESCALAR' ? 'border-left:3px solid var(--green)' : '';
+    return `<tr style="cursor:pointer;${rowAccent}" onclick="loadAdsets('${c.id}','${(c.name||'').replace(/'/g,"\'")}')">
       <td><div style="font-weight:600;font-size:13px;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${c.name}">${c.name}</div>
           <div style="font-size:10px;color:var(--text3);margin-top:1px">${c.objective||''}</div></td>
       <td>${statusBadge(c.effective_status||c.status)}</td>
@@ -4566,6 +4687,7 @@ function renderCampaigns() {
       <td>
         <button class="btn btn-sm btn-outline" onclick="event.stopPropagation();snapshotCampaign('${c.id}','${(c.name||'').replace(/'/g,"\'")}')">&#128248;</button>
       </td>
+      <td>${metaStatusBadgeHtml(ins, c.id, c.name)}</td>
     </tr>`;
   }).join('');
 }
@@ -4617,12 +4739,15 @@ function renderAdsets(campName) {
   }
   tbody.innerHTML = list.map(s => {
     const ins = s.insights||{};
-    const metricTds = metaActiveColumns.map(id => `<td>${META_METRIC_DEFS[id].render(ins)}</td>`).join('');
-    return `<tr style="cursor:pointer" onclick="loadAds('${s.id}','${(s.name||'').replace(/'/g,"\'")}')">
+   const metricTds = metaActiveColumns.map(id => `<td>${META_METRIC_DEFS[id].render(ins)}</td>`).join('');
+    const strat = metaStrategicStatus(ins, currentCampaignId);
+    const rowAccent = strat.label==='KILL' ? 'border-left:3px solid var(--red)' : strat.label==='ESCALAR' ? 'border-left:3px solid var(--green)' : '';
+    return `<tr style="cursor:pointer;${rowAccent}" onclick="loadAds('${s.id}','${(s.name||'').replace(/'/g,"\'")}')">
       <td><div style="font-weight:600;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${s.name}">${s.name}</div></td>
       <td>${statusBadge(s.effective_status||s.status)}</td>
       ${metricTds}
       <td><button class="btn btn-sm btn-outline" onclick="event.stopPropagation();snapshotAdset('${s.id}','${(s.name||'').replace(/'/g,"\'")}')">&#128248;</button></td>
+      <td>${metaStatusBadgeHtml(ins, currentCampaignId, currentCampaignName)}</td>
     </tr>`;
   }).join('');
 }
