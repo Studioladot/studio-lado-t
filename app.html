@@ -105,6 +105,10 @@ tr:hover td{background:var(--surface2)}
 .b-teal{background:var(--teal-l);color:var(--teal-d)}
 .b-accent{background:var(--accent-l);color:var(--accent)}
 .b-gray{background:var(--surface2);color:var(--text2)}
+  .meta-switch{position:relative;width:30px;height:16px;border-radius:9px;background:var(--surface2);border:1px solid var(--border);cursor:pointer;padding:0;flex-shrink:0;transition:background .15s,border-color .15s}
+.meta-switch::after{content:'';position:absolute;top:1px;left:1px;width:12px;height:12px;border-radius:50%;background:var(--text2);transition:transform .15s,background .15s}
+.meta-switch.on{background:var(--green-l);border-color:var(--green)}
+.meta-switch.on::after{transform:translateX(14px);background:var(--green)}
 .form-row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px}
 .fg{display:flex;flex-direction:column;gap:5px;flex:1;min-width:140px}
 .fg.wide{flex:2;min-width:260px}
@@ -4352,7 +4356,16 @@ async function metaGet(path, params={}) {
   const r = await fetch(`/api/meta-proxy?${p}`, { headers: { Authorization: `Bearer ${session.access_token}` } });
   return r.json();
 }
-
+// POST a Graph API (cambiar status, etc.) — requiere que /api/meta-proxy acepte metodo POST
+async function metaPost(path, body={}) {
+  const session = (await db.auth.getSession()).data.session;
+  const r = await fetch(`/api/meta-proxy`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+    body: JSON.stringify({ path, ...body })
+  });
+  return r.json();
+}
 function parseInsights(ins) {
   if(!ins||!ins.length) return {};
   const d = ins[0];
@@ -4399,7 +4412,47 @@ function statusBadge(s) {
   const label = {ACTIVE:'Activa',PAUSED:'Pausada',ARCHIVED:'Archivada',DELETED:'Eliminada'};
   return `<span class="badge ${map[s]||'b-gray'}">${label[s]||s}</span>`;
 }
+const META_HIGH_SPEND_CONFIRM = 30; // USD — gasto a partir del cual pedimos confirmacion antes de pausar
 
+function metaStatusCellHtml(id, status, type, spend) {
+  const isActive = status === 'ACTIVE';
+  return `<div id="meta-status-cell-${id}" style="display:flex;align-items:center;gap:6px">
+    <button class="meta-switch ${isActive?'on':''}" onclick="event.stopPropagation();toggleMetaStatus('${id}','${status}','${type}',${(+spend)||0})"></button>
+    <span style="font-size:11px;font-weight:700;color:${isActive?'var(--green)':'var(--text2)'}">${isActive?'Activa':'Pausada'}</span>
+  </div>`;
+}
+
+async function toggleMetaStatus(objectId, currentStatus, objectType, spend) {
+  const newStatus = currentStatus === 'ACTIVE' ? 'PAUSED' : 'ACTIVE';
+
+  // SEGURIDAD: confirmar antes de pausar algo con gasto alto en el periodo
+  if(newStatus === 'PAUSED' && (+spend) >= META_HIGH_SPEND_CONFIRM) {
+    const nombre = objectType === 'campaign' ? 'Esta campana' : 'Este conjunto';
+    const ok = confirm(`${nombre} acumula $${spend} de gasto en el periodo seleccionado.\n¿Confirmas pausarla?`);
+    if(!ok) return;
+  }
+
+  const cell = document.getElementById(`meta-status-cell-${objectId}`);
+  const prevHtml = cell ? cell.innerHTML : '';
+  if(cell) cell.innerHTML = `<span class="ld"></span><span class="ld"></span><span class="ld"></span>`;
+
+  try {
+    const res = await metaPost(objectId, { status: newStatus });
+    if(res.error) throw new Error(res.error.message);
+
+    // Actualizar en memoria sin recargar nada — para que Campanas/Conjuntos/Anuncios queden sincronizados
+    [metaCampaigns, metaAdsets, metaAds].forEach(list => {
+      const item = list.find(x => x.id === objectId);
+      if(item) { item.status = newStatus; item.effective_status = newStatus; }
+    });
+
+    if(cell) cell.outerHTML = metaStatusCellHtml(objectId, newStatus, objectType, spend);
+    toast(newStatus === 'ACTIVE' ? 'Activada ✓' : 'Pausada ✓');
+  } catch(e) {
+    if(cell) cell.innerHTML = prevHtml;
+    toast('Error al cambiar el estado: ' + e.message);
+  }
+}
 function fmtNum(n) { return n?Number(n).toLocaleString('es-AR'):'—'; }
  
   // ── CONECTAR META (OAuth, sin token manual) ───────────────────────────────────
@@ -4678,7 +4731,7 @@ function renderCampaigns() {
     return `<tr style="cursor:pointer;${rowAccent}" onclick="loadAdsets('${c.id}','${(c.name||'').replace(/'/g,"\'")}')">
       <td><div style="font-weight:600;font-size:13px;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${c.name}">${c.name}</div>
           <div style="font-size:10px;color:var(--text3);margin-top:1px">${c.objective||''}</div></td>
-      <td>${statusBadge(c.effective_status||c.status)}</td>
+      <td>${metaStatusCellHtml(c.id, c.effective_status||c.status, 'campaign', ins.spend)}</td>
       ${metricTds}
       <td>
         <button class="btn btn-sm btn-outline" onclick="event.stopPropagation();snapshotCampaign('${c.id}','${(c.name||'').replace(/'/g,"\'")}')">&#128248;</button>
@@ -4740,7 +4793,7 @@ function renderAdsets(campName) {
     const rowAccent = strat.label==='KILL' ? 'border-left:3px solid var(--red)' : strat.label==='ESCALAR' ? 'border-left:3px solid var(--green)' : '';
     return `<tr style="cursor:pointer;${rowAccent}" onclick="loadAds('${s.id}','${(s.name||'').replace(/'/g,"\'")}')">
       <td><div style="font-weight:600;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${s.name}">${s.name}</div></td>
-      <td>${statusBadge(s.effective_status||s.status)}</td>
+      <td>${metaStatusCellHtml(s.id, s.effective_status||s.status, 'adset', ins.spend)}</td>
       ${metricTds}
       <td><button class="btn btn-sm btn-outline" onclick="event.stopPropagation();snapshotAdset('${s.id}','${(s.name||'').replace(/'/g,"\'")}')">&#128248;</button></td>
       <td>${metaStatusBadgeHtml(ins, currentCampaignId, currentCampaignName)}</td>
