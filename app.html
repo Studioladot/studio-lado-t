@@ -4872,22 +4872,23 @@ function renderCampaigns() {
   if(metaCampFilter !== 'ALL') list = list.filter(c => c.effective_status===metaCampFilter||c.status===metaCampFilter);
   if(metaStrategyFilter !== 'ALL') list = list.filter(c => META_STRATEGY_RX[metaStrategyFilter].test(c.name||''));
   if(!list.length) {
-    tbody.innerHTML = `<tr><td colspan="10" style="text-align:center;padding:24px;color:var(--text2)">Sin campanas con ese filtro</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="14" style="text-align:center;padding:24px;color:var(--text2)">Sin campanas con ese filtro</td></tr>`;
     return;
-    renderMetaInsights(list);
   }
-tbody.innerHTML = list.map(s => {
-    const ins = s.insights||{};
-   const metricTds = metaActiveColumns.map(id => `<td>${META_METRIC_DEFS[id].render(ins)}</td>`).join('');
-    const strat = metaStrategicStatus(ins, currentCampaignId);
+  tbody.innerHTML = list.map(c => {
+    const ins = c.insights||{};
+    const metricTds = metaActiveColumns.map(id => `<td>${META_METRIC_DEFS[id].render(ins)}</td>`).join('');
+    const strat = metaStrategicStatus(ins, c.id);
     const rowAccent = strat.label==='KILL' ? 'border-left:3px solid var(--red)' : strat.label==='ESCALAR' ? 'border-left:3px solid var(--green)' : '';
-    return `<tr style="cursor:pointer;${rowAccent}" onclick="loadAds('${s.id}','${(s.name||'').replace(/'/g,"\'")}')">
-      <td><div style="font-weight:600;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${s.name}">${s.name}</div></td>
-      <td>${metaStatusCellHtml(s.id, s.effective_status||s.status, 'adset', ins.spend)}</td>
+    return `<tr style="cursor:pointer;${rowAccent}" onclick="loadAdsets('${c.id}','${(c.name||'').replace(/'/g,"\'")}')">
+      <td><div style="font-weight:600;font-size:13px;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${c.name}">${c.name}</div>
+          <div style="font-size:10px;color:var(--text3);margin-top:1px">${c.objective||''}</div></td>
+      <td>${metaStatusCellHtml(c.id, c.effective_status||c.status, 'campaign', ins.spend)}</td>
       ${metricTds}
-      <td><button class="btn btn-sm btn-outline" onclick="event.stopPropagation();snapshotAdset('${s.id}','${(s.name||'').replace(/'/g,"\'")}')">&#128248;</button></td>
-      <td>${metaStatusBadgeHtml(ins, currentCampaignId, currentCampaignName)}</td>
-      <td>${metaDiagnosticoHtml(ins, currentCampaignId)}</td>
+      <td>
+        <button class="btn btn-sm btn-outline" onclick="event.stopPropagation();snapshotCampaign('${c.id}','${(c.name||'').replace(/'/g,"\'")}')">&#128248;</button>
+      </td>
+      <td>${metaStatusBadgeHtml(ins, c.id, c.name)}</td>
     </tr>`;
   }).join('');
 }
@@ -4934,7 +4935,7 @@ function renderAdsets(campName) {
   const subEl = document.getElementById('meta-adsets-sub');
   if(subEl) subEl.textContent = metaCampFilter==='ALL' ? `${metaAdsets.length} conjuntos` : `${list.length} de ${metaAdsets.length} conjuntos (filtro activo)`;
   if(!list.length) {
-    tbody.innerHTML = `<tr><td colspan="14" style="text-align:center;padding:20px;color:var(--text2)">Sin conjuntos con ese filtro</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="16" style="text-align:center;padding:20px;color:var(--text2)">Sin conjuntos con ese filtro</td></tr>`;
     return;
   }
   tbody.innerHTML = list.map(s => {
@@ -4948,6 +4949,7 @@ function renderAdsets(campName) {
       ${metricTds}
       <td><button class="btn btn-sm btn-outline" onclick="event.stopPropagation();snapshotAdset('${s.id}','${(s.name||'').replace(/'/g,"\'")}')">&#128248;</button></td>
       <td>${metaStatusBadgeHtml(ins, currentCampaignId, currentCampaignName)}</td>
+      <td>${metaDiagnosticoHtml(ins, currentCampaignId)}</td>
     </tr>`;
   }).join('');
 }
