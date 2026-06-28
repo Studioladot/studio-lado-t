@@ -25,22 +25,51 @@ export default async function handler(req) {
     const conn = conns?.[0];
     if (!conn || !conn.token) return json({ error: 'Meta Ads no conectado' }, 404);
 
+    const cleanAccountId = String(conn.account_id).replace(/^act_/, '');
     const url = new URL(req.url);
-    let path = url.searchParams.get('path');
+
+    // ── Path: en GET viaja en la querystring, en POST viaja en el body JSON ──
+    let path, bodyParams = {};
+    if (req.method === 'POST') {
+      const body = await req.json().catch(() => ({}));
+      path = body.path;
+      bodyParams = { ...body };
+      delete bodyParams.path;
+    } else {
+      path = url.searchParams.get('path');
+    }
     if (!path) return json({ error: 'Falta path' }, 400);
     path = path.replace(/^act_act_/, 'act_');
 
-    const cleanAccountId = String(conn.account_id).replace(/^act_/, '');
     const isOwnAccountPath = path === `act_${cleanAccountId}` || path.startsWith(`act_${cleanAccountId}/`);
-    // Permitir tambien cualquier ID de objeto numerico (anuncio/conjunto/campana),
+    // Permite tambien cualquier ID de objeto numerico (campana/conjunto/anuncio),
     // con o sin sub-recurso despues (ej: "120211.../adsets", "120211.../ads").
-    // Esto NUNCA permite leer otra cuenta publicitaria (act_OTRACUENTA sigue bloqueado),
+    // Esto NUNCA permite leer ni escribir sobre otra cuenta publicitaria,
     // solo objetos individuales a los que el token del usuario ya tiene acceso.
     const isObjectIdPath = /^\d+(\/.*)?$/.test(path);
     if (!isOwnAccountPath && !isObjectIdPath) {
       return json({ error: 'Path no autorizado', path: path, expected: cleanAccountId }, 403);
     }
 
+    // ── ESCRITURA (POST): solo se permite sobre un objeto individual ya existente. ──
+    // Nunca se permite POST sobre act_xxx (la cuenta) ni sobre rutas con sub-recurso
+    // (ej "act_x/campaigns" o "id/adsets"), para no abrir la puerta a crear cosas nuevas
+    // desde este endpoint — su unico proposito hoy es cambiar el status de algo que ya existe.
+    if (req.method === 'POST') {
+      if (!isObjectIdPath || path.includes('/')) {
+        return json({ error: 'Escritura no autorizada para ese path' }, 403);
+      }
+      const graphBody = new URLSearchParams({ ...bodyParams, access_token: conn.token });
+      const graphRes = await fetch(`https://graph.facebook.com/v19.0/${path}`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/x-www-form-urlencoded' },
+        body: graphBody,
+      });
+      const data = await graphRes.json();
+      return json(data, graphRes.status);
+    }
+
+    // ── LECTURA (GET): igual que antes, sin cambios ──
     const graphParams = new URLSearchParams(url.searchParams);
     graphParams.delete('path');
     graphParams.set('access_token', conn.token);
