@@ -722,7 +722,8 @@ body.focus-mode #main{margin-left:0}
         <input type="date" id="meta-date-until" class="fg" style="margin:0;max-width:140px">
       </div>
       <button class="btn btn-outline" onclick="applyMetaDateRange()">&#8635; Actualizar</button>
-      <button class="btn btn-outline" onclick="openMetaColumnsModal()" title="Personalizar columnas">&#9881; Columnas</button>
+     <button class="btn btn-outline" onclick="openMetaColumnsModal()" title="Personalizar columnas">&#9881; Columnas</button>
+      <button class="btn btn-outline" onclick="openMetaDefaultTargetsModal()" title="Target CPA y Break-Even ROAS por defecto">&#127919; Objetivos</button>
       <button class="btn btn-accent" onclick="autoSnapshot()">&#128248; Auto-snapshot</button>
     </div>
   </div>
@@ -2037,15 +2038,6 @@ body.focus-mode #main{margin-left:0}
        <button class="btn btn-accent" onclick="saveSupabaseConfig()">Guardar Supabase</button>
       </div>
       <div class="card">
-        <div class="card-title">Reglas de decision — Meta Ads</div>
-        <div style="font-size:13px;color:var(--text2);margin-bottom:14px;line-height:1.6">Valores por defecto para toda la cuenta. Los podés pisar por campaña individual haciendo clic en la etiqueta "Estado Estratégico" dentro de la tabla de Meta Ads.</div>
-        <div class="form-row">
-          <div class="fg"><label>Target CPA (USD)</label><input id="cfg-target-cpa" type="number" step="0.01" placeholder="18"/></div>
-          <div class="fg"><label>Break-Even ROAS</label><input id="cfg-breakeven-roas" type="number" step="0.01" placeholder="2"/></div>
-        </div>
-        <button class="btn btn-accent" onclick="saveMetaDefaultTargets()">Guardar reglas</button>
-      </div>
-      <div class="card">
         <div class="card-title">IA Estrategica — Anthropic API Key</div>
         <div style="font-size:13px;color:var(--text2);margin-bottom:12px;line-height:1.6">
           Necesitas una API key de Anthropic para usar la IA.<br>
@@ -2492,18 +2484,17 @@ create policy "own" on contacts for all using (auth.uid()=user_id);</div>
     </div>
   </div>
 </div>
-  <div class="modal-backdrop" id="modal-meta-rule-override">
+ <div class="modal-backdrop" id="modal-meta-default-targets">
   <div class="modal" style="max-width:360px">
-    <div class="modal-title">Objetivo para <span id="mro-camp-name" style="color:var(--text2);font-weight:400"></span></div>
-    <div style="font-size:12px;color:var(--text2);margin-bottom:14px">Dejá un campo vacío para usar el valor por defecto de la cuenta.</div>
+    <div class="modal-title">Objetivos por defecto — Meta Ads</div>
+    <div style="font-size:12px;color:var(--text2);margin-bottom:14px">Se aplican a toda la cuenta. Para una campaña puntual, hacé clic en su etiqueta "Estado Estratégico" en la tabla.</div>
     <div class="form-row">
-      <div class="fg"><label>Target CPA (USD)</label><input id="mro-cpa" type="number" step="0.01" placeholder="Default de cuenta"/></div>
-      <div class="fg"><label>Break-Even ROAS</label><input id="mro-roas" type="number" step="0.01" placeholder="Default de cuenta"/></div>
+      <div class="fg"><label>Target CPA (USD)</label><input id="cfg-target-cpa" type="number" step="0.01" placeholder="18"/></div>
+      <div class="fg"><label>Break-Even ROAS</label><input id="cfg-breakeven-roas" type="number" step="0.01" placeholder="2"/></div>
     </div>
     <div class="modal-footer">
-      <button class="btn btn-outline" onclick="clearMetaRuleOverride()">Usar default</button>
-      <button class="btn btn-outline" onclick="closeModal('modal-meta-rule-override')">Cancelar</button>
-      <button class="btn btn-accent" onclick="saveMetaRuleOverride()">Guardar</button>
+      <button class="btn btn-outline" onclick="closeModal('modal-meta-default-targets')">Cancelar</button>
+      <button class="btn btn-accent" onclick="saveMetaDefaultTargets()">Guardar</button>
     </div>
   </div>
 </div>
@@ -4334,6 +4325,7 @@ function saveMetaDefaultTargets() {
   const roas = +document.getElementById('cfg-breakeven-roas').value || metaTargets.default.breakEvenRoas;
   metaTargets.default = { targetCpa: cpa, breakEvenRoas: roas };
   saveMetaTargets();
+  closeModal('modal-meta-default-targets');
   refreshMetaStrategicViews();
   toast('Reglas por defecto guardadas');
 }
@@ -4342,6 +4334,10 @@ function populateMetaDefaultTargetsInputs() {
   const roasEl = document.getElementById('cfg-breakeven-roas');
   if(cpaEl)  cpaEl.value  = metaTargets.default.targetCpa;
   if(roasEl) roasEl.value = metaTargets.default.breakEvenRoas;
+}
+function openMetaDefaultTargetsModal() {
+  populateMetaDefaultTargetsInputs();
+  openModal('modal-meta-default-targets');
 }
 const GRAPH = 'https://graph.facebook.com/v19.0';
 const AD_FIELDS = 'spend,actions,action_values,impressions,clicks,ctr,cpm,cpc,frequency,video_thruplay_watched_actions,video_p25_watched_actions,video_p75_watched_actions,video_p100_watched_actions,video_play_actions';
