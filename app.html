@@ -105,6 +105,11 @@ tr:hover td{background:var(--surface2)}
 .b-teal{background:var(--teal-l);color:var(--teal-d)}
 .b-accent{background:var(--accent-l);color:var(--accent)}
 .b-gray{background:var(--surface2);color:var(--text2)}
+  .focus-card{background:var(--surface);border:0.5px solid var(--border);border-radius:var(--rl);padding:24px 22px}
+.focus-card-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);margin-bottom:10px}
+.focus-card-value{font-size:32px;font-weight:700;letter-spacing:-.02em;line-height:1.1;color:var(--text)}
+@media (max-width:900px){.focus-grid{grid-template-columns:repeat(2,1fr)!important}}
+@media (max-width:560px){.focus-grid{grid-template-columns:1fr!important}}
   .meta-switch{position:relative;width:30px;height:16px;border-radius:9px;background:var(--surface2);border:1px solid var(--border);cursor:pointer;padding:0;flex-shrink:0;transition:background .15s,border-color .15s}
 .meta-switch::after{content:'';position:absolute;top:1px;left:1px;width:12px;height:12px;border-radius:50%;background:var(--text2);transition:transform .15s,background .15s}
 .meta-switch.on{background:var(--green-l);border-color:var(--green)}
@@ -726,12 +731,40 @@ body.focus-mode #main{margin-left:0}
         <input type="date" id="meta-date-until" class="fg" style="margin:0;max-width:140px">
       </div>
       <button class="btn btn-outline" onclick="applyMetaDateRange()">&#8635; Actualizar</button>
-     <button class="btn btn-outline" onclick="openMetaColumnsModal()" title="Personalizar columnas">&#9881; Columnas</button>
+      <button class="btn btn-outline" onclick="openMetaColumnsModal()" title="Personalizar columnas">&#9881; Columnas</button>
       <button class="btn btn-outline" onclick="openMetaDefaultTargetsModal()" title="Target CPA y Break-Even ROAS por defecto">&#127919; Objetivos</button>
       <button class="btn btn-accent" onclick="autoSnapshot()">&#128248; Auto-snapshot</button>
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:var(--text2);margin-left:4px">
+        <button class="meta-switch" id="meta-focus-switch" onclick="toggleMetaFocusMode()"></button>
+        Modo Focus
+      </label>
     </div>
   </div>
 
+  <!-- MODO FOCUS -->
+  <div id="meta-focus-cards" style="display:none;margin-bottom:18px">
+    <div id="meta-focus-sub" style="font-size:12px;color:var(--text3);margin-bottom:12px"></div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px" class="focus-grid">
+      <div class="focus-card">
+        <div class="focus-card-label">Gasto total</div>
+        <div class="focus-card-value" id="mfc-spend">$0</div>
+      </div>
+      <div class="focus-card">
+        <div class="focus-card-label">Ventas totales</div>
+        <div class="focus-card-value" id="mfc-revenue">$0</div>
+      </div>
+      <div class="focus-card">
+        <div class="focus-card-label">CPA promedio</div>
+        <div class="focus-card-value" id="mfc-cpa">—</div>
+      </div>
+      <div class="focus-card">
+        <div class="focus-card-label">Beneficio neto estimado</div>
+        <div class="focus-card-value" id="mfc-beneficio">—</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="meta-tables-wrap">
   <!-- INSIGHTS AUTOMATICOS -->
   <div id="meta-insights-panel" style="border:1px solid #222222;border-radius:8px;padding:14px 16px;margin-bottom:14px;display:none">
     <div id="meta-insights-list" style="display:flex;flex-direction:column;gap:8px"></div>
@@ -4453,6 +4486,46 @@ async function toggleMetaStatus(objectId, currentStatus, objectType, spend) {
     toast('Error al cambiar el estado: ' + e.message);
   }
 }
+  let metaFocusMode = false;
+
+function getMetaFocusAggregates() {
+  const active = metaCampaigns.filter(c => (c.effective_status||c.status) === 'ACTIVE');
+  let spend = 0, revenue = 0, purchases = 0;
+  active.forEach(c => {
+    const ins = c.insights || {};
+    spend += +ins.spend || 0;
+    revenue += +ins.revenue || 0;
+    purchases += +ins.purchases || 0;
+  });
+  const cpa = purchases > 0 ? spend / purchases : 0;
+  const beneficio = revenue - spend; // Ventas - Gasto (ver nota sobre el calculo)
+  return { spend, revenue, purchases, cpa, beneficio, count: active.length };
+}
+
+function renderMetaFocusCards() {
+  const { spend, revenue, cpa, beneficio, count } = getMetaFocusAggregates();
+  const rangeLabel = document.getElementById('meta-sub')?.textContent || '';
+  const targetCpa = +metaTargets.default.targetCpa;
+
+  document.getElementById('mfc-spend').textContent = '$' + spend.toFixed(2);
+  document.getElementById('mfc-revenue').textContent = '$' + revenue.toFixed(2);
+
+  const cpaColor = cpa <= 0 ? 'var(--text)' : cpa <= targetCpa ? 'var(--green)' : 'var(--red)';
+  document.getElementById('mfc-cpa').innerHTML = cpa > 0 ? `<span style="color:${cpaColor}">$${cpa.toFixed(2)}</span>` : '—';
+
+  const benColor = beneficio >= 0 ? 'var(--green)' : 'var(--red)';
+  document.getElementById('mfc-beneficio').innerHTML = `<span style="color:${benColor}">${beneficio>=0?'+':''}$${beneficio.toFixed(2)}</span>`;
+
+  document.getElementById('meta-focus-sub').textContent = `${count} campana${count===1?'':'s'} activa${count===1?'':'s'} — ${rangeLabel}`;
+}
+
+function toggleMetaFocusMode() {
+  metaFocusMode = !metaFocusMode;
+  document.getElementById('meta-focus-switch').classList.toggle('on', metaFocusMode);
+  document.getElementById('meta-tables-wrap').style.display = metaFocusMode ? 'none' : '';
+  document.getElementById('meta-focus-cards').style.display = metaFocusMode ? 'block' : 'none';
+  if(metaFocusMode) renderMetaFocusCards();
+}
 function fmtNum(n) { return n?Number(n).toLocaleString('es-AR'):'—'; }
  
   // ── CONECTAR META (OAuth, sin token manual) ───────────────────────────────────
@@ -4714,6 +4787,7 @@ function renderMetaInsights(list) {
 }
 function renderCampaigns() {
   renderMetaCampHeader();
+  if(metaFocusMode) renderMetaFocusCards();
   const tbody = document.getElementById('meta-camp-tbody');
   let list = metaCampaigns;
   if(metaCampFilter !== 'ALL') list = list.filter(c => c.effective_status===metaCampFilter||c.status===metaCampFilter);
