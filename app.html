@@ -4859,7 +4859,7 @@ tbody.innerHTML = list.map(a => {
           </div>
         </div>
       </td>
-      <td>${statusBadge(a.effective_status||a.status)}</td>
+      <td>${metaStatusCellHtml(a.id, a.effective_status||a.status, 'ad', ins.spend)}</td>
       ${metricTds}
       <td>
         <button class="btn btn-sm btn-accent" onclick="snapshotAd('${a.id}','${(a.name||'').replace(/'/g,"\'")}')">&#128248; Snap</button>
