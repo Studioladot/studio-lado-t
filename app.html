@@ -4275,6 +4275,10 @@ function renderRanking() {
 const META_APP_ID = '1003982038687663'; // reemplazar por el App ID real de tu app en Meta Developers
 let META_TOKEN = localStorage.getItem('lt_meta_account') ? 'server' : '';
 let META_ACCOUNT = localStorage.getItem('lt_meta_account')||'';
+// Pixel y Pagina de Facebook para KIRIZ — usados al lanzar Testeos desde el Sandbox.
+// Si se conecta otra cuenta de Meta, actualizar estos dos valores.
+const META_PIXEL_ID = '1258785315695994';
+const META_PAGE_ID = '165233826665041';
 let metaCampaigns = [], metaAdsets = [], metaAds = [];
 let metaCampFilter = 'ALL';
 let currentCampaignId = null, currentAdsetId = null;
@@ -4439,9 +4443,19 @@ function tsWireDropzone(dz, aId){
   });
 }
 
-function tsGenerarTesteo(){
+function tsFileToBase64(file){
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result.split(',')[1]);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+async function tsGenerarTesteo(){
   const nombre = document.getElementById('ts-camp-nombre').value.trim();
   if(!nombre){ toast('Pone un nombre a la campana'); return; }
+  if(!META_ACCOUNT){ toast('Conecta tu cuenta de Meta primero'); return; }
 
   const conjuntoEls = document.querySelectorAll('#ts-conjuntos-wrap .ts-conjunto');
   if(!conjuntoEls.length){ toast('Agrega al menos un conjunto'); return; }
@@ -4462,23 +4476,87 @@ function tsGenerarTesteo(){
       const file = tsFiles.get(aId) || null;
       const anuncioNombre = aEl.querySelector('.ts-anuncio-nombre').value.trim();
       if(!anuncioNombre) valido = false;
-      conjunto.anuncios.push({
-        nombre: anuncioNombre,
-        archivo_nombre: file ? file.name : null,
-        archivo_tipo: file ? file.type : null,
-        archivo: file // File real, listo para enviar en FormData a la API
-      });
+      conjunto.anuncios.push({ nombre: anuncioNombre, archivo: file });
     });
     campania.conjuntos.push(conjunto);
   });
 
   if(!valido){ toast('Completa el nombre de cada conjunto y anuncio'); return; }
+  if(!campania.presupuesto_diario){ toast('Falta el presupuesto diario'); return; }
 
-  console.log('Testeo generado:', campania);
-  // TODO: conectar con api/meta-proxy.js para crear campana > conjuntos > anuncios via Marketing API
-  toast('Testeo generado — revisa la consola (F12) para ver el JSON');
-  closeModal('modal-testing-sandbox');
+  toast('Creando testeo en Meta...');
+
+  try {
+    // 1) CAMPANA (pausada — se revisa y activa a mano desde la tabla)
+    const campRes = await metaPost(`act_${META_ACCOUNT}/campaigns`, {
+      name: campania.nombre,
+      objective: 'OUTCOME_SALES',
+      status: 'PAUSED',
+      special_ad_categories: JSON.stringify([])
+    });
+    if(campRes.error){ toast('Error al crear campana: '+campRes.error.message); return; }
+    const campaignId = campRes.id;
+
+    for(const conjunto of campania.conjuntos){
+      // 2) CONJUNTO
+      const adsetRes = await metaPost(`act_${META_ACCOUNT}/adsets`, {
+        name: conjunto.nombre,
+        campaign_id: campaignId,
+        daily_budget: Math.round(campania.presupuesto_diario * 100),
+        billing_event: 'IMPRESSIONS',
+        optimization_goal: 'OFFSITE_CONVERSIONS',
+        promoted_object: JSON.stringify({ pixel_id: META_PIXEL_ID, custom_event_type: 'PURCHASE' }),
+        targeting: JSON.stringify({ geo_locations: { countries: ['AR'] } }),
+        status: 'PAUSED'
+      });
+      if(adsetRes.error){ toast(`Conjunto "${conjunto.nombre}" fallo: ${adsetRes.error.message}`); continue; }
+      const adsetId = adsetRes.id;
+
+      for(const anuncio of conjunto.anuncios){
+        if(anuncio.archivo && anuncio.archivo.type.startsWith('video')){
+          toast(`"${anuncio.nombre}": video aun no soportado, subilo luego desde Meta`);
+          continue;
+        }
+
+        // 3) SUBIR IMAGEN (si hay) → hash
+        let imageHash = null;
+        if(anuncio.archivo){
+          const base64 = await tsFileToBase64(anuncio.archivo);
+          const imgRes = await metaPost(`act_${META_ACCOUNT}/adimages`, { bytes: base64 });
+          if(imgRes.error){ toast(`Imagen de "${anuncio.nombre}" fallo: ${imgRes.error.message}`); continue; }
+          const images = imgRes.images || {};
+          imageHash = Object.values(images)[0]?.hash || null;
+        }
+
+        // 4) CREATIVE
+        const creativeRes = await metaPost(`act_${META_ACCOUNT}/adcreatives`, {
+          name: anuncio.nombre + ' - Creative',
+          object_story_spec: JSON.stringify({
+            page_id: META_PAGE_ID,
+            link_data: { image_hash: imageHash, link: campania.url_producto, message: anuncio.nombre }
+          })
+        });
+        if(creativeRes.error){ toast(`Creative de "${anuncio.nombre}" fallo: ${creativeRes.error.message}`); continue; }
+
+        // 5) ANUNCIO
+        const adRes = await metaPost(`act_${META_ACCOUNT}/ads`, {
+          name: anuncio.nombre,
+          adset_id: adsetId,
+          creative: JSON.stringify({ creative_id: creativeRes.id }),
+          status: 'PAUSED'
+        });
+        if(adRes.error){ toast(`Anuncio "${anuncio.nombre}" fallo: ${adRes.error.message}`); continue; }
+      }
+    }
+
+    toast('Testeo creado en Meta — revisa Ads Manager (todo en pausa)');
+    closeModal('modal-testing-sandbox');
+    applyMetaDateRange();
+  } catch(e){
+    toast('Error inesperado: ' + e.message);
+  }
 }
+
 
   // ── REGLAS DE DECISION: Target CPA / Break-Even ROAS ─────────────────────────
 const META_TARGETS_KEY = 'gotix_meta_targets_v1';
