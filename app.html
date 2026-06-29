@@ -4496,7 +4496,8 @@ async function tsGenerarTesteo(){
       special_ad_categories: JSON.stringify([])
     });
     if(campRes.error){ toast('Error al crear campana: '+campRes.error.message); return; }
-    console.log('campRes:', JSON.stringify(campRes));
+   alert('campRes: ' + JSON.stringify(campRes));
+    if(campRes.error){ toast('Error al crear campana: '+campRes.error.message); return; }
     const campaignId = campRes.id;
 
     for(const conjunto of campania.conjuntos){
