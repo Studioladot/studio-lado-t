@@ -56,7 +56,13 @@ export default async function handler(req) {
     // (ej "act_x/campaigns" o "id/adsets"), para no abrir la puerta a crear cosas nuevas
     // desde este endpoint — su unico proposito hoy es cambiar el status de algo que ya existe.
     if (req.method === 'POST') {
-      if (!isObjectIdPath || path.includes('/')) {
+      // Lista blanca de endpoints de creacion permitidos, SOLO dentro de la cuenta propia del usuario
+      // (isOwnAccountPath ya garantiza que el path empieza con act_{cleanAccountId}/).
+      const ALLOWED_CREATE_PATHS = ['campaigns', 'adsets', 'ads', 'adimages', 'adcreatives'];
+      const createSubPath = isOwnAccountPath ? path.slice(`act_${cleanAccountId}/`.length) : null;
+      const isAllowedCreatePath = isOwnAccountPath && ALLOWED_CREATE_PATHS.includes(createSubPath);
+
+      if (!isAllowedCreatePath && (!isObjectIdPath || path.includes('/'))) {
         return json({ error: 'Escritura no autorizada para ese path' }, 403);
       }
       const graphBody = new URLSearchParams({ ...bodyParams, access_token: conn.token });
