@@ -4488,6 +4488,7 @@ async function tsGenerarTesteo(){
 
   try {
     // 1) CAMPANA (pausada — se revisa y activa a mano desde la tabla)
+    console.log('META_ACCOUNT:', META_ACCOUNT);
     const campRes = await metaPost(`act_${META_ACCOUNT}/campaigns`, {
       name: campania.nombre,
       objective: 'OUTCOME_SALES',
@@ -4495,6 +4496,7 @@ async function tsGenerarTesteo(){
       special_ad_categories: JSON.stringify([])
     });
     if(campRes.error){ toast('Error al crear campana: '+campRes.error.message); return; }
+    console.log('campRes:', campRes);
     const campaignId = campRes.id;
 
     for(const conjunto of campania.conjuntos){
