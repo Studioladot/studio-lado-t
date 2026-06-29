@@ -4489,11 +4489,12 @@ async function tsGenerarTesteo(){
   try {
     // 1) CAMPANA (pausada — se revisa y activa a mano desde la tabla)
     console.log('META_ACCOUNT:', META_ACCOUNT);
-    const campRes = await metaPost(`act_${META_ACCOUNT}/campaigns`, {
+   const campRes = await metaPost(`act_${META_ACCOUNT}/campaigns`, {
       name: campania.nombre,
       objective: 'OUTCOME_SALES',
       status: 'PAUSED',
-      special_ad_categories: JSON.stringify([])
+      special_ad_categories: JSON.stringify([]),
+      is_adset_budget_sharing_enabled: false
     });
     if(campRes.error){ toast('Error al crear campana: '+campRes.error.message); return; }
    alert('campRes: ' + JSON.stringify(campRes));
