@@ -4509,6 +4509,7 @@ async function tsGenerarTesteo(){
         daily_budget: Math.round(campania.presupuesto_diario * 100),
         billing_event: 'IMPRESSIONS',
         optimization_goal: 'OFFSITE_CONVERSIONS',
+        bid_strategy: 'LOWEST_COST_WITHOUT_CAP',
         promoted_object: JSON.stringify({ pixel_id: META_PIXEL_ID, custom_event_type: 'PURCHASE' }),
         targeting: JSON.stringify({ geo_locations: { countries: ['AR'] } }),
         status: 'PAUSED'
