@@ -2628,36 +2628,25 @@ create policy "own" on contacts for all using (auth.uid()=user_id);</div>
   </div>
 </div>
 <div class="modal-backdrop" id="modal-dup-selected">
-  <div class="modal" style="max-width:560px">
+  <div class="modal" style="max-width:600px">
     <div class="modal-title">Duplicar Conjuntos Seleccionados</div>
-    <div style="font-size:12px;color:var(--text2);margin-bottom:16px">La segmentación (público/targeting) de cada conjunto original se mantiene intacta. Solo se reemplaza el creativo y los textos.</div>
+    <div style="font-size:12px;color:var(--text2);margin-bottom:16px">La segmentación de cada conjunto original se mantiene intacta. Configurá un creativo distinto por copia.</div>
 
-    <div class="form-row">
-      <div class="fg"><label>¿Cuántas copias querés crear?</label><input id="tsdup-count" type="number" min="1" step="1" value="1"></div>
-      <div class="fg wide"><label>Nuevo nombre de Conjunto</label><input id="tsdup-adset-name" type="text" placeholder="Ej: Conjunto Duplicado"></div>
-    </div>
-    <div class="form-row">
-      <div class="fg wide"><label>Nuevo nombre de Anuncio</label><input id="tsdup-ad-name" type="text" placeholder="Ej: Anuncio Duplicado"></div>
+    <div style="display:flex;gap:12px;margin-bottom:14px">
+      <div class="fg" style="flex:1">
+        <label>¿Cuántas copias?</label>
+        <input id="tsdup-count" type="number" min="1" max="10" step="1" value="1" oninput="tsRenderDupBlocks()">
+      </div>
+      <div class="fg" style="flex:2">
+        <label>Nombre base del Conjunto</label>
+        <input id="tsdup-adset-name" type="text" placeholder="Ej: Conjunto Verano">
+      </div>
     </div>
 
     <div class="divider"></div>
 
-    <div class="fg" style="margin-bottom:10px"><label>Link de destino (URL)</label><input id="tsdup-link" type="text" placeholder="https://kirizproject.com.ar/productos/..."></div>
-    <div class="fg" style="margin-bottom:10px"><label>Título (Headline)</label><input id="tsdup-headline" type="text" placeholder="Título del anuncio"></div>
-    <div class="ts-copy-row" style="margin-bottom:10px">
-      <textarea id="tsdup-copy" rows="3" placeholder="Copy (texto principal del anuncio)"></textarea>
-      <button type="button" class="ts-import-guion-btn" onclick="tsToggleDupGuionDropdown()">
-        <svg width="11" height="11" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><rect x="2" y="1.5" width="10" height="11" rx="1.2"/><path d="M4.5 5h5M4.5 7.5h5M4.5 10h3"/></svg>
-        Importar Guion
-      </button>
-      <div class="ts-guion-dropdown" id="tsdup-guion-dd"></div>
-    </div>
-
-    <label class="ts-dropzone" id="tsdup-dropzone" style="width:100%;min-height:60px">
-      <span class="ts-dz-text">Arrastra el nuevo creativo (imagen o video) o hace clic</span>
-      <input type="file" class="ts-dz-input" id="tsdup-file-input" accept="image/*,video/*" hidden>
-      <div class="ts-dz-bar"></div>
-    </label>
+    <!-- Bloques dinámicos: uno por copia -->
+    <div id="tsdup-bloques-wrap" style="display:flex;flex-direction:column;gap:16px;margin-top:4px"></div>
 
     <div class="modal-footer">
       <button class="btn btn-outline" onclick="closeModal('modal-dup-selected')">Cancelar</button>
@@ -4438,42 +4427,72 @@ function tsToggleSelect(type, id, name, checkbox){
   }
 }
 
-function tsOpenDupModal(){
-  const selectedAdsets = Array.from(tsSelectedItems.values()).filter(i => i.type === 'adset');
-  if(!selectedAdsets.length){ toast('Selecciona al menos un Conjunto para duplicar (la segmentación se hereda del conjunto)'); return; }
+const tsDupFiles = new Map(); // bloqueIdx -> File
 
-  document.getElementById('tsdup-count').value = 1;
-  document.getElementById('tsdup-adset-name').value = selectedAdsets[0].name + ' (copia)';
-  document.getElementById('tsdup-ad-name').value = 'Anuncio (copia)';
-  document.getElementById('tsdup-link').value = '';
-  document.getElementById('tsdup-headline').value = '';
-  document.getElementById('tsdup-copy').value = '';
-  const dz = document.getElementById('tsdup-dropzone');
-  dz.classList.remove('has-file');
-  dz.querySelector('.ts-dz-text').textContent = 'Arrastra el nuevo creativo (imagen o video) o hace clic';
-  dz.querySelector('.ts-dz-bar').style.width = '0%';
-  tsDupFile = null;
-  tsWireDropzone(dz, 'tsdup');
+function tsRenderDupBlocks(){
+  const cantidad = Math.max(1, Math.min(10, +document.getElementById('tsdup-count').value || 1));
+  const wrap = document.getElementById('tsdup-bloques-wrap');
+  tsDupFiles.clear();
+  wrap.innerHTML = '';
+  for(let i = 1; i <= cantidad; i++){
+    const bloque = document.createElement('div');
+    bloque.style.cssText = 'background:var(--surface2);border:0.5px solid var(--border);border-radius:var(--rl);padding:14px 16px';
+    bloque.innerHTML = `
+      <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">Copia ${i}</div>
+      <div class="fg" style="margin-bottom:8px"><label>Nombre del Anuncio</label><input class="tsdup-ad-name" type="text" placeholder="Anuncio (copia) ${i}" style="border:0.5px solid var(--border);border-radius:var(--r);padding:7px 10px;font-size:13px;background:var(--surface);color:var(--text);outline:none;width:100%"></div>
+      <div class="fg" style="margin-bottom:8px"><label>URL de destino</label><input class="tsdup-link" type="text" placeholder="https://kirizproject.com.ar/productos/..." style="border:0.5px solid var(--border);border-radius:var(--r);padding:7px 10px;font-size:13px;background:var(--surface);color:var(--text);outline:none;width:100%"></div>
+      <div class="fg" style="margin-bottom:8px"><label>Título (Headline)</label><input class="tsdup-headline" type="text" placeholder="Título del anuncio" style="border:0.5px solid var(--border);border-radius:var(--r);padding:7px 10px;font-size:13px;background:var(--surface);color:var(--text);outline:none;width:100%"></div>
+      <div class="ts-copy-row" style="margin-bottom:8px">
+        <textarea class="tsdup-copy" rows="3" placeholder="Copy (texto principal)" style="width:100%;border:0.5px solid var(--border);border-radius:var(--r);padding:7px 10px;font-size:13px;background:#2A2A2A;color:#ffffff;outline:none;resize:vertical;font-family:inherit"></textarea>
+        <button type="button" class="ts-import-guion-btn" onclick="tsToggleDupGuionDropdown(${i})">
+          <svg width="11" height="11" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><rect x="2" y="1.5" width="10" height="11" rx="1.2"/><path d="M4.5 5h5M4.5 7.5h5M4.5 10h3"/></svg>
+          Importar Guion
+        </button>
+        <div class="ts-guion-dropdown" id="tsdup-guion-dd-${i}"></div>
+      </div>
+      <label class="ts-dropzone" style="width:100%;min-height:48px">
+        <span class="ts-dz-text">Arrastra el creativo o hace clic</span>
+        <input type="file" class="ts-dz-input tsdup-file-input" accept="image/*,video/*" hidden>
+        <div class="ts-dz-bar"></div>
+      </label>`;
+    wrap.appendChild(bloque);
 
-  openModal('modal-dup-selected');
+    // Wiring manual del dropzone (sin ID, usando closure del índice)
+    const dz = bloque.querySelector('.ts-dropzone');
+    const fileInput = bloque.querySelector('.ts-dz-input');
+    const txt = bloque.querySelector('.ts-dz-text');
+    function setFile(file){ tsDupFiles.set(i, file); txt.textContent = file.name; dz.classList.add('has-file'); }
+    fileInput.addEventListener('change', e => { if(e.target.files[0]) setFile(e.target.files[0]); });
+    dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('dragover'); });
+    dz.addEventListener('dragleave', () => dz.classList.remove('dragover'));
+    dz.addEventListener('drop', e => { e.preventDefault(); dz.classList.remove('dragover'); if(e.dataTransfer.files[0]) setFile(e.dataTransfer.files[0]); });
+    dz.addEventListener('click', () => fileInput.click());
+  }
 }
 
-let tsDupFile = null;
-const _tsFilesSetOriginal = tsFiles.set.bind(tsFiles);
-tsFiles.set = function(key, file){ if(key === 'tsdup') tsDupFile = file; return _tsFilesSetOriginal(key, file); };
+function tsOpenDupModal(){
+  const selectedAdsets = Array.from(tsSelectedItems.values()).filter(i => i.type === 'adset');
+  if(!selectedAdsets.length){ toast('Selecciona al menos un Conjunto para duplicar'); return; }
+  document.getElementById('tsdup-count').value = 1;
+  document.getElementById('tsdup-adset-name').value = selectedAdsets[0].name + ' (copia)';
+  tsDupFiles.clear();
+  tsRenderDupBlocks();
+  openModal('modal-dup-selected');
+}
 
 async function tsGetAdsetFull(adsetId){
   return await metaGet(adsetId, { fields: 'campaign_id,targeting,billing_event,optimization_goal,bid_strategy,daily_budget,promoted_object' });
 }
 
-async function tsToggleDupGuionDropdown(){
-  const dd = document.getElementById('tsdup-guion-dd');
+async function tsToggleDupGuionDropdown(bloqueIdx){
+  const ddId = `tsdup-guion-dd-${bloqueIdx}`;
+  const dd = document.getElementById(ddId);
+  if(!dd) return;
   if(dd.classList.contains('open')){ dd.classList.remove('open'); return; }
   document.querySelectorAll('.ts-guion-dropdown.open').forEach(o => o.classList.remove('open'));
   dd.innerHTML = `<div class="ts-guion-empty">Cargando...</div>`;
   dd.classList.add('open');
 
-  // Tabla real en Supabase: "scripts" (title, hook, body, copy_feed)
   const { data, error } = await db.from('scripts').select('title,hook,body,copy_feed').order('updated_at',{ascending:false});
   const guiones = (!error && data) ? data.map(s => ({
     titulo_headline: s.title || 'Sin titulo',
@@ -4488,27 +4507,28 @@ async function tsToggleDupGuionDropdown(){
       <div class="ts-guion-item-preview">${g.texto_completo.replace(/</g,'&lt;')}</div>
     </div>`).join('');
 
+  const bloque = dd.closest('div[style*="surface2"]');
   dd.querySelectorAll('.ts-guion-item').forEach(item => {
     item.addEventListener('click', () => {
       const idx = +item.dataset.guionIdx;
-      document.getElementById('tsdup-copy').value = guiones[idx].texto_completo;
-      document.getElementById('tsdup-headline').value = guiones[idx].titulo_headline;
+      if(bloque){
+        bloque.querySelector('.tsdup-copy').value = guiones[idx].texto_completo;
+        bloque.querySelector('.tsdup-headline').value = guiones[idx].titulo_headline;
+      }
       dd.classList.remove('open');
     });
   });
 }
 
 async function tsEjecutarDuplicacion(){
-  const cantidad = Math.max(1, +document.getElementById('tsdup-count').value || 1);
   const baseAdsetName = document.getElementById('tsdup-adset-name').value.trim();
-  const baseAdName = document.getElementById('tsdup-ad-name').value.trim();
-  const link = document.getElementById('tsdup-link').value.trim();
-  const headline = document.getElementById('tsdup-headline').value.trim();
-  const copy = document.getElementById('tsdup-copy').value.trim();
-  const file = tsDupFile;
+  if(!baseAdsetName){ toast('Completa el nombre base del Conjunto'); return; }
 
-  if(!baseAdsetName || !baseAdName){ toast('Completa los nombres de Conjunto y Anuncio'); return; }
+  const bloques = document.querySelectorAll('#tsdup-bloques-wrap > div');
+  if(!bloques.length){ toast('Sin bloques de copia configurados'); return; }
+
   const selectedAdsets = Array.from(tsSelectedItems.values()).filter(i => i.type === 'adset');
+  if(!selectedAdsets.length){ toast('Sin conjuntos seleccionados'); return; }
 
   toast('Duplicando conjuntos...');
 
@@ -4516,9 +4536,14 @@ async function tsEjecutarDuplicacion(){
     const full = await tsGetAdsetFull(original.id);
     if(full.error){ toast(`No se pudo leer "${original.name}": ${full.error.message}`); continue; }
 
-    for(let i = 1; i <= cantidad; i++){
-      const adsetName = cantidad > 1 ? `${baseAdsetName} - ${i}` : baseAdsetName;
-      const adName = cantidad > 1 ? `${baseAdName} - ${i}` : baseAdName;
+    let idx = 1;
+    for(const bloque of bloques){
+      const adsetName = bloques.length > 1 ? `${baseAdsetName} - ${idx}` : baseAdsetName;
+      const adName = bloque.querySelector('.tsdup-ad-name').value.trim() || `Anuncio (copia) ${idx}`;
+      const link = bloque.querySelector('.tsdup-link').value.trim();
+      const headline = bloque.querySelector('.tsdup-headline').value.trim();
+      const copy = bloque.querySelector('.tsdup-copy').value.trim();
+      const file = tsDupFiles.get(idx) || null;
 
       const adsetPayload = {
         name: adsetName,
@@ -4533,20 +4558,18 @@ async function tsEjecutarDuplicacion(){
       if(full.promoted_object) adsetPayload.promoted_object = JSON.stringify(full.promoted_object);
 
       const adsetRes = await metaPost(`act_${META_ACCOUNT}/adsets`, adsetPayload);
-      if(adsetRes.error){ toast(`Conjunto "${adsetName}" fallo: ${adsetRes.error.message}`); continue; }
+      if(adsetRes.error){ toast(`Conjunto "${adsetName}" fallo: ${adsetRes.error.message}`); idx++; continue; }
 
-      let objectStorySpec;
       const isVideo = file && file.type.startsWith('video');
+      let objectStorySpec;
 
       if(isVideo){
-        const videoRes = await tsUploadVideo(file, pct => tsSetProgress('tsdup', pct, `Subiendo... ${pct}%`));
-        if(videoRes.error){ toast(`Video fallo: ${videoRes.error.message}`); continue; }
+        const dz = bloque.querySelector('.ts-dropzone');
+        const videoRes = await tsUploadVideo(file, pct => { if(dz){ dz.querySelector('.ts-dz-bar').style.width=pct+'%'; dz.querySelector('.ts-dz-text').textContent=`Subiendo... ${pct}%`; } });
+        if(videoRes.error){ toast(`Video fallo: ${videoRes.error.message}`); idx++; continue; }
         const ready = await tsWaitVideoReady(videoRes.id);
         const thumbnailUrl = ready ? await tsGetVideoThumbnail(videoRes.id) : null;
-        objectStorySpec = {
-          page_id: META_PAGE_ID,
-          video_data: { video_id: videoRes.id, image_url: thumbnailUrl, title: headline, message: copy, call_to_action: { type: 'SHOP_NOW', value: { link } } }
-        };
+        objectStorySpec = { page_id: META_PAGE_ID, video_data: { video_id: videoRes.id, image_url: thumbnailUrl, title: headline, message: copy, call_to_action: { type: 'SHOP_NOW', value: { link } } } };
       } else if(file){
         const base64 = await tsFileToBase64(file);
         const imgRes = await metaPost(`act_${META_ACCOUNT}/adimages`, { bytes: base64 });
@@ -4560,7 +4583,7 @@ async function tsEjecutarDuplicacion(){
         name: adName + ' - Creative',
         object_story_spec: JSON.stringify(objectStorySpec)
       });
-      if(creativeRes.error){ toast(`Creative "${adName}" fallo: ${creativeRes.error.message}`); continue; }
+      if(creativeRes.error){ toast(`Creative "${adName}" fallo: ${creativeRes.error.message}`); idx++; continue; }
 
       const adRes = await metaPost(`act_${META_ACCOUNT}/ads`, {
         name: adName,
@@ -4568,7 +4591,9 @@ async function tsEjecutarDuplicacion(){
         creative: JSON.stringify({ creative_id: creativeRes.id }),
         status: 'PAUSED'
       });
-      if(adRes.error){ toast(`Anuncio "${adName}" fallo: ${adRes.error.message}`); continue; }
+      if(adRes.error){ toast(`Anuncio "${adName}" fallo: ${adRes.error.message}`); }
+
+      idx++;
     }
   }
 
@@ -4576,7 +4601,7 @@ async function tsEjecutarDuplicacion(){
   closeModal('modal-dup-selected');
   tsSelectedItems.clear();
   document.getElementById('ts-dup-selected-btn').style.display = 'none';
- applyMetaDateRange();
+  applyMetaDateRange();
 }
 
 function tsTrashIcon(size=14){
