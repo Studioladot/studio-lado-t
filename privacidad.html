@@ -1,41 +1,381 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es-AR">
 <head>
 <meta charset="UTF-8">
-<title>Política de Privacidad — GOTIX</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Política de Privacidad — Gotix</title>
 <style>
-  body{background:#000;color:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:720px;margin:0 auto;padding:40px 24px;line-height:1.7}
-  h1{font-size:24px;margin-bottom:6px}
-  h2{font-size:16px;margin-top:32px;color:#10B981}
-  p,li{font-size:14px;color:#ccc}
-  .upd{font-size:12px;color:#888;margin-bottom:32px}
+  :root{
+    --bg:#F2F2F2;
+    --surface:#FFFFFF;
+    --border:#E0E0E0;
+    --text:#1A1A1A;
+    --text2:#5C5C5C;
+    --text3:#8A8A8A;
+    --accent:#1A1A1A;
+    --r:10px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;
+    line-height:1.7;
+    -webkit-font-smoothing:antialiased;
+    -moz-osx-font-smoothing:grayscale;
+  }
+  .wrap{
+    max-width:760px;
+    margin:0 auto;
+    padding:72px 24px 120px;
+  }
+  header.doc-header{
+    margin-bottom:56px;
+  }
+  .doc-eyebrow{
+    font-size:12px;
+    font-weight:600;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+    color:var(--text3);
+    margin-bottom:14px;
+  }
+  h1{
+    font-size:32px;
+    font-weight:700;
+    letter-spacing:-.02em;
+    margin-bottom:10px;
+  }
+  .doc-meta{
+    font-size:13px;
+    color:var(--text3);
+  }
+  .card{
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:var(--r);
+    padding:40px 44px;
+  }
+  section{
+    margin-bottom:38px;
+  }
+  section:last-child{margin-bottom:0}
+  h2{
+    font-size:18px;
+    font-weight:700;
+    letter-spacing:-.01em;
+    margin-bottom:14px;
+    padding-bottom:10px;
+    border-bottom:1px solid var(--border);
+  }
+  h2 .num{
+    color:var(--text3);
+    font-weight:500;
+    margin-right:8px;
+  }
+  p{
+    font-size:14.5px;
+    color:var(--text2);
+    margin-bottom:14px;
+  }
+  p:last-child{margin-bottom:0}
+  ul{
+    margin:0 0 14px 20px;
+  }
+  ul:last-child{margin-bottom:0}
+  li{
+    font-size:14.5px;
+    color:var(--text2);
+    margin-bottom:8px;
+  }
+  li:last-child{margin-bottom:0}
+  strong{
+    color:var(--text);
+    font-weight:600;
+  }
+  a{
+    color:var(--text);
+    text-decoration:underline;
+    text-decoration-color:var(--border);
+    text-underline-offset:3px;
+  }
+  a:hover{text-decoration-color:var(--text)}
+  table{
+    width:100%;
+    border-collapse:collapse;
+    margin-top:6px;
+    margin-bottom:14px;
+    font-size:13.5px;
+  }
+  th,td{
+    text-align:left;
+    padding:10px 12px;
+    border-bottom:1px solid var(--border);
+    color:var(--text2);
+  }
+  th{
+    font-weight:600;
+    color:var(--text);
+    font-size:12px;
+    text-transform:uppercase;
+    letter-spacing:.04em;
+  }
+  .pill{
+    display:inline-block;
+    font-size:11px;
+    font-weight:600;
+    letter-spacing:.03em;
+    text-transform:uppercase;
+    color:var(--text2);
+    background:var(--bg);
+    border:1px solid var(--border);
+    border-radius:20px;
+    padding:3px 10px;
+    margin-bottom:18px;
+  }
+  footer.doc-footer{
+    margin-top:48px;
+    padding-top:24px;
+    text-align:center;
+  }
+  footer.doc-footer p{
+    font-size:12px;
+    color:var(--text3);
+    text-align:center;
+  }
+  @media (max-width:600px){
+    .wrap{padding:48px 16px 80px}
+    .card{padding:28px 22px}
+    h1{font-size:26px}
+  }
 </style>
 </head>
 <body>
-  <h1>Política de Privacidad — GOTIX</h1>
-  <div class="upd">Última actualización: junio de 2026</div>
+  <div class="wrap">
+    <header class="doc-header">
+      <div class="doc-eyebrow">Gotix · gotix.com.ar</div>
+      <h1>Política de Privacidad y Tratamiento de Datos Personales</h1>
+      <div class="doc-meta">Última actualización: 30 de junio de 2026</div>
+    </header>
 
-  <p>GOTIX es un sistema operativo de negocios que permite a marcas conectar sus cuentas de Tienda Nube y Meta Ads para visualizar métricas de ventas, publicidad y finanzas en un solo lugar.</p>
+    <div class="card">
 
-  <h2>Qué datos recopilamos</h2>
-  <ul>
-    <li>Datos de cuenta: email y credenciales de acceso (gestionados por Supabase Auth).</li>
-    <li>Datos de Meta Ads: con tu autorización vía OAuth, accedemos a métricas de campañas publicitarias (gasto, alcance, conversiones) de las cuentas publicitarias que vos elijas conectar. No accedemos a tu perfil personal de Facebook ni publicamos contenido en tu nombre.</li>
-    <li>Datos de Tienda Nube: con tu autorización, accedemos a órdenes, productos y checkouts de tu tienda para calcular métricas financieras.</li>
-    <li>Datos que cargás manualmente: gastos, ventas manuales, costos de producto.</li>
-  </ul>
+      <span class="pill">Ley N.º 25.326 — República Argentina</span>
 
-  <h2>Cómo usamos los datos</h2>
-  <p>Los datos se usan exclusivamente para calcular y mostrarte métricas dentro de tu propia cuenta de GOTIX (ventas, ROAS, rentabilidad, etc.). No vendemos ni compartimos tus datos con terceros, y no los usamos para publicidad propia ni de terceros.</p>
+      <section>
+        <h2><span class="num">1.</span>Introducción</h2>
+        <p>
+          Esta Política de Privacidad describe cómo <strong>Gotix</strong> (en adelante, "la Plataforma", "nosotros") recolecta,
+          utiliza, almacena y protege la información de los usuarios que administran cuentas a través de
+          <a href="https://gotix.com.ar" target="_blank" rel="noopener">gotix.com.ar</a>. Gotix es un sistema operativo de
+          negocio diseñado para la gestión, automatización y testeo de campañas publicitarias en Meta Ads, destinado a
+          marcas de e-commerce y a sus equipos de marketing.
+        </p>
+        <p>
+          El uso de la Plataforma implica la aceptación plena de los términos descritos en este documento. Esta política
+          se rige por la Ley de Protección de los Datos Personales N.º 25.326 de la República Argentina, su Decreto
+          Reglamentario N.º 1558/2001, y las disposiciones emitidas por la Agencia de Acceso a la Información Pública
+          (AAIP), autoridad de aplicación en la materia.
+        </p>
+      </section>
 
-  <h2>Almacenamiento y seguridad</h2>
-  <p>Los datos se almacenan en Supabase (base de datos con cifrado en tránsito y en reposo). Los tokens de acceso a Meta Ads y Tienda Nube se guardan únicamente en el servidor y nunca se exponen en el navegador del usuario.</p>
+      <section>
+        <h2><span class="num">2.</span>Responsable del tratamiento</h2>
+        <p>
+          El responsable del tratamiento de los datos personales recolectados a través de la Plataforma es el titular de
+          Gotix, operando bajo el dominio <a href="https://gotix.com.ar" target="_blank" rel="noopener">gotix.com.ar</a>.
+          Para cualquier consulta relacionada con esta política o con el ejercicio de derechos sobre datos personales,
+          el usuario puede dirigirse a través de los canales de contacto habilitados dentro de la propia Plataforma.
+        </p>
+      </section>
 
-  <h2>Eliminación de datos</h2>
-  <p>Podés solicitar la eliminación completa de tu cuenta y datos asociados escribiendo a <strong>kirizproject@gmail.com</strong>. La desconexión de Meta Ads o Tienda Nube también puede hacerse en cualquier momento desde la sección "Conexiones" de GOTIX.</p>
+      <section>
+        <h2><span class="num">3.</span>Datos que recopilamos</h2>
+        <p>Para poder prestar el servicio, Gotix recolecta y procesa las siguientes categorías de datos:</p>
+        <ul>
+          <li>
+            <strong>Tokens de acceso de la API de Meta:</strong> credenciales de autorización (access tokens) generadas
+            por el usuario al vincular su cuenta publicitaria de Meta Ads, necesarias para que la Plataforma pueda
+            consultar y operar campañas en su nombre.
+          </li>
+          <li>
+            <strong>Identificadores de cuentas publicitarias:</strong> IDs de cuenta de anuncios, IDs de píxel e IDs de
+            página de Facebook vinculados por el usuario.
+          </li>
+          <li>
+            <strong>Datos de campañas:</strong> nombres de campañas, conjuntos de anuncios y anuncios, configuraciones
+            de presupuesto, y métricas de rendimiento publicitario obtenidas a través de la API de Meta.
+          </li>
+          <li>
+            <strong>Datos básicos del usuario administrador:</strong> nombre, dirección de correo electrónico y
+            credenciales de acceso necesarias para autenticarse en la Plataforma.
+          </li>
+        </ul>
+        <p>
+          Gotix <strong>no recolecta ni procesa datos personales de los clientes finales o consumidores</strong> de las
+          marcas que utilizan la Plataforma (por ejemplo, datos de compradores en una tienda online), salvo aquellos
+          datos agregados y anonimizados que Meta Ads provee como métricas de campaña.
+        </p>
+      </section>
 
-  <h2>Contacto</h2>
-  <p>Para consultas sobre esta política, escribí a <strong>kirizproject@gmail.com</strong>.</p>
+      <section>
+        <h2><span class="num">4.</span>Finalidad del tratamiento</h2>
+        <p>Los datos recolectados se utilizan exclusivamente para los siguientes fines:</p>
+        <ul>
+          <li>Permitir el funcionamiento técnico de la Plataforma y la autenticación segura de usuarios.</li>
+          <li>Conectar e interactuar con la API de Marketing de Meta en nombre del usuario, para la creación, lectura,
+            modificación y pausado de campañas, conjuntos de anuncios y anuncios.</li>
+          <li>Mostrar al usuario reportes, métricas y diagnósticos sobre el rendimiento de sus campañas publicitarias.</li>
+          <li>Brindar soporte técnico y resolver incidencias relacionadas con el uso de la Plataforma.</li>
+        </ul>
+        <p>
+          <strong>Gotix no vende, alquila ni comercializa datos personales a terceros bajo ninguna circunstancia.</strong>
+          Los datos no se utilizan para fines publicitarios propios de Gotix, ni se comparten con anunciantes,
+          intermediarios o brokers de datos.
+        </p>
+      </section>
+
+      <section>
+        <h2><span class="num">5.</span>Encargados del tratamiento (proveedores de infraestructura)</h2>
+        <p>
+          Para operar, Gotix se apoya en proveedores de infraestructura tecnológica que actúan como Encargados del
+          Tratamiento bajo instrucciones de la Plataforma, y que cuentan con sus propias políticas de seguridad y
+          privacidad a nivel internacional:
+        </p>
+        <table>
+          <thead>
+            <tr><th>Proveedor</th><th>Función</th><th>Rol</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Vercel Inc.</td>
+              <td>Alojamiento en la nube (hosting) y ejecución de la aplicación web</td>
+              <td>Encargado de tratamiento</td>
+            </tr>
+            <tr>
+              <td>Supabase Inc.</td>
+              <td>Gestión de base de datos, autenticación y almacenamiento de credenciales</td>
+              <td>Encargado de tratamiento</td>
+            </tr>
+          </tbody>
+        </table>
+        <p>
+          Estos proveedores procesan los datos exclusivamente para prestar el servicio de infraestructura contratado por
+          Gotix, y no tienen autorización para utilizar los datos del usuario para fines propios. Dado que estos
+          proveedores operan con infraestructura distribuida internacionalmente, es posible que los datos sean
+          almacenados o procesados en servidores ubicados fuera de la República Argentina. En todos los casos, Gotix
+          procura que dichos proveedores ofrezcan garantías de seguridad y confidencialidad adecuadas, conforme a los
+          estándares exigidos por la normativa argentina para transferencias internacionales de datos.
+        </p>
+      </section>
+
+      <section>
+        <h2><span class="num">6.</span>Integración con Meta Platforms, Inc.</h2>
+        <p>
+          Gotix utiliza la API de Marketing de Meta para operar campañas publicitarias en nombre del usuario. Al
+          autorizar esta conexión, el usuario acepta que Meta Platforms, Inc. procesará los datos según sus propias
+          políticas de privacidad y condiciones de la plataforma. Gotix actúa como una herramienta intermediaria que
+          opera dentro de los permisos otorgados por el usuario y por Meta, y no almacena ni accede a información de
+          Meta más allá de lo estrictamente necesario para el funcionamiento de las funciones contratadas.
+        </p>
+        <p>
+          El usuario puede revocar en cualquier momento el acceso de Gotix a su cuenta de Meta a través del panel de
+          administración de su cuenta de Facebook/Meta Business Suite, lo cual invalida automáticamente los tokens de
+          acceso almacenados.
+        </p>
+      </section>
+
+      <section>
+        <h2><span class="num">7.</span>Seguridad de la información</h2>
+        <p>
+          Gotix implementa medidas técnicas y organizativas razonables para proteger los datos personales contra
+          accesos no autorizados, pérdida, alteración o divulgación indebida. Entre estas medidas se incluyen:
+        </p>
+        <ul>
+          <li>Almacenamiento de tokens y credenciales sensibles del lado del servidor, nunca expuestos en el cliente.</li>
+          <li>Conexiones cifradas (HTTPS/TLS) en todas las comunicaciones entre el usuario, la Plataforma y los
+            servicios de terceros.</li>
+          <li>Control de acceso basado en autenticación de usuario y autorización por roles dentro de la Plataforma.</li>
+        </ul>
+        <p>
+          No obstante, ningún sistema de transmisión o almacenamiento de datos es completamente infalible, por lo que
+          no es posible garantizar una seguridad absoluta.
+        </p>
+      </section>
+
+      <section>
+        <h2><span class="num">8.</span>Conservación de los datos</h2>
+        <p>
+          Los datos personales y credenciales se conservarán durante el tiempo en que el usuario mantenga una cuenta
+          activa en la Plataforma. Una vez que el usuario solicite la baja de su cuenta o revoque el acceso a Meta Ads,
+          los tokens de acceso serán eliminados o invalidados, y los datos personales conservados solo durante el plazo
+          mínimo necesario por razones administrativas, legales o de seguridad.
+        </p>
+      </section>
+
+      <section>
+        <h2><span class="num">9.</span>Derechos del titular de los datos (Derechos ARCO)</h2>
+        <p>
+          De conformidad con la Ley N.º 25.326, el usuario tiene derecho a:
+        </p>
+        <ul>
+          <li><strong>Acceso:</strong> solicitar información sobre los datos personales que Gotix posee sobre él.</li>
+          <li><strong>Rectificación:</strong> solicitar la corrección de datos inexactos o incompletos.</li>
+          <li><strong>Actualización:</strong> solicitar que sus datos sean actualizados cuando corresponda.</li>
+          <li><strong>Supresión:</strong> solicitar la eliminación de sus datos cuando ya no sean necesarios para los
+            fines para los cuales fueron recolectados.</li>
+          <li><strong>Confidencialidad:</strong> exigir que sus datos no sean tratados con fines distintos a los aquí
+            descritos.</li>
+        </ul>
+        <p>
+          Estos derechos pueden ejercerse en cualquier momento a través de los canales de contacto disponibles en la
+          Plataforma. La Agencia de Acceso a la Información Pública (AAIP), en su carácter de Órgano de Control de la
+          Ley N.º 25.326, es la autoridad competente para recibir reclamos relacionados con el incumplimiento de las
+          normas de protección de datos personales en la Argentina.
+        </p>
+      </section>
+
+      <section>
+        <h2><span class="num">10.</span>Cookies y tecnologías similares</h2>
+        <p>
+          Gotix puede utilizar cookies técnicas y de sesión estrictamente necesarias para mantener la sesión del
+          usuario autenticado y garantizar el correcto funcionamiento de la Plataforma. No se utilizan cookies de
+          seguimiento publicitario de terceros dentro de la aplicación.
+        </p>
+      </section>
+
+      <section>
+        <h2><span class="num">11.</span>Menores de edad</h2>
+        <p>
+          La Plataforma está destinada exclusivamente a usuarios mayores de 18 años que actúen en representación de
+          una empresa, marca o emprendimiento. Gotix no recolecta intencionalmente datos de menores de edad.
+        </p>
+      </section>
+
+      <section>
+        <h2><span class="num">12.</span>Modificaciones a esta política</h2>
+        <p>
+          Gotix podrá actualizar esta Política de Privacidad en cualquier momento para reflejar cambios en sus
+          prácticas de tratamiento de datos o en la normativa vigente. Las modificaciones entrarán en vigor desde su
+          publicación en esta misma página, indicando la fecha de la última actualización.
+        </p>
+      </section>
+
+      <section>
+        <h2><span class="num">13.</span>Contacto</h2>
+        <p>
+          Para consultas, solicitudes vinculadas al ejercicio de derechos sobre datos personales, o cualquier duda
+          relacionada con esta Política de Privacidad, el usuario puede comunicarse a través de los canales de
+          contacto disponibles en <a href="https://gotix.com.ar" target="_blank" rel="noopener">gotix.com.ar</a>.
+        </p>
+      </section>
+
+    </div>
+
+    <footer class="doc-footer">
+      <p>Gotix — gotix.com.ar · Documento sujeto a la Ley N.º 25.326 de la República Argentina</p>
+    </footer>
+  </div>
 </body>
 </html>
