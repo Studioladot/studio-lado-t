@@ -3367,7 +3367,9 @@ if(p==='finanzas'){loadFinanzas();loadCotizacionUSD();loadEscAll();}
   if(p==='userlist')cargarUsuarios();
   if(p==='config')loadConfigPage();
   if(p==='dashboard'&&META_TOKEN&&META_ACCOUNT){syncDashDateSelector();if(!metaCampaigns.length)initDashboardMeta();}
- if(p==='autopilot'){ apRenderRules(); apRenderLog(); }const cm=document.getElementById('cont-cal-mes');if(cm&&!cm.value)cm.value=new Date().toISOString().substring(0,7);const cmp=document.getElementById('camp-mes-plan');if(cmp&&!cmp.value)cmp.value=new Date().toISOString().substring(0,7);}
+ if(p==='autopilot'){ apRenderRules(); apRenderLog(); }
+  const cm=document.getElementById('cont-cal-mes');if(cm&&!cm.value)cm.value=new Date().toISOString().substring(0,7);
+  const cmp=document.getElementById('camp-mes-plan');if(cmp&&!cmp.value)cmp.value=new Date().toISOString().substring(0,7);
 }
 
 // ── LOAD ALL ─────────────────────────────────────────────────────────────────
