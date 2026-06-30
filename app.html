@@ -2576,8 +2576,15 @@ create policy "own" on contacts for all using (auth.uid()=user_id);</div>
     <div class="form-row">
       <div class="fg wide"><label>Nombre de Campaña</label><input id="ts-camp-nombre" type="text" placeholder="Testeo Drop Invierno - Jun"/></div>
     </div>
+   <div class="fg" style="margin-bottom:14px">
+      <label>Tipo de presupuesto</label>
+      <div class="filters" id="ts-budget-toggle" style="margin-top:4px">
+        <div class="ft active" data-budget-type="CBO" onclick="tsSetBudgetType('CBO',this)">Presupuesto a nivel de Campaña (CBO)</div>
+        <div class="ft" data-budget-type="ABO" onclick="tsSetBudgetType('ABO',this)">Presupuesto a nivel de Conjunto (ABO)</div>
+      </div>
+    </div>
     <div class="form-row">
-      <div class="fg"><label>Presupuesto Diario (USD)</label><input id="ts-camp-presupuesto" type="number" step="0.01" placeholder="20"/></div>
+      <div class="fg"><label id="ts-presupuesto-label">Presupuesto Diario (USD) — Campaña</label><input id="ts-camp-presupuesto" type="number" step="0.01" placeholder="20"/></div>
       <div class="fg wide"><label>URL del Producto</label><input id="ts-camp-url" type="text" placeholder="https://kirizproject.com.ar/productos/..."/></div>
     </div>
 
@@ -4354,6 +4361,16 @@ function tsTrashIcon(size=14){
   return `<svg width="${size}" height="${size}" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 4.5h11"/><path d="M5.5 4.5V3a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1v1.5"/><path d="M6.5 7.5v4M9.5 7.5v4"/><path d="M3.5 4.5l.6 8.4a1 1 0 0 0 1 .9h5.8a1 1 0 0 0 1-.9l.6-8.4"/></svg>`;
 }
 
+let tsBudgetType = 'CBO';
+
+function tsSetBudgetType(type, el){
+  tsBudgetType = type;
+  document.querySelectorAll('#ts-budget-toggle .ft').forEach(f => f.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('ts-presupuesto-label').textContent =
+    type === 'CBO' ? 'Presupuesto Diario (USD) — Campaña' : 'Presupuesto Diario (USD) — por Conjunto';
+}
+
 function openTestingSandbox(){
   document.getElementById('ts-camp-nombre').value = '';
   document.getElementById('ts-camp-presupuesto').value = '';
@@ -4361,6 +4378,10 @@ function openTestingSandbox(){
   document.getElementById('ts-conjuntos-wrap').innerHTML = '';
   tsConjuntoSeq = 0;
   tsFiles.clear();
+  tsBudgetType = 'CBO';
+  document.querySelectorAll('#ts-budget-toggle .ft').forEach(f => f.classList.remove('active'));
+  document.querySelector('#ts-budget-toggle .ft[data-budget-type="CBO"]').classList.add('active');
+  document.getElementById('ts-presupuesto-label').textContent = 'Presupuesto Diario (USD) — Campaña';
   tsAddConjunto(); // arranca con Conjunto 1 + Anuncio 1
   openModal('modal-testing-sandbox');
 }
@@ -4565,29 +4586,40 @@ async function tsGenerarTesteo(){
   try {
     // 1) CAMPANA (pausada — se revisa y activa a mano desde la tabla)
     console.log('META_ACCOUNT:', META_ACCOUNT);
-   const campRes = await metaPost(`act_${META_ACCOUNT}/campaigns`, {
+   // CBO: presupuesto + bid_strategy van en la CAMPAÑA, los adsets no llevan presupuesto.
+    // ABO: la CAMPAÑA no lleva presupuesto, cada adset lleva su propio daily_budget + bid_strategy.
+    const campaignPayload = {
       name: campania.nombre,
       objective: 'OUTCOME_SALES',
       status: 'PAUSED',
-      special_ad_categories: JSON.stringify([]),
-      is_adset_budget_sharing_enabled: false
-    });
-   if(campRes.error){ toast('Error al crear campana: '+campRes.error.message); return; }
+      special_ad_categories: JSON.stringify([])
+    };
+    if(tsBudgetType === 'CBO'){
+      campaignPayload.daily_budget = Math.round(campania.presupuesto_diario * 100);
+      campaignPayload.bid_strategy = 'LOWEST_COST_WITHOUT_CAP';
+      campaignPayload.is_adset_budget_sharing_enabled = false;
+    }
+
+    const campRes = await metaPost(`act_${META_ACCOUNT}/campaigns`, campaignPayload);
+    if(campRes.error){ toast('Error al crear campana: '+campRes.error.message); return; }
     const campaignId = campRes.id;
 
     for(const conjunto of campania.conjuntos){
-      // 2) CONJUNTO
-      const adsetRes = await metaPost(`act_${META_ACCOUNT}/adsets`, {
+      const adsetPayload = {
         name: conjunto.nombre,
         campaign_id: campaignId,
-        daily_budget: Math.round(campania.presupuesto_diario * 100),
         billing_event: 'IMPRESSIONS',
         optimization_goal: 'OFFSITE_CONVERSIONS',
-        bid_strategy: 'LOWEST_COST_WITHOUT_CAP',
         promoted_object: JSON.stringify({ pixel_id: META_PIXEL_ID, custom_event_type: 'PURCHASE' }),
         targeting: JSON.stringify({ geo_locations: { countries: ['AR'] } }),
         status: 'PAUSED'
-      });
+      };
+      if(tsBudgetType === 'ABO'){
+        adsetPayload.daily_budget = Math.round(campania.presupuesto_diario * 100);
+        adsetPayload.bid_strategy = 'LOWEST_COST_WITHOUT_CAP';
+      }
+
+      const adsetRes = await metaPost(`act_${META_ACCOUNT}/adsets`, adsetPayload);
       if(adsetRes.error){ toast(`Conjunto "${conjunto.nombre}" fallo: ${adsetRes.error.message}`); continue; }
       const adsetId = adsetRes.id;
 
