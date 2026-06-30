@@ -237,6 +237,20 @@ body.focus-mode #main{margin-left:0}
 .ts-trash-btn:hover,.ts-trash-btn-sm:hover{background:var(--red-l);border-color:var(--red);color:var(--red)}
 .ts-add-anuncio-btn{display:inline-flex;align-items:center;gap:6px;background:transparent;border:0.5px dashed var(--border2);border-radius:var(--r);padding:7px 12px;font-size:12px;font-weight:600;color:var(--text2);cursor:pointer;transition:all .12s}
 .ts-add-anuncio-btn:hover{border-color:var(--accent);color:var(--accent)}
+.ts-anuncio-detail{display:flex;flex-direction:column;gap:8px;margin-top:8px;padding:10px;background:var(--surface);border:0.5px solid var(--border);border-radius:var(--r)}
+.ts-anuncio-detail input,.ts-anuncio-detail textarea{width:100%;border:0.5px solid var(--border);border-radius:var(--r);padding:7px 10px;font-size:12px;background:var(--surface2);color:var(--text);outline:none;transition:border-color .12s;resize:vertical;font-family:inherit}
+.ts-anuncio-detail input:focus,.ts-anuncio-detail textarea:focus{border-color:var(--accent)}
+.ts-copy-row{position:relative;display:flex;flex-direction:column;gap:6px}
+.ts-import-guion-btn{align-self:flex-start;display:inline-flex;align-items:center;gap:5px;background:transparent;border:0.5px solid var(--border2);border-radius:14px;padding:4px 10px;font-size:11px;font-weight:600;color:var(--text2);cursor:pointer;transition:all .12s}
+.ts-import-guion-btn:hover{border-color:var(--accent);color:var(--accent)}
+.ts-guion-dropdown{position:absolute;top:100%;left:0;margin-top:4px;width:100%;max-height:220px;overflow-y:auto;background:var(--surface2);border:0.5px solid var(--border);border-radius:var(--r);box-shadow:0 8px 24px rgba(0,0,0,.25);z-index:50;display:none}
+.ts-guion-dropdown.open{display:block}
+.ts-guion-item{padding:9px 12px;cursor:pointer;border-bottom:0.5px solid var(--border);transition:background .12s}
+.ts-guion-item:last-child{border-bottom:none}
+.ts-guion-item:hover{background:var(--surface)}
+.ts-guion-item-title{font-size:12.5px;font-weight:600;color:var(--text)}
+.ts-guion-item-preview{font-size:11px;color:var(--text3);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ts-guion-empty{padding:14px 12px;font-size:12px;color:var(--text3);text-align:center}
 @media(max-width:768px){
   .ts-anuncio-row{flex-wrap:wrap}
   .ts-anuncio-nombre{flex:1 1 100%}
@@ -4403,7 +4417,8 @@ function tsAddConjunto(){
       <input class="ts-conjunto-nombre" type="text" value="Conjunto ${tsConjuntoSeq}" placeholder="Nombre del conjunto">
       <button type="button" class="ts-trash-btn" onclick="tsRemoveConjunto('${cId}')" title="Eliminar conjunto">${tsTrashIcon()}</button>
     </div>
-    <div class="ts-anuncios-wrap" data-anuncios-of="${cId}"></div>
+  <div class="ts-anuncios-wrap" data-anuncios-of="${cId}"></div>
+    <!-- TEMPLATE usado por tsAddAnuncio para los campos de link/headline/copy/guion -->
     <button type="button" class="ts-add-anuncio-btn" onclick="tsAddAnuncio('${cId}')">
       <svg width="11" height="11" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M7 1.5v11M1.5 7h11"/></svg>
       Agregar Anuncio
@@ -4430,15 +4445,76 @@ function tsAddAnuncio(cId){
   row.className = 'ts-anuncio-row';
   row.dataset.anuncioId = aId;
  row.innerHTML = `
-    <input class="ts-anuncio-nombre" type="text" value="Anuncio ${seq}" placeholder="Nombre del anuncio">
-    <label class="ts-dropzone" data-dz-of="${aId}">
-      <span class="ts-dz-text">Arrastra el archivo o hace clic</span>
-      <input type="file" class="ts-dz-input" accept="image/*,video/*" hidden>
-      <div class="ts-dz-bar"></div>
-    </label>
-    <button type="button" class="ts-trash-btn-sm" onclick="tsRemoveAnuncio('${aId}')" title="Eliminar anuncio">${tsTrashIcon(12)}</button>`;
+    <div style="display:flex;align-items:center;gap:8px;width:100%">
+      <input class="ts-anuncio-nombre" type="text" value="Anuncio ${seq}" placeholder="Nombre del anuncio">
+      <label class="ts-dropzone" data-dz-of="${aId}">
+        <span class="ts-dz-text">Arrastra el archivo o hace clic</span>
+        <input type="file" class="ts-dz-input" accept="image/*,video/*" hidden>
+        <div class="ts-dz-bar"></div>
+      </label>
+      <button type="button" class="ts-trash-btn-sm" onclick="tsRemoveAnuncio('${aId}')" title="Eliminar anuncio">${tsTrashIcon(12)}</button>
+    </div>
+    <div class="ts-anuncio-detail">
+      <input class="ts-anuncio-link" type="text" placeholder="Link de destino (URL)">
+      <input class="ts-anuncio-headline" type="text" placeholder="Título (Headline)">
+      <div class="ts-copy-row">
+        <textarea class="ts-anuncio-copy" rows="3" placeholder="Copy (texto principal del anuncio)"></textarea>
+        <button type="button" class="ts-import-guion-btn" onclick="tsToggleGuionDropdown('${aId}')">
+          <svg width="11" height="11" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><rect x="2" y="1.5" width="10" height="11" rx="1.2"/><path d="M4.5 5h5M4.5 7.5h5M4.5 10h3"/></svg>
+          Importar Guion
+        </button>
+        <div class="ts-guion-dropdown" id="ts-guion-dd-${aId}"></div>
+      </div>
+    </div>`;
   conjunto.querySelector('.ts-anuncios-wrap').appendChild(row);
   tsWireDropzone(row.querySelector('.ts-dropzone'), aId);
+}
+
+// Trae los guiones disponibles. Tabla real en Supabase: "scripts"
+// (columnas: title, hook, body, copy_feed) — mapeados aca a titulo/texto_completo.
+async function fetchGuiones(){
+  const { data, error } = await db.from('scripts').select('title,hook,body,copy_feed').order('updated_at',{ascending:false});
+  if(error || !data) return [];
+  return data.map(s => ({
+    titulo: s.title || 'Sin titulo',
+    texto_completo: s.copy_feed || s.body || s.hook || ''
+  }));
+}
+
+async function tsToggleGuionDropdown(aId){
+  const dd = document.getElementById(`ts-guion-dd-${aId}`);
+  if(!dd) return;
+
+  if(dd.classList.contains('open')){
+    dd.classList.remove('open');
+    return;
+  }
+  document.querySelectorAll('.ts-guion-dropdown.open').forEach(o => o.classList.remove('open'));
+
+  dd.innerHTML = `<div class="ts-guion-empty">Cargando...</div>`;
+  dd.classList.add('open');
+
+  const guiones = await fetchGuiones();
+  if(!guiones.length){
+    dd.innerHTML = `<div class="ts-guion-empty">Sin guiones disponibles</div>`;
+    return;
+  }
+
+  dd.innerHTML = guiones.map((g, i) => `
+    <div class="ts-guion-item" data-guion-idx="${i}">
+      <div class="ts-guion-item-title">${g.titulo}</div>
+      <div class="ts-guion-item-preview">${g.texto_completo.replace(/</g,'&lt;')}</div>
+    </div>
+  `).join('');
+
+  dd.querySelectorAll('.ts-guion-item').forEach(item => {
+    item.addEventListener('click', () => {
+      const idx = +item.dataset.guionIdx;
+      const row = dd.closest('.ts-anuncio-row');
+      row.querySelector('.ts-anuncio-copy').value = guiones[idx].texto_completo;
+      dd.classList.remove('open');
+    });
+  });
 }
 
 function tsRemoveAnuncio(aId){
