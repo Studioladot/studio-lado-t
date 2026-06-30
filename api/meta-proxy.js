@@ -28,6 +28,26 @@ export default async function handler(req) {
     const cleanAccountId = String(conn.account_id).replace(/^act_/, '');
     const url = new URL(req.url);
 
+    // ── SUBIDA DE VIDEO (multipart binario): unica excepcion que no pasa por JSON.
+    // Solo se permite hacia act_{cuenta}/advideos, nunca a otro path.
+    const contentType = req.headers.get('content-type') || '';
+    if (req.method === 'POST' && contentType.includes('multipart/form-data')) {
+      const videoPath = url.searchParams.get('path');
+      if (videoPath !== `act_${cleanAccountId}/advideos`) {
+        return json({ error: 'Path no autorizado para subida de video' }, 403);
+      }
+      const incomingForm = await req.formData();
+      const graphForm = new FormData();
+      for (const [key, value] of incomingForm.entries()) graphForm.append(key, value);
+      graphForm.append('access_token', conn.token);
+      const graphRes = await fetch(`https://graph.facebook.com/v19.0/${videoPath}`, {
+        method: 'POST',
+        body: graphForm,
+      });
+      const data = await graphRes.json();
+      return json(data, graphRes.status);
+    }
+
     // ── Path: en GET viaja en la querystring, en POST viaja en el body JSON ──
     let path, bodyParams = {};
     if (req.method === 'POST') {
