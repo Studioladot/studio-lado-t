@@ -4546,6 +4546,7 @@ async function tsGenerarTesteo(){
 
         if(isVideo){
           const videoRes = await tsUploadVideo(anuncio.archivo);
+          alert('videoRes: ' + JSON.stringify(videoRes));
           if(videoRes.error){ toast(`Video de "${anuncio.nombre}" fallo: ${videoRes.error.message}`); continue; }
           const videoId = videoRes.id;
           const ready = await tsWaitVideoReady(videoId);
