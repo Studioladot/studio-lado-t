@@ -773,6 +773,10 @@ body.focus-mode #main{margin-left:0}
         <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 1.5v11M1.5 7h11"/></svg>
         Lanzar Testeo
       </button>
+      <button class="btn btn-accent" id="ts-dup-selected-btn" onclick="tsOpenDupModal()" style="display:none;opacity:0;transition:opacity .2s">
+        <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="8" height="8" rx="1.3"/><path d="M5 4V2.8a1 1 0 0 1 1-1h5a1 1 0 0 1 1 1V9a1 1 0 0 1-1 1h-1.5"/></svg>
+        Duplicar Seleccionados (<span id="ts-dup-count-badge">0</span>)
+      </button>
       <button class="btn btn-outline" onclick="applyMetaDateRange()">&#8635; Actualizar</button>
       <button class="btn btn-outline" onclick="openMetaColumnsModal()" title="Personalizar columnas">&#9881; Columnas</button>
       <button class="btn btn-outline" onclick="openMetaDefaultTargetsModal()" title="Target CPA y Break-Even ROAS por defecto">&#127919; Objetivos</button>
@@ -835,7 +839,7 @@ body.focus-mode #main{margin-left:0}
     <div class="tbl-wrap">
       <table id="meta-camp-table">
         <thead><tr id="meta-camp-thead-row">
-          <th>Campana</th><th>Estado</th><th>Gasto</th><th>ROAS</th>
+          <th style="width:28px"></th><th>Campana</th><th>Estado</th><th>Gasto</th><th>ROAS</th>
           <th>Compras</th><th>CPA</th><th>CTR</th><th>CPM</th><th>Impr.</th><th></th>
         </tr></thead>
         <tbody id="meta-camp-tbody">
@@ -859,7 +863,7 @@ body.focus-mode #main{margin-left:0}
     <div class="card" style="padding:0;overflow:hidden">
       <div class="tbl-wrap">
         <table>
-         <thead><tr id="meta-adsets-thead-row"><th>Conjunto</th><th>Estado</th><th>Gasto</th><th>ROAS</th><th>Compras</th><th>CPA</th><th>CTR</th><th>CPM</th><th></th></tr></thead>
+        <thead><tr id="meta-adsets-thead-row"><th style="width:28px"></th><th>Conjunto</th><th>Estado</th><th>Gasto</th><th>ROAS</th><th>Compras</th><th>CPA</th><th>CTR</th><th>CPM</th><th></th></tr></thead>
           <tbody id="meta-adsets-tbody"></tbody>
         </table>
       </div>
@@ -877,7 +881,7 @@ body.focus-mode #main{margin-left:0}
       <div class="card" style="padding:0;overflow:hidden">
         <div class="tbl-wrap">
           <table>
-          <thead><tr id="meta-ads-thead-row"><th>Anuncio</th><th>Estado</th><th>Gasto</th><th>ROAS</th><th>Compras</th><th>CPA</th><th>CTR</th><th>Hook%</th><th>CPM</th><th></th></tr></thead>
+          <thead><tr id="meta-ads-thead-row"><th style="width:28px"></th><th>Anuncio</th><th>Estado</th><th>Gasto</th><th>ROAS</th><th>Compras</th><th>CPA</th><th>CTR</th><th>Hook%</th><th>CPM</th><th></th></tr></thead>
             <tbody id="meta-ads-tbody"></tbody>
           </table>
         </div>
@@ -2620,6 +2624,44 @@ create policy "own" on contacts for all using (auth.uid()=user_id);</div>
     <div class="modal-footer">
       <button class="btn btn-outline" onclick="closeModal('modal-testing-sandbox')">Cancelar</button>
       <button class="btn btn-accent" onclick="tsGenerarTesteo()">Generar Testeo</button>
+    </div>
+  </div>
+</div>
+<div class="modal-backdrop" id="modal-dup-selected">
+  <div class="modal" style="max-width:560px">
+    <div class="modal-title">Duplicar Conjuntos Seleccionados</div>
+    <div style="font-size:12px;color:var(--text2);margin-bottom:16px">La segmentación (público/targeting) de cada conjunto original se mantiene intacta. Solo se reemplaza el creativo y los textos.</div>
+
+    <div class="form-row">
+      <div class="fg"><label>¿Cuántas copias querés crear?</label><input id="tsdup-count" type="number" min="1" step="1" value="1"></div>
+      <div class="fg wide"><label>Nuevo nombre de Conjunto</label><input id="tsdup-adset-name" type="text" placeholder="Ej: Conjunto Duplicado"></div>
+    </div>
+    <div class="form-row">
+      <div class="fg wide"><label>Nuevo nombre de Anuncio</label><input id="tsdup-ad-name" type="text" placeholder="Ej: Anuncio Duplicado"></div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="fg" style="margin-bottom:10px"><label>Link de destino (URL)</label><input id="tsdup-link" type="text" placeholder="https://kirizproject.com.ar/productos/..."></div>
+    <div class="fg" style="margin-bottom:10px"><label>Título (Headline)</label><input id="tsdup-headline" type="text" placeholder="Título del anuncio"></div>
+    <div class="ts-copy-row" style="margin-bottom:10px">
+      <textarea id="tsdup-copy" rows="3" placeholder="Copy (texto principal del anuncio)"></textarea>
+      <button type="button" class="ts-import-guion-btn" onclick="tsToggleDupGuionDropdown()">
+        <svg width="11" height="11" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><rect x="2" y="1.5" width="10" height="11" rx="1.2"/><path d="M4.5 5h5M4.5 7.5h5M4.5 10h3"/></svg>
+        Importar Guion
+      </button>
+      <div class="ts-guion-dropdown" id="tsdup-guion-dd"></div>
+    </div>
+
+    <label class="ts-dropzone" id="tsdup-dropzone" style="width:100%;min-height:60px">
+      <span class="ts-dz-text">Arrastra el nuevo creativo (imagen o video) o hace clic</span>
+      <input type="file" class="ts-dz-input" id="tsdup-file-input" accept="image/*,video/*" hidden>
+      <div class="ts-dz-bar"></div>
+    </label>
+
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-dup-selected')">Cancelar</button>
+      <button class="btn btn-accent" onclick="tsEjecutarDuplicacion()">Duplicar</button>
     </div>
   </div>
 </div>
@@ -4375,7 +4417,167 @@ function renderMetaAdsHeader()    { renderMetaTableHeader('meta-ads-thead-row', 
 let tsConjuntoSeq = 0;
 const tsFiles = new Map(); // anuncioId -> File
 
-function tsTrashIcon(size=14){
+// ── SELECCION VISUAL + DUPLICACION MASIVA ──────────────────────────────────
+const tsSelectedItems = new Map(); // key `${type}:${id}` -> {type,id,name}
+
+function tsToggleSelect(type, id, name, checkbox){
+  const key = `${type}:${id}`;
+  if(checkbox.checked) tsSelectedItems.set(key, { type, id, name });
+  else tsSelectedItems.delete(key);
+
+  const btn = document.getElementById('ts-dup-selected-btn');
+  const badge = document.getElementById('ts-dup-count-badge');
+  const count = tsSelectedItems.size;
+  badge.textContent = count;
+  if(count > 0){
+    btn.style.display = 'inline-flex';
+    requestAnimationFrame(() => btn.style.opacity = '1');
+  } else {
+    btn.style.opacity = '0';
+    setTimeout(() => { if(tsSelectedItems.size===0) btn.style.display='none'; }, 200);
+  }
+}
+
+function tsOpenDupModal(){
+  const selectedAdsets = Array.from(tsSelectedItems.values()).filter(i => i.type === 'adset');
+  if(!selectedAdsets.length){ toast('Selecciona al menos un Conjunto para duplicar (la segmentación se hereda del conjunto)'); return; }
+
+  document.getElementById('tsdup-count').value = 1;
+  document.getElementById('tsdup-adset-name').value = selectedAdsets[0].name + ' (copia)';
+  document.getElementById('tsdup-ad-name').value = 'Anuncio (copia)';
+  document.getElementById('tsdup-link').value = '';
+  document.getElementById('tsdup-headline').value = '';
+  document.getElementById('tsdup-copy').value = '';
+  const dz = document.getElementById('tsdup-dropzone');
+  dz.classList.remove('has-file');
+  dz.querySelector('.ts-dz-text').textContent = 'Arrastra el nuevo creativo (imagen o video) o hace clic';
+  dz.querySelector('.ts-dz-bar').style.width = '0%';
+  tsDupFile = null;
+  tsWireDropzone(dz, 'tsdup');
+
+  openModal('modal-dup-selected');
+}
+
+let tsDupFile = null;
+const _tsFilesSetOriginal = tsFiles.set.bind(tsFiles);
+tsFiles.set = function(key, file){ if(key === 'tsdup') tsDupFile = file; return _tsFilesSetOriginal(key, file); };
+
+async function tsGetAdsetFull(adsetId){
+  return await metaGet(adsetId, { fields: 'campaign_id,targeting,billing_event,optimization_goal,bid_strategy,daily_budget,promoted_object' });
+}
+
+async function tsToggleDupGuionDropdown(){
+  const dd = document.getElementById('tsdup-guion-dd');
+  if(dd.classList.contains('open')){ dd.classList.remove('open'); return; }
+  document.querySelectorAll('.ts-guion-dropdown.open').forEach(o => o.classList.remove('open'));
+  dd.innerHTML = `<div class="ts-guion-empty">Cargando...</div>`;
+  dd.classList.add('open');
+
+  // Tabla real en Supabase: "scripts" (title, hook, body, copy_feed)
+  const { data, error } = await db.from('scripts').select('title,hook,body,copy_feed').order('updated_at',{ascending:false});
+  const guiones = (!error && data) ? data.map(s => ({
+    titulo_headline: s.title || 'Sin titulo',
+    texto_completo: s.copy_feed || s.body || s.hook || ''
+  })) : [];
+
+  if(!guiones.length){ dd.innerHTML = `<div class="ts-guion-empty">Sin guiones disponibles</div>`; return; }
+
+  dd.innerHTML = guiones.map((g,i) => `
+    <div class="ts-guion-item" data-guion-idx="${i}">
+      <div class="ts-guion-item-title">${g.titulo_headline}</div>
+      <div class="ts-guion-item-preview">${g.texto_completo.replace(/</g,'&lt;')}</div>
+    </div>`).join('');
+
+  dd.querySelectorAll('.ts-guion-item').forEach(item => {
+    item.addEventListener('click', () => {
+      const idx = +item.dataset.guionIdx;
+      document.getElementById('tsdup-copy').value = guiones[idx].texto_completo;
+      document.getElementById('tsdup-headline').value = guiones[idx].titulo_headline;
+      dd.classList.remove('open');
+    });
+  });
+}
+
+async function tsEjecutarDuplicacion(){
+  const cantidad = Math.max(1, +document.getElementById('tsdup-count').value || 1);
+  const baseAdsetName = document.getElementById('tsdup-adset-name').value.trim();
+  const baseAdName = document.getElementById('tsdup-ad-name').value.trim();
+  const link = document.getElementById('tsdup-link').value.trim();
+  const headline = document.getElementById('tsdup-headline').value.trim();
+  const copy = document.getElementById('tsdup-copy').value.trim();
+  const file = tsDupFile;
+
+  if(!baseAdsetName || !baseAdName){ toast('Completa los nombres de Conjunto y Anuncio'); return; }
+  const selectedAdsets = Array.from(tsSelectedItems.values()).filter(i => i.type === 'adset');
+
+  toast('Duplicando conjuntos...');
+
+  for(const original of selectedAdsets){
+    const full = await tsGetAdsetFull(original.id);
+    if(full.error){ toast(`No se pudo leer "${original.name}": ${full.error.message}`); continue; }
+
+    for(let i = 1; i <= cantidad; i++){
+      const adsetName = cantidad > 1 ? `${baseAdsetName} - ${i}` : baseAdsetName;
+      const adName = cantidad > 1 ? `${baseAdName} - ${i}` : baseAdName;
+
+      const adsetPayload = {
+        name: adsetName,
+        campaign_id: full.campaign_id,
+        billing_event: full.billing_event,
+        optimization_goal: full.optimization_goal,
+        targeting: JSON.stringify(full.targeting),
+        status: 'PAUSED'
+      };
+      if(full.bid_strategy) adsetPayload.bid_strategy = full.bid_strategy;
+      if(full.daily_budget) adsetPayload.daily_budget = full.daily_budget;
+      if(full.promoted_object) adsetPayload.promoted_object = JSON.stringify(full.promoted_object);
+
+      const adsetRes = await metaPost(`act_${META_ACCOUNT}/adsets`, adsetPayload);
+      if(adsetRes.error){ toast(`Conjunto "${adsetName}" fallo: ${adsetRes.error.message}`); continue; }
+
+      let objectStorySpec;
+      const isVideo = file && file.type.startsWith('video');
+
+      if(isVideo){
+        const videoRes = await tsUploadVideo(file, pct => tsSetProgress('tsdup', pct, `Subiendo... ${pct}%`));
+        if(videoRes.error){ toast(`Video fallo: ${videoRes.error.message}`); continue; }
+        const ready = await tsWaitVideoReady(videoRes.id);
+        const thumbnailUrl = ready ? await tsGetVideoThumbnail(videoRes.id) : null;
+        objectStorySpec = {
+          page_id: META_PAGE_ID,
+          video_data: { video_id: videoRes.id, image_url: thumbnailUrl, title: headline, message: copy, call_to_action: { type: 'SHOP_NOW', value: { link } } }
+        };
+      } else if(file){
+        const base64 = await tsFileToBase64(file);
+        const imgRes = await metaPost(`act_${META_ACCOUNT}/adimages`, { bytes: base64 });
+        const imageHash = !imgRes.error ? Object.values(imgRes.images||{})[0]?.hash : null;
+        objectStorySpec = { page_id: META_PAGE_ID, link_data: { image_hash: imageHash, link, name: headline, message: copy } };
+      } else {
+        objectStorySpec = { page_id: META_PAGE_ID, link_data: { link, name: headline, message: copy } };
+      }
+
+      const creativeRes = await metaPost(`act_${META_ACCOUNT}/adcreatives`, {
+        name: adName + ' - Creative',
+        object_story_spec: JSON.stringify(objectStorySpec)
+      });
+      if(creativeRes.error){ toast(`Creative "${adName}" fallo: ${creativeRes.error.message}`); continue; }
+
+      const adRes = await metaPost(`act_${META_ACCOUNT}/ads`, {
+        name: adName,
+        adset_id: adsetRes.id,
+        creative: JSON.stringify({ creative_id: creativeRes.id }),
+        status: 'PAUSED'
+      });
+      if(adRes.error){ toast(`Anuncio "${adName}" fallo: ${adRes.error.message}`); continue; }
+    }
+  }
+
+  toast('Duplicación completa — revisa Ads Manager (todo en pausa)');
+  closeModal('modal-dup-selected');
+  tsSelectedItems.clear();
+  document.getElementById('ts-dup-selected-btn').style.display = 'none';
+  applyMetaDateRange();
+}
   return `<svg width="${size}" height="${size}" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 4.5h11"/><path d="M5.5 4.5V3a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1v1.5"/><path d="M6.5 7.5v4M9.5 7.5v4"/><path d="M3.5 4.5l.6 8.4a1 1 0 0 0 1 .9h5.8a1 1 0 0 0 1-.9l.6-8.4"/></svg>`;
 }
 
@@ -5383,7 +5585,8 @@ function renderCampaigns() {
     const metricTds = metaActiveColumns.map(id => `<td>${META_METRIC_DEFS[id].render(ins)}</td>`).join('');
     const strat = metaStrategicStatus(ins, c.id);
     const rowAccent = strat.label==='KILL' ? 'border-left:3px solid var(--red)' : strat.label==='ESCALAR' ? 'border-left:3px solid var(--green)' : '';
-    return `<tr style="cursor:pointer;${rowAccent}" onclick="loadAdsets('${c.id}','${(c.name||'').replace(/'/g,"\'")}')">
+   return `<tr style="cursor:pointer;${rowAccent}" onclick="loadAdsets('${c.id}','${(c.name||'').replace(/'/g,"\'")}')">
+      <td onclick="event.stopPropagation()"><input type="checkbox" class="ts-sel-chk" onchange="tsToggleSelect('campaign','${c.id}','${(c.name||'').replace(/'/g,"\\'")}',this)"></td>
       <td><div style="font-weight:600;font-size:13px;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${c.name}">${c.name}</div>
           <div style="font-size:10px;color:var(--text3);margin-top:1px">${c.objective||''}</div></td>
       <td>${metaStatusCellHtml(c.id, c.effective_status||c.status, 'campaign', ins.spend)}</td>
@@ -5447,6 +5650,7 @@ function renderAdsets(campName) {
     const strat = metaStrategicStatus(ins, currentCampaignId);
     const rowAccent = strat.label==='KILL' ? 'border-left:3px solid var(--red)' : strat.label==='ESCALAR' ? 'border-left:3px solid var(--green)' : '';
     return `<tr style="cursor:pointer;${rowAccent}" onclick="loadAds('${s.id}','${(s.name||'').replace(/'/g,"\'")}')">
+      <td onclick="event.stopPropagation()"><input type="checkbox" class="ts-sel-chk" onchange="tsToggleSelect('adset','${s.id}','${(s.name||'').replace(/'/g,"\\'")}',this)"></td>
       <td><div style="font-weight:600;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${s.name}">${s.name}</div></td>
       <td>${metaStatusCellHtml(s.id, s.effective_status||s.status, 'adset', ins.spend)}</td>
       ${metricTds}
@@ -5506,6 +5710,7 @@ tbody.innerHTML = list.map(a => {
     const fatigued = freq>=3 && ctrv>0 && ctrv<1;
     const metricTds = metaActiveColumns.map(id => `<td>${META_METRIC_DEFS[id].render(ins)}</td>`).join('');
     return `<tr>
+      <td><input type="checkbox" class="ts-sel-chk" onchange="tsToggleSelect('ad','${a.id}','${(a.name||'').replace(/'/g,"\\'")}',this)"></td>
       <td>
         <div style="display:flex;align-items:center;gap:8px">
           ${thumb?`<img src="${thumb}" style="width:36px;height:36px;object-fit:cover;border-radius:4px;flex-shrink:0" onerror="this.style.display='none'">`:''}
