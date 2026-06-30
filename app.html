@@ -226,7 +226,8 @@ body.focus-mode #main{margin-left:0}
 .ts-anuncio-row{display:flex;align-items:center;gap:8px}
 .ts-anuncio-nombre{flex:0 0 150px;background:var(--surface);border:0.5px solid var(--border);border-radius:var(--r);padding:7px 10px;font-size:12px;color:var(--text);outline:none;transition:border-color .12s}
 .ts-anuncio-nombre:focus{border-color:var(--accent)}
-.ts-dropzone{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;border:1px dashed var(--border2);border-radius:var(--r);padding:8px 10px;font-size:11px;color:var(--text2);cursor:pointer;transition:all .12s;background:var(--surface);min-height:34px;text-align:center}
+.ts-dropzone{position:relative;overflow:hidden;flex:1;display:flex;align-items:center;justify-content:center;gap:6px;border:1px dashed var(--border2);border-radius:var(--r);padding:8px 10px;font-size:11px;color:var(--text2);cursor:pointer;transition:all .12s;background:var(--surface);min-height:34px;text-align:center}
+.ts-dz-bar{position:absolute;left:0;bottom:0;height:3px;width:0%;background:var(--accent);transition:width .25s ease}
 .ts-dropzone:hover{border-color:var(--accent);color:var(--text)}
 .ts-dropzone.dragover{border-color:var(--accent);background:var(--accent-l);color:var(--accent)}
 .ts-dropzone.has-file{border-style:solid;border-color:var(--accent);color:var(--accent);background:var(--accent-l)}
@@ -4403,11 +4404,12 @@ function tsAddAnuncio(cId){
   const row = document.createElement('div');
   row.className = 'ts-anuncio-row';
   row.dataset.anuncioId = aId;
-  row.innerHTML = `
+ row.innerHTML = `
     <input class="ts-anuncio-nombre" type="text" value="Anuncio ${seq}" placeholder="Nombre del anuncio">
     <label class="ts-dropzone" data-dz-of="${aId}">
       <span class="ts-dz-text">Arrastra el archivo o hace clic</span>
       <input type="file" class="ts-dz-input" accept="image/*,video/*" hidden>
+      <div class="ts-dz-bar"></div>
     </label>
     <button type="button" class="ts-trash-btn-sm" onclick="tsRemoveAnuncio('${aId}')" title="Eliminar anuncio">${tsTrashIcon(12)}</button>`;
   conjunto.querySelector('.ts-anuncios-wrap').appendChild(row);
@@ -4442,18 +4444,63 @@ function tsWireDropzone(dz, aId){
     if(e.dataTransfer.files && e.dataTransfer.files[0]) setFile(e.dataTransfer.files[0]);
   });
 }
-async function tsUploadVideo(file){
-  const session = (await db.auth.getSession()).data.session;
-  const fd = new FormData();
-  fd.append('source', file);
-  const r = await fetch(`/api/meta-proxy?path=act_${META_ACCOUNT}/advideos`, {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${session.access_token}` },
-    body: fd
-  });
-  return r.json();
+  function tsSetProgress(aId, pct, label){
+  const dz = document.querySelector(`.ts-dropzone[data-dz-of="${aId}"]`);
+  if(!dz) return;
+  const bar = dz.querySelector('.ts-dz-bar');
+  const txt = dz.querySelector('.ts-dz-text');
+  if(bar) bar.style.width = pct + '%';
+  if(txt && label) txt.textContent = label;
 }
+async function tsUploadVideo(file){
+  // Vercel limita cada request a 4.5MB, asi que el video se sube en pedazos
+  // chicos via el protocolo de subida reanudable de Meta (start -> transfer x N -> finish).
+  const CHUNK_SIZE = 3500000; // ~3.34MB por pedazo, con margen de sobra bajo el limite de 4.5MB
 
+  const startRes = await metaPost(`act_${META_ACCOUNT}/advideos`, {
+    upload_phase: 'start',
+    file_size: file.size
+  });
+  if(startRes.error) return startRes;
+
+  const uploadSessionId = startRes.upload_session_id;
+  const videoId = startRes.video_id;
+  let startOffset = +startRes.start_offset;
+  const endOffsetTotal = +startRes.end_offset;
+
+  const session = (await db.auth.getSession()).data.session;
+
+  while(startOffset < endOffsetTotal || startOffset < file.size){
+    const chunkEnd = Math.min(startOffset + CHUNK_SIZE, file.size);
+    const chunkBlob = file.slice(startOffset, chunkEnd);
+
+    const fd = new FormData();
+    fd.append('upload_phase', 'transfer');
+    fd.append('upload_session_id', uploadSessionId);
+    fd.append('start_offset', String(startOffset));
+    fd.append('video_file_chunk', chunkBlob, file.name);
+
+    const r = await fetch(`/api/meta-proxy?path=act_${META_ACCOUNT}/advideos`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${session.access_token}` },
+      body: fd
+    });
+    const data = await r.json();
+    if(data.error) return data;
+
+    const nextOffset = +data.start_offset;
+    if(nextOffset === startOffset) break; // Meta indica fin de la subida
+    startOffset = nextOffset;
+  }
+
+  const finishRes = await metaPost(`act_${META_ACCOUNT}/advideos`, {
+    upload_phase: 'finish',
+    upload_session_id: uploadSessionId
+  });
+  if(finishRes.error) return finishRes;
+
+  return { id: videoId };
+}
 async function tsWaitVideoReady(videoId, maxTries=10){
   for(let i=0; i<maxTries; i++){
     const res = await metaGet(videoId, { fields: 'status' });
