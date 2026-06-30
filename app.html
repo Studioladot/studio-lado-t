@@ -4505,6 +4505,10 @@ async function tsUploadVideo(file, onProgress){
   if(onProgress) onProgress(100);
   return { id: videoId };
 }
+  async function tsGetVideoThumbnail(videoId){
+  const res = await metaGet(videoId, { fields: 'picture' });
+  return res?.picture || null;
+}
 async function tsWaitVideoReady(videoId, maxTries=10){
   for(let i=0; i<maxTries; i++){
     const res = await metaGet(videoId, { fields: 'status' });
@@ -4591,7 +4595,7 @@ async function tsGenerarTesteo(){
         const isVideo = anuncio.archivo && anuncio.archivo.type.startsWith('video');
         let objectStorySpec;
 
-        if(isVideo){
+if(isVideo){
           tsSetProgress(anuncio.aId, 0, 'Subiendo video...');
           const videoRes = await tsUploadVideo(anuncio.archivo, pct => tsSetProgress(anuncio.aId, pct, `Subiendo... ${pct}%`));
           if(videoRes.error){ tsSetProgress(anuncio.aId, 0, 'Error al subir'); toast(`Video de "${anuncio.nombre}" fallo: ${videoRes.error.message}`); continue; }
@@ -4599,11 +4603,17 @@ async function tsGenerarTesteo(){
           tsSetProgress(anuncio.aId, 100, 'Procesando en Meta...');
           const ready = await tsWaitVideoReady(videoId);
           if(!ready){ tsSetProgress(anuncio.aId, 100, 'Tarda en procesar'); toast(`Video de "${anuncio.nombre}" no termino de procesar a tiempo, intenta de nuevo en unos minutos`); continue; }
+
+          // CRITICO: el video_data necesita una miniatura (image_url) o Meta
+          // crea el anuncio sin nada visible, aunque el video_id este correcto.
+          const thumbnailUrl = await tsGetVideoThumbnail(videoId);
+
           tsSetProgress(anuncio.aId, 100, '✓ Listo');
           objectStorySpec = {
             page_id: META_PAGE_ID,
             video_data: {
               video_id: videoId,
+              image_url: thumbnailUrl,
               message: anuncio.nombre,
               call_to_action: { type: 'SHOP_NOW', value: { link: campania.url_producto } }
             }
