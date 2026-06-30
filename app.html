@@ -903,39 +903,66 @@ body.focus-mode #main{margin-left:0}
   <div class="page-hdr">
     <div><div class="page-title">Campanas</div><div class="page-sub" id="meta-sub">Ultimos 30 dias — datos en tiempo real</div></div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-      <select id="meta-date-range" class="fg" style="margin:0;min-width:0" onchange="onDateRangeChange()">
+      <!-- Selector de período -->
+      <select id="meta-date-range" class="meta-filter-select" onchange="onDateRangeChange()">
         <option value="today">Hoy</option>
         <option value="yesterday">Ayer</option>
-        <option value="last_7d">Ultimos 7 dias</option>
-        <option value="last_14d">Ultimos 14 dias</option>
-        <option value="last_30d">Ultimos 30 dias</option>
-        <option value="last_90d">Ultimos 90 dias</option>
+        <option value="last_7d">Últimos 7 días</option>
+        <option value="last_14d">Últimos 14 días</option>
+        <option value="last_30d">Últimos 30 días</option>
+        <option value="last_90d">Últimos 90 días</option>
         <option value="this_month" selected>Este mes</option>
         <option value="last_month">Mes pasado</option>
-        <option value="maximum">Maximo historico</option>
+        <option value="maximum">Máximo histórico</option>
         <option value="custom">Personalizado...</option>
       </select>
-      <div id="custom-date-wrap" style="display:none;display:flex;gap:6px;align-items:center">
-       <input type="date" id="meta-date-since" class="fg" style="margin:0;max-width:140px">
+      <div id="custom-date-wrap" style="display:none;gap:6px;align-items:center">
+        <input type="date" id="meta-date-since" class="fg" style="margin:0;max-width:130px">
         <span style="font-size:12px;color:var(--text2)">→</span>
-        <input type="date" id="meta-date-until" class="fg" style="margin:0;max-width:140px">
+        <input type="date" id="meta-date-until" class="fg" style="margin:0;max-width:130px">
       </div>
-      <button class="btn btn-accent" onclick="openTestingSandbox()" title="Crear campaña de testeo con conjuntos y anuncios dinámicos">
-        <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 1.5v11M1.5 7h11"/></svg>
+
+      <!-- Botón principal -->
+      <button class="btn btn-accent" onclick="openTestingSandbox()" title="Crear campaña de testeo">
+        <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 1.5v11M1.5 7h11"/></svg>
         Lanzar Testeo
       </button>
+
+      <!-- Duplicar (aparece solo cuando hay checkboxes seleccionados) -->
       <button class="btn btn-accent" id="ts-dup-selected-btn" onclick="tsOpenDupModal()" style="display:none;opacity:0;transition:opacity .2s">
-        <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="8" height="8" rx="1.3"/><path d="M5 4V2.8a1 1 0 0 1 1-1h5a1 1 0 0 1 1 1V9a1 1 0 0 1-1 1h-1.5"/></svg>
-        Duplicar Seleccionados (<span id="ts-dup-count-badge">0</span>)
+        <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="8" height="8" rx="1.3"/><path d="M5 4V2.8a1 1 0 0 1 1-1h5a1 1 0 0 1 1 1V9a1 1 0 0 1-1 1h-1.5"/></svg>
+        Duplicar (<span id="ts-dup-count-badge">0</span>)
       </button>
-      <button class="btn btn-outline" onclick="applyMetaDateRange()">&#8635; Actualizar</button>
-      <button class="btn btn-outline" onclick="openMetaColumnsModal()" title="Personalizar columnas">&#9881; Columnas</button>
-      <button class="btn btn-outline" onclick="openMetaDefaultTargetsModal()" title="Target CPA y Break-Even ROAS por defecto">&#127919; Objetivos</button>
-      <button class="btn btn-accent" onclick="autoSnapshot()">&#128248; Auto-snapshot</button>
-      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:var(--text2);margin-left:4px">
-        <button class="meta-switch" id="meta-focus-switch" onclick="toggleMetaFocusMode()"></button>
-        Modo Focus
-      </label>
+
+      <!-- Menú Opciones (3 puntos) -->
+      <div class="meta-opts-wrap" id="meta-opts-wrap">
+        <button class="btn btn-outline" onclick="tsToggleOptsMenu()" title="Más opciones" style="padding:8px 10px">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><circle cx="8" cy="3" r="1.3"/><circle cx="8" cy="8" r="1.3"/><circle cx="8" cy="13" r="1.3"/></svg>
+        </button>
+        <div class="meta-opts-menu" id="meta-opts-menu">
+          <button class="meta-opts-item" onclick="applyMetaDateRange();tsToggleOptsMenu()">
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M14 8a6 6 0 1 1-1-3.2"/><path d="M14 2v3h-3"/></svg>
+            Actualizar
+          </button>
+          <button class="meta-opts-item" onclick="openMetaColumnsModal();tsToggleOptsMenu()">
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><rect x="1" y="1" width="14" height="14" rx="2"/><path d="M6 1v14M11 1v14"/></svg>
+            Columnas
+          </button>
+          <button class="meta-opts-item" onclick="openMetaDefaultTargetsModal();tsToggleOptsMenu()">
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="8" cy="8" r="6.5"/><circle cx="8" cy="8" r="3.5"/><circle cx="8" cy="8" r="1"/></svg>
+            Objetivos
+          </button>
+          <button class="meta-opts-item" onclick="autoSnapshot();tsToggleOptsMenu()">
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><rect x="2" y="4" width="12" height="9" rx="1.5"/><path d="M10 4l-1.5-2h-1L6 4"/><circle cx="8" cy="9" r="2"/></svg>
+            Auto-snapshot
+          </button>
+          <div class="meta-opts-divider"></div>
+          <button class="meta-opts-focus-row" onclick="toggleMetaFocusMode()">
+            <span>Modo Focus</span>
+            <button class="meta-switch" id="meta-focus-switch" onclick="event.stopPropagation();toggleMetaFocusMode()"></button>
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -969,20 +996,20 @@ body.focus-mode #main{margin-left:0}
     <div id="meta-insights-list" style="display:flex;flex-direction:column;gap:8px"></div>
   </div>
 
-  <!-- FILTROS STATUS -->
-  <div class="filters" style="margin-bottom:10px">
-    <div class="ft active" onclick="filterMetaCamp('ALL',this)">Todas</div>
-    <div class="ft" onclick="filterMetaCamp('ACTIVE',this)">&#9679; Activas</div>
-    <div class="ft" onclick="filterMetaCamp('PAUSED',this)">&#9646;&#9646; Pausadas</div>
-    <div class="ft" onclick="filterMetaCamp('ARCHIVED',this)">Archivadas</div>
-  </div>
-
-  <!-- FILTROS ESTRATEGIA -->
-  <div class="filters" id="meta-strategy-filters" style="margin-bottom:14px">
-    <div class="ft active" onclick="filterMetaStrategy('ALL',this)">Todas las estrategias</div>
-    <div class="ft" onclick="filterMetaStrategy('TEST',this)">Testeo de Drops</div>
-    <div class="ft" onclick="filterMetaStrategy('CBO',this)">Escalamiento (CBO)</div>
-    <div class="ft" onclick="filterMetaStrategy('RTG',this)">Retargeting / Liquidacion</div>
+<!-- FILTROS COMPACTOS -->
+  <div class="meta-filter-bar">
+    <select class="meta-filter-select" id="meta-status-select" onchange="tsApplyStatusDropdown(this)">
+      <option value="ALL">Estado: Todas</option>
+      <option value="ACTIVE">● Activas</option>
+      <option value="PAUSED">⏸ Pausadas</option>
+      <option value="ARCHIVED">Archivadas</option>
+    </select>
+    <select class="meta-filter-select" id="meta-strategy-select" onchange="tsApplyStrategyDropdown(this)">
+      <option value="ALL">Estrategia: Todas</option>
+      <option value="TEST">Testeo de Drops</option>
+      <option value="CBO">Escalamiento (CBO)</option>
+      <option value="RTG">Retargeting / Liquidación</option>
+    </select>
   </div>
 
   <!-- CAMPANAS TABLE -->
@@ -4754,7 +4781,27 @@ async function tsEjecutarDuplicacion(){
   document.getElementById('ts-dup-selected-btn').style.display = 'none';
   applyMetaDateRange();
 }
+// ── MENÚ OPCIONES DE CAMPANAS ───────────────────────────────────────────────
+function tsToggleOptsMenu(){
+  const menu = document.getElementById('meta-opts-menu');
+  if(!menu) return;
+  menu.classList.toggle('open');
+  // cerrar al hacer click fuera
+  if(menu.classList.contains('open')){
+    const close = e => { if(!document.getElementById('meta-opts-wrap')?.contains(e.target)){ menu.classList.remove('open'); document.removeEventListener('click', close); } };
+    setTimeout(() => document.addEventListener('click', close), 0);
+  }
+}
 
+// Adapters para los nuevos dropdowns (llaman a las funciones existentes sin el elemento DOM)
+function tsApplyStatusDropdown(sel){
+  metaCampFilter = sel.value;
+  renderCampaigns();
+}
+function tsApplyStrategyDropdown(sel){
+  metaStrategyFilter = sel.value;
+  renderCampaigns();
+}
 function tsTrashIcon(size=14){
   return `<svg width="${size}" height="${size}" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 4.5h11"/><path d="M5.5 4.5V3a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1v1.5"/><path d="M6.5 7.5v4M9.5 7.5v4"/><path d="M3.5 4.5l.6 8.4a1 1 0 0 0 1 .9h5.8a1 1 0 0 0 1-.9l.6-8.4"/></svg>`;
 }
