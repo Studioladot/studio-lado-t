@@ -119,7 +119,7 @@ a{color:inherit;text-decoration:none}
 .stat-card.accent .stat-value{color:#10B981}.stat-card.accent .stat-label,.stat-card.accent .stat-sub{color:#A1A1AA}
 .stat-card.teal{background:var(--teal-l);border-color:var(--teal)}
 .card{background:rgba(255,255,255,.02);border:1px solid var(--border);border-radius:var(--rl);padding:18px 20px;margin-bottom:14px;backdrop-filter:blur(2px);transition:border-color .2s,box-shadow .2s}
-.card:hover{border-color:rgba(11,185,128,.15);box-shadow:0 0 20px rgba(0,0,0,.3)}
+.card:hover{border-color:rgba(11,185,128,.2);box-shadow:0 0 28px rgba(0,0,0,.4),0 0 14px rgba(11,185,128,.06)}
 .card-title{font-size:14px;font-weight:700;color:var(--text);margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
 /* Badge de sección (META ADS, TIENDA NUBE, etc.) */
 .section-badge{display:inline-flex;align-items:center;gap:6px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--primary-green);background:rgba(11,185,128,.08);border:1px solid var(--primary-green-border);border-radius:14px;padding:3px 10px}
@@ -678,7 +678,7 @@ body.focus-mode #main{margin-left:0}
   <!-- Meta Ads -->
   <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);padding:18px">
     <div style="display:flex;align-items:center;justify-content:between;gap:8px;margin-bottom:14px">
-      <span style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.08em">Meta Ads</span>
+      <span class="section-badge">Meta Ads</span>
     </div>
     <div style="display:flex;justify-content:space-between;align-items:flex-end">
       <div>
@@ -695,7 +695,7 @@ body.focus-mode #main{margin-left:0}
   <!-- Tienda Nube -->
   <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);padding:18px">
     <div style="margin-bottom:14px">
-      <span style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.08em">Tienda Nube</span>
+     <span class="section-badge">Tienda Nube</span>
     </div>
     <div style="display:flex;justify-content:space-between;align-items:flex-end">
       <div>
