@@ -8238,6 +8238,7 @@ function openEditPost(id){
   const p = posts.find(x=>String(x.id)===String(id));
   if(!p){toast('Publicacion no encontrada');return;}
   document.getElementById('post-edit-id').value = p.id;
+  document.getElementById('post-title').value = p.title||'';
   document.getElementById('post-caption').value = p.caption||'';
   document.getElementById('post-platform').value = p.platform||'Instagram';
   document.getElementById('post-format').value = p.format||'Post';
@@ -8245,8 +8246,9 @@ function openEditPost(id){
   document.getElementById('post-status').value = p.status||'pendiente';
   openModal('modal-post');
 }
- function openNewPost(){
+function openNewPost(){
   document.getElementById('post-edit-id').value = '';
+  document.getElementById('post-title').value = '';
   document.getElementById('post-caption').value = '';
   const pmf = document.getElementById('post-media-file'); if(pmf) pmf.value = '';
   document.getElementById('post-platform').value = 'Instagram';
@@ -8317,7 +8319,10 @@ async function saveEditPost(){
     const uploaded = await uploadPiezaMedia(file);
     if(uploaded){ media_url = uploaded.url; media_type = uploaded.type; }
   }
+  const titleVal = document.getElementById('post-title').value.trim();
+  if(!titleVal){ toast('Agregá un título a la publicación'); return; }
   const rec = {
+    title: titleVal,
     caption: document.getElementById('post-caption').value.trim(),
     platform: document.getElementById('post-platform').value,
     format: document.getElementById('post-format').value,
@@ -8964,7 +8969,13 @@ function openDiaPiezas(date){
       </div>`;
     }).join('');
   }
-  document.getElementById('dia-piezas-add-btn').onclick = ()=>{ closeModal('modal-dia-piezas'); openAddPiezaForDate(date); };
+ document.getElementById('dia-piezas-add-btn').onclick = ()=>{
+    closeModal('modal-dia-piezas');
+    openNewPost();
+    // pre-rellena la fecha con el día seleccionado
+    const df = document.getElementById('post-date');
+    if(df) df.value = date;
+  };
   openModal('modal-dia-piezas');
 }
 function openAddPiezaForDate(date){
@@ -9676,7 +9687,7 @@ function escRenderPgwList2() {
     <div id="dia-piezas-list" style="display:flex;flex-direction:column;gap:8px;max-height:380px;overflow-y:auto;margin-bottom:14px"></div>
     <div class="modal-footer" style="justify-content:space-between">
       <button class="btn btn-outline" onclick="closeModal('modal-dia-piezas')">Cerrar</button>
-      <button class="btn btn-accent" id="dia-piezas-add-btn" onclick="">+ Agregar pieza</button>
+      <button class="btn btn-accent" id="dia-piezas-add-btn" onclick="">+ Agregar publicación</button>
     </div>
   </div>
 </div>
@@ -9893,8 +9904,11 @@ function escRenderPgwList2() {
   <!-- Modal Post suelto (sin campaña) -->
 <div class="modal-backdrop" id="modal-post">
   <div class="modal" style="max-width:420px">
-    <div class="modal-title" id="modal-post-titulo">Editar publicacion</div>
+   <div class="modal-title" id="modal-post-titulo">Editar publicacion</div>
     <input type="hidden" id="post-edit-id"/>
+    <div class="form-row">
+      <div class="fg wide"><label>Título de la publicación</label><input id="post-title" type="text" placeholder="Ej: Campera EME — Drop Invierno"/></div>
+    </div>
     <div class="form-row">
       <div class="fg wide"><label>Texto / Caption</label><textarea id="post-caption" rows="3" placeholder="Texto de la publicacion..."></textarea></div>
     </div>
