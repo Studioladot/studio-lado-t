@@ -4442,30 +4442,7 @@ function tsWireDropzone(dz, aId){
     if(e.dataTransfer.files && e.dataTransfer.files[0]) setFile(e.dataTransfer.files[0]);
   });
 }
-async function tsUploadVideo(file){
-  const session = (await db.auth.getSession()).data.session;
-  const fd = new FormData();
-  fd.append('source', file);
-  const r = await fetch(`/api/meta-proxy?path=act_${META_ACCOUNT}/advideos`, {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${session.access_token}` },
-    body: fd
-  });
-  return r.json();
-}
 
-async function tsWaitVideoReady(videoId, maxTries=10){
-  for(let i=0; i<maxTries; i++){
-    const res = await metaGet(videoId, { fields: 'status' });
-    const status = res?.status?.video_status;
-    if(status === 'ready') return true;
-    if(status === 'error') return false;
-    await new Promise(r => setTimeout(r, 3000));
-  }
-  return false;
-}
-
-function tsFileToBase64(file){
 function tsFileToBase64(file){
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -4541,41 +4518,28 @@ async function tsGenerarTesteo(){
       const adsetId = adsetRes.id;
 
       for(const anuncio of conjunto.anuncios){
-      const isVideo = anuncio.archivo && anuncio.archivo.type.startsWith('video');
-        let objectStorySpec;
-
-        if(isVideo){
-          const videoRes = await tsUploadVideo(anuncio.archivo);
-          if(videoRes.error){ toast(`Video de "${anuncio.nombre}" fallo: ${videoRes.error.message}`); continue; }
-          const videoId = videoRes.id;
-          const ready = await tsWaitVideoReady(videoId);
-          if(!ready){ toast(`Video de "${anuncio.nombre}" no termino de procesar a tiempo, intenta de nuevo en unos minutos`); continue; }
-          objectStorySpec = {
-            page_id: META_PAGE_ID,
-            video_data: {
-              video_id: videoId,
-              message: anuncio.nombre,
-              call_to_action: { type: 'SHOP_NOW', value: { link: campania.url_producto } }
-            }
-          };
-        } else {
-          let imageHash = null;
-          if(anuncio.archivo){
-            const base64 = await tsFileToBase64(anuncio.archivo);
-            const imgRes = await metaPost(`act_${META_ACCOUNT}/adimages`, { bytes: base64 });
-            if(imgRes.error){ toast(`Imagen de "${anuncio.nombre}" fallo: ${imgRes.error.message}`); continue; }
-            const images = imgRes.images || {};
-            imageHash = Object.values(images)[0]?.hash || null;
-          }
-          objectStorySpec = {
-            page_id: META_PAGE_ID,
-            link_data: { image_hash: imageHash, link: campania.url_producto, message: anuncio.nombre }
-          };
+        if(anuncio.archivo && anuncio.archivo.type.startsWith('video')){
+          toast(`"${anuncio.nombre}": video aun no soportado, subilo luego desde Meta`);
+          continue;
         }
 
+        // 3) SUBIR IMAGEN (si hay) → hash
+        let imageHash = null;
+        if(anuncio.archivo){
+          const base64 = await tsFileToBase64(anuncio.archivo);
+          const imgRes = await metaPost(`act_${META_ACCOUNT}/adimages`, { bytes: base64 });
+          if(imgRes.error){ toast(`Imagen de "${anuncio.nombre}" fallo: ${imgRes.error.message}`); continue; }
+          const images = imgRes.images || {};
+          imageHash = Object.values(images)[0]?.hash || null;
+        }
+
+        // 4) CREATIVE
         const creativeRes = await metaPost(`act_${META_ACCOUNT}/adcreatives`, {
           name: anuncio.nombre + ' - Creative',
-          object_story_spec: JSON.stringify(objectStorySpec)
+          object_story_spec: JSON.stringify({
+            page_id: META_PAGE_ID,
+            link_data: { image_hash: imageHash, link: campania.url_producto, message: anuncio.nombre }
+          })
         });
         if(creativeRes.error){ toast(`Creative de "${anuncio.nombre}" fallo: ${creativeRes.error.message}`); continue; }
 
