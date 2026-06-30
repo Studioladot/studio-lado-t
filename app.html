@@ -2583,9 +2583,13 @@ create policy "own" on contacts for all using (auth.uid()=user_id);</div>
         <div class="ft" data-budget-type="ABO" onclick="tsSetBudgetType('ABO',this)">Presupuesto a nivel de Conjunto (ABO)</div>
       </div>
     </div>
-    <div class="form-row">
+  <div class="form-row">
       <div class="fg"><label id="ts-presupuesto-label">Presupuesto Diario (USD) — Campaña</label><input id="ts-camp-presupuesto" type="number" step="0.01" placeholder="20"/></div>
       <div class="fg wide"><label>URL del Producto</label><input id="ts-camp-url" type="text" placeholder="https://kirizproject.com.ar/productos/..."/></div>
+    </div>
+    <div class="form-row">
+      <div class="fg wide"><label>ID de Campaña Existente (opcional)</label><input id="ts-camp-existing-id" type="text" placeholder="Dejar vacio para crear una campaña nueva"/></div>
+      <div class="fg"><label>Duplicados por Conjunto</label><input id="ts-dup-count" type="number" min="1" step="1" value="1"/></div>
     </div>
 
     <div class="divider"></div>
@@ -4586,27 +4590,39 @@ async function tsGenerarTesteo(){
   try {
     // 1) CAMPANA (pausada — se revisa y activa a mano desde la tabla)
     console.log('META_ACCOUNT:', META_ACCOUNT);
-   // CBO: presupuesto + bid_strategy van en la CAMPAÑA, los adsets no llevan presupuesto.
-    // ABO: la CAMPAÑA no lleva presupuesto, cada adset lleva su propio daily_budget + bid_strategy.
-    const campaignPayload = {
-      name: campania.nombre,
-      objective: 'OUTCOME_SALES',
-      status: 'PAUSED',
-      special_ad_categories: JSON.stringify([])
-    };
-    if(tsBudgetType === 'CBO'){
-      campaignPayload.daily_budget = Math.round(campania.presupuesto_diario * 100);
-      campaignPayload.bid_strategy = 'LOWEST_COST_WITHOUT_CAP';
-      campaignPayload.is_adset_budget_sharing_enabled = false;
+const existingCampaignId = document.getElementById('ts-camp-existing-id').value.trim();
+    const dupCount = Math.max(1, +document.getElementById('ts-dup-count').value || 1);
+
+    let campaignId;
+    if(existingCampaignId){
+      // Inyeccion: se omite el fetch de creacion, se usa el ID provisto directamente
+      campaignId = existingCampaignId;
+    } else {
+      // CBO: presupuesto + bid_strategy van en la CAMPAÑA, los adsets no llevan presupuesto.
+      // ABO: la CAMPAÑA no lleva presupuesto, cada adset lleva su propio daily_budget + bid_strategy.
+      const campaignPayload = {
+        name: campania.nombre,
+        objective: 'OUTCOME_SALES',
+        status: 'PAUSED',
+        special_ad_categories: JSON.stringify([])
+      };
+      if(tsBudgetType === 'CBO'){
+        campaignPayload.daily_budget = Math.round(campania.presupuesto_diario * 100);
+        campaignPayload.bid_strategy = 'LOWEST_COST_WITHOUT_CAP';
+        campaignPayload.is_adset_budget_sharing_enabled = false;
+      }
+
+      const campRes = await metaPost(`act_${META_ACCOUNT}/campaigns`, campaignPayload);
+      if(campRes.error){ toast('Error al crear campana: '+campRes.error.message); return; }
+      campaignId = campRes.id;
     }
 
-    const campRes = await metaPost(`act_${META_ACCOUNT}/campaigns`, campaignPayload);
-    if(campRes.error){ toast('Error al crear campana: '+campRes.error.message); return; }
-    const campaignId = campRes.id;
-
     for(const conjunto of campania.conjuntos){
+    for(let dupIdx = 1; dupIdx <= dupCount; dupIdx++){
+      const conjuntoNombre = dupCount > 1 ? `${conjunto.nombre} - ${dupIdx}` : conjunto.nombre;
+
       const adsetPayload = {
-        name: conjunto.nombre,
+        name: conjuntoNombre,
         campaign_id: campaignId,
         billing_event: 'IMPRESSIONS',
         optimization_goal: 'OFFSITE_CONVERSIONS',
@@ -4620,7 +4636,7 @@ async function tsGenerarTesteo(){
       }
 
       const adsetRes = await metaPost(`act_${META_ACCOUNT}/adsets`, adsetPayload);
-      if(adsetRes.error){ toast(`Conjunto "${conjunto.nombre}" fallo: ${adsetRes.error.message}`); continue; }
+      if(adsetRes.error){ toast(`Conjunto "${conjuntoNombre}" fallo: ${adsetRes.error.message}`); continue; }
       const adsetId = adsetRes.id;
 
       for(const anuncio of conjunto.anuncios){
@@ -4678,8 +4694,9 @@ if(isVideo){
           creative: JSON.stringify({ creative_id: creativeRes.id }),
           status: 'PAUSED'
         });
-        if(adRes.error){ toast(`Anuncio "${anuncio.nombre}" fallo: ${adRes.error.message}`); continue; }
+       if(adRes.error){ toast(`Anuncio "${anuncio.nombre}" fallo: ${adRes.error.message}`); continue; }
       }
+    }
     }
 
     toast('Testeo creado en Meta — revisa Ads Manager (todo en pausa)');
