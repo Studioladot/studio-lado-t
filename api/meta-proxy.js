@@ -78,7 +78,7 @@ export default async function handler(req) {
     if (req.method === 'POST') {
       // Lista blanca de endpoints de creacion permitidos, SOLO dentro de la cuenta propia del usuario
       // (isOwnAccountPath ya garantiza que el path empieza con act_{cleanAccountId}/).
-      const ALLOWED_CREATE_PATHS = ['campaigns', 'adsets', 'ads', 'adimages', 'adcreatives'];
+     const ALLOWED_CREATE_PATHS = ['campaigns', 'adsets', 'ads', 'adimages', 'adcreatives', 'advideos'];
       const createSubPath = isOwnAccountPath ? path.slice(`act_${cleanAccountId}/`.length) : null;
       const isAllowedCreatePath = isOwnAccountPath && ALLOWED_CREATE_PATHS.includes(createSubPath);
 
