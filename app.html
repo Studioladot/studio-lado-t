@@ -2324,16 +2324,25 @@ body.focus-mode #main{margin-left:0}
 
 <!-- MODAL NUEVA/EDITAR REGLA AUTOPILOTO -->
 <div class="modal-backdrop" id="modal-ap-rule">
-  <div class="modal" style="max-width:480px">
+  <div class="modal" style="max-width:520px">
     <div class="modal-title" id="ap-rule-modal-title">Nueva Regla de Autopiloto</div>
     <input type="hidden" id="ap-rule-edit-id">
 
     <div class="form-row">
       <div class="fg wide"><label>Nombre de la regla</label><input id="ap-rule-name" type="text" placeholder="Ej: Pausar perdedores nocturnos"/></div>
     </div>
+
+    <div class="divider"></div>
+    <div style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">Condiciones (todas deben cumplirse)</div>
+    <div id="ap-conditions-wrap" style="display:flex;flex-direction:column;gap:8px;margin-bottom:10px"></div>
+    <button type="button" class="ts-add-anuncio-btn" onclick="apAddCondition()">
+      <svg width="11" height="11" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M7 1.5v11M1.5 7h11"/></svg>
+      Agregar condición
+    </button>
+
+    <div class="divider"></div>
     <div class="form-row">
-      <div class="fg"><label>ROAS Breakeven</label><input id="ap-rule-roas" type="number" step="0.1" placeholder="2.0"/></div>
-      <div class="fg"><label>Ventana de tiempo</label>
+      <div class="fg"><label>Ventana de análisis</label>
         <select id="ap-rule-window">
           <option value="3">Últimos 3 días</option>
           <option value="7" selected>Últimos 7 días</option>
@@ -2341,16 +2350,18 @@ body.focus-mode #main{margin-left:0}
           <option value="30">Últimos 30 días</option>
         </select>
       </div>
+      <div class="fg"><label>Gasto mínimo antes de actuar (USD)</label>
+        <input id="ap-rule-min-spend" type="number" step="0.1" placeholder="10"/>
+      </div>
     </div>
     <div class="form-row">
-      <div class="fg"><label>Acción</label>
+      <div class="fg wide"><label>Acción</label>
         <select id="ap-rule-action">
           <option value="pause">Pausar anuncio</option>
           <option value="reduce">Reducir presupuesto 20%</option>
           <option value="notify">Solo notificar (no tocar)</option>
         </select>
       </div>
-      <div class="fg"><label>Gasto mínimo antes de actuar (USD)</label><input id="ap-rule-min-spend" type="number" step="0.1" placeholder="10"/></div>
     </div>
     <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:10px 12px;margin-bottom:4px">
       <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;color:var(--text2)">
@@ -5083,7 +5094,7 @@ function tsGetAdvPayload(){
   return payload;
 }
 // ══════════════════════════════════════════════════════════════════════════════
-// AUTOPILOTO DE RENTABILIDAD
+// AUTOPILOTO DE RENTABILIDAD — Motor multiparamétrico
 // ══════════════════════════════════════════════════════════════════════════════
 const AP_STORAGE_KEY   = 'gotix_autopilot_rules_v1';
 const AP_LOG_KEY       = 'gotix_autopilot_log_v1';
@@ -5093,53 +5104,124 @@ const AP_SCHEDULER_KEY = 'gotix_autopilot_last_run_v1';
 function apLoadRules(){ try{ return JSON.parse(localStorage.getItem(AP_STORAGE_KEY)||'[]'); }catch{ return []; } }
 function apSaveRules(r){ localStorage.setItem(AP_STORAGE_KEY, JSON.stringify(r)); }
 function apLoadLog(){ try{ return JSON.parse(localStorage.getItem(AP_LOG_KEY)||'[]'); }catch{ return []; } }
-function apSaveLog(l){ localStorage.setItem(AP_LOG_KEY, JSON.stringify(l.slice(0,200))); }
+function apSaveLog(l){ localStorage.setItem(AP_LOG_KEY, JSON.stringify(l.slice(0,300))); }
 function apLoadProtected(){ try{ return JSON.parse(localStorage.getItem(AP_PROTECTED_KEY)||'[]'); }catch{ return []; } }
 function apSaveProtected(p){ localStorage.setItem(AP_PROTECTED_KEY, JSON.stringify(p)); }
+function apPushLog(entry){ const log=apLoadLog(); log.unshift({...entry,ts:new Date().toISOString()}); apSaveLog(log); }
 
-function apPushLog(entry){
-  const log = apLoadLog();
-  log.unshift({ ...entry, ts: new Date().toISOString() });
-  apSaveLog(log);
+// ── DEFINICIÓN DE MÉTRICAS ────────────────────────────────────────────────────
+const AP_METRICS = {
+  roas:     { label:'ROAS',     unit:'x',   step:'0.1', placeholder:'2.0',   extract: ins => { const s=+(ins.spend||0),r=+(ins.action_values?.find(a=>a.action_type==='purchase')?.value||0); return s>0&&r>0?r/s:0; } },
+  cpa:      { label:'CPA (USD)',unit:'$',   step:'1',   placeholder:'3000',  extract: ins => { const s=+(ins.spend||0),p=+(ins.actions?.find(a=>a.action_type==='purchase')?.value||0); return p>0?s/p:0; } },
+  spend:    { label:'Gasto (USD)',unit:'$', step:'1',   placeholder:'50',    extract: ins => +(ins.spend||0) },
+  purchases:{ label:'Compras',  unit:'',   step:'1',   placeholder:'5',     extract: ins => +(ins.actions?.find(a=>a.action_type==='purchase')?.value||0) },
+  cpc:      { label:'CPC (USD)',unit:'$',  step:'0.01',placeholder:'0.50',  extract: ins => +(ins.cpc||0) },
+};
+const AP_OPS = { lt:'menor que (<)', gt:'mayor que (>)', eq:'igual a (=)' };
+
+function apEval(op, actual, threshold){
+  if(op==='lt') return actual < threshold;
+  if(op==='gt') return actual > threshold;
+  if(op==='eq') return Math.abs(actual - threshold) < 0.001;
+  return false;
 }
 
+// ── UI: CONDICIONES DINÁMICAS ─────────────────────────────────────────────────
+let apCondSeq = 0;
+const apConditions = new Map(); // id -> {metric, op, value}
+
+function apAddCondition(preset={}){
+  apCondSeq++;
+  const id = 'apc_'+apCondSeq;
+  apConditions.set(id, { metric: preset.metric||'roas', op: preset.op||'lt', value: preset.value||'' });
+
+  const wrap = document.getElementById('ap-conditions-wrap');
+  const row = document.createElement('div');
+  row.id = id;
+  row.style.cssText = 'display:flex;align-items:center;gap:6px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:8px 10px';
+
+  const metricOpts = Object.entries(AP_METRICS).map(([k,v])=>`<option value="${k}" ${preset.metric===k?'selected':''}>${v.label}</option>`).join('');
+  const opOpts = Object.entries(AP_OPS).map(([k,v])=>`<option value="${k}" ${preset.op===k?'selected':''}>${v}</option>`).join('');
+  const m = AP_METRICS[preset.metric||'roas'];
+
+  row.innerHTML = `
+    <select style="flex:0 0 120px;font-size:12px;background:var(--surface);border:0.5px solid var(--border);border-radius:var(--r);padding:5px 8px;color:var(--text);outline:none" onchange="apOnMetricChange('${id}',this.value)">${metricOpts}</select>
+    <select style="flex:0 0 130px;font-size:12px;background:var(--surface);border:0.5px solid var(--border);border-radius:var(--r);padding:5px 8px;color:var(--text);outline:none" onchange="apConditions.get('${id}').op=this.value">${opOpts}</select>
+    <input id="${id}_val" type="number" step="${m.step}" placeholder="${m.placeholder}" value="${preset.value||''}" style="flex:1;font-size:12px;background:var(--surface);border:0.5px solid var(--border);border-radius:var(--r);padding:5px 8px;color:var(--text);outline:none" onchange="apConditions.get('${id}').value=+this.value">
+    <span style="font-size:11px;color:var(--text3);flex-shrink:0" id="${id}_unit">${m.unit}</span>
+    <button type="button" class="ts-trash-btn-sm" onclick="apRemoveCondition('${id}')" title="Eliminar condición">${tsTrashIcon(12)}</button>`;
+
+  wrap.appendChild(row);
+}
+
+function apOnMetricChange(id, metricKey){
+  const c = apConditions.get(id);
+  if(c) c.metric = metricKey;
+  const m = AP_METRICS[metricKey]||AP_METRICS.roas;
+  const inp = document.getElementById(id+'_val');
+  const unit = document.getElementById(id+'_unit');
+  if(inp){ inp.step=m.step; inp.placeholder=m.placeholder; }
+  if(unit) unit.textContent = m.unit;
+}
+
+function apRemoveCondition(id){
+  if(apConditions.size <= 1){ toast('Necesitás al menos una condición'); return; }
+  apConditions.delete(id);
+  const el = document.getElementById(id);
+  if(el) el.remove();
+}
+
+function apClearConditionsUI(){
+  apConditions.clear();
+  apCondSeq = 0;
+  const wrap = document.getElementById('ap-conditions-wrap');
+  if(wrap) wrap.innerHTML = '';
+}
+
+// ── CRUD REGLAS ───────────────────────────────────────────────────────────────
 function apOpenNewRule(){
   document.getElementById('ap-rule-edit-id').value = '';
   document.getElementById('ap-rule-modal-title').textContent = 'Nueva Regla de Autopiloto';
   document.getElementById('ap-rule-name').value = '';
-  document.getElementById('ap-rule-roas').value = '';
   document.getElementById('ap-rule-window').value = '7';
   document.getElementById('ap-rule-action').value = 'pause';
   document.getElementById('ap-rule-min-spend').value = '10';
   document.getElementById('ap-rule-active').checked = true;
+  apClearConditionsUI();
+  apAddCondition({ metric:'roas', op:'lt', value:2 });
   openModal('modal-ap-rule');
 }
 
 function apSaveRule(){
   const name = document.getElementById('ap-rule-name').value.trim();
-  const roas = +document.getElementById('ap-rule-roas').value;
   if(!name){ toast('Poné un nombre a la regla'); return; }
-  if(!roas || roas <= 0){ toast('Definí el ROAS Breakeven'); return; }
+
+  // Recolectar condiciones del DOM (valores actuales de los inputs)
+  const conditions = [];
+  apConditions.forEach((c, id) => {
+    const inp = document.getElementById(id+'_val');
+    const val = inp ? +inp.value : +c.value;
+    if(!val && val!==0){ return; }
+    conditions.push({ metric: c.metric, op: c.op, value: val });
+  });
+  if(!conditions.length){ toast('Agregá al menos una condición'); return; }
 
   const rules = apLoadRules();
   const editId = document.getElementById('ap-rule-edit-id').value;
   const rule = {
-    id: editId || ('ap_' + Date.now()),
+    id: editId || ('ap_'+Date.now()),
     name,
-    breakeven_roas: roas,
+    conditions,
     window_days: +document.getElementById('ap-rule-window').value,
     action: document.getElementById('ap-rule-action').value,
-    min_spend: +document.getElementById('ap-rule-min-spend').value || 0,
+    min_spend: +document.getElementById('ap-rule-min-spend').value||0,
     active: document.getElementById('ap-rule-active').checked,
-    created_at: editId ? (rules.find(r=>r.id===editId)?.created_at || new Date().toISOString()) : new Date().toISOString()
+    created_at: editId ? (rules.find(r=>r.id===editId)?.created_at||new Date().toISOString()) : new Date().toISOString()
   };
 
-  if(editId){
-    const idx = rules.findIndex(r=>r.id===editId);
-    if(idx > -1) rules[idx] = rule; else rules.unshift(rule);
-  } else {
-    rules.unshift(rule);
-  }
+  if(editId){ const i=rules.findIndex(r=>r.id===editId); if(i>-1) rules[i]=rule; else rules.unshift(rule); }
+  else rules.unshift(rule);
+
   apSaveRules(rules);
   closeModal('modal-ap-rule');
   apRenderRules();
@@ -5154,75 +5236,67 @@ function apDeleteRule(id){
 }
 
 function apToggleRuleActive(id){
-  const rules = apLoadRules();
-  const r = rules.find(x=>x.id===id);
-  if(r) r.active = !r.active;
-  apSaveRules(rules);
-  apRenderRules();
-}
-
-function apRenderRules(){
-  const container = document.getElementById('ap-rules-list');
-  if(!container) return;
-  const rules = apLoadRules();
-  if(!rules.length){
-    container.innerHTML='<div class="empty" style="padding:16px 0"><div class="empty-msg">Sin reglas</div><div class="empty-sub">Creá tu primera regla de autopiloto</div></div>';
-    return;
-  }
-  const actionLabel = { pause:'Pausar', reduce:'Reducir presupuesto 20%', notify:'Solo notificar' };
-  container.innerHTML = rules.map(r=>`
-    <div class="ap-rule-card">
-      <div class="ap-rule-header">
-        <div class="ap-rule-name">${r.name}</div>
-        <span class="ap-status-badge ${r.active?'active':'paused'}">${r.active?'Activa':'Pausada'}</span>
-      </div>
-      <div style="font-size:11px;color:var(--text3);margin-bottom:10px">
-        ROAS Breakeven: <strong style="color:var(--text)">${r.breakeven_roas}x</strong> ·
-        Ventana: <strong style="color:var(--text)">${r.window_days} días</strong> ·
-        Gasto mín.: <strong style="color:var(--text)">USD ${r.min_spend}</strong> ·
-        Acción: <strong style="color:var(--text)">${actionLabel[r.action]||r.action}</strong>
-      </div>
-      <div style="display:flex;gap:6px">
-        <button class="btn btn-sm btn-outline" onclick="apToggleRuleActive('${r.id}')">${r.active?'Pausar':'Activar'}</button>
-        <button class="btn btn-sm btn-outline" onclick="apEditRule('${r.id}')">Editar</button>
-        <button class="btn btn-sm btn-red btn-ghost" onclick="apDeleteRule('${r.id}')">Eliminar</button>
-      </div>
-    </div>`).join('');
+  const rules=apLoadRules(); const r=rules.find(x=>x.id===id); if(r) r.active=!r.active;
+  apSaveRules(rules); apRenderRules();
 }
 
 function apEditRule(id){
-  const r = apLoadRules().find(x=>x.id===id);
-  if(!r) return;
+  const r = apLoadRules().find(x=>x.id===id); if(!r) return;
   document.getElementById('ap-rule-edit-id').value = r.id;
   document.getElementById('ap-rule-modal-title').textContent = 'Editar Regla';
   document.getElementById('ap-rule-name').value = r.name;
-  document.getElementById('ap-rule-roas').value = r.breakeven_roas;
   document.getElementById('ap-rule-window').value = r.window_days;
   document.getElementById('ap-rule-action').value = r.action;
   document.getElementById('ap-rule-min-spend').value = r.min_spend;
   document.getElementById('ap-rule-active').checked = r.active;
+  apClearConditionsUI();
+  const conds = r.conditions || [{ metric:'roas', op:'lt', value: r.breakeven_roas||2 }]; // compatibilidad retroactiva
+  conds.forEach(c => apAddCondition(c));
   openModal('modal-ap-rule');
 }
 
+function apRenderRules(){
+  const container = document.getElementById('ap-rules-list'); if(!container) return;
+  const rules = apLoadRules();
+  if(!rules.length){ container.innerHTML='<div class="empty" style="padding:16px 0"><div class="empty-msg">Sin reglas</div><div class="empty-sub">Creá tu primera regla de autopiloto</div></div>'; return; }
+  const actionLabel = { pause:'Pausar', reduce:'Reducir presupuesto 20%', notify:'Solo notificar' };
+  container.innerHTML = rules.map(r=>{
+    const conds = r.conditions || [{ metric:'roas', op:'lt', value: r.breakeven_roas||2 }];
+    const condStr = conds.map(c=>{
+      const m=AP_METRICS[c.metric]; const opLbl=c.op==='lt'?'<':c.op==='gt'?'>':'=';
+      return `${m?.label||c.metric} ${opLbl} ${m?.unit||''}${c.value}`;
+    }).join(' <span style="color:var(--amber)">AND</span> ');
+    return `<div class="ap-rule-card">
+      <div class="ap-rule-header">
+        <div class="ap-rule-name">${r.name}</div>
+        <span class="ap-status-badge ${r.active?'active':'paused'}">${r.active?'Activa':'Pausada'}</span>
+      </div>
+      <div style="font-size:11px;color:var(--text3);margin-bottom:4px">Condición: <span style="color:var(--text)">${condStr}</span></div>
+      <div style="font-size:11px;color:var(--text3);margin-bottom:10px">Ventana: <strong style="color:var(--text)">${r.window_days}d</strong> · Gasto mín.: <strong style="color:var(--text)">USD ${r.min_spend}</strong> · Acción: <strong style="color:var(--text)">${actionLabel[r.action]||r.action}</strong></div>
+      <div style="display:flex;gap:6px">
+        <button class="btn btn-sm btn-outline" onclick="apToggleRuleActive('${r.id}')">${r.active?'Pausar':'Activar'}</button>
+        <button class="btn btn-sm btn-outline" onclick="apEditRule('${r.id}')">Editar</button>
+        <button class="btn btn-sm btn-ghost" onclick="apDeleteRule('${r.id}')">Eliminar</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── LOG ───────────────────────────────────────────────────────────────────────
 function apRenderLog(){
-  const container = document.getElementById('ap-log-list');
-  if(!container) return;
+  const container = document.getElementById('ap-log-list'); if(!container) return;
   const log = apLoadLog();
-  if(!log.length){
-    container.innerHTML='<div class="empty" style="padding:16px 0"><div class="empty-msg">Sin actividad</div></div>';
-    return;
-  }
-  const iconMap = { pause:'pause', reduce:'reduce', notify:'notify', protected:'protected' };
+  if(!log.length){ container.innerHTML='<div class="empty" style="padding:16px 0"><div class="empty-msg">Sin actividad</div></div>'; return; }
   const svgMap = {
     pause:`<svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><rect x="3" y="2" width="2.5" height="10" rx=".5"/><rect x="8.5" y="2" width="2.5" height="10" rx=".5"/></svg>`,
     reduce:`<svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M2 10l4-4 3 3 3-4"/></svg>`,
-    notify:`<svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M7 1v1.5M7 11.5V13M2.5 7H1M13 7h-1.5M4 4L3 3M11 4l1-1M4 10l-1 1M11 10l1 1"/><circle cx="7" cy="7" r="3"/></svg>`,
+    notify:`<svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="7" cy="7" r="5.5"/><path d="M7 4.5v3l2 1.5"/></svg>`,
     protected:`<svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M7 1l5 2v4c0 3.3-5 6-5 6S2 10.3 2 7V3z"/></svg>`
   };
   container.innerHTML = log.map(e=>{
-    const t = new Date(e.ts);
-    const timeStr = t.toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit'})+' '+t.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'})+'hs';
-    const iconType = iconMap[e.action]||'notify';
+    const t=new Date(e.ts);
+    const timeStr=t.toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit'})+' '+t.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'})+'hs';
+    const iconType=e.action||'notify';
     return `<div class="ap-log-row">
       <div class="ap-log-icon ${iconType}">${svgMap[iconType]||''}</div>
       <div class="ap-log-msg">${e.message}</div>
@@ -5231,78 +5305,80 @@ function apRenderLog(){
   }).join('');
 }
 
-function apClearLog(){
-  if(!confirm('¿Limpiar el log de actividad?')) return;
-  apSaveLog([]);
-  apRenderLog();
-}
+function apClearLog(){ if(!confirm('¿Limpiar el log?')) return; apSaveLog([]); apRenderLog(); }
 
-// ── TOGGLE PROTECCIÓN DE ANUNCIO ──────────────────────────────────────────────
+// ── PROTECCIÓN DE ANUNCIOS ────────────────────────────────────────────────────
 function apToggleProtected(adId, adName){
-  const protected_ = apLoadProtected();
-  const idx = protected_.findIndex(x=>x.id===adId);
-  if(idx > -1){
-    protected_.splice(idx,1);
-    apSaveProtected(protected_);
-    toast(`"${adName}" ya no está protegido`);
-  } else {
-    protected_.push({ id:adId, name:adName, protected_at:new Date().toISOString() });
-    apSaveProtected(protected_);
-    toast(`"${adName}" protegido — el Autopiloto no lo tocará`);
-  }
+  const p=apLoadProtected(); const idx=p.findIndex(x=>x.id===adId);
+  if(idx>-1){ p.splice(idx,1); apSaveProtected(p); toast(`"${adName}" ya no está protegido`); }
+  else { p.push({id:adId,name:adName,protected_at:new Date().toISOString()}); apSaveProtected(p); toast(`"${adName}" protegido — el Autopiloto no lo tocará`); }
   apScanNow();
 }
 
 // ── MOTOR DE ANÁLISIS ─────────────────────────────────────────────────────────
 async function apScanNow(){
-  const riskList = document.getElementById('ap-risk-list');
-  if(!riskList) return;
+  const riskList=document.getElementById('ap-risk-list'); if(!riskList) return;
   if(!META_ACCOUNT){ riskList.innerHTML='<div class="empty" style="padding:16px 0"><div class="empty-msg">Conectá Meta Ads primero</div></div>'; return; }
-
-  const rules = apLoadRules().filter(r=>r.active);
+  const rules=apLoadRules().filter(r=>r.active);
   if(!rules.length){ riskList.innerHTML='<div class="empty" style="padding:16px 0"><div class="empty-msg">Sin reglas activas</div></div>'; return; }
+  riskList.innerHTML='<div style="padding:12px;color:var(--text2);font-size:12px">Analizando anuncios activos...</div>';
 
-  riskList.innerHTML='<div style="padding:12px;color:var(--text2);font-size:12px">Analizando anuncios...</div>';
-
-  const protected_ = apLoadProtected();
-  const atRisk = [];
+  const protected_=apLoadProtected();
+  const atRisk=[];
+  const processedAdIds=new Set();
 
   for(const rule of rules){
-    const until = new Date();
-    const since = new Date(Date.now() - rule.window_days*86400000);
-    const fmt = d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-
+    const until=new Date(); const since=new Date(Date.now()-rule.window_days*86400000);
+    const fmt=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
     let adsData;
     try{
-      adsData = await metaGet(`act_${META_ACCOUNT}/ads`, {
-        fields:`id,name,status,effective_status,insights.time_range({"since":"${fmt(since)}","until":"${fmt(until)}"}){spend,action_values,actions,impressions}`,
-        limit:100
+      adsData=await metaGet(`act_${META_ACCOUNT}/ads`,{
+        fields:`id,name,status,effective_status,adset_id,insights.time_range({"since":"${fmt(since)}","until":"${fmt(until)}"}){spend,action_values,actions,impressions,cpc}`,
+        limit:200
       });
     }catch(e){ continue; }
 
-    const ads = adsData?.data||[];
-    for(const ad of ads){
+    for(const ad of (adsData?.data||[])){
       if((ad.effective_status||ad.status)!=='ACTIVE') continue;
-      const ins = ad.insights?.data?.[0]||{};
-      const spend = +(ins.spend||0);
-      const revenue = +(ins.action_values?.find(a=>a.action_type==='purchase')?.value||0);
-      const roas = spend>0&&revenue>0 ? revenue/spend : 0;
+      const ins=ad.insights?.data?.[0]||{};
+      const spend=+(ins.spend||0);
+      if(spend < (rule.min_spend||0)) continue;
 
-      if(spend < rule.min_spend) continue; // no actuar con gasto insuficiente
+      // Evaluar TODAS las condiciones de la regla (AND lógico)
+      const conds = rule.conditions || [{ metric:'roas', op:'lt', value: rule.breakeven_roas||2 }];
+      const failedConds = [];
+      let allFail = true;
 
-      const isProtected = protected_.some(p=>p.id===ad.id);
-      if(roas < rule.breakeven_roas){
-        atRisk.push({ ad, roas, spend, rule, isProtected });
+      for(const cond of conds){
+        const m = AP_METRICS[cond.metric];
+        if(!m){ allFail=false; break; }
+        const actual = m.extract(ins);
+        const fails = apEval(cond.op, actual, cond.value);
+        if(fails){
+          // Construir texto del motivo para el log
+          const opLbl = cond.op==='lt'?'bajo':cond.op==='gt'?'alto':'igual a';
+          const actualFmt = cond.metric==='roas' ? actual.toFixed(2)+'x' : '$'+actual.toFixed(cond.metric==='cpc'?2:0);
+          const targetFmt = cond.metric==='roas' ? cond.value+'x' : '$'+cond.value;
+          failedConds.push({ label:`${m.label} ${opLbl}: ${actualFmt} (meta: ${cond.op==='lt'?'<':'>'} ${targetFmt})`, actual, threshold:cond.value, metric:cond.metric });
+        } else {
+          allFail=false;
+        }
+      }
+
+      if(allFail && failedConds.length && !processedAdIds.has(ad.id)){
+        processedAdIds.add(ad.id);
+        const isProtected=protected_.some(p=>p.id===ad.id);
+        atRisk.push({ ad, spend, rule, failedConds, isProtected });
       }
     }
   }
 
   if(!atRisk.length){
-    riskList.innerHTML='<div class="empty" style="padding:16px 0"><div class="empty-msg" style="color:var(--primary-green)">✓ Sin anuncios en riesgo</div><div class="empty-sub">Todos los anuncios activos están sobre el breakeven</div></div>';
+    riskList.innerHTML='<div class="empty" style="padding:16px 0"><div class="empty-msg" style="color:var(--primary-green)">✓ Sin anuncios en riesgo</div><div class="empty-sub">Todos los anuncios activos cumplen las condiciones definidas</div></div>';
     return;
   }
 
-  riskList.innerHTML = atRisk.map(({ad,roas,spend,rule,isProtected})=>`
+  riskList.innerHTML=atRisk.map(({ad,spend,rule,failedConds,isProtected})=>`
     <div class="ap-at-risk" style="${isProtected?'opacity:.6':''}">
       <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:4px">
         <div>
@@ -5313,75 +5389,73 @@ async function apScanNow(){
           ${isProtected?'Quitar protección':'Proteger'}
         </button>
       </div>
-      <div class="ap-at-risk-meta">
-        ROAS: <strong style="color:var(--red)">${roas.toFixed(2)}x</strong> vs Breakeven
-        <strong>${rule.breakeven_roas}x</strong> ·
-        Gasto: <strong>USD ${(+spend).toFixed(2)}</strong> ·
-        Regla: "${rule.name}"
+      <div class="ap-at-risk-meta" style="margin-bottom:6px">
+        Regla: "<strong>${rule.name}</strong>" · Gasto: <strong>USD ${(+spend).toFixed(2)}</strong>
       </div>
-      ${!isProtected?`<button class="btn btn-sm btn-red" style="margin-top:8px" onclick="apExecuteOnAd('${ad.id}','${(ad.name||'').replace(/'/g,"\\'")}','${rule.action}','${roas.toFixed(2)}','${rule.breakeven_roas}')">
-        ${rule.action==='pause'?'Pausar ahora':rule.action==='reduce'?'Reducir presupuesto':'Notificado'}
+      <div style="display:flex;flex-direction:column;gap:3px;margin-bottom:8px">
+        ${failedConds.map(fc=>`<div style="font-size:11px;color:var(--red)">
+          <svg width="10" height="10" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M7 2v6M7 10.5v1"/></svg>
+          ${fc.label}
+        </div>`).join('')}
+      </div>
+      ${!isProtected?`<button class="btn btn-sm btn-red" onclick="apExecuteOnAd('${ad.id}','${(ad.name||'').replace(/'/g,"\\'")}','${rule.action}',${JSON.stringify(failedConds).replace(/'/g,"\\'")},'${rule.id}')">
+        ${rule.action==='pause'?'Pausar ahora':rule.action==='reduce'?'Reducir presupuesto':'Marcar como notificado'}
       </button>`:''}
     </div>`).join('');
 }
 
-// ── EJECUTAR ACCIÓN SOBRE UN ANUNCIO ─────────────────────────────────────────
-async function apExecuteOnAd(adId, adName, action, roas, breakeven){
-  if(!confirm(`¿Seguro querés ${action==='pause'?'pausar':'reducir presupuesto de'} "${adName}"?`)) return;
-  if(action === 'pause'){
-    const r = await metaPost(adId, { status:'PAUSED' });
+// ── EJECUTAR ACCIÓN ───────────────────────────────────────────────────────────
+async function apExecuteOnAd(adId, adName, action, failedCondsJson, ruleId){
+  let failedConds; try{ failedConds=typeof failedCondsJson==='string'?JSON.parse(failedCondsJson):failedCondsJson; }catch{ failedConds=[]; }
+  const motivoStr = failedConds.map(fc=>fc.label).join(' | ');
+  if(!confirm(`¿${action==='pause'?'Pausar':'Reducir presupuesto de'} "${adName}"?\nMotivo: ${motivoStr}`)) return;
+
+  if(action==='pause'){
+    const r=await metaPost(adId,{status:'PAUSED'});
     if(r.error){ toast('Error: '+r.error.message); return; }
-    apPushLog({ action:'pause', message:`Se pausó <strong>"${adName}"</strong> — ROAS ${roas}x estaba bajo el breakeven de ${breakeven}x.` });
+    apPushLog({ action:'pause', message:`Se pausó <strong>"${adName}"</strong> — ${motivoStr}` });
     toast(`"${adName}" pausado`);
-  } else if(action === 'reduce'){
-    // Obtener presupuesto actual y bajar 20%
-    const adsetData = await metaGet(adId, { fields:'adset_id' });
-    if(adsetData.adset_id){
-      const adset = await metaGet(adsetData.adset_id, { fields:'daily_budget' });
-      const currentBudget = +adset.daily_budget||0;
-      if(currentBudget > 0){
-        const newBudget = Math.round(currentBudget * 0.8);
-        await metaPost(adsetData.adset_id, { daily_budget: newBudget });
-        apPushLog({ action:'reduce', message:`Presupuesto de "<strong>${adName}</strong>" reducido 20% (de $${(currentBudget/100).toFixed(2)} a $${(newBudget/100).toFixed(2)}) — ROAS ${roas}x bajo breakeven ${breakeven}x.` });
-        toast(`Presupuesto reducido`);
+  } else if(action==='reduce'){
+    const adData=await metaGet(adId,{fields:'adset_id'});
+    if(adData.adset_id){
+      const adset=await metaGet(adData.adset_id,{fields:'daily_budget'});
+      const cur=+(adset.daily_budget||0);
+      if(cur>0){
+        const next=Math.round(cur*0.8);
+        await metaPost(adData.adset_id,{daily_budget:next});
+        apPushLog({ action:'reduce', message:`Presupuesto de <strong>"${adName}"</strong> reducido 20% (USD ${(cur/100).toFixed(0)} → ${(next/100).toFixed(0)}) — ${motivoStr}` });
+        toast('Presupuesto reducido');
       }
     }
   } else {
-    apPushLog({ action:'notify', message:`Alerta: <strong>"${adName}"</strong> tiene ROAS ${roas}x (Breakeven: ${breakeven}x). No se tomó ninguna acción.` });
+    apPushLog({ action:'notify', message:`Alerta: <strong>"${adName}"</strong> — ${motivoStr}` });
+    toast('Registrado en el log');
   }
   apRenderLog();
   apScanNow();
 }
 
-// ── SCHEDULER: corre a las 23:00 hs ARG (UTC-3) ──────────────────────────────
+// ── SCHEDULER 23:00hs ARG ─────────────────────────────────────────────────────
 function apStartScheduler(){
   function msToNext23Arg(){
-    const now = new Date();
-    // UTC-3
-    const argOffset = -3*60;
-    const argNow = new Date(now.getTime() + (argOffset - (-now.getTimezoneOffset()))*60000);
-    const target = new Date(argNow);
-    target.setHours(23,0,0,0);
-    if(argNow >= target) target.setDate(target.getDate()+1);
-    return target - argNow;
+    const now=new Date(); const argOffset=-3*60;
+    const argNow=new Date(now.getTime()+(argOffset-(-now.getTimezoneOffset()))*60000);
+    const target=new Date(argNow); target.setHours(23,0,0,0);
+    if(argNow>=target) target.setDate(target.getDate()+1);
+    return target-argNow;
   }
-
   function runNightly(){
-    const lastRun = localStorage.getItem(AP_SCHEDULER_KEY);
-    const today = new Date().toISOString().substring(0,10);
-    if(lastRun === today) return; // ya corrió hoy
-    localStorage.setItem(AP_SCHEDULER_KEY, today);
-    apPushLog({ action:'notify', message:'<strong>Autopiloto nocturno</strong> — Iniciando análisis automático de las 23:00hs.' });
+    const lastRun=localStorage.getItem(AP_SCHEDULER_KEY); const today=new Date().toISOString().substring(0,10);
+    if(lastRun===today) return;
+    localStorage.setItem(AP_SCHEDULER_KEY,today);
+    apPushLog({action:'notify',message:'<strong>Autopiloto nocturno</strong> — Análisis automático de las 23:00hs iniciado.'});
     apScanNow().then(()=>apRenderLog());
   }
-
-  setTimeout(()=>{ runNightly(); setInterval(runNightly, 60*60*1000); }, msToNext23Arg());
+  setTimeout(()=>{ runNightly(); setInterval(runNightly,60*60*1000); },msToNext23Arg());
 }
 
-// Inicializar cuando se carga la página de Autopiloto
 (function apInit(){
-  // Lanzar scheduler silenciosamente al cargar la app
-  if(typeof META_ACCOUNT !== 'undefined') apStartScheduler();
+  if(typeof META_ACCOUNT!=='undefined') apStartScheduler();
 })();
 function tsResetAdvControls(){
   Object.keys(ADV_CONTROLS).forEach(k => ADV_CONTROLS[k].value = true);
