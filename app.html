@@ -439,7 +439,12 @@ body.focus-mode #main{margin-left:0}
   [style*="grid-template-columns:repeat(3,1fr)"]{grid-template-columns:1fr !important}
 
   /* Grids de cards auto-fill → una sola columna para que no se corten */
-  #cont-pub-grid,#cont-ideas-grid,#notas-grid{grid-template-columns:1fr !important}
+ #cont-pub-grid,#cont-ideas-grid,#notas-grid{grid-template-columns:1fr !important}
+  /* Calendario responsive: sin scroll horizontal */
+  #cont-tab-calendario,#cont-cal-card,#cont-cal-grid{width:100%;max-width:100%;overflow-x:hidden;box-sizing:border-box}
+  #cont-cal-days-grid{gap:2px !important}
+  #cont-cal-days-grid > div{min-width:0 !important;min-height:44px !important;padding:2px !important}
+  #cont-cal-days-grid > div span,#cont-cal-days-grid > div div{max-width:100% !important;font-size:7px !important}
   #bibads-grid{grid-template-columns:repeat(2,1fr) !important}
   /* Banner bienvenida + video: en mobile, columnas apiladas */
   [style*="grid-template-columns:1.1fr 0.9fr"]{grid-template-columns:1fr !important;padding:18px !important;gap:18px !important}
@@ -461,7 +466,7 @@ body.focus-mode #main{margin-left:0}
   .form-row{gap:8px}
   .fg{min-width:100%}
   .fg.wide{min-width:100%}
-  #cont-cal-days-grid{grid-template-columns:repeat(7,1fr) !important}
+ #cont-cal-days-grid{grid-template-columns:repeat(7,1fr) !important;width:100% !important}
 
   /* Filas de filtros largas (Biblioteca Ads, etc.) ocupan todo el ancho */
   .page-hdr select,.page-hdr input{flex:1;min-width:140px}
@@ -1940,10 +1945,10 @@ body.focus-mode #main{margin-left:0}
 
   <!-- TABS -->
   <div style="display:flex;gap:0;border-bottom:0.5px solid var(--border);margin-bottom:20px">
-    <button onclick="switchContTab('control',this)" id="ctab-control" style="padding:9px 18px;border:none;background:transparent;font-size:13px;font-weight:600;color:var(--accent);border-bottom:2px solid var(--accent);cursor:pointer">&#128200; Control</button>
-    <button onclick="switchContTab('calendario',this)" id="ctab-calendario" style="padding:9px 18px;border:none;background:transparent;font-size:13px;font-weight:500;color:var(--text2);border-bottom:2px solid transparent;cursor:pointer">&#128197; Calendario</button>
-    <button onclick="switchContTab('publicaciones',this)" id="ctab-publicaciones" style="padding:9px 18px;border:none;background:transparent;font-size:13px;font-weight:500;color:var(--text2);border-bottom:2px solid transparent;cursor:pointer">&#128247; Publicaciones</button>
-    <button onclick="switchContTab('ideas',this)" id="ctab-ideas" style="padding:9px 18px;border:none;background:transparent;font-size:13px;font-weight:500;color:var(--text2);border-bottom:2px solid transparent;cursor:pointer">&#128161; Ideas</button>
+  <button onclick="switchContTab('control',this)" id="ctab-control" style="padding:9px 18px;border:none;background:transparent;font-size:13px;font-weight:600;color:var(--accent);border-bottom:2px solid var(--accent);cursor:pointer;display:inline-flex;align-items:center;gap:6px"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><rect x="1" y="1" width="6" height="6" rx="1"/><rect x="9" y="1" width="6" height="6" rx="1"/><rect x="1" y="9" width="6" height="6" rx="1"/><rect x="9" y="9" width="6" height="6" rx="1"/></svg> Control</button>
+    <button onclick="switchContTab('calendario',this)" id="ctab-calendario" style="padding:9px 18px;border:none;background:transparent;font-size:13px;font-weight:500;color:var(--text2);border-bottom:2px solid transparent;cursor:pointer;display:inline-flex;align-items:center;gap:6px"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><rect x="1" y="2" width="14" height="13" rx="1.5"/><path d="M5 1v2M11 1v2M1 6h14"/></svg> Calendario</button>
+    <button onclick="switchContTab('publicaciones',this)" id="ctab-publicaciones" style="padding:9px 18px;border:none;background:transparent;font-size:13px;font-weight:500;color:var(--text2);border-bottom:2px solid transparent;cursor:pointer;display:inline-flex;align-items:center;gap:6px"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><rect x="2" y="1" width="12" height="14" rx="1.5"/><path d="M5 5h6M5 8h6M5 11h4"/></svg> Publicaciones</button>
+    <button onclick="switchContTab('ideas',this)" id="ctab-ideas" style="padding:9px 18px;border:none;background:transparent;font-size:13px;font-weight:500;color:var(--text2);border-bottom:2px solid transparent;cursor:pointer;display:inline-flex;align-items:center;gap:6px"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="8" cy="7" r="4.5"/><path d="M6 12h4M7 14h2"/></svg> Ideas</button>
   </div>
 
   <!-- CONTROL TAB -->
@@ -8821,50 +8826,116 @@ function renderCalCont(){
   const diasEnMes=new Date(year,month,0).getDate();
   const primerDia=new Date(year,month-1,1).getDay();
   const primerLunes=primerDia===0?6:primerDia-1;
+  const grid=document.getElementById('cont-cal-grid');if(!grid)return;
 
- const porDia={};
-  getUnifiedContentItems().filter(p=>(p.date||'').startsWith(mesVal)).forEach(p=>{
-    const d=parseInt(p.date.split('-')[2]);
-    if(!porDia[d])porDia[d]=[];
-    porDia[d].push({
-      id:p.id, titulo:p.caption||p.platform||'Publicacion', status:p.status,
-      campColor: p.source==='campana' ? (p.campaignColor||'var(--accent)') : 'var(--blue)',
-      campName: p.source==='campana' ? p.campaignName : 'Publicacion suelta',
-      source: p.source,
+  // LIMPIAR antes de renderizar — evita duplicación en cada llamada
+  grid.innerHTML='';
+
+  // Construir mapa por día — una sola pasada, sin duplicar fuentes
+  const porDia={};
+  const addToDia=(items)=>{
+    items.forEach(p=>{
+      if(!(p.date||'').startsWith(mesVal))return;
+      const d=parseInt(p.date.split('-')[2]);
+      if(!porDia[d])porDia[d]=[];
+      porDia[d].push(p);
     });
-  });
-  posts.filter(p=>(p.date||'').startsWith(mesVal)).forEach(p=>{
-    const d=parseInt(p.date.split('-')[2]);
-    if(!porDia[d])porDia[d]=[];
-    porDia[d].push({
-      id:p.id, titulo:p.caption||p.platform||'Publicacion', status:p.status==='publicado'?'publicado':'pendiente',
-      campColor:'var(--blue)', campName:'Sin campana',
-    });
-  });
+  };
+  addToDia(getUnifiedContentItems());
+  // posts sueltos que NO están ya en getUnifiedContentItems (evitar duplicado)
+  const unifiedIds=new Set(getUnifiedContentItems().map(p=>String(p.id)));
+  addToDia(posts.filter(p=>!unifiedIds.has(String(p.id))).map(p=>({
+    ...p,
+    date:p.date,
+    titulo:p.caption||p.platform||'Publicacion',
+    status:p.status==='publicado'?'publicado':'pendiente',
+    campColor:'var(--blue)',campName:'Sin campana',source:'post',
+  })));
 
   const dias=['Lu','Ma','Mi','Ju','Vi','Sa','Do'];
-  const grid=document.getElementById('cont-cal-grid');if(!grid)return;
-  let html=`<div style="font-size:13px;font-weight:700;text-align:center;margin-bottom:10px">${new Date(year,month-1,1).toLocaleDateString('es-AR',{month:'long',year:'numeric'}).toUpperCase()}</div>`;
- html+='<div id="cont-cal-days-grid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px">';
-  dias.forEach(d=>{html+=`<div style="font-size:10px;font-weight:700;text-align:center;color:var(--text2);padding:3px">${d}</div>`;});
-  for(let i=0;i<primerLunes;i++)html+='<div></div>';
+
+  // Encabezado de mes
+  const header=document.createElement('div');
+  header.style.cssText='font-size:13px;font-weight:700;text-align:center;margin-bottom:10px;text-transform:uppercase;letter-spacing:.06em';
+  header.textContent=new Date(year,month-1,1).toLocaleDateString('es-AR',{month:'long',year:'numeric'});
+  grid.appendChild(header);
+
+  // Grid días — 100% width, sin scroll
+  const daysGrid=document.createElement('div');
+  daysGrid.id='cont-cal-days-grid';
+  daysGrid.style.cssText='display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:3px;width:100%;box-sizing:border-box';
+
+  // Cabeceras de día
+  dias.forEach(d=>{
+    const h=document.createElement('div');
+    h.style.cssText='font-size:9px;font-weight:700;text-align:center;color:var(--text3);padding:3px 0;letter-spacing:.05em';
+    h.textContent=d;
+    daysGrid.appendChild(h);
+  });
+
+  // Celdas vacías iniciales
+  for(let i=0;i<primerLunes;i++){
+    daysGrid.appendChild(document.createElement('div'));
+  }
+
+  // Celdas de días
   for(let d=1;d<=diasEnMes;d++){
     const pd=porDia[d]||[];
     const fd=`${year}-${String(month).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
     const esHoy=d===hoy.getDate()&&month===hoy.getMonth()+1&&year===hoy.getFullYear();
     const pubs=pd.filter(p=>p.status==='publicado').length;
     const bgCell=pubs===pd.length&&pd.length>0?'var(--green-l)':pd.length?'var(--surface2)':'transparent';
-    const chips=pd.slice(0,2).map(p=>`<div style="display:flex;align-items:center;gap:2px;padding:1px 4px;border-radius:6px;background:var(--surface);border:1px solid var(--border);margin-top:2px;cursor:pointer" onclick="event.stopPropagation();cyclePiezaStatus('${p.id}')" title="${p.titulo}"><span style="font-size:8px;color:${PZ_COLOR[p.status]}">${PZ_ICON[p.status]}</span><span style="font-size:8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:48px;color:var(--text)">${p.titulo}</span></div>`).join('');
-    const more=pd.length>2?`<div style="font-size:8px;color:var(--text2);margin-top:1px">+${pd.length-2}</div>`:'';
- html+=`<div onclick="openDiaPiezas('${fd}')" title="Ver publicaciones del ${d}/${month}" style="border-radius:8px;padding:4px;min-height:58px;border:1px solid ${esHoy?'var(--accent)':'var(--border)'};background:${bgCell};cursor:pointer;transition:border-color .12s" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='${esHoy?'var(--accent)':'var(--border)'}' ">
-      <div style="font-size:11px;font-weight:${esHoy?'800':'600'};color:${esHoy?'var(--accent)':'var(--text)'};text-align:center">${d}</div>
-      ${chips}${more}
-    </div>`;
+    const borderColor=esHoy?'var(--primary-green)':'var(--border)';
+
+    const cell=document.createElement('div');
+    cell.onclick=()=>openDiaPiezas(fd);
+    cell.title=`Ver publicaciones del ${d}/${month}`;
+    cell.style.cssText=`border-radius:6px;padding:3px;min-height:52px;border:1px solid ${borderColor};background:${bgCell};cursor:pointer;transition:border-color .12s;overflow:hidden;box-sizing:border-box`;
+    cell.onmouseover=()=>cell.style.borderColor='var(--primary-green)';
+    cell.onmouseout=()=>cell.style.borderColor=borderColor;
+
+    // Número del día
+    const num=document.createElement('div');
+    num.style.cssText=`font-size:10px;font-weight:${esHoy?'800':'600'};color:${esHoy?'var(--primary-green)':'var(--text)'};text-align:center;margin-bottom:2px`;
+    num.textContent=d;
+    cell.appendChild(num);
+
+    // Chips (máx 2) — sin emojis, solo punto de color + texto truncado
+    pd.slice(0,2).forEach(p=>{
+      const chip=document.createElement('div');
+      chip.onclick=e=>{e.stopPropagation();cyclePiezaStatus(p.id);};
+      chip.title=p.titulo||p.caption||'';
+      chip.style.cssText='display:flex;align-items:center;gap:2px;padding:1px 3px;border-radius:4px;background:var(--surface);border:1px solid var(--border);margin-top:2px;cursor:pointer;overflow:hidden';
+      const dot=document.createElement('span');
+      dot.style.cssText=`width:5px;height:5px;border-radius:50%;background:${PZ_COLOR[p.status]||'var(--text3)'};flex-shrink:0`;
+      const label=document.createElement('span');
+      label.style.cssText='font-size:7px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text);min-width:0';
+      label.textContent=p.titulo||p.caption||'';
+      chip.appendChild(dot);chip.appendChild(label);
+      cell.appendChild(chip);
+    });
+
+    // "+N más"
+    if(pd.length>2){
+      const more=document.createElement('div');
+      more.style.cssText='font-size:7px;color:var(--text3);margin-top:1px;text-align:center';
+      more.textContent=`+${pd.length-2}`;
+      cell.appendChild(more);
+    }
+
+    daysGrid.appendChild(cell);
   }
-  html+='</div>';
+
+  grid.appendChild(daysGrid);
+
+  // Leyenda de campañas del mes
   const campsConPiezas=[...new Set(contentPiezas.filter(p=>(p.fecha_planificada||'').startsWith(mesVal)).map(p=>p.campaign_id))].map(id=>contentCamps.find(cc=>cc.id===id)).filter(Boolean);
-  if(campsConPiezas.length){html+=`<div style="margin-top:10px;padding-top:8px;border-top:0.5px solid var(--border);display:flex;gap:10px;flex-wrap:wrap;font-size:11px">${campsConPiezas.map(cc=>`<span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${cc.color||'var(--accent)'};margin-right:4px"></span>${cc.nombre}</span>`).join('')}</div>`;}
-  grid.innerHTML=html;
+  if(campsConPiezas.length){
+    const leyenda=document.createElement('div');
+    leyenda.style.cssText='margin-top:10px;padding-top:8px;border-top:0.5px solid var(--border);display:flex;gap:10px;flex-wrap:wrap;font-size:11px;color:var(--text2)';
+    leyenda.innerHTML=campsConPiezas.map(cc=>`<span style="display:flex;align-items:center;gap:4px"><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${cc.color||'var(--accent)'}"></span>${cc.nombre}</span>`).join('');
+    grid.appendChild(leyenda);
+  }
 }
 function openDiaPiezas(date){
   const items = getUnifiedContentItems().filter(p=>p.date===date);
