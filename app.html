@@ -5311,6 +5311,11 @@ const existingCampaignId = document.getElementById('ts-camp-existing-id').value.
         adsetPayload.daily_budget = Math.round(campania.presupuesto_diario * 100);
         adsetPayload.bid_strategy = 'LOWEST_COST_WITHOUT_CAP';
       }
+      // Advantage+ Catalog: se desactiva a nivel adset
+      const advPayload = tsGetAdvPayload();
+      if(advPayload._catalog_off){
+        adsetPayload.catalog_based_optimization = 'NONE';
+      }
 
       const adsetRes = await metaPost(`act_${META_ACCOUNT}/adsets`, adsetPayload);
       if(adsetRes.error){ toast(`Conjunto "${conjuntoNombre}" fallo: ${adsetRes.error.message}`); continue; }
