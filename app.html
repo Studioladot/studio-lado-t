@@ -366,6 +366,25 @@ body.focus-mode #main{margin-left:0}
 .ts-trash-btn:hover,.ts-trash-btn-sm:hover{background:var(--red-l);border-color:var(--red);color:var(--red)}
 .ts-add-anuncio-btn{display:inline-flex;align-items:center;gap:6px;background:transparent;border:0.5px dashed var(--border2);border-radius:var(--r);padding:7px 12px;font-size:12px;font-weight:600;color:var(--text2);cursor:pointer;transition:all .12s}
 .ts-add-anuncio-btn:hover{border-color:var(--accent);color:var(--accent)}
+  /* ── ADVANTAGE+ KILL SWITCH ── */
+.adv-panel{background:var(--surface2);border:1px solid var(--border);border-radius:var(--rl);padding:14px 16px;margin-top:4px}
+.adv-master-row{display:flex;align-items:center;justify-content:space-between;gap:12px;cursor:pointer;user-select:none}
+.adv-master-label{font-size:13px;font-weight:700;color:var(--text)}
+.adv-master-sub{font-size:11px;color:var(--text3);margin-top:2px}
+.adv-kill-badge{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;padding:2px 8px;border-radius:10px;transition:all .2s}
+.adv-kill-badge.off{background:rgba(255,71,87,.12);color:var(--red)}
+.adv-kill-badge.on{background:rgba(11,185,128,.1);color:var(--primary-green)}
+.adv-detail-wrap{overflow:hidden;max-height:0;transition:max-height .3s ease,opacity .25s;opacity:0}
+.adv-detail-wrap.open{max-height:400px;opacity:1}
+.adv-detail-divider{height:1px;background:var(--border);margin:12px 0}
+.adv-detail-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.adv-toggle-row{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 0;border-bottom:0.5px solid rgba(255,255,255,.04)}
+.adv-toggle-row:last-child{border-bottom:none}
+.adv-toggle-label{font-size:12px;color:var(--text2);flex:1}
+.adv-toggle-label small{display:block;font-size:10px;color:var(--text3);margin-top:1px}
+.adv-pill{font-size:10px;font-weight:700;padding:3px 9px;border-radius:10px;border:none;cursor:pointer;transition:all .15s;flex-shrink:0}
+.adv-pill.active{background:rgba(11,185,128,.12);color:var(--primary-green);border:1px solid rgba(11,185,128,.2)}
+.adv-pill.inactive{background:rgba(255,71,87,.1);color:var(--red);border:1px solid rgba(255,71,87,.15)}
   /* ── MENÚ OPCIONES (3 puntos) ── */
 .meta-opts-wrap{position:relative}
 .meta-opts-menu{
@@ -2795,6 +2814,45 @@ create policy "own" on contacts for all using (auth.uid()=user_id);</div>
 
     <div class="divider"></div>
 
+    <!-- ── ADVANTAGE+ KILL SWITCH ────────────────────────────────────────────── -->
+    <div class="adv-panel">
+      <div class="adv-master-row" onclick="tsToggleKillSwitch()">
+        <div>
+          <div class="adv-master-label">
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" style="vertical-align:-2px;margin-right:5px"><circle cx="8" cy="8" r="6.5"/><path d="M8 4v4l2.5 2.5"/></svg>
+            Control de Automatización Advantage+
+          </div>
+          <div class="adv-master-sub">Controlá qué optimizaciones automáticas de Meta están activas</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span class="adv-kill-badge on" id="adv-kill-badge">Permitidas</span>
+          <svg id="adv-detail-arrow" width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="var(--text3)" stroke-width="1.5" stroke-linecap="round" style="transition:transform .25s"><path d="M3 5l4 4 4-4"/></svg>
+        </div>
+      </div>
+
+      <div class="adv-detail-wrap" id="adv-detail-wrap">
+        <div class="adv-detail-divider"></div>
+
+        <!-- Kill switch maestro -->
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 10px;background:rgba(255,71,87,.06);border:1px solid rgba(255,71,87,.15);border-radius:var(--r);margin-bottom:10px">
+          <div>
+            <div style="font-size:12px;font-weight:700;color:var(--red)">Desactivar todo Advantage+</div>
+            <div style="font-size:10px;color:var(--text3);margin-top:1px">Apaga de golpe: creative, catálogo, mejoras de imagen/video y texto</div>
+          </div>
+          <button class="adv-pill inactive" id="adv-master-pill" onclick="event.stopPropagation();tsAdvMasterKill()">DESACTIVADO</button>
+        </div>
+
+        <div class="adv-detail-title">
+          <svg width="11" height="11" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M7 1v2M7 11v2M2.2 2.2l1.4 1.4M10.4 10.4l1.4 1.4M1 7h2M11 7h2M2.2 11.8l1.4-1.4M10.4 3.6l1.4-1.4"/></svg>
+          Control granular
+        </div>
+
+        <div id="adv-granular-list"></div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
     <div style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">Estructura del testeo</div>
 
     <div id="ts-conjuntos-wrap" style="display:flex;flex-direction:column;gap:14px"></div>
@@ -4810,7 +4868,117 @@ function tsApplyStrategyDropdown(sel){
 function tsTrashIcon(size=14){
   return `<svg width="${size}" height="${size}" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 4.5h11"/><path d="M5.5 4.5V3a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1v1.5"/><path d="M6.5 7.5v4M9.5 7.5v4"/><path d="M3.5 4.5l.6 8.4a1 1 0 0 0 1 .9h5.8a1 1 0 0 0 1-.9l.6-8.4"/></svg>`;
 }
+// ── ADVANTAGE+ KILL SWITCH ────────────────────────────────────────────────────
+// Estado de cada automatización (true = permitida, false = desactivada)
+const ADV_CONTROLS = {
+  advantage_plus_creative:    { label:'Advantage+ Creative',        sub:'Meta puede alterar tu creativo automáticamente',          value:true },
+  advantage_plus_catalog:     { label:'Advantage+ Catalog',         sub:'Meta puede mezclar productos del catálogo',               value:true },
+  image_enhancement:          { label:'Mejoras de imagen',          sub:'Brillo, contraste y ajustes automáticos en imágenes',     value:true },
+  video_enhancement:          { label:'Mejoras de video',           sub:'Recorte, filtros y ajustes automáticos en videos',        value:true },
+  text_optimization:          { label:'Optimización de texto',      sub:'Meta puede reescribir o reordenar tu copy',               value:true },
+  call_to_action_enhancement: { label:'Mejorar llamada a la acción',sub:'CTA automático basado en comportamiento del usuario',     value:true },
+  add_card:                   { label:'Agregar tarjetas (carousel)', sub:'Meta puede agregar tarjetas extra al carrusel',          value:true },
+};
 
+let advDetailOpen = false;
+let advMasterKillActive = false;
+
+function tsToggleKillSwitch(){
+  advDetailOpen = !advDetailOpen;
+  const wrap = document.getElementById('adv-detail-wrap');
+  const arrow = document.getElementById('adv-detail-arrow');
+  if(!wrap) return;
+  wrap.classList.toggle('open', advDetailOpen);
+  if(arrow) arrow.style.transform = advDetailOpen ? 'rotate(180deg)' : 'rotate(0deg)';
+  if(advDetailOpen) tsRenderAdvGranular();
+}
+
+function tsAdvMasterKill(){
+  advMasterKillActive = !advMasterKillActive;
+  Object.keys(ADV_CONTROLS).forEach(k => ADV_CONTROLS[k].value = !advMasterKillActive);
+  const pill = document.getElementById('adv-master-pill');
+  const badge = document.getElementById('adv-kill-badge');
+  if(pill){
+    pill.textContent = advMasterKillActive ? 'ACTIVADO' : 'DESACTIVADO';
+    pill.className = advMasterKillActive ? 'adv-pill active' : 'adv-pill inactive';
+    pill.closest('div').style.background = advMasterKillActive ? 'rgba(11,185,128,.06)' : 'rgba(255,71,87,.06)';
+    pill.closest('div').style.borderColor = advMasterKillActive ? 'rgba(11,185,128,.2)' : 'rgba(255,71,87,.15)';
+    pill.closest('div').querySelector('div div:first-child').style.color = advMasterKillActive ? 'var(--primary-green)' : 'var(--red)';
+  }
+  if(badge){
+    badge.textContent = advMasterKillActive ? 'Bloqueadas' : 'Permitidas';
+    badge.className = advMasterKillActive ? 'adv-kill-badge off' : 'adv-kill-badge on';
+  }
+  tsRenderAdvGranular();
+}
+
+function tsAdvToggle(key){
+  if(!ADV_CONTROLS[key]) return;
+  ADV_CONTROLS[key].value = !ADV_CONTROLS[key].value;
+  // Si hay alguna activa, el kill maestro ya no está 100% activo
+  const anyOn = Object.values(ADV_CONTROLS).some(v=>v.value);
+  const allOff = Object.values(ADV_CONTROLS).every(v=>!v.value);
+  advMasterKillActive = allOff;
+  const badge = document.getElementById('adv-kill-badge');
+  if(badge){
+    badge.textContent = allOff ? 'Bloqueadas' : anyOn ? 'Permitidas' : 'Bloqueadas';
+    badge.className = allOff ? 'adv-kill-badge off' : 'adv-kill-badge on';
+  }
+  const pill = document.getElementById('adv-master-pill');
+  if(pill){
+    pill.textContent = allOff ? 'ACTIVADO' : 'DESACTIVADO';
+    pill.className = allOff ? 'adv-pill active' : 'adv-pill inactive';
+  }
+  tsRenderAdvGranular();
+}
+
+function tsRenderAdvGranular(){
+  const list = document.getElementById('adv-granular-list');
+  if(!list) return;
+  list.innerHTML = Object.entries(ADV_CONTROLS).map(([key,ctrl])=>`
+    <div class="adv-toggle-row">
+      <div class="adv-toggle-label">
+        ${ctrl.label}
+        <small>${ctrl.sub}</small>
+      </div>
+      <button class="adv-pill ${ctrl.value?'active':'inactive'}" onclick="tsAdvToggle('${key}')">
+        ${ctrl.value ? 'ON' : 'OFF'}
+      </button>
+    </div>`).join('');
+}
+
+// Construye el objeto degree_control para inyectar en el creative
+function tsGetAdvPayload(){
+  const payload = {};
+  // advantage_plus_creative: object con sub-campos
+  const apc = {};
+  if(!ADV_CONTROLS.advantage_plus_creative.value) apc.creative_features_spec = { standard_enhancements: { enroll_status:'OPT_OUT' } };
+  if(!ADV_CONTROLS.image_enhancement.value) apc.image_enhancement = { enroll_status:'OPT_OUT' };
+  if(!ADV_CONTROLS.video_enhancement.value) apc.video_enhancement = { enroll_status:'OPT_OUT' };
+  if(!ADV_CONTROLS.text_optimization.value) apc.text_optimization = { enroll_status:'OPT_OUT' };
+  if(!ADV_CONTROLS.call_to_action_enhancement.value) apc.call_to_action_enhancement = { enroll_status:'OPT_OUT' };
+  if(!ADV_CONTROLS.add_card.value) apc.add_card = { enroll_status:'OPT_OUT' };
+  if(Object.keys(apc).length) payload.degrees_of_freedom_spec = { creative_features_spec: apc };
+
+  // advantage_plus_catalog: va en el adset como catalog_based_optimization
+  if(!ADV_CONTROLS.advantage_plus_catalog.value) payload._catalog_off = true;
+
+  return payload;
+}
+
+function tsResetAdvControls(){
+  Object.keys(ADV_CONTROLS).forEach(k => ADV_CONTROLS[k].value = true);
+  advMasterKillActive = false;
+  advDetailOpen = false;
+  const wrap = document.getElementById('adv-detail-wrap');
+  if(wrap) wrap.classList.remove('open');
+  const arrow = document.getElementById('adv-detail-arrow');
+  if(arrow) arrow.style.transform = 'rotate(0deg)';
+  const badge = document.getElementById('adv-kill-badge');
+  if(badge){ badge.textContent='Permitidas'; badge.className='adv-kill-badge on'; }
+  const pill = document.getElementById('adv-master-pill');
+  if(pill){ pill.textContent='DESACTIVADO'; pill.className='adv-pill inactive'; }
+}
 let tsBudgetType = 'CBO';
 
 function tsSetBudgetType(type, el){
@@ -4832,6 +5000,7 @@ function openTestingSandbox(){
   document.querySelectorAll('#ts-budget-toggle .ft').forEach(f => f.classList.remove('active'));
   document.querySelector('#ts-budget-toggle .ft[data-budget-type="CBO"]').classList.add('active');
   document.getElementById('ts-presupuesto-label').textContent = 'Presupuesto Diario (USD) — Campaña';
+  tsResetAdvControls();
   tsAddConjunto(); // arranca con Conjunto 1 + Anuncio 1
   openModal('modal-testing-sandbox');
 }
@@ -5189,10 +5358,16 @@ if(isVideo){
           };
         }
 
-        const creativeRes = await metaPost(`act_${META_ACCOUNT}/adcreatives`, {
+       const advPayload = tsGetAdvPayload();
+        const creativeBody = {
           name: anuncio.nombre + ' - Creative',
           object_story_spec: JSON.stringify(objectStorySpec)
-        });
+        };
+        // Inyectar degrees_of_freedom_spec solo si hay algo que desactivar
+        if(advPayload.degrees_of_freedom_spec){
+          creativeBody.degrees_of_freedom_spec = JSON.stringify(advPayload.degrees_of_freedom_spec);
+        }
+        const creativeRes = await metaPost(`act_${META_ACCOUNT}/adcreatives`, creativeBody);
         if(creativeRes.error){ toast(`Creative de "${anuncio.nombre}" fallo: ${creativeRes.error.message}`); continue; }
 
         // 5) ANUNCIO
