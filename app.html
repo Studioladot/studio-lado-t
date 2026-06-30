@@ -4510,7 +4510,9 @@ async function tsGenerarTesteo(){
   toast('Creando testeo en Meta...');
 
   try {
-    const campRes = await metaPost(`act_${META_ACCOUNT}/campaigns`, {
+    // 1) CAMPANA (pausada — se revisa y activa a mano desde la tabla)
+    console.log('META_ACCOUNT:', META_ACCOUNT);
+   const campRes = await metaPost(`act_${META_ACCOUNT}/campaigns`, {
       name: campania.nombre,
       objective: 'OUTCOME_SALES',
       status: 'PAUSED',
@@ -4518,9 +4520,12 @@ async function tsGenerarTesteo(){
       is_adset_budget_sharing_enabled: false
     });
     if(campRes.error){ toast('Error al crear campana: '+campRes.error.message); return; }
+   alert('campRes: ' + JSON.stringify(campRes));
+    if(campRes.error){ toast('Error al crear campana: '+campRes.error.message); return; }
     const campaignId = campRes.id;
 
     for(const conjunto of campania.conjuntos){
+      // 2) CONJUNTO
       const adsetRes = await metaPost(`act_${META_ACCOUNT}/adsets`, {
         name: conjunto.nombre,
         campaign_id: campaignId,
@@ -4536,12 +4541,11 @@ async function tsGenerarTesteo(){
       const adsetId = adsetRes.id;
 
       for(const anuncio of conjunto.anuncios){
-        const isVideo = anuncio.archivo && anuncio.archivo.type.startsWith('video');
+      const isVideo = anuncio.archivo && anuncio.archivo.type.startsWith('video');
         let objectStorySpec;
 
         if(isVideo){
           const videoRes = await tsUploadVideo(anuncio.archivo);
-          alert('videoRes: ' + JSON.stringify(videoRes));
           if(videoRes.error){ toast(`Video de "${anuncio.nombre}" fallo: ${videoRes.error.message}`); continue; }
           const videoId = videoRes.id;
           const ready = await tsWaitVideoReady(videoId);
@@ -4575,6 +4579,7 @@ async function tsGenerarTesteo(){
         });
         if(creativeRes.error){ toast(`Creative de "${anuncio.nombre}" fallo: ${creativeRes.error.message}`); continue; }
 
+        // 5) ANUNCIO
         const adRes = await metaPost(`act_${META_ACCOUNT}/ads`, {
           name: anuncio.nombre,
           adset_id: adsetId,
@@ -4592,6 +4597,7 @@ async function tsGenerarTesteo(){
     toast('Error inesperado: ' + e.message);
   }
 }
+
 
   // ── REGLAS DE DECISION: Target CPA / Break-Even ROAS ─────────────────────────
 const META_TARGETS_KEY = 'gotix_meta_targets_v1';
