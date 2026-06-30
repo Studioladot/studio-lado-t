@@ -136,6 +136,92 @@ tr:hover td{background:rgba(0,232,122,.025)}
 .b-gray{background:var(--surface2);color:var(--text2)}
   .focus-card{background:rgba(255,255,255,.02);border:1px solid var(--border);border-radius:var(--rl);padding:24px 22px;transition:border-color .2s,box-shadow .2s}
 .focus-card:hover{border-color:rgba(0,232,122,.2);box-shadow:0 0 20px rgba(0,232,122,.06)}
+  /* ── DASHBOARD: atmósfera inmersiva y tarjetas flotantes ───────────────────── */
+#page-dashboard{
+  background:
+    radial-gradient(ellipse 80% 60% at 50% -10%, rgba(0,232,122,.09) 0%, transparent 65%),
+    radial-gradient(ellipse 50% 40% at 90% 90%, rgba(0,180,90,.05) 0%, transparent 60%);
+}
+.dash-hero{
+  position:relative;
+  overflow:hidden;
+  background:linear-gradient(135deg,rgba(0,232,122,.07) 0%,rgba(0,0,0,0) 55%),
+             rgba(255,255,255,.025);
+  border:1px solid rgba(255,255,255,.07);
+  border-radius:var(--rl);
+  padding:28px;
+  margin-bottom:14px;
+  display:grid;
+  grid-template-columns:1.1fr 0.9fr;
+  gap:32px;
+  align-items:center;
+  backdrop-filter:blur(12px);
+  box-shadow:0 4px 40px rgba(0,0,0,.45), inset 0 0 0 0.5px rgba(0,232,122,.08);
+}
+/* luz radial que emana desde arriba-izquierda */
+.dash-hero::before{
+  content:'';
+  position:absolute;
+  top:-60px;left:-60px;
+  width:340px;height:340px;
+  background:radial-gradient(circle, rgba(0,232,122,.13) 0%, transparent 70%);
+  pointer-events:none;
+  z-index:0;
+}
+.dash-hero > *{position:relative;z-index:1}
+.dash-hero-title{
+  font-size:22px;font-weight:800;
+  color:#ffffff;letter-spacing:-.03em;margin-bottom:8px;
+  text-shadow:0 0 40px rgba(0,232,122,.35);
+}
+.dash-hero-sub{font-size:13px;color:#a1a1aa;line-height:1.6;margin-bottom:18px;max-width:380px}
+.dash-hero-cta{
+  background:transparent;
+  border:1px solid rgba(0,232,122,.3);
+  color:#00e87a;
+  font-size:13px;font-weight:600;
+  padding:9px 16px;border-radius:var(--r);cursor:pointer;
+  transition:all .18s;
+  box-shadow:0 0 12px rgba(0,232,122,.1);
+}
+.dash-hero-cta:hover{
+  background:rgba(0,232,122,.08);
+  border-color:rgba(0,232,122,.6);
+  box-shadow:0 0 24px rgba(0,232,122,.2);
+}
+.dash-hero-video{
+  position:relative;width:100%;aspect-ratio:16/10;
+  border-radius:var(--r);overflow:hidden;
+  border:1px solid rgba(255,255,255,.08);
+  background:#0c0e12;cursor:pointer;
+  box-shadow:0 8px 32px rgba(0,0,0,.5), 0 0 0 0.5px rgba(0,232,122,.1);
+  transition:box-shadow .2s;
+}
+.dash-hero-video:hover{box-shadow:0 8px 40px rgba(0,0,0,.6), 0 0 20px rgba(0,232,122,.12)}
+.dash-hero-play{
+  position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+}
+.dash-hero-play-btn{
+  width:52px;height:52px;border-radius:50%;
+  border:1px solid rgba(255,255,255,.15);
+  background:rgba(0,0,0,.7);
+  backdrop-filter:blur(8px);
+  display:flex;align-items:center;justify-content:center;
+  transition:all .18s;box-shadow:0 0 20px rgba(0,232,122,.15);
+}
+.dash-hero-video:hover .dash-hero-play-btn{
+  border-color:rgba(0,232,122,.4);
+  box-shadow:0 0 32px rgba(0,232,122,.3);
+  transform:scale(1.07);
+}
+.dash-hero-badge{
+  position:absolute;bottom:10px;left:10px;
+  font-size:10px;font-weight:600;color:#fafafa;
+  background:rgba(0,0,0,.75);backdrop-filter:blur(6px);
+  border:1px solid rgba(255,255,255,.1);
+  padding:3px 9px;border-radius:6px;letter-spacing:.03em;
+}
+@media(max-width:768px){.dash-hero{grid-template-columns:1fr!important;padding:20px!important;gap:20px!important}}
 .focus-card-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);margin-bottom:10px}
 .focus-card-value{font-size:32px;font-weight:700;letter-spacing:-.02em;line-height:1.1;color:var(--text)}
   .focus-card-sub{font-size:12px;color:var(--text2);margin-top:8px}
@@ -555,34 +641,21 @@ body.focus-mode #main{margin-left:0}
     </div>
   </div>
 
-<!-- BANNER BIENVENIDA + VIDEO ONBOARDING (2 columnas) ─────────────────────── -->
-<div style="background:#131316;border:1px solid #27272A;border-radius:var(--rl);padding:28px;margin-bottom:14px;display:grid;grid-template-columns:1.1fr 0.9fr;gap:32px;align-items:center">
-
-  <!-- IZQUIERDA: texto + CTA -->
+<!-- BANNER BIENVENIDA + VIDEO ONBOARDING ───────────────────────────────────── -->
+<div class="dash-hero">
   <div>
-    <div style="font-size:22px;font-weight:800;color:#FFFFFF;letter-spacing:-.02em;margin-bottom:8px">
-     LA BASE DE TU NEGOCIO
-    </div>
-    <div style="font-size:13px;color:#a1a1aa;line-height:1.5;margin-bottom:18px;max-width:380px">
-      Controlá tus anuncios, medí tus márgenes reales y escalá tu marca en un solo lugar.
-    </div>
-    <button style="background:transparent;border:1px solid #27272A;color:#fafafa;font-size:13px;font-weight:600;padding:9px 16px;border-radius:var(--r);cursor:pointer" onclick="alert('Conectar video de onboarding aqui')">
-      Ver recorrido
-    </button>
+    <div class="dash-hero-title">LA BASE DE TU NEGOCIO</div>
+    <div class="dash-hero-sub">Controlá tus anuncios, medí tus márgenes reales y escalá tu marca en un solo lugar.</div>
+    <button class="dash-hero-cta" onclick="alert('Conectar video de onboarding aqui')">Ver recorrido</button>
   </div>
-
-  <!-- DERECHA: video compacto -->
-  <div style="position:relative;width:100%;aspect-ratio:16/10;border-radius:var(--r);overflow:hidden;border:1px solid #27272A;background:#18181B;cursor:pointer" onclick="alert('Conectar video de onboarding aqui')">
-    <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center">
-      <div style="width:48px;height:48px;border-radius:50%;border:1px solid #27272A;background:rgba(24,24,27,.9);display:flex;align-items:center;justify-content:center">
-        <svg width="15" height="15" viewBox="0 0 18 18" fill="#FAFAFA"><path d="M3 1.5l13 7.5-13 7.5z"/></svg>
+  <div class="dash-hero-video" onclick="alert('Conectar video de onboarding aqui')">
+    <div class="dash-hero-play">
+      <div class="dash-hero-play-btn">
+        <svg width="15" height="15" viewBox="0 0 18 18" fill="#ffffff"><path d="M3 1.5l13 7.5-13 7.5z"/></svg>
       </div>
     </div>
-    <div style="position:absolute;bottom:10px;left:10px;font-size:10px;font-weight:600;color:#fafafa;background:rgba(24,24,27,.9);border:1px solid #27272A;padding:3px 8px;border-radius:6px">
-      Onboarding · 3:42
-    </div>
+    <div class="dash-hero-badge">Onboarding · 3:42</div>
   </div>
-
 </div>
 
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
