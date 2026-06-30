@@ -366,6 +366,39 @@ body.focus-mode #main{margin-left:0}
 .ts-trash-btn:hover,.ts-trash-btn-sm:hover{background:var(--red-l);border-color:var(--red);color:var(--red)}
 .ts-add-anuncio-btn{display:inline-flex;align-items:center;gap:6px;background:transparent;border:0.5px dashed var(--border2);border-radius:var(--r);padding:7px 12px;font-size:12px;font-weight:600;color:var(--text2);cursor:pointer;transition:all .12s}
 .ts-add-anuncio-btn:hover{border-color:var(--accent);color:var(--accent)}
+  /* ── MENÚ OPCIONES (3 puntos) ── */
+.meta-opts-wrap{position:relative}
+.meta-opts-menu{
+  position:absolute;top:calc(100% + 6px);right:0;min-width:200px;
+  background:#141417;border:1px solid var(--border);border-radius:var(--r);
+  box-shadow:0 8px 32px rgba(0,0,0,.5);z-index:100;display:none;
+  padding:4px;overflow:hidden;
+}
+.meta-opts-menu.open{display:block}
+.meta-opts-item{
+  display:flex;align-items:center;gap:10px;width:100%;
+  padding:9px 12px;border:none;background:transparent;
+  color:var(--text2);font-size:13px;font-weight:500;cursor:pointer;
+  border-radius:6px;transition:background .12s,color .12s;text-align:left;
+}
+.meta-opts-item:hover{background:var(--surface2);color:var(--text)}
+.meta-opts-item svg{flex-shrink:0;opacity:.6}
+.meta-opts-item:hover svg{opacity:1}
+.meta-opts-divider{height:1px;background:var(--border);margin:3px 0}
+.meta-opts-focus-row{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;padding:9px 12px;border:none;background:transparent;color:var(--text2);font-size:13px;font-weight:500;cursor:pointer;border-radius:6px;transition:background .12s,color .12s}
+.meta-opts-focus-row:hover{background:var(--surface2);color:var(--text)}
+/* ── DROPDOWNS DE FILTRO (Estado / Estrategia) ── */
+.meta-filter-bar{display:flex;align-items:center;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+.meta-filter-select{
+  appearance:none;-webkit-appearance:none;
+  background:#141417 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%238b8fa8' stroke-width='1.4' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right 10px center;
+  border:1px solid var(--border);border-radius:20px;
+  color:var(--text2);font-size:12px;font-weight:600;
+  padding:6px 30px 6px 12px;cursor:pointer;outline:none;
+  transition:border-color .15s,color .15s;
+}
+.meta-filter-select:hover,.meta-filter-select:focus{border-color:var(--primary-green-border);color:var(--text)}
+.meta-filter-select option{background:#141417;color:var(--text)}
 .ts-anuncio-detail{display:flex;flex-direction:column;gap:8px;margin-top:8px;padding:10px;background:var(--surface);border:0.5px solid var(--border);border-radius:var(--r)}
 .ts-anuncio-detail input,.ts-anuncio-detail textarea{width:100%;border:0.5px solid var(--border);border-radius:var(--r);padding:7px 10px;font-size:12px;background:var(--surface2);color:var(--text);outline:none;transition:border-color .12s;resize:vertical;font-family:inherit}
 .ts-anuncio-detail input:focus,.ts-anuncio-detail textarea:focus{border-color:var(--accent)}
