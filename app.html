@@ -4452,11 +4452,12 @@ function tsWireDropzone(dz, aId){
   if(bar) bar.style.width = pct + '%';
   if(txt && label) txt.textContent = label;
 }
-async function tsUploadVideo(file){
+async function tsUploadVideo(file, onProgress){
   // Vercel limita cada request a 4.5MB, asi que el video se sube en pedazos
   // chicos via el protocolo de subida reanudable de Meta (start -> transfer x N -> finish).
   const CHUNK_SIZE = 3500000; // ~3.34MB por pedazo, con margen de sobra bajo el limite de 4.5MB
 
+  if(onProgress) onProgress(2);
   const startRes = await metaPost(`act_${META_ACCOUNT}/advideos`, {
     upload_phase: 'start',
     file_size: file.size
@@ -4491,14 +4492,17 @@ async function tsUploadVideo(file){
     const nextOffset = +data.start_offset;
     if(nextOffset === startOffset) break; // Meta indica fin de la subida
     startOffset = nextOffset;
+    if(onProgress) onProgress(Math.min(95, Math.round((startOffset / file.size) * 95)));
   }
 
+  if(onProgress) onProgress(97);
   const finishRes = await metaPost(`act_${META_ACCOUNT}/advideos`, {
     upload_phase: 'finish',
     upload_session_id: uploadSessionId
   });
   if(finishRes.error) return finishRes;
 
+  if(onProgress) onProgress(100);
   return { id: videoId };
 }
 async function tsWaitVideoReady(videoId, maxTries=10){
@@ -4544,7 +4548,7 @@ async function tsGenerarTesteo(){
       const file = tsFiles.get(aId) || null;
       const anuncioNombre = aEl.querySelector('.ts-anuncio-nombre').value.trim();
       if(!anuncioNombre) valido = false;
-      conjunto.anuncios.push({ nombre: anuncioNombre, archivo: file });
+      conjunto.anuncios.push({ nombre: anuncioNombre, archivo: file, aId });
     });
     campania.conjuntos.push(conjunto);
   });
@@ -4588,11 +4592,14 @@ async function tsGenerarTesteo(){
         let objectStorySpec;
 
         if(isVideo){
-          const videoRes = await tsUploadVideo(anuncio.archivo);
-          if(videoRes.error){ toast(`Video de "${anuncio.nombre}" fallo: ${videoRes.error.message}`); continue; }
+          tsSetProgress(anuncio.aId, 0, 'Subiendo video...');
+          const videoRes = await tsUploadVideo(anuncio.archivo, pct => tsSetProgress(anuncio.aId, pct, `Subiendo... ${pct}%`));
+          if(videoRes.error){ tsSetProgress(anuncio.aId, 0, 'Error al subir'); toast(`Video de "${anuncio.nombre}" fallo: ${videoRes.error.message}`); continue; }
           const videoId = videoRes.id;
+          tsSetProgress(anuncio.aId, 100, 'Procesando en Meta...');
           const ready = await tsWaitVideoReady(videoId);
-          if(!ready){ toast(`Video de "${anuncio.nombre}" no termino de procesar a tiempo, intenta de nuevo en unos minutos`); continue; }
+          if(!ready){ tsSetProgress(anuncio.aId, 100, 'Tarda en procesar'); toast(`Video de "${anuncio.nombre}" no termino de procesar a tiempo, intenta de nuevo en unos minutos`); continue; }
+          tsSetProgress(anuncio.aId, 100, '✓ Listo');
           objectStorySpec = {
             page_id: META_PAGE_ID,
             video_data: {
