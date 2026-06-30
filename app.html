@@ -385,6 +385,28 @@ body.focus-mode #main{margin-left:0}
 .adv-pill{font-size:10px;font-weight:700;padding:3px 9px;border-radius:10px;border:none;cursor:pointer;transition:all .15s;flex-shrink:0}
 .adv-pill.active{background:rgba(11,185,128,.12);color:var(--primary-green);border:1px solid rgba(11,185,128,.2)}
 .adv-pill.inactive{background:rgba(255,71,87,.1);color:var(--red);border:1px solid rgba(255,71,87,.15)}
+  /* ── AUTOPILOT ── */
+.ap-rule-card{background:var(--surface2);border:1px solid var(--border);border-radius:var(--rl);padding:16px 18px;margin-bottom:10px;transition:border-color .2s}
+.ap-rule-card:hover{border-color:var(--primary-green-border)}
+.ap-rule-header{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px}
+.ap-rule-name{font-size:13px;font-weight:700;color:var(--text)}
+.ap-status-badge{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;padding:2px 8px;border-radius:10px}
+.ap-status-badge.active{background:rgba(11,185,128,.1);color:var(--primary-green)}
+.ap-status-badge.paused{background:var(--surface);color:var(--text3)}
+.ap-log-row{display:flex;gap:10px;padding:10px 0;border-bottom:0.5px solid rgba(255,255,255,.04);align-items:flex-start}
+.ap-log-row:last-child{border-bottom:none}
+.ap-log-icon{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+.ap-log-icon.pause{background:rgba(255,71,87,.1);color:var(--red)}
+.ap-log-icon.reduce{background:rgba(245,166,35,.1);color:var(--amber)}
+.ap-log-icon.notify{background:rgba(11,185,128,.1);color:var(--primary-green)}
+.ap-log-icon.protected{background:rgba(59,130,246,.1);color:var(--blue)}
+.ap-log-msg{font-size:12px;color:var(--text2);line-height:1.5;flex:1}
+.ap-log-msg strong{color:var(--text);font-weight:600}
+.ap-log-time{font-size:10px;color:var(--text3);flex-shrink:0;white-space:nowrap;margin-top:2px}
+.ap-at-risk{background:rgba(255,71,87,.06);border:1px solid rgba(255,71,87,.18);border-radius:var(--r);padding:10px 12px;margin-bottom:6px}
+.ap-at-risk-name{font-size:12px;font-weight:600;color:var(--text);margin-bottom:3px}
+.ap-at-risk-meta{font-size:11px;color:var(--text3)}
+.ap-protected-badge{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;padding:2px 6px;border-radius:8px;background:rgba(59,130,246,.12);color:var(--blue);border:1px solid rgba(59,130,246,.2)}
   /* ── MENÚ OPCIONES (3 puntos) ── */
 .meta-opts-wrap{position:relative}
 .meta-opts-menu{
@@ -660,6 +682,7 @@ body.focus-mode #main{margin-left:0}
     <div class="nav-item" onclick="showPage('notas')" data-page="notas" data-section="contenido"><span class="ni"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14l2-5.5L14.5 1l3 3L9 12.5z"/><path d="M4 14h4"/><path d="M10.5 3.5l3 3"/></svg></span><span>Notas</span></div>
     <div class="nav-item" onclick="showPage('campanas-contenido')" data-page="campanas-contenido" data-section="contenido"><span class="ni"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><rect x="1" y="3" width="16" height="14" rx="2"/><path d="M1 8h16"/><path d="M6 1v4M12 1v4"/><circle cx="6" cy="12" r="1" fill="currentColor" stroke="none"/><circle cx="9" cy="12" r="1" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1" fill="currentColor" stroke="none"/></svg></span><span>Campaña de Contenido</span></div>
     <div class="sb-section">Inteligencia</div>
+    <div class="nav-item" onclick="showPage('autopilot')" data-page="autopilot" data-section="ia"><span class="ni"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="9" r="7.5"/><path d="M9 5v4l2.5 2.5"/><path d="M3.5 3.5l11 11"/></svg></span><span>Autopiloto</span></div>
     <div class="nav-item" onclick="showPage('ia')" data-page="ia" data-section="ia"><span class="ni"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 1L10.5 6H16L11.5 9.5 13 14.5 9 11.5 5 14.5 6.5 9.5 2 6H7.5z"/></svg></span><span>IA Estratégica</span></div>
    <div class="sb-section">Planes</div>
     <div class="nav-item" onclick="showPage('facturacion')" data-page="facturacion"><span class="ni"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1.5" y="4" width="15" height="10" rx="1.5"/><path d="M1.5 7.5h15"/></svg></span><span>Facturacion y Suscripcion</span></div>
@@ -2249,7 +2272,99 @@ body.focus-mode #main{margin-left:0}
     </div>
   </div>
 
+<!-- AUTOPILOTO -->
+<div id="page-autopilot" class="page">
+  <div class="page-hdr">
+    <div>
+      <div class="page-title">Autopiloto de Rentabilidad</div>
+      <div class="page-sub">El sistema analiza tus anuncios cada noche y actúa si el ROAS cae bajo el breakeven</div>
+    </div>
+    <button class="btn btn-accent" onclick="apOpenNewRule()">
+      <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M7 1.5v11M1.5 7h11"/></svg>
+      Nueva Regla
+    </button>
+  </div>
 
+  <!-- PANEL DE RIESGO EN VIVO -->
+  <div class="card" id="ap-risk-panel" style="margin-bottom:14px">
+    <div class="card-title">
+      <span style="display:flex;align-items:center;gap:7px">
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="var(--red)" stroke-width="1.5" stroke-linecap="round"><path d="M8 2L14.5 13.5H1.5z"/><path d="M8 6v4M8 11.5v.5"/></svg>
+        Anuncios en riesgo ahora
+      </span>
+      <button class="btn btn-sm btn-outline" onclick="apScanNow()">
+        <svg width="11" height="11" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M13 7A6 6 0 1 1 11.2 3"/><path d="M11.2 1v2.5H8.7"/></svg>
+        Escanear ahora
+      </button>
+    </div>
+    <div id="ap-risk-list"><div class="empty" style="padding:20px 0"><div class="empty-msg">Sin anuncios en riesgo</div><div class="empty-sub">Hace clic en "Escanear ahora" para analizar en tiempo real</div></div></div>
+  </div>
+
+  <div class="grid-2" style="gap:14px;margin-bottom:14px">
+
+    <!-- REGLAS ACTIVAS -->
+    <div class="card">
+      <div class="card-title">Reglas activas</div>
+      <div id="ap-rules-list"><div class="empty" style="padding:16px 0"><div class="empty-msg">Sin reglas</div><div class="empty-sub">Creá tu primera regla de autopiloto</div></div></div>
+    </div>
+
+    <!-- LOG DE ACTIVIDAD -->
+    <div class="card">
+      <div class="card-title">
+        <span>Log de actividad</span>
+        <button class="btn btn-sm btn-ghost" onclick="apClearLog()" title="Limpiar log">
+          <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M2.5 4.5h9"/><path d="M5 4.5V3.5a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v1"/><path d="M3 4.5l.7 7a1 1 0 0 0 1 .9h4.6a1 1 0 0 0 1-.9l.7-7"/></svg>
+        </button>
+      </div>
+      <div id="ap-log-list" style="max-height:320px;overflow-y:auto"><div class="empty" style="padding:16px 0"><div class="empty-msg">Sin actividad</div><div class="empty-sub">Las acciones del autopiloto aparecen acá</div></div></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- MODAL NUEVA/EDITAR REGLA AUTOPILOTO -->
+<div class="modal-backdrop" id="modal-ap-rule">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-title" id="ap-rule-modal-title">Nueva Regla de Autopiloto</div>
+    <input type="hidden" id="ap-rule-edit-id">
+
+    <div class="form-row">
+      <div class="fg wide"><label>Nombre de la regla</label><input id="ap-rule-name" type="text" placeholder="Ej: Pausar perdedores nocturnos"/></div>
+    </div>
+    <div class="form-row">
+      <div class="fg"><label>ROAS Breakeven</label><input id="ap-rule-roas" type="number" step="0.1" placeholder="2.0"/></div>
+      <div class="fg"><label>Ventana de tiempo</label>
+        <select id="ap-rule-window">
+          <option value="3">Últimos 3 días</option>
+          <option value="7" selected>Últimos 7 días</option>
+          <option value="14">Últimos 14 días</option>
+          <option value="30">Últimos 30 días</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="fg"><label>Acción</label>
+        <select id="ap-rule-action">
+          <option value="pause">Pausar anuncio</option>
+          <option value="reduce">Reducir presupuesto 20%</option>
+          <option value="notify">Solo notificar (no tocar)</option>
+        </select>
+      </div>
+      <div class="fg"><label>Gasto mínimo antes de actuar (USD)</label><input id="ap-rule-min-spend" type="number" step="0.1" placeholder="10"/></div>
+    </div>
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:10px 12px;margin-bottom:4px">
+      <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;color:var(--text2)">
+        <input type="checkbox" id="ap-rule-active" checked style="accent-color:var(--primary-green)">
+        Regla activa (el Autopiloto la ejecuta cada noche a las 23:00 hs)
+      </label>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-ap-rule')">Cancelar</button>
+      <button class="btn btn-accent" onclick="apSaveRule()">Guardar Regla</button>
+    </div>
+  </div>
+</div>
 <!-- IA -->
 <div id="page-ia" class="page">
   <div class="page-hdr">
@@ -3252,7 +3367,7 @@ if(p==='finanzas'){loadFinanzas();loadCotizacionUSD();loadEscAll();}
   if(p==='userlist')cargarUsuarios();
   if(p==='config')loadConfigPage();
   if(p==='dashboard'&&META_TOKEN&&META_ACCOUNT){syncDashDateSelector();if(!metaCampaigns.length)initDashboardMeta();}
-  if(p==='contenido'){loadContenido();const cm=document.getElementById('cont-cal-mes');if(cm&&!cm.value)cm.value=new Date().toISOString().substring(0,7);const cmp=document.getElementById('camp-mes-plan');if(cmp&&!cmp.value)cmp.value=new Date().toISOString().substring(0,7);}
+ if(p==='autopilot'){ apRenderRules(); apRenderLog(); }const cm=document.getElementById('cont-cal-mes');if(cm&&!cm.value)cm.value=new Date().toISOString().substring(0,7);const cmp=document.getElementById('camp-mes-plan');if(cmp&&!cmp.value)cmp.value=new Date().toISOString().substring(0,7);}
 }
 
 // ── LOAD ALL ─────────────────────────────────────────────────────────────────
@@ -4965,7 +5080,307 @@ function tsGetAdvPayload(){
 
   return payload;
 }
+// ══════════════════════════════════════════════════════════════════════════════
+// AUTOPILOTO DE RENTABILIDAD
+// ══════════════════════════════════════════════════════════════════════════════
+const AP_STORAGE_KEY   = 'gotix_autopilot_rules_v1';
+const AP_LOG_KEY       = 'gotix_autopilot_log_v1';
+const AP_PROTECTED_KEY = 'gotix_autopilot_protected_v1';
+const AP_SCHEDULER_KEY = 'gotix_autopilot_last_run_v1';
 
+function apLoadRules(){ try{ return JSON.parse(localStorage.getItem(AP_STORAGE_KEY)||'[]'); }catch{ return []; } }
+function apSaveRules(r){ localStorage.setItem(AP_STORAGE_KEY, JSON.stringify(r)); }
+function apLoadLog(){ try{ return JSON.parse(localStorage.getItem(AP_LOG_KEY)||'[]'); }catch{ return []; } }
+function apSaveLog(l){ localStorage.setItem(AP_LOG_KEY, JSON.stringify(l.slice(0,200))); }
+function apLoadProtected(){ try{ return JSON.parse(localStorage.getItem(AP_PROTECTED_KEY)||'[]'); }catch{ return []; } }
+function apSaveProtected(p){ localStorage.setItem(AP_PROTECTED_KEY, JSON.stringify(p)); }
+
+function apPushLog(entry){
+  const log = apLoadLog();
+  log.unshift({ ...entry, ts: new Date().toISOString() });
+  apSaveLog(log);
+}
+
+function apOpenNewRule(){
+  document.getElementById('ap-rule-edit-id').value = '';
+  document.getElementById('ap-rule-modal-title').textContent = 'Nueva Regla de Autopiloto';
+  document.getElementById('ap-rule-name').value = '';
+  document.getElementById('ap-rule-roas').value = '';
+  document.getElementById('ap-rule-window').value = '7';
+  document.getElementById('ap-rule-action').value = 'pause';
+  document.getElementById('ap-rule-min-spend').value = '10';
+  document.getElementById('ap-rule-active').checked = true;
+  openModal('modal-ap-rule');
+}
+
+function apSaveRule(){
+  const name = document.getElementById('ap-rule-name').value.trim();
+  const roas = +document.getElementById('ap-rule-roas').value;
+  if(!name){ toast('Poné un nombre a la regla'); return; }
+  if(!roas || roas <= 0){ toast('Definí el ROAS Breakeven'); return; }
+
+  const rules = apLoadRules();
+  const editId = document.getElementById('ap-rule-edit-id').value;
+  const rule = {
+    id: editId || ('ap_' + Date.now()),
+    name,
+    breakeven_roas: roas,
+    window_days: +document.getElementById('ap-rule-window').value,
+    action: document.getElementById('ap-rule-action').value,
+    min_spend: +document.getElementById('ap-rule-min-spend').value || 0,
+    active: document.getElementById('ap-rule-active').checked,
+    created_at: editId ? (rules.find(r=>r.id===editId)?.created_at || new Date().toISOString()) : new Date().toISOString()
+  };
+
+  if(editId){
+    const idx = rules.findIndex(r=>r.id===editId);
+    if(idx > -1) rules[idx] = rule; else rules.unshift(rule);
+  } else {
+    rules.unshift(rule);
+  }
+  apSaveRules(rules);
+  closeModal('modal-ap-rule');
+  apRenderRules();
+  toast('Regla guardada ✓');
+}
+
+function apDeleteRule(id){
+  if(!confirm('¿Eliminar esta regla?')) return;
+  apSaveRules(apLoadRules().filter(r=>r.id!==id));
+  apRenderRules();
+  toast('Regla eliminada');
+}
+
+function apToggleRuleActive(id){
+  const rules = apLoadRules();
+  const r = rules.find(x=>x.id===id);
+  if(r) r.active = !r.active;
+  apSaveRules(rules);
+  apRenderRules();
+}
+
+function apRenderRules(){
+  const container = document.getElementById('ap-rules-list');
+  if(!container) return;
+  const rules = apLoadRules();
+  if(!rules.length){
+    container.innerHTML='<div class="empty" style="padding:16px 0"><div class="empty-msg">Sin reglas</div><div class="empty-sub">Creá tu primera regla de autopiloto</div></div>';
+    return;
+  }
+  const actionLabel = { pause:'Pausar', reduce:'Reducir presupuesto 20%', notify:'Solo notificar' };
+  container.innerHTML = rules.map(r=>`
+    <div class="ap-rule-card">
+      <div class="ap-rule-header">
+        <div class="ap-rule-name">${r.name}</div>
+        <span class="ap-status-badge ${r.active?'active':'paused'}">${r.active?'Activa':'Pausada'}</span>
+      </div>
+      <div style="font-size:11px;color:var(--text3);margin-bottom:10px">
+        ROAS Breakeven: <strong style="color:var(--text)">${r.breakeven_roas}x</strong> ·
+        Ventana: <strong style="color:var(--text)">${r.window_days} días</strong> ·
+        Gasto mín.: <strong style="color:var(--text)">USD ${r.min_spend}</strong> ·
+        Acción: <strong style="color:var(--text)">${actionLabel[r.action]||r.action}</strong>
+      </div>
+      <div style="display:flex;gap:6px">
+        <button class="btn btn-sm btn-outline" onclick="apToggleRuleActive('${r.id}')">${r.active?'Pausar':'Activar'}</button>
+        <button class="btn btn-sm btn-outline" onclick="apEditRule('${r.id}')">Editar</button>
+        <button class="btn btn-sm btn-red btn-ghost" onclick="apDeleteRule('${r.id}')">Eliminar</button>
+      </div>
+    </div>`).join('');
+}
+
+function apEditRule(id){
+  const r = apLoadRules().find(x=>x.id===id);
+  if(!r) return;
+  document.getElementById('ap-rule-edit-id').value = r.id;
+  document.getElementById('ap-rule-modal-title').textContent = 'Editar Regla';
+  document.getElementById('ap-rule-name').value = r.name;
+  document.getElementById('ap-rule-roas').value = r.breakeven_roas;
+  document.getElementById('ap-rule-window').value = r.window_days;
+  document.getElementById('ap-rule-action').value = r.action;
+  document.getElementById('ap-rule-min-spend').value = r.min_spend;
+  document.getElementById('ap-rule-active').checked = r.active;
+  openModal('modal-ap-rule');
+}
+
+function apRenderLog(){
+  const container = document.getElementById('ap-log-list');
+  if(!container) return;
+  const log = apLoadLog();
+  if(!log.length){
+    container.innerHTML='<div class="empty" style="padding:16px 0"><div class="empty-msg">Sin actividad</div></div>';
+    return;
+  }
+  const iconMap = { pause:'pause', reduce:'reduce', notify:'notify', protected:'protected' };
+  const svgMap = {
+    pause:`<svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><rect x="3" y="2" width="2.5" height="10" rx=".5"/><rect x="8.5" y="2" width="2.5" height="10" rx=".5"/></svg>`,
+    reduce:`<svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M2 10l4-4 3 3 3-4"/></svg>`,
+    notify:`<svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M7 1v1.5M7 11.5V13M2.5 7H1M13 7h-1.5M4 4L3 3M11 4l1-1M4 10l-1 1M11 10l1 1"/><circle cx="7" cy="7" r="3"/></svg>`,
+    protected:`<svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M7 1l5 2v4c0 3.3-5 6-5 6S2 10.3 2 7V3z"/></svg>`
+  };
+  container.innerHTML = log.map(e=>{
+    const t = new Date(e.ts);
+    const timeStr = t.toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit'})+' '+t.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'})+'hs';
+    const iconType = iconMap[e.action]||'notify';
+    return `<div class="ap-log-row">
+      <div class="ap-log-icon ${iconType}">${svgMap[iconType]||''}</div>
+      <div class="ap-log-msg">${e.message}</div>
+      <div class="ap-log-time">${timeStr}</div>
+    </div>`;
+  }).join('');
+}
+
+function apClearLog(){
+  if(!confirm('¿Limpiar el log de actividad?')) return;
+  apSaveLog([]);
+  apRenderLog();
+}
+
+// ── TOGGLE PROTECCIÓN DE ANUNCIO ──────────────────────────────────────────────
+function apToggleProtected(adId, adName){
+  const protected_ = apLoadProtected();
+  const idx = protected_.findIndex(x=>x.id===adId);
+  if(idx > -1){
+    protected_.splice(idx,1);
+    apSaveProtected(protected_);
+    toast(`"${adName}" ya no está protegido`);
+  } else {
+    protected_.push({ id:adId, name:adName, protected_at:new Date().toISOString() });
+    apSaveProtected(protected_);
+    toast(`"${adName}" protegido — el Autopiloto no lo tocará`);
+  }
+  apScanNow();
+}
+
+// ── MOTOR DE ANÁLISIS ─────────────────────────────────────────────────────────
+async function apScanNow(){
+  const riskList = document.getElementById('ap-risk-list');
+  if(!riskList) return;
+  if(!META_ACCOUNT){ riskList.innerHTML='<div class="empty" style="padding:16px 0"><div class="empty-msg">Conectá Meta Ads primero</div></div>'; return; }
+
+  const rules = apLoadRules().filter(r=>r.active);
+  if(!rules.length){ riskList.innerHTML='<div class="empty" style="padding:16px 0"><div class="empty-msg">Sin reglas activas</div></div>'; return; }
+
+  riskList.innerHTML='<div style="padding:12px;color:var(--text2);font-size:12px">Analizando anuncios...</div>';
+
+  const protected_ = apLoadProtected();
+  const atRisk = [];
+
+  for(const rule of rules){
+    const until = new Date();
+    const since = new Date(Date.now() - rule.window_days*86400000);
+    const fmt = d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+
+    let adsData;
+    try{
+      adsData = await metaGet(`act_${META_ACCOUNT}/ads`, {
+        fields:`id,name,status,effective_status,insights.time_range({"since":"${fmt(since)}","until":"${fmt(until)}"}){spend,action_values,actions,impressions}`,
+        limit:100
+      });
+    }catch(e){ continue; }
+
+    const ads = adsData?.data||[];
+    for(const ad of ads){
+      if((ad.effective_status||ad.status)!=='ACTIVE') continue;
+      const ins = ad.insights?.data?.[0]||{};
+      const spend = +(ins.spend||0);
+      const revenue = +(ins.action_values?.find(a=>a.action_type==='purchase')?.value||0);
+      const roas = spend>0&&revenue>0 ? revenue/spend : 0;
+
+      if(spend < rule.min_spend) continue; // no actuar con gasto insuficiente
+
+      const isProtected = protected_.some(p=>p.id===ad.id);
+      if(roas < rule.breakeven_roas){
+        atRisk.push({ ad, roas, spend, rule, isProtected });
+      }
+    }
+  }
+
+  if(!atRisk.length){
+    riskList.innerHTML='<div class="empty" style="padding:16px 0"><div class="empty-msg" style="color:var(--primary-green)">✓ Sin anuncios en riesgo</div><div class="empty-sub">Todos los anuncios activos están sobre el breakeven</div></div>';
+    return;
+  }
+
+  riskList.innerHTML = atRisk.map(({ad,roas,spend,rule,isProtected})=>`
+    <div class="ap-at-risk" style="${isProtected?'opacity:.6':''}">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:4px">
+        <div>
+          <span class="ap-at-risk-name">${ad.name}</span>
+          ${isProtected?`<span class="ap-protected-badge" style="margin-left:6px">Protegido</span>`:''}
+        </div>
+        <button class="btn btn-sm btn-ghost" onclick="apToggleProtected('${ad.id}','${(ad.name||'').replace(/'/g,"\\'")}')">
+          ${isProtected?'Quitar protección':'Proteger'}
+        </button>
+      </div>
+      <div class="ap-at-risk-meta">
+        ROAS: <strong style="color:var(--red)">${roas.toFixed(2)}x</strong> vs Breakeven
+        <strong>${rule.breakeven_roas}x</strong> ·
+        Gasto: <strong>USD ${(+spend).toFixed(2)}</strong> ·
+        Regla: "${rule.name}"
+      </div>
+      ${!isProtected?`<button class="btn btn-sm btn-red" style="margin-top:8px" onclick="apExecuteOnAd('${ad.id}','${(ad.name||'').replace(/'/g,"\\'")}','${rule.action}','${roas.toFixed(2)}','${rule.breakeven_roas}')">
+        ${rule.action==='pause'?'Pausar ahora':rule.action==='reduce'?'Reducir presupuesto':'Notificado'}
+      </button>`:''}
+    </div>`).join('');
+}
+
+// ── EJECUTAR ACCIÓN SOBRE UN ANUNCIO ─────────────────────────────────────────
+async function apExecuteOnAd(adId, adName, action, roas, breakeven){
+  if(!confirm(`¿Seguro querés ${action==='pause'?'pausar':'reducir presupuesto de'} "${adName}"?`)) return;
+  if(action === 'pause'){
+    const r = await metaPost(adId, { status:'PAUSED' });
+    if(r.error){ toast('Error: '+r.error.message); return; }
+    apPushLog({ action:'pause', message:`Se pausó <strong>"${adName}"</strong> — ROAS ${roas}x estaba bajo el breakeven de ${breakeven}x.` });
+    toast(`"${adName}" pausado`);
+  } else if(action === 'reduce'){
+    // Obtener presupuesto actual y bajar 20%
+    const adsetData = await metaGet(adId, { fields:'adset_id' });
+    if(adsetData.adset_id){
+      const adset = await metaGet(adsetData.adset_id, { fields:'daily_budget' });
+      const currentBudget = +adset.daily_budget||0;
+      if(currentBudget > 0){
+        const newBudget = Math.round(currentBudget * 0.8);
+        await metaPost(adsetData.adset_id, { daily_budget: newBudget });
+        apPushLog({ action:'reduce', message:`Presupuesto de "<strong>${adName}</strong>" reducido 20% (de $${(currentBudget/100).toFixed(2)} a $${(newBudget/100).toFixed(2)}) — ROAS ${roas}x bajo breakeven ${breakeven}x.` });
+        toast(`Presupuesto reducido`);
+      }
+    }
+  } else {
+    apPushLog({ action:'notify', message:`Alerta: <strong>"${adName}"</strong> tiene ROAS ${roas}x (Breakeven: ${breakeven}x). No se tomó ninguna acción.` });
+  }
+  apRenderLog();
+  apScanNow();
+}
+
+// ── SCHEDULER: corre a las 23:00 hs ARG (UTC-3) ──────────────────────────────
+function apStartScheduler(){
+  function msToNext23Arg(){
+    const now = new Date();
+    // UTC-3
+    const argOffset = -3*60;
+    const argNow = new Date(now.getTime() + (argOffset - (-now.getTimezoneOffset()))*60000);
+    const target = new Date(argNow);
+    target.setHours(23,0,0,0);
+    if(argNow >= target) target.setDate(target.getDate()+1);
+    return target - argNow;
+  }
+
+  function runNightly(){
+    const lastRun = localStorage.getItem(AP_SCHEDULER_KEY);
+    const today = new Date().toISOString().substring(0,10);
+    if(lastRun === today) return; // ya corrió hoy
+    localStorage.setItem(AP_SCHEDULER_KEY, today);
+    apPushLog({ action:'notify', message:'<strong>Autopiloto nocturno</strong> — Iniciando análisis automático de las 23:00hs.' });
+    apScanNow().then(()=>apRenderLog());
+  }
+
+  setTimeout(()=>{ runNightly(); setInterval(runNightly, 60*60*1000); }, msToNext23Arg());
+}
+
+// Inicializar cuando se carga la página de Autopiloto
+(function apInit(){
+  // Lanzar scheduler silenciosamente al cargar la app
+  if(typeof META_ACCOUNT !== 'undefined') apStartScheduler();
+})();
 function tsResetAdvControls(){
   Object.keys(ADV_CONTROLS).forEach(k => ADV_CONTROLS[k].value = true);
   advMasterKillActive = false;
