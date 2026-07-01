@@ -5696,6 +5696,9 @@ function openTestingSandbox(){
   document.querySelectorAll('#ts-budget-toggle .ft').forEach(f => f.classList.remove('active'));
   document.querySelector('#ts-budget-toggle .ft[data-budget-type="CBO"]').classList.add('active');
   document.getElementById('ts-presupuesto-label').textContent = 'Presupuesto Diario (USD) — Campaña';
+tsEngMode.clear();
+  tsEngSelected.clear();
+  tsEngAdsCache = null; // limpiar cache al abrir para forzar re-fetch
   tsResetAdvControls();
   tsAddConjunto(); // arranca con Conjunto 1 + Anuncio 1
   openModal('modal-testing-sandbox');
@@ -6156,7 +6159,9 @@ async function tsGenerarTesteo(){
       const file = tsFiles.get(aId) || null;
       const anuncioNombre = aEl.querySelector('.ts-anuncio-nombre').value.trim();
       if(!anuncioNombre) valido = false;
-      conjunto.anuncios.push({ nombre: anuncioNombre, archivo: file, aId });
+     const engMode = tsEngMode.get(aEl.dataset.anuncioId);
+      const engSel = tsEngSelected.get(aEl.dataset.anuncioId);
+      conjunto.anuncios.push({ nombre: anuncioNombre, archivo: file, aId, engMode, engSel });
     });
     campania.conjuntos.push(conjunto);
   });
