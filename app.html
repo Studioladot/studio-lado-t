@@ -471,6 +471,20 @@ body.focus-mode #main{margin-left:0}
 .ap-badge.pause{background:rgba(255,71,87,.1);color:var(--red);border:1px solid rgba(255,71,87,.2)}
 .ap-badge.reduce{background:rgba(245,166,35,.1);color:var(--amber);border:1px solid rgba(245,166,35,.2)}
 .ap-badge.notify{background:rgba(11,185,128,.08);color:var(--primary-green);border:1px solid var(--primary-green-border)}
+  /* ── CICLO VIVO ── */
+.cv-stock-badge{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:600;padding:2px 8px;border-radius:10px;white-space:nowrap;cursor:pointer}
+.cv-stock-badge.ok{background:rgba(11,185,128,.08);color:var(--primary-green);border:1px solid var(--primary-green-border)}
+.cv-stock-badge.warn{background:rgba(245,166,35,.1);color:var(--amber);border:1px solid rgba(245,166,35,.25)}
+.cv-stock-badge.critical{background:rgba(255,71,87,.1);color:var(--red);border:1px solid rgba(255,71,87,.25)}
+.cv-stock-badge.no-stock{background:rgba(255,71,87,.15);color:var(--red);border:1px solid rgba(255,71,87,.4)}
+.cv-link-btn{display:inline-flex;align-items:center;gap:4px;font-size:10px;color:var(--text3);cursor:pointer;background:transparent;border:none;padding:2px 4px;border-radius:4px;transition:color .12s}
+.cv-link-btn:hover{color:var(--primary-green)}
+.cv-modal-prod-item{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:var(--r);cursor:pointer;transition:background .12s;border-bottom:0.5px solid var(--border)}
+.cv-modal-prod-item:last-child{border-bottom:none}
+.cv-modal-prod-item:hover{background:var(--surface2)}
+.cv-modal-prod-img{width:36px;height:36px;border-radius:4px;object-fit:cover;background:var(--surface2);flex-shrink:0}
+.cv-modal-prod-name{font-size:12px;font-weight:600;color:var(--text)}
+.cv-modal-prod-stock{font-size:11px;color:var(--text3);margin-top:1px}
 .ap-log-time{font-size:10px;color:var(--text3);flex-shrink:0;white-space:nowrap;margin-top:2px}
 .ap-at-risk{background:rgba(255,71,87,.06);border:1px solid rgba(255,71,87,.18);border-radius:var(--r);padding:10px 12px;margin-bottom:6px}
 .ap-at-risk-name{font-size:12px;font-weight:600;color:var(--text);margin-bottom:3px}
@@ -3134,7 +3148,32 @@ create policy "own" on contacts for all using (auth.uid()=user_id);</div>
     </div>
   </div>
 </div>
+<!-- CICLO VIVO: vincular anuncio a producto TN -->
+<div class="modal-backdrop" id="modal-cv-link">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-title">Vincular anuncio a producto</div>
+    <div style="font-size:12px;color:var(--text2);margin-bottom:14px">Seleccioná el producto de tu tienda que este anuncio está promocionando. GOTIX monitoreará el stock y pausará el anuncio automáticamente si se agota.</div>
+    <input id="cv-prod-search" type="text" placeholder="Buscar producto..." style="width:100%;margin-bottom:10px" oninput="cvRenderProdList(this.value)">
+    <div id="cv-prod-list" style="max-height:280px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--r)"></div>
+    <input type="hidden" id="cv-link-ad-id">
+    <input type="hidden" id="cv-link-ad-name">
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-cv-link')">Cancelar</button>
+    </div>
+  </div>
+</div>
 
+<!-- CICLO VIVO: restock → reactivar anuncio -->
+<div class="modal-backdrop" id="modal-cv-restock">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-title">Stock repuesto — ¿Reactivar anuncio?</div>
+    <div id="cv-restock-body" style="font-size:13px;color:var(--text2);margin-bottom:16px"></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-cv-restock')">Ahora no</button>
+      <button class="btn btn-accent" id="cv-restock-confirm-btn">Reactivar anuncio</button>
+    </div>
+  </div>
+</div>
 <div class="modal-backdrop" id="modal-dup-selected">
   <div class="modal" style="max-width:600px">
     <div class="modal-title">Duplicar Conjuntos Seleccionados</div>
@@ -3519,7 +3558,13 @@ if(p==='finanzas'){loadFinanzas();loadCotizacionUSD();loadEscAll();}
   if(p==='userlist')cargarUsuarios();
   if(p==='config')loadConfigPage();
   if(p==='dashboard'&&META_TOKEN&&META_ACCOUNT){syncDashDateSelector();if(!metaCampaigns.length)initDashboardMeta();}
-  if(p==='meta-campanas'){ apRefreshLogCache(); }
+  if(p==='meta-campanas'){
+    apRefreshLogCache();
+    cvRefreshCache().then(() => {
+      cvMonitorStock();
+      cvCheckRestock();
+    });
+  }
   if(p==='biblioteca'){ bibLoadRoas(); }
  if(p==='autopilot'){ apRenderRules(); apRenderLog(); }
   const cm=document.getElementById('cont-cal-mes');if(cm&&!cm.value)cm.value=new Date().toISOString().substring(0,7);
@@ -6031,6 +6076,183 @@ async function dfEscalar(adId, adName, adsetId){
     </tr>`).join('')}</tbody>
   </table>`;
 }
+  // ══════════════════════════════════════════════════════════════════════════════
+// CICLO VIVO — Circuito cerrado: Anuncio Meta ↔ Stock TiendaNube
+// ══════════════════════════════════════════════════════════════════════════════
+let cvLinksCache = null; // Map: ad_id -> { tn_product_id, tn_variant_id, product_name, variant_name }
+let cvStockCache = null; // Map: variant_id|product_id -> stock actual
+
+async function cvRefreshCache(){
+  if(!me) return;
+  // 1) Traer vínculos del usuario
+  const { data: links } = await db.from('ad_product_links').select('*').eq('user_id', me.id);
+  cvLinksCache = new Map();
+  for(const l of (links||[])) cvLinksCache.set(l.ad_id, l);
+
+  // 2) Traer stock actualizado de TiendaNube si hay productos cargados
+  if(!anProductos.length) return;
+  cvStockCache = new Map();
+  anProductos.forEach(p => {
+    (p.variants||[]).forEach(v => {
+      cvStockCache.set(v.variant_id, +v.stock||0);
+    });
+    if((!p.variants||!p.variants.length)) cvStockCache.set(p.product_id, +p.stock||0);
+  });
+}
+
+function cvGetStock(link){
+  if(!cvStockCache) return null;
+  const key = link.tn_variant_id || link.tn_product_id;
+  const s = cvStockCache.get(key);
+  return s !== undefined ? s : null;
+}
+
+function cvEstimarDias(adId, stockActual){
+  // Usa insights del ad para calcular ventas/día
+  const ad = (metaAds||[]).find(a=>a.id===adId) || (metaCampaigns||[]).find(c=>c.id===adId);
+  if(!ad?.insights) return null;
+  const ins = ad.insights;
+  const purchases = +(ins.purchases||ins.actions?.find?.(a=>a.action_type==='purchase')?.value||0);
+  const dias = 7;
+  const ventasDia = purchases / dias;
+  if(ventasDia <= 0) return null;
+  return Math.floor(stockActual / ventasDia);
+}
+
+function cvStockBadgeHtml(adId){
+  if(!cvLinksCache || !cvLinksCache.has(adId)){
+    return `<button class="cv-link-btn" onclick="event.stopPropagation();cvOpenLinkModal('${adId}','')">
+      <svg width="10" height="10" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M8.5 1H13v4.5"/><path d="M13 1l-7 7"/><path d="M6 3H2.5A1.5 1.5 0 0 0 1 4.5v7A1.5 1.5 0 0 0 2.5 13h7A1.5 1.5 0 0 0 11 11.5V8"/></svg>
+      Vincular producto
+    </button>`;
+  }
+  const link = cvLinksCache.get(adId);
+  const stock = cvGetStock(link);
+  if(stock === null) return `<span class="cv-stock-badge ok" onclick="event.stopPropagation();cvOpenLinkModal('${adId}','${link.product_name||''}')">📦 Vinculado</span>`;
+
+  if(stock <= 0){
+    return `<span class="cv-stock-badge no-stock" onclick="event.stopPropagation();cvOpenLinkModal('${adId}','${link.product_name||''}')" title="Sin stock — el anuncio debería estar pausado">
+      <svg width="9" height="9" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M7 2v6M7 10.5v.5"/><circle cx="7" cy="7" r="6"/></svg>
+      SIN STOCK
+    </span>`;
+  }
+
+  const dias = cvEstimarDias(adId, stock);
+  const diasStr = dias !== null ? ` · ~${dias}d` : '';
+  const cls = !dias ? 'ok' : dias <= 2 ? 'critical' : dias <= 5 ? 'warn' : 'ok';
+  const nombre = (link.variant_name && link.variant_name !== 'Unica') ? link.variant_name : link.product_name||'Producto';
+
+  return `<span class="cv-stock-badge ${cls}" onclick="event.stopPropagation();cvOpenLinkModal('${adId}','${nombre}')" title="Stock: ${stock} uds${dias?` · ${dias} días estimados`:''}">
+    <svg width="9" height="9" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><rect x="1" y="5" width="12" height="8" rx="1"/><path d="M4 5V4a3 3 0 0 1 6 0v1"/></svg>
+    ${stock} uds${diasStr}
+  </span>`;
+}
+
+// ── Modal de vinculación ──────────────────────────────────────────────────────
+function cvOpenLinkModal(adId, adName){
+  document.getElementById('cv-link-ad-id').value = adId;
+  document.getElementById('cv-link-ad-name').value = adName;
+  document.getElementById('cv-prod-search').value = '';
+  cvRenderProdList('');
+  openModal('modal-cv-link');
+}
+
+function cvRenderProdList(q){
+  const list = document.getElementById('cv-prod-list');
+  if(!list) return;
+  if(!anProductos.length){
+    list.innerHTML = '<div style="padding:16px;text-align:center;font-size:12px;color:var(--text3)">Primero sincronizá tus productos de TiendaNube en la sección Ventas.</div>';
+    return;
+  }
+  const qLow = (q||'').toLowerCase();
+  let items = anProductos;
+  if(qLow) items = items.filter(p => p.product_name.toLowerCase().includes(qLow));
+
+  list.innerHTML = items.slice(0,30).map(p => {
+    const variants = (p.variants||[]);
+    if(variants.length <= 1){
+      const stock = variants[0]?.stock ?? p.stock ?? 0;
+      const vid = variants[0]?.variant_id || '';
+      return `<div class="cv-modal-prod-item" onclick="cvSaveLink('${p.product_id}','${vid}','${(p.product_name||'').replace(/'/g,"\\'")}','')">
+        ${p.image?`<img class="cv-modal-prod-img" src="${p.image}" onerror="this.style.display='none'">`:'<div class="cv-modal-prod-img"></div>'}
+        <div><div class="cv-modal-prod-name">${p.product_name}</div><div class="cv-modal-prod-stock">Stock: ${stock} uds</div></div>
+      </div>`;
+    }
+    return variants.map(v => `<div class="cv-modal-prod-item" onclick="cvSaveLink('${p.product_id}','${v.variant_id}','${(p.product_name||'').replace(/'/g,"\\'")}','${(v.variant_name||'').replace(/'/g,"\\'")}')">
+      ${p.image?`<img class="cv-modal-prod-img" src="${p.image}" onerror="this.style.display='none'">`:'<div class="cv-modal-prod-img"></div>'}
+      <div><div class="cv-modal-prod-name">${p.product_name} — ${v.variant_name}</div><div class="cv-modal-prod-stock">Stock: ${v.stock||0} uds</div></div>
+    </div>`).join('');
+  }).join('');
+}
+
+async function cvSaveLink(productId, variantId, productName, variantName){
+  const adId = document.getElementById('cv-link-ad-id').value;
+  if(!adId || !me) return;
+  await db.from('ad_product_links').upsert({
+    user_id: me.id,
+    ad_id: adId,
+    ad_name: document.getElementById('cv-link-ad-name').value || adId,
+    tn_product_id: productId,
+    tn_variant_id: variantId || null,
+    product_name: productName,
+    variant_name: variantName || null
+  }, { onConflict: 'user_id,ad_id' });
+  await cvRefreshCache();
+  closeModal('modal-cv-link');
+  toast(`Vinculado a "${productName}${variantName?' — '+variantName:''}" ✓`);
+  applyMetaDateRange(); // refrescar tabla para mostrar badge actualizado
+}
+
+// ── Monitor de stock (corre al cargar Meta Ads) ───────────────────────────────
+async function cvMonitorStock(){
+  if(!cvLinksCache || !cvStockCache || !me) return;
+
+  for(const [adId, link] of cvLinksCache.entries()){
+    const stock = cvGetStock(link);
+    if(stock === null) continue;
+
+    if(stock <= 0){
+      // Sin stock → pausar anuncio automáticamente
+      const r = await metaPost(adId, { status: 'PAUSED' });
+      if(!r.error){
+        await apPushLog({
+          action: 'pause',
+          message: `[Ciclo Vivo] Se pausó "<strong>${link.ad_name}</strong>" automáticamente — sin stock de "${link.product_name}${link.variant_name?' — '+link.variant_name:''}".`,
+          ad_id: adId,
+          ad_name: link.ad_name
+        });
+        toast(`Anuncio "${link.ad_name}" pausado — sin stock`);
+      }
+    }
+  }
+}
+
+// ── Sugerencia de reactivación cuando hay restock ────────────────────────────
+async function cvCheckRestock(){
+  if(!cvLinksCache || !cvStockCache) return;
+  for(const [adId, link] of cvLinksCache.entries()){
+    const stock = cvGetStock(link);
+    if(stock === null || stock <= 0) continue;
+
+    // Verificar si el anuncio está pausado
+    const adData = await metaGet(adId, { fields: 'effective_status,name' });
+    if(adData?.effective_status !== 'PAUSED') continue;
+
+    // Mostrar modal de sugerencia de reactivación
+    const body = document.getElementById('cv-restock-body');
+    if(body) body.innerHTML = `Hay <strong>${stock} unidades</strong> de "<strong>${link.product_name}${link.variant_name?' — '+link.variant_name:''}</strong>" disponibles.<br><br>El anuncio "<strong>${link.ad_name}</strong>" está pausado. ¿Querés reactivarlo?`;
+    const btn = document.getElementById('cv-restock-confirm-btn');
+    if(btn) btn.onclick = async () => {
+      await metaPost(adId, { status: 'ACTIVE' });
+      await apPushLog({ action:'notify', message:`[Ciclo Vivo] Se reactivó "<strong>${link.ad_name}</strong>" después de reponer stock de "${link.product_name}".`, ad_id:adId, ad_name:link.ad_name });
+      closeModal('modal-cv-restock');
+      toast(`"${link.ad_name}" reactivado ✓`);
+      applyMetaDateRange();
+    };
+    openModal('modal-cv-restock');
+    break; // una sugerencia por vez, no spamear
+  }
+}
 function tsResetAdvControls(){
   Object.keys(ADV_CONTROLS).forEach(k => ADV_CONTROLS[k].value = true);
   advMasterKillActive = false;
@@ -7611,6 +7833,7 @@ tbody.innerHTML = list.map(a => {
       </td>
       <td>${metaDiagnosticoHtml(ins, currentCampaignId)}</td>
       <td>${apBadgeHtml(a.id)}</td>
+      <td>${cvStockBadgeHtml(a.id)}</td>
     </tr>`;
   }).join('');
 }
