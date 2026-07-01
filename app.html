@@ -6352,17 +6352,22 @@ if(isVideo){
         if(advPayload.degrees_of_freedom_spec){
           creativeBody.degrees_of_freedom_spec = JSON.stringify(advPayload.degrees_of_freedom_spec);
         }
+       console.log('[TS] creativeBody →', JSON.stringify(creativeBody));
         const creativeRes = await metaPost(`act_${META_ACCOUNT}/adcreatives`, creativeBody);
+        console.log('[TS] creativeRes →', JSON.stringify(creativeRes));
         if(creativeRes.error){ toast(`Creative de "${anuncio.nombre}" fallo: ${creativeRes.error.message}`); continue; }
 
         // 5) ANUNCIO
-        const adRes = await metaPost(`act_${META_ACCOUNT}/ads`, {
+        const adPayload = {
           name: anuncio.nombre,
           adset_id: adsetId,
           creative: JSON.stringify({ creative_id: creativeRes.id }),
           status: 'PAUSED'
-        });
-       if(adRes.error){ toast(`Anuncio "${anuncio.nombre}" fallo: ${adRes.error.message}`); continue; }
+        };
+        console.log('[TS] adPayload →', JSON.stringify(adPayload));
+        const adRes = await metaPost(`act_${META_ACCOUNT}/ads`, adPayload);
+        console.log('[TS] adRes →', JSON.stringify(adRes));
+        if(adRes.error){ toast(`Anuncio "${anuncio.nombre}" fallo: ${adRes.error.message}`); continue; }
       }
     }
     }
