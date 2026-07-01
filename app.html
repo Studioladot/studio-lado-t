@@ -5391,14 +5391,37 @@ const AP_LOG_KEY       = 'gotix_autopilot_log_v1';
 const AP_PROTECTED_KEY = 'gotix_autopilot_protected_v1';
 const AP_SCHEDULER_KEY = 'gotix_autopilot_last_run_v1';
 
-function apLoadRules(){ try{ return JSON.parse(localStorage.getItem(AP_STORAGE_KEY)||'[]'); }catch{ return []; } }
-function apSaveRules(r){ localStorage.setItem(AP_STORAGE_KEY, JSON.stringify(r)); }
-function apLoadLog(){ try{ return JSON.parse(localStorage.getItem(AP_LOG_KEY)||'[]'); }catch{ return []; } }
-function apSaveLog(l){ localStorage.setItem(AP_LOG_KEY, JSON.stringify(l.slice(0,300))); }
+// ── Autopilot: CRUD via Supabase (reemplaza localStorage) ──────────────────
+async function apLoadRules(){
+  if(!me) return [];
+  const { data } = await db.from('autopilot_rules').select('*').eq('user_id',me.id).order('created_at',{ascending:false});
+  return data||[];
+}
+async function apSaveRule_db(rule){
+  if(!me) return;
+  await db.from('autopilot_rules').upsert({ ...rule, user_id: me.id });
+}
+async function apDeleteRule_db(id){
+  if(!me) return;
+  await db.from('autopilot_rules').delete().eq('id',id).eq('user_id',me.id);
+}
+async function apToggleRule_db(id, active){
+  if(!me) return;
+  await db.from('autopilot_rules').update({ active }).eq('id',id).eq('user_id',me.id);
+}
+async function apLoadLog(){
+  if(!me) return [];
+  const { data } = await db.from('autopilot_log').select('*').eq('user_id',me.id).order('created_at',{ascending:false}).limit(200);
+  return (data||[]).map(r=>({ ...r, ts: r.created_at }));
+}
+async function apPushLog(entry){
+  if(!me) return;
+  await db.from('autopilot_log').insert({ user_id: me.id, action: entry.action||'notify', message: entry.message||'', ad_id: entry.ad_id||null, ad_name: entry.ad_name||null, rule_id: entry.rule_id||null });
+}
+// Protected sigue en localStorage (es preferencia local, no necesita servidor)
 function apLoadProtected(){ try{ return JSON.parse(localStorage.getItem(AP_PROTECTED_KEY)||'[]'); }catch{ return []; } }
 function apSaveProtected(p){ localStorage.setItem(AP_PROTECTED_KEY, JSON.stringify(p)); }
-function apPushLog(entry){ const log=apLoadLog(); log.unshift({...entry,ts:new Date().toISOString()}); apSaveLog(log); }
-
+  
 // ── DEFINICIÓN DE MÉTRICAS ────────────────────────────────────────────────────
 const AP_METRICS = {
   roas:     { label:'ROAS',     unit:'x',   step:'0.1', placeholder:'2.0',   extract: ins => { const s=+(ins.spend||0),r=+(ins.action_values?.find(a=>a.action_type==='purchase')?.value||0); return s>0&&r>0?r/s:0; } },
@@ -5512,22 +5535,25 @@ function apSaveRule(){
   if(editId){ const i=rules.findIndex(r=>r.id===editId); if(i>-1) rules[i]=rule; else rules.unshift(rule); }
   else rules.unshift(rule);
 
-  apSaveRules(rules);
+ await apSaveRule_db(rule);
   closeModal('modal-ap-rule');
   apRenderRules();
   toast('Regla guardada ✓');
 }
 
-function apDeleteRule(id){
+async function apDeleteRule(id){
   if(!confirm('¿Eliminar esta regla?')) return;
-  apSaveRules(apLoadRules().filter(r=>r.id!==id));
+  await apDeleteRule_db(id);
   apRenderRules();
   toast('Regla eliminada');
 }
 
-function apToggleRuleActive(id){
-  const rules=apLoadRules(); const r=rules.find(x=>x.id===id); if(r) r.active=!r.active;
-  apSaveRules(rules); apRenderRules();
+async function apToggleRuleActive(id){
+  const rules = await apLoadRules();
+  const r = rules.find(x=>x.id===id);
+  if(!r) return;
+  await apToggleRule_db(id, !r.active);
+  apRenderRules();
 }
 
 function apEditRule(id){
