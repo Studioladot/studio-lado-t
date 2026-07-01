@@ -5142,9 +5142,19 @@ function tsGetAdvPayload(){
 // ══════════════════════════════════════════════════════════════════════════════
 const PRESETS_KEY = 'gotix_presets_v1';
 
-function presetsLoad(){ try{ return JSON.parse(localStorage.getItem(PRESETS_KEY)||'[]'); }catch{ return []; } }
-function presetsSave(p){ localStorage.setItem(PRESETS_KEY, JSON.stringify(p)); }
-
+async function presetsLoad(){
+  if(!me) return [];
+  const { data, error } = await db.from('campaign_presets').select('*').eq('user_id', me.id).order('created_at',{ascending:false});
+  return error ? [] : (data||[]);
+}
+async function presetsSave(preset){
+  if(!me) return;
+  await db.from('campaign_presets').upsert({ ...preset, user_id: me.id });
+}
+async function presetsDelete(presetId){
+  if(!me) return;
+  await db.from('campaign_presets').delete().eq('id', presetId).eq('user_id', me.id);
+}
 // Leer la configuración actual del sandbox y armar el objeto preset
 function tsReadCurrentConfig(){
   return {
@@ -5181,26 +5191,26 @@ function tsSaveCurrentAsPreset(){
   openModal('modal-save-preset');
 }
 
-function tsConfirmSavePreset(){
+async function tsConfirmSavePreset(){
   const name = document.getElementById('preset-save-name').value.trim();
   if(!name){ toast('Poné un nombre al preset'); return; }
-  const presets = presetsLoad();
   const p = {
     id: 'preset_'+Date.now(),
     name,
     created_at: new Date().toISOString(),
     ...tsReadCurrentConfig()
   };
-  presets.unshift(p);
-  presetsSave(presets);
+  await presetsSave(p);
   closeModal('modal-save-preset');
   toast('Preset guardado ✓ — "'+name+'"');
 }
 
 // Abrir el selector de presets
-function tsOpenPresetPicker(){
+async function tsOpenPresetPicker(){
   const list = document.getElementById('preset-picker-list');
-  const presets = presetsLoad();
+  list.innerHTML='<div style="padding:12px;color:var(--text2);font-size:12px">Cargando presets...</div>';
+  openModal('modal-preset-picker');
+  const presets = await presetsLoad();
   if(!presets.length){
     list.innerHTML='<div class="empty" style="padding:16px 0"><div class="empty-msg">Sin presets guardados</div><div class="empty-sub">Configurá una campaña y hacé clic en "Guardar como Preset"</div></div>';
     openModal('modal-preset-picker');
@@ -5226,8 +5236,9 @@ function tsOpenPresetPicker(){
 }
 
 // Aplicar un preset al formulario del sandbox
-function tsApplyPreset(presetId){
-  const p = presetsLoad().find(x=>x.id===presetId);
+async function tsApplyPreset(presetId){
+  const presets = await presetsLoad();
+  const p = presets.find(x=>x.id===presetId);
   if(!p){ toast('Preset no encontrado'); return; }
 
   // Campaña
@@ -5260,10 +5271,10 @@ function tsApplyPreset(presetId){
   toast('Preset "'+p.name+'" aplicado — solo falta el creativo y el copy');
 }
 
-function tsDeletePreset(presetId){
+async function tsDeletePreset(presetId){
   if(!confirm('¿Eliminar este preset?')) return;
-  presetsSave(presetsLoad().filter(p=>p.id!==presetId));
-  tsOpenPresetPicker(); // refrescar la lista
+  await presetsDelete(presetId);
+  tsOpenPresetPicker();
 }
 // ══════════════════════════════════════════════════════════════════════════════
 // AUTOPILOTO DE RENTABILIDAD — Motor multiparamétrico
