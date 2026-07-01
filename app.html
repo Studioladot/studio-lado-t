@@ -6235,7 +6235,6 @@ function cvStockBadgeHtml(adId){
     ${isProtected?protectBtn:''}
   </div>`;
 }
-
   const dias = cvEstimarDias(adId, stock);
   const diasStr = dias !== null ? ` · ~${dias}d` : '';
   const cls = !dias ? 'ok' : dias <= 2 ? 'critical' : dias <= 5 ? 'warn' : 'ok';
