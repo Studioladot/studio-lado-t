@@ -467,6 +467,10 @@ body.focus-mode #main{margin-left:0}
 .ap-log-icon.protected{background:rgba(59,130,246,.1);color:var(--blue)}
 .ap-log-msg{font-size:12px;color:var(--text2);line-height:1.5;flex:1}
 .ap-log-msg strong{color:var(--text);font-weight:600}
+  .ap-badge{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:600;padding:2px 7px;border-radius:10px;white-space:nowrap;cursor:default}
+.ap-badge.pause{background:rgba(255,71,87,.1);color:var(--red);border:1px solid rgba(255,71,87,.2)}
+.ap-badge.reduce{background:rgba(245,166,35,.1);color:var(--amber);border:1px solid rgba(245,166,35,.2)}
+.ap-badge.notify{background:rgba(11,185,128,.08);color:var(--primary-green);border:1px solid var(--primary-green-border)}
 .ap-log-time{font-size:10px;color:var(--text3);flex-shrink:0;white-space:nowrap;margin-top:2px}
 .ap-at-risk{background:rgba(255,71,87,.06);border:1px solid rgba(255,71,87,.18);border-radius:var(--r);padding:10px 12px;margin-bottom:6px}
 .ap-at-risk-name{font-size:12px;font-weight:600;color:var(--text);margin-bottom:3px}
@@ -3515,6 +3519,7 @@ if(p==='finanzas'){loadFinanzas();loadCotizacionUSD();loadEscAll();}
   if(p==='userlist')cargarUsuarios();
   if(p==='config')loadConfigPage();
   if(p==='dashboard'&&META_TOKEN&&META_ACCOUNT){syncDashDateSelector();if(!metaCampaigns.length)initDashboardMeta();}
+  if(p==='meta-campanas'){ apRefreshLogCache(); }
   if(p==='biblioteca'){ bibLoadRoas(); }
  if(p==='autopilot'){ apRenderRules(); apRenderLog(); }
   const cm=document.getElementById('cont-cal-mes');if(cm&&!cm.value)cm.value=new Date().toISOString().substring(0,7);
@@ -7411,6 +7416,41 @@ function renderMetaInsights(list) {
       <span style="font-size:12px;color:#cccccc">${al.txt}</span>
     </div>`).join('');
 }
+  // ── AUTOPILOT BADGE EN TABLA ──────────────────────────────────────────────────
+// Cache del log de autopiloto indexado por ad_id para lookup O(1) en el render
+let apLogCache = null; // Map: ad_id -> { action, message, created_at }
+
+async function apRefreshLogCache(){
+  if(!me) return;
+  const { data } = await db.from('autopilot_log')
+    .select('ad_id, ad_name, action, message, created_at')
+    .eq('user_id', me.id)
+    .order('created_at', { ascending: false })
+    .limit(500);
+  apLogCache = new Map();
+  for(const row of (data||[])){
+    if(row.ad_id && !apLogCache.has(row.ad_id)){
+      apLogCache.set(row.ad_id, row); // solo el evento más reciente por ad_id
+    }
+    // También indexar por campaign_id (para mostrar en fila de campaña)
+    // usamos ad_name como fallback key si no hay ad_id
+  }
+}
+
+function apBadgeHtml(id){
+  if(!apLogCache) return '';
+  const entry = apLogCache.get(String(id));
+  if(!entry) return '';
+  const t = new Date(entry.created_at);
+  const timeStr = t.toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit'}) + ' ' + t.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'});
+  const icons = {
+    pause:`<svg width="9" height="9" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><rect x="3" y="2" width="2.5" height="10" rx=".5"/><rect x="8.5" y="2" width="2.5" height="10" rx=".5"/></svg>`,
+    reduce:`<svg width="9" height="9" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M2 10l4-4 3 3 3-4"/></svg>`,
+    notify:`<svg width="9" height="9" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="7" cy="7" r="5.5"/><path d="M7 4.5v3"/></svg>`
+  };
+  const labels = { pause:'Pausado por Autopiloto', reduce:'Presupuesto reducido', notify:'Alerta Autopiloto' };
+  return `<span class="ap-badge ${entry.action||'notify'}" title="${(entry.message||'').replace(/</g,'&lt;').replace(/"/g,'&quot;')} — ${timeStr}">${icons[entry.action]||icons.notify} ${labels[entry.action]||'Autopiloto'}</span>`;
+}
 function renderCampaigns() {
   renderMetaCampHeader();
   if(metaFocusMode) renderMetaFocusCards();
@@ -7437,6 +7477,7 @@ function renderCampaigns() {
         <button class="btn btn-sm btn-outline" onclick="event.stopPropagation();snapshotCampaign('${c.id}','${(c.name||'').replace(/'/g,"\'")}')">&#128248;</button>
       </td>
       <td>${metaStatusBadgeHtml(ins, c.id, c.name)}</td>
+      <td>${apBadgeHtml(c.id)}</td>
     </tr>`;
   }).join('');
 }
@@ -7499,6 +7540,7 @@ function renderAdsets(campName) {
       <td><button class="btn btn-sm btn-outline" onclick="event.stopPropagation();snapshotAdset('${s.id}','${(s.name||'').replace(/'/g,"\'")}')">&#128248;</button></td>
       <td>${metaStatusBadgeHtml(ins, currentCampaignId, currentCampaignName)}</td>
       <td>${metaDiagnosticoHtml(ins, currentCampaignId)}</td>
+      <td>${apBadgeHtml(s.id)}</td>
     </tr>`;
   }).join('');
 }
@@ -7568,6 +7610,7 @@ tbody.innerHTML = list.map(a => {
         <button class="btn btn-sm btn-accent" onclick="snapshotAd('${a.id}','${(a.name||'').replace(/'/g,"\'")}')">&#128248; Snap</button>
       </td>
       <td>${metaDiagnosticoHtml(ins, currentCampaignId)}</td>
+      <td>${apBadgeHtml(a.id)}</td>
     </tr>`;
   }).join('');
 }
