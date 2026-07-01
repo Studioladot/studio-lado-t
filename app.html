@@ -4899,7 +4899,7 @@ function saveMetaColumns() {
 function renderMetaTableHeader(rowId, firstColLabel, includeStrategic=false, includeDiagnostico=false) {
   const row = document.getElementById(rowId);
   if(!row) return;
-  row.innerHTML = `<th>${firstColLabel}</th><th>Estado</th>` +
+  row.innerHTML = `<th style="width:28px"></th><th>${firstColLabel}</th><th>Estado</th>` +
     metaActiveColumns.map(id => `<th>${META_METRIC_DEFS[id].label}</th>`).join('') +
     `<th></th>` +
     (includeStrategic ? `<th>Estado Estrategico</th>` : '') +
