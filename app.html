@@ -6557,12 +6557,16 @@ async function metaGet(path, params={}) {
 // POST a Graph API (cambiar status, etc.) — requiere que /api/meta-proxy acepte metodo POST
 async function metaPost(path, body={}) {
   const session = (await db.auth.getSession()).data.session;
+  const payload = { path, ...body };
+  console.log('[metaPost] →', path, JSON.stringify(payload).substring(0, 400));
   const r = await fetch(`/api/meta-proxy`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
-    body: JSON.stringify({ path, ...body })
+    body: JSON.stringify(payload)
   });
-  return r.json();
+  const raw = await r.text();
+  if(!r.ok) console.error('[metaPost] ✗', r.status, path, raw.substring(0, 600));
+  try { return JSON.parse(raw); } catch(e) { return { error: { message: 'Respuesta no-JSON: ' + raw } }; }
 }
 function parseInsights(ins) {
   if(!ins||!ins.length) return {};
