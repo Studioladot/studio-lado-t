@@ -6294,6 +6294,7 @@ const existingCampaignId = document.getElementById('ts-camp-existing-id').value.
           // source_ad_id clona el anuncio original incluyendo su configuración de catálogo,
           // evitando el error 3858040 que ocurre al adjuntar un creative_id con Catalog activado
           // a un adset sin catálogo configurado.
+          console.log('[ENG] source_ad_id:', engSel.adId, '| engSel:', JSON.stringify(engSel));
           const adRes = await metaPost(`act_${META_ACCOUNT}/ads`, {
             name: anuncio.nombre,
             adset_id: adsetId,
