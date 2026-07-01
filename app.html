@@ -6379,7 +6379,8 @@ const existingCampaignId = document.getElementById('ts-camp-existing-id').value.
       }
 
       const campRes = await metaPost(`act_${META_ACCOUNT}/campaigns`, campaignPayload);
-      if(campRes.error){ toast('Error al crear campana: '+campRes.error.message); return; }
+      if(campRes.error){ tsConsoleError('al crear campaña: '+campRes.error.message); return; }
+      tsConsoleStep(1);
       campaignId = campRes.id;
     }
 
@@ -6406,8 +6407,9 @@ const existingCampaignId = document.getElementById('ts-camp-existing-id').value.
         adsetPayload.catalog_based_optimization = 'NONE';
       }
 
-      const adsetRes = await metaPost(`act_${META_ACCOUNT}/adsets`, adsetPayload);
-      if(adsetRes.error){ toast(`Conjunto "${conjuntoNombre}" fallo: ${adsetRes.error.message}`); continue; }
+     const adsetRes = await metaPost(`act_${META_ACCOUNT}/adsets`, adsetPayload);
+      if(adsetRes.error){ tsConsoleError(`conjunto "${conjuntoNombre}": ${adsetRes.error.message}`); continue; }
+      tsConsoleStep(2);
       const adsetId = adsetRes.id;
 
       for(const anuncio of conjunto.anuncios){
@@ -6493,11 +6495,9 @@ if(isVideo){
         if(advPayload.degrees_of_freedom_spec){
           creativeBody.degrees_of_freedom_spec = JSON.stringify(advPayload.degrees_of_freedom_spec);
         }
-       console.log('[TS] creativeBody →', JSON.stringify(creativeBody));
+       tsConsoleStep(3);
         const creativeRes = await metaPost(`act_${META_ACCOUNT}/adcreatives`, creativeBody);
-        console.log('[TS] creativeRes →', JSON.stringify(creativeRes));
-        if(creativeRes.error){ toast(`Creative de "${anuncio.nombre}" fallo: ${creativeRes.error.message}`); continue; }
-
+        if(creativeRes.error){ tsConsoleError(`creative "${anuncio.nombre}": ${creativeRes.error.message}`); continue; }
         // 5) ANUNCIO
         const adPayload = {
           name: anuncio.nombre,
@@ -6505,18 +6505,22 @@ if(isVideo){
           creative: JSON.stringify({ creative_id: creativeRes.id }),
           status: 'PAUSED'
         };
-        console.log('[TS] adPayload →', JSON.stringify(adPayload));
+      tsConsoleStep(4);
         const adRes = await metaPost(`act_${META_ACCOUNT}/ads`, adPayload);
-        console.log('[TS] adRes →', JSON.stringify(adRes));
-        if(adRes.error){ toast(`Anuncio "${anuncio.nombre}" fallo: ${adRes.error.message}`); continue; }
+        if(adRes.error){ tsConsoleError(`anuncio "${anuncio.nombre}": ${adRes.error.message}`); continue; }
       }
     }
     }
 
-    toast('Testeo creado en Meta — revisa Ads Manager (todo en pausa)');
-    closeModal('modal-testing-sandbox');
-    applyMetaDateRange();
+   tsConsoleStep(5);
+    tsConsoleDone();
+    setTimeout(() => {
+      closeModal('modal-testing-sandbox');
+      tsConsoleReset();
+      applyMetaDateRange();
+    }, 2200);
   } catch(e){
+    tsConsoleError(e.message);
     toast('Error inesperado: ' + e.message);
   }
 }
