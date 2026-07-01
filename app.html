@@ -1102,6 +1102,14 @@ body.focus-mode #main{margin-left:0}
             <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><rect x="2" y="4" width="12" height="9" rx="1.5"/><path d="M10 4l-1.5-2h-1L6 4"/><circle cx="8" cy="9" r="2"/></svg>
             Auto-snapshot
           </button>
+         <div class="meta-opts-divider"></div>
+          <button class="meta-opts-focus-row" onclick="cvToggleAutoPause()">
+            <span style="display:flex;flex-direction:column;gap:1px">
+              <span>Ciclo Vivo — Pausa automática</span>
+              <span style="font-size:10px;color:var(--text3)">Pausa anuncios si se agota el stock</span>
+            </span>
+            <button class="meta-switch" id="cv-autopause-switch" onclick="event.stopPropagation();cvToggleAutoPause()"></button>
+          </button>
           <div class="meta-opts-divider"></div>
           <button class="meta-opts-focus-row" onclick="toggleMetaFocusMode()">
             <span>Modo Focus</span>
@@ -3560,6 +3568,7 @@ if(p==='finanzas'){loadFinanzas();loadCotizacionUSD();loadEscAll();}
   if(p==='dashboard'&&META_TOKEN&&META_ACCOUNT){syncDashDateSelector();if(!metaCampaigns.length)initDashboardMeta();}
   if(p==='meta-campanas'){
     apRefreshLogCache();
+    cvInitAutoPauseSwitch();
     cvRefreshCache().then(() => {
       cvMonitorStock();
       cvCheckRestock();
@@ -6082,31 +6091,92 @@ async function dfEscalar(adId, adName, adsetId){
 let cvLinksCache = null; // Map: ad_id -> { tn_product_id, tn_variant_id, product_name, variant_name }
 let cvStockCache = null; // Map: variant_id|product_id -> stock actual
 
+const CV_AUTOPAUSE_KEY = 'gotix_cv_autopause';
+const CV_PROTECTED_ADS_KEY = 'gotix_cv_protected_ads';
+
+function cvAutoPauseEnabled(){ return localStorage.getItem(CV_AUTOPAUSE_KEY) !== 'off'; }
+function cvToggleAutoPause(){
+  const next = !cvAutoPauseEnabled();
+  localStorage.setItem(CV_AUTOPAUSE_KEY, next ? 'on' : 'off');
+  const sw = document.getElementById('cv-autopause-switch');
+  if(sw) sw.classList.toggle('on', next);
+  toast('Ciclo Vivo: pausa automática ' + (next ? 'activada' : 'desactivada'));
+}
+function cvInitAutoPauseSwitch(){
+  const sw = document.getElementById('cv-autopause-switch');
+  if(sw) sw.classList.toggle('on', cvAutoPauseEnabled());
+}
+
+function cvIsAdProtected(adId){
+  try{ return JSON.parse(localStorage.getItem(CV_PROTECTED_ADS_KEY)||'[]').includes(adId); }catch{ return false; }
+}
+function cvToggleAdProtected(adId, adName){
+  try{
+    let list = JSON.parse(localStorage.getItem(CV_PROTECTED_ADS_KEY)||'[]');
+    if(list.includes(adId)){ list = list.filter(x=>x!==adId); toast(`"${adName}" ya puede ser pausado por Ciclo Vivo`); }
+    else { list.push(adId); toast(`"${adName}" protegido — Ciclo Vivo no lo tocará`); }
+    localStorage.setItem(CV_PROTECTED_ADS_KEY, JSON.stringify(list));
+    applyMetaDateRange();
+  }catch{}
+}
+
 async function cvRefreshCache(){
   if(!me) return;
-  // 1) Traer vínculos del usuario
+  // 1) Vínculos producto único (ad_product_links)
   const { data: links } = await db.from('ad_product_links').select('*').eq('user_id', me.id);
   cvLinksCache = new Map();
   for(const l of (links||[])) cvLinksCache.set(l.ad_id, l);
 
-  // 2) Traer stock actualizado de TiendaNube si hay productos cargados
+  // 2) Vínculos multi-variante (ad_variant_links)
+  const { data: varLinks } = await db.from('ad_variant_links').select('*').eq('user_id', me.id);
+  // Agrupar por ad_id → array de variantes
+  if(varLinks?.length){
+    const byAd = {};
+    for(const v of varLinks){
+      if(!byAd[v.ad_id]) byAd[v.ad_id] = [];
+      byAd[v.ad_id].push(v);
+    }
+    for(const [adId, variants] of Object.entries(byAd)){
+      // Si ya hay un link de producto único, enriquecerlo con variantes
+      if(!cvLinksCache.has(adId)){
+        cvLinksCache.set(adId, { ad_id: adId, tn_product_id: variants[0].tn_product_id, _variants: variants });
+      } else {
+        cvLinksCache.get(adId)._variants = variants;
+      }
+    }
+  }
+
+  // 3) Stock desde anProductos
   if(!anProductos.length) return;
   cvStockCache = new Map();
   anProductos.forEach(p => {
-    (p.variants||[]).forEach(v => {
-      cvStockCache.set(v.variant_id, +v.stock||0);
-    });
-    if((!p.variants||!p.variants.length)) cvStockCache.set(p.product_id, +p.stock||0);
+    (p.variants||[]).forEach(v => { cvStockCache.set(v.variant_id, +v.stock||0); });
+    cvStockCache.set(p.product_id, +p.stock||0);
   });
 }
 
 function cvGetStock(link){
   if(!cvStockCache) return null;
+  // Si tiene múltiples variantes vinculadas, sumar el stock de todas
+  if(link._variants?.length){
+    let total = 0;
+    let found = false;
+    for(const v of link._variants){
+      const s = cvStockCache.get(v.tn_variant_id);
+      if(s !== undefined){ total += s; found = true; }
+    }
+    return found ? total : null;
+  }
   const key = link.tn_variant_id || link.tn_product_id;
   const s = cvStockCache.get(key);
   return s !== undefined ? s : null;
 }
 
+function cvGetVariantesCriticas(link){
+  // Devuelve las variantes con stock = 0 para mostrar al usuario
+  if(!link._variants?.length || !cvStockCache) return [];
+  return link._variants.filter(v => (cvStockCache.get(v.tn_variant_id)||0) === 0).map(v=>v.variant_name||v.tn_variant_id);
+}
 function cvEstimarDias(adId, stockActual){
   // Usa insights del ad para calcular ventas/día
   const ad = (metaAds||[]).find(a=>a.id===adId) || (metaCampaigns||[]).find(c=>c.id===adId);
@@ -6120,8 +6190,51 @@ function cvEstimarDias(adId, stockActual){
 }
 
 function cvStockBadgeHtml(adId){
+  const isProtected = cvIsAdProtected(adId);
+  const protectBtn = `<button class="cv-link-btn" onclick="event.stopPropagation();cvToggleAdProtected('${adId}','${adId}')" title="${isProtected?'Quitar protección':'Proteger — Ciclo Vivo no pausará este anuncio'}">
+    <svg width="9" height="9" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"><path d="M7 1l5 2v4c0 3.3-5 6-5 6S2 10.3 2 7V3z"/></svg>
+    ${isProtected?'Protegido':'Proteger'}
+  </button>`;
+
   if(!cvLinksCache || !cvLinksCache.has(adId)){
     return `<button class="cv-link-btn" onclick="event.stopPropagation();cvOpenLinkModal('${adId}','')">
+      <svg width="10" height="10" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M8.5 1H13v4.5"/><path d="M13 1l-7 7"/><path d="M6 3H2.5A1.5 1.5 0 0 0 1 4.5v7A1.5 1.5 0 0 0 2.5 13h7A1.5 1.5 0 0 0 11 11.5V8"/></svg>
+      Vincular producto
+    </button>`;
+  }
+
+  const link = cvLinksCache.get(adId);
+  const stock = cvGetStock(link);
+  const criticas = cvGetVariantesCriticas(link);
+  const numVariantes = link._variants?.length || (link.tn_variant_id ? 1 : 0);
+  const varLabel = numVariantes > 1 ? ` (${numVariantes} variantes)` : '';
+
+  if(stock === null) return `<span class="cv-stock-badge ok" onclick="event.stopPropagation();cvOpenLinkModal('${adId}','${link.product_name||''}')">📦 Vinculado${varLabel}</span> ${isProtected?protectBtn:''}`;
+
+  if(stock <= 0){
+    return `<div style="display:flex;align-items:center;gap:4px">
+      <span class="cv-stock-badge no-stock" title="Sin stock en todas las variantes vinculadas">
+        <svg width="9" height="9" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M7 2v6M7 10.5v.5"/><circle cx="7" cy="7" r="6"/></svg>
+        SIN STOCK
+      </span>
+      ${isProtected?protectBtn:''}
+    </div>`;
+  }
+
+  const dias = cvEstimarDias(adId, stock);
+  const diasStr = dias !== null ? ` · ~${dias}d` : '';
+  const cls = !dias ? 'ok' : dias <= 2 ? 'critical' : dias <= 5 ? 'warn' : 'ok';
+  const critStr = criticas.length ? ` ⚠ Sin: ${criticas.join(', ')}` : '';
+  const nombre = link.product_name || 'Producto';
+
+  return `<div style="display:flex;align-items:center;gap:4px">
+    <span class="cv-stock-badge ${cls}" onclick="event.stopPropagation();cvOpenLinkModal('${adId}','${nombre}')" title="Stock total: ${stock} uds${dias?` · ${dias} días estimados`:''}${critStr}">
+      <svg width="9" height="9" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><rect x="1" y="5" width="12" height="8" rx="1"/><path d="M4 5V4a3 3 0 0 1 6 0v1"/></svg>
+      ${stock} uds${diasStr}${varLabel}
+    </span>
+    ${isProtected?protectBtn:''}
+  </div>`;
+}
       <svg width="10" height="10" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M8.5 1H13v4.5"/><path d="M13 1l-7 7"/><path d="M6 3H2.5A1.5 1.5 0 0 0 1 4.5v7A1.5 1.5 0 0 0 2.5 13h7A1.5 1.5 0 0 0 11 11.5V8"/></svg>
       Vincular producto
     </button>`;
@@ -6170,19 +6283,68 @@ function cvRenderProdList(q){
 
   list.innerHTML = items.slice(0,30).map(p => {
     const variants = (p.variants||[]);
+    const stockTotal = variants.reduce((s,v)=>s+(+v.stock||0), 0) || +p.stock || 0;
+
     if(variants.length <= 1){
-      const stock = variants[0]?.stock ?? p.stock ?? 0;
       const vid = variants[0]?.variant_id || '';
       return `<div class="cv-modal-prod-item" onclick="cvSaveLink('${p.product_id}','${vid}','${(p.product_name||'').replace(/'/g,"\\'")}','')">
         ${p.image?`<img class="cv-modal-prod-img" src="${p.image}" onerror="this.style.display='none'">`:'<div class="cv-modal-prod-img"></div>'}
-        <div><div class="cv-modal-prod-name">${p.product_name}</div><div class="cv-modal-prod-stock">Stock: ${stock} uds</div></div>
+        <div><div class="cv-modal-prod-name">${p.product_name}</div><div class="cv-modal-prod-stock">Stock: ${stockTotal} uds</div></div>
       </div>`;
     }
-    return variants.map(v => `<div class="cv-modal-prod-item" onclick="cvSaveLink('${p.product_id}','${v.variant_id}','${(p.product_name||'').replace(/'/g,"\\'")}','${(v.variant_name||'').replace(/'/g,"\\'")}')">
-      ${p.image?`<img class="cv-modal-prod-img" src="${p.image}" onerror="this.style.display='none'">`:'<div class="cv-modal-prod-img"></div>'}
-      <div><div class="cv-modal-prod-name">${p.product_name} — ${v.variant_name}</div><div class="cv-modal-prod-stock">Stock: ${v.stock||0} uds</div></div>
-    </div>`).join('');
+
+    // Multi-variante: mostrar producto con opción de vincular todas o seleccionar
+    return `<div style="border-bottom:0.5px solid var(--border);padding:8px 10px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+        <div style="display:flex;align-items:center;gap:8px">
+          ${p.image?`<img class="cv-modal-prod-img" src="${p.image}" onerror="this.style.display='none'">`:'<div class="cv-modal-prod-img"></div>'}
+          <div>
+            <div class="cv-modal-prod-name">${p.product_name}</div>
+            <div class="cv-modal-prod-stock">Stock total: ${stockTotal} uds · ${variants.length} variantes</div>
+          </div>
+        </div>
+        <button class="btn btn-sm btn-accent" onclick="cvSaveMultiVariant('${p.product_id}','${(p.product_name||'').replace(/'/g,"\\'")}',${JSON.stringify(variants).replace(/"/g,'&quot;')})">Vincular todas</button>
+      </div>
+      <div style="padding-left:44px;display:flex;flex-direction:column;gap:3px">
+        ${variants.map(v=>`<label style="display:flex;align-items:center;gap:8px;font-size:11px;color:var(--text2);cursor:pointer">
+          <input type="checkbox" data-vid="${v.variant_id}" data-vname="${(v.variant_name||'').replace(/"/g,'')}" data-pid="${p.product_id}" data-pname="${(p.product_name||'').replace(/"/g,'')}" style="accent-color:var(--primary-green)">
+          ${v.variant_name||'Única'} <span style="color:var(--text3)">(${v.stock||0} uds)</span>
+        </label>`).join('')}
+        <button class="btn btn-sm btn-outline" style="margin-top:6px;align-self:flex-start" onclick="cvSaveSelectedVariants()">Vincular seleccionadas</button>
+      </div>
+    </div>`;
   }).join('');
+}
+
+async function cvSaveMultiVariant(productId, productName, variants){
+  const adId = document.getElementById('cv-link-ad-id').value;
+  if(!adId || !me) return;
+  // Guardar link principal
+  await db.from('ad_product_links').upsert({ user_id:me.id, ad_id:adId, ad_name:adId, tn_product_id:productId, tn_variant_id:null, product_name:productName, variant_name:null }, { onConflict:'user_id,ad_id' });
+  // Guardar cada variante en ad_variant_links
+  await db.from('ad_variant_links').delete().eq('user_id',me.id).eq('ad_id',adId);
+  await db.from('ad_variant_links').insert(variants.map(v=>({ user_id:me.id, ad_id:adId, tn_product_id:productId, tn_variant_id:v.variant_id, variant_name:v.variant_name||'Única' })));
+  await cvRefreshCache();
+  closeModal('modal-cv-link');
+  toast(`Vinculado a todas las variantes de "${productName}" ✓`);
+  applyMetaDateRange();
+}
+
+async function cvSaveSelectedVariants(){
+  const adId = document.getElementById('cv-link-ad-id').value;
+  if(!adId || !me) return;
+  const checked = document.querySelectorAll('#cv-prod-list input[type=checkbox]:checked');
+  if(!checked.length){ toast('Seleccioná al menos una variante'); return; }
+  const variants = Array.from(checked).map(c=>({ variant_id:c.dataset.vid, variant_name:c.dataset.vname, product_id:c.dataset.pid, product_name:c.dataset.pname }));
+  const productId = variants[0].product_id;
+  const productName = variants[0].product_name;
+  await db.from('ad_product_links').upsert({ user_id:me.id, ad_id:adId, ad_name:adId, tn_product_id:productId, tn_variant_id:null, product_name:productName, variant_name:null }, { onConflict:'user_id,ad_id' });
+  await db.from('ad_variant_links').delete().eq('user_id',me.id).eq('ad_id',adId);
+  await db.from('ad_variant_links').insert(variants.map(v=>({ user_id:me.id, ad_id:adId, tn_product_id:productId, tn_variant_id:v.variant_id, variant_name:v.variant_name })));
+  await cvRefreshCache();
+  closeModal('modal-cv-link');
+  toast(`Vinculado a ${variants.length} variante${variants.length>1?'s':''} de "${productName}" ✓`);
+  applyMetaDateRange();
 }
 
 async function cvSaveLink(productId, variantId, productName, variantName){
@@ -6206,13 +6368,16 @@ async function cvSaveLink(productId, variantId, productName, variantName){
 // ── Monitor de stock (corre al cargar Meta Ads) ───────────────────────────────
 async function cvMonitorStock(){
   if(!cvLinksCache || !cvStockCache || !me) return;
+  if(!cvAutoPauseEnabled()) return; // toggle global desactivado
 
   for(const [adId, link] of cvLinksCache.entries()){
+    if(cvIsAdProtected(adId)) continue; // protección individual
     const stock = cvGetStock(link);
     if(stock === null) continue;
 
+    const criticas = cvGetVariantesCriticas(link);
+    // Solo pausa si el stock TOTAL es 0, no si hay alguna variante sin stock
     if(stock <= 0){
-      // Sin stock → pausar anuncio automáticamente
       const r = await metaPost(adId, { status: 'PAUSED' });
       if(!r.error){
         await apPushLog({
