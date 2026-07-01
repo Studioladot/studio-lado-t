@@ -6220,11 +6220,108 @@ function tsFileToBase64(file){
     reader.readAsDataURL(file);
   });
 }
+// ── CONSOLA DE ESTADO ─────────────────────────────────────────────────────────
+const TS_STEPS = [
+  'Estableciendo conexión segura con Meta...',
+  'Creando estructura de campaña en Business Manager...',
+  'Verificando creativos y vinculando engagement...',
+  'Subiendo assets y configurando reglas de optimización...',
+  'Desplegando conjuntos y anuncios en pausa...',
+  '¡Campaña lanzada con éxito!'
+];
 
+let tsConsoleStepIdx = 0;
+let tsConsoleLineEls = [];
+
+function tsConsoleInit(){
+  const modal = document.getElementById('modal-testing-sandbox');
+  if(modal) modal.classList.add('ts-processing');
+  const con = document.getElementById('ts-console');
+  const linesEl = document.getElementById('ts-console-lines');
+  const finalEl = document.getElementById('ts-console-final');
+  if(!con || !linesEl || !finalEl) return;
+  con.classList.add('active');
+  linesEl.innerHTML = '';
+  finalEl.style.display = 'none';
+  finalEl.className = 'ts-console-final';
+  tsConsoleStepIdx = 0;
+  tsConsoleLineEls = [];
+
+  // Pre-renderizar todas las líneas ocultas
+  TS_STEPS.forEach((msg, i) => {
+    const line = document.createElement('div');
+    line.className = 'ts-console-line';
+    const now = new Date();
+    const t = now.toLocaleTimeString('es-AR', { hour:'2-digit', minute:'2-digit', second:'2-digit' });
+    line.innerHTML = `
+      <div class="ts-con-dot"></div>
+      <div class="ts-con-msg">${i===TS_STEPS.length-1 ? '<strong>'+msg+'</strong>' : msg}</div>
+      <div class="ts-con-time">${t}</div>`;
+    linesEl.appendChild(line);
+    tsConsoleLineEls.push(line);
+    // Mostrar con delay escalonado inicial
+    setTimeout(() => line.classList.add('visible'), i * 40);
+  });
+
+  // Activar el primer paso
+  tsConsoleActivateStep(0);
+}
+
+function tsConsoleActivateStep(idx){
+  tsConsoleStepIdx = idx;
+  tsConsoleLineEls.forEach((el, i) => {
+    el.classList.remove('active-line', 'done');
+    if(i < idx) el.classList.add('done');
+    if(i === idx) el.classList.add('active-line');
+  });
+  // Scroll al paso activo
+  const activeEl = tsConsoleLineEls[idx];
+  if(activeEl) activeEl.scrollIntoView({ behavior:'smooth', block:'nearest' });
+}
+
+function tsConsoleStep(idx){
+  if(idx < TS_STEPS.length) tsConsoleActivateStep(idx);
+}
+
+function tsConsoleDone(){
+  tsConsoleLineEls.forEach(el => { el.classList.remove('active-line'); el.classList.add('done'); });
+  const finalEl = document.getElementById('ts-console-final');
+  if(finalEl){
+    finalEl.textContent = '✓ Todo listo — revisá Ads Manager para activar cuando estés listo.';
+    finalEl.style.display = 'block';
+    finalEl.className = 'ts-console-final';
+  }
+  const modal = document.getElementById('modal-testing-sandbox');
+  if(modal) modal.classList.remove('ts-processing');
+}
+
+function tsConsoleError(msg){
+  // Marcar el paso activo como error
+  const errEl = tsConsoleLineEls[tsConsoleStepIdx];
+  if(errEl){ errEl.classList.remove('active-line'); errEl.classList.add('error'); }
+  const finalEl = document.getElementById('ts-console-final');
+  if(finalEl){
+    finalEl.textContent = `✗ Error: ${msg}`;
+    finalEl.style.display = 'block';
+    finalEl.className = 'ts-console-final error';
+  }
+  const modal = document.getElementById('modal-testing-sandbox');
+  if(modal) modal.classList.remove('ts-processing');
+}
+
+function tsConsoleReset(){
+  const con = document.getElementById('ts-console');
+  if(con) con.classList.remove('active');
+  const modal = document.getElementById('modal-testing-sandbox');
+  if(modal) modal.classList.remove('ts-processing');
+  tsConsoleLineEls = [];
+  tsConsoleStepIdx = 0;
+}
 async function tsGenerarTesteo(){
   const nombre = document.getElementById('ts-camp-nombre').value.trim();
   if(!nombre){ toast('Pone un nombre a la campana'); return; }
   if(!META_ACCOUNT){ toast('Conecta tu cuenta de Meta primero'); return; }
+  tsConsoleInit();
 
   const conjuntoEls = document.querySelectorAll('#ts-conjuntos-wrap .ts-conjunto');
   if(!conjuntoEls.length){ toast('Agrega al menos un conjunto'); return; }
