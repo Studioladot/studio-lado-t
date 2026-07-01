@@ -5890,8 +5890,8 @@ function tsSetEngMode(aId, mode, btn){
 async function tsEngLoadAds(){
   if(!META_ACCOUNT) return;
   try {
-    const res = await metaGet(`act_${META_ACCOUNT}/ads`, {
-      fields: 'id,name,effective_status,campaign{id,name},adset{name},creative{id,thumbnail_url,object_story_spec}',
+   const res = await metaGet(`act_${META_ACCOUNT}/ads`, {
+      fields: 'id,name,effective_status,campaign{id,name},adset{name},creative{id,thumbnail_url,effective_object_story_id,object_story_spec}',
       filtering: JSON.stringify([{ field:'effective_status', operator:'IN', value:['ACTIVE','PAUSED'] }]),
       limit: 200
     });
@@ -5900,7 +5900,8 @@ async function tsEngLoadAds(){
       name: ad.name || ad.id,
       campaignName: ad.campaign?.name || '—',
       adsetName: ad.adset?.name || '—',
-      creativeId: ad.creative?.id || null,
+     creativeId: ad.creative?.id || null,
+      objectStoryId: ad.creative?.effective_object_story_id || null,
       thumbUrl: ad.creative?.thumbnail_url || null,
       objectStorySpec: ad.creative?.object_story_spec || null
     }));
@@ -6289,30 +6290,34 @@ const existingCampaignId = document.getElementById('ts-camp-existing-id').value.
 
       for(const anuncio of conjunto.anuncios){
         // ── MODO ENGAGEMENT: reusar creative_id existente ─────────────────────
-       const engSel = tsEngSelected.get(anuncio.aId);
+      const engSel = tsEngSelected.get(anuncio.aId);
         if(engSel?.creativeId){
-          // Para preservar engagement (likes/comentarios), copiamos el anuncio original
-          // usando el endpoint /copies de Meta, que clona el ad con todo su contexto.
-          const copyRes = await metaPost(`${engSel.adId}/copies`, {
-            campaign_id: campaignId,
-            adset_id: adsetId,
-            rename_options: JSON.stringify({
-              rename_strategy: 'CUSTOM_STRING',
-              custom_string: anuncio.nombre
-            }),
-            status_option: 'PAUSED'
-          });
-          if(copyRes.error){
-            // Fallback: si /copies falla, usar creative_id directo (pierde engagement pero crea el ad)
-            console.warn('[ENG] /copies falló, fallback a creative_id:', copyRes.error.message);
-            const adRes = await metaPost(`act_${META_ACCOUNT}/ads`, {
-              name: anuncio.nombre,
-              adset_id: adsetId,
-              creative: JSON.stringify({ creative_id: engSel.creativeId }),
-              status: 'PAUSED'
+          // object_story_id apunta al post de página real (no al creative interno).
+          // Esto preserva todos los likes/comentarios del anuncio original porque
+          // Meta reutiliza el mismo post publicado en lugar de crear uno nuevo.
+          let engCreativeId = engSel.creativeId;
+
+          if(engSel.objectStoryId){
+            // Crear un nuevo creative que referencia el post existente via object_story_id
+            const engCreativeRes = await metaPost(`act_${META_ACCOUNT}/adcreatives`, {
+              name: `${anuncio.nombre} - Creative (eng) [${Date.now()}]`,
+              object_story_id: engSel.objectStoryId
             });
-            if(adRes.error){ toast(`Anuncio "${anuncio.nombre}" fallo: ${adRes.error.message}`); continue; }
+            console.log('[ENG] creativeRes desde object_story_id:', JSON.stringify(engCreativeRes));
+            if(!engCreativeRes.error) engCreativeId = engCreativeRes.id;
+            else console.warn('[ENG] object_story_id fallo, usando creative_id original:', engCreativeRes.error.message);
           }
+
+          const adPayload = {
+            name: anuncio.nombre,
+            adset_id: adsetId,
+            creative: JSON.stringify({ creative_id: engCreativeId }),
+            status: 'PAUSED'
+          };
+          console.log('[ENG] adPayload final:', JSON.stringify(adPayload));
+          const adRes = await metaPost(`act_${META_ACCOUNT}/ads`, adPayload);
+          if(adRes.error){ toast(`Anuncio "${anuncio.nombre}" fallo: ${adRes.error.message}`); continue; }
+          console.log('[ENG] ✓ Ad creado con engagement:', adRes.id);
           continue;
         }
 
