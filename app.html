@@ -6289,17 +6289,19 @@ const existingCampaignId = document.getElementById('ts-camp-existing-id').value.
 
       for(const anuncio of conjunto.anuncios){
         // ── MODO ENGAGEMENT: reusar creative_id existente ─────────────────────
-        const engSel = tsEngSelected.get(anuncio.aId);
+       const engSel = tsEngSelected.get(anuncio.aId);
         if(engSel?.creativeId){
-          // Usar el creative original — se preserva todo el engagement social
+          // source_ad_id clona el anuncio original incluyendo su configuración de catálogo,
+          // evitando el error 3858040 que ocurre al adjuntar un creative_id con Catalog activado
+          // a un adset sin catálogo configurado.
           const adRes = await metaPost(`act_${META_ACCOUNT}/ads`, {
             name: anuncio.nombre,
             adset_id: adsetId,
-            creative: JSON.stringify({ creative_id: engSel.creativeId }),
+            source_ad_id: engSel.adId,
             status: 'PAUSED'
           });
           if(adRes.error){ toast(`Anuncio "${anuncio.nombre}" fallo: ${adRes.error.message}`); continue; }
-          continue; // saltar la creación de creativo nuevo
+          continue;
         }
 
         const isVideo = anuncio.archivo && anuncio.archivo.type.startsWith('video');
