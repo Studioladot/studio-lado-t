@@ -6352,9 +6352,8 @@ async function tsGenerarTesteo(){
   if(!valido){ toast('Completa el nombre de cada conjunto y anuncio'); return; }
   if(!campania.presupuesto_diario){ toast('Falta el presupuesto diario'); return; }
 
-  toast('Creando testeo en Meta...');
-
-  try {
+ try {
+    tsConsoleStep(0);
     // 1) CAMPANA (pausada — se revisa y activa a mano desde la tabla)
     console.log('META_ACCOUNT:', META_ACCOUNT);
 const existingCampaignId = document.getElementById('ts-camp-existing-id').value.trim();
