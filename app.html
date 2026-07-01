@@ -388,6 +388,25 @@ body.focus-mode #main{margin-left:0}
   /* ── AUTOPILOT ── */
 .ap-rule-card{background:var(--surface2);border:1px solid var(--border);border-radius:var(--rl);padding:16px 18px;margin-bottom:10px;transition:border-color .2s}
 .ap-rule-card:hover{border-color:var(--primary-green-border)}
+  /* ── DECISION FEED ── */
+.df-wrap{display:flex;flex-direction:column;gap:8px}
+.df-card{background:var(--surface2);border:1px solid var(--border);border-radius:var(--rl);padding:14px 16px;display:flex;align-items:flex-start;gap:12px;transition:border-color .2s}
+.df-card:hover{border-color:var(--primary-green-border)}
+.df-card.urgent{border-color:rgba(255,71,87,.25);background:rgba(255,71,87,.03)}
+.df-card.opportunity{border-color:rgba(11,185,128,.2);background:rgba(11,185,128,.03)}
+.df-card.warning{border-color:rgba(245,166,35,.2);background:rgba(245,166,35,.03)}
+.df-icon{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.df-icon.urgent{background:rgba(255,71,87,.12);color:var(--red)}
+.df-icon.opportunity{background:rgba(11,185,128,.1);color:var(--primary-green)}
+.df-icon.warning{background:rgba(245,166,35,.1);color:var(--amber)}
+.df-body{flex:1;min-width:0}
+.df-title{font-size:13px;font-weight:700;color:var(--text);margin-bottom:3px}
+.df-desc{font-size:12px;color:var(--text2);line-height:1.5;margin-bottom:10px}
+.df-meta{font-size:10px;color:var(--text3);margin-bottom:8px}
+.df-actions{display:flex;gap:6px;flex-wrap:wrap}
+.df-empty{text-align:center;padding:28px;color:var(--text3);font-size:13px}
+.df-scanning{display:flex;align-items:center;gap:8px;padding:16px;color:var(--text2);font-size:12px}
+.df-dot{width:6px;height:6px;border-radius:50%;background:var(--primary-green);animation:ts-pulse 1s ease-in-out infinite}
   .preset-card{background:var(--surface2);border:1px solid var(--border);border-radius:var(--rl);padding:12px 14px;cursor:pointer;transition:border-color .15s,box-shadow .15s;display:flex;align-items:center;justify-content:space-between;gap:10px}
 .preset-card:hover{border-color:var(--primary-green-border);box-shadow:0 0 14px rgba(11,185,128,.07)}
 .preset-card-name{font-size:13px;font-weight:700;color:var(--text);margin-bottom:3px}
@@ -747,6 +766,22 @@ body.focus-mode #main{margin-left:0}
 
 <!-- DASHBOARD -->
 <div id="page-dashboard" class="page active">
+  <!-- DECISION FEED -->
+  <div class="card" id="df-panel" style="margin-bottom:18px">
+    <div class="card-title" style="margin-bottom:12px">
+      <span style="display:flex;align-items:center;gap:8px">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="var(--primary-green)" stroke-width="1.5" stroke-linecap="round"><circle cx="8" cy="8" r="6.5"/><path d="M8 5v3.5l2 2"/></svg>
+        Decisiones pendientes
+      </span>
+      <button class="btn btn-sm btn-outline" onclick="dfScan()" id="df-scan-btn">
+        <svg width="11" height="11" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M13 7A6 6 0 1 1 11.2 3"/><path d="M11.2 1v2.5H8.7"/></svg>
+        Analizar ahora
+      </button>
+    </div>
+    <div id="df-list">
+      <div class="df-empty">Hacé clic en "Analizar ahora" para ver qué anuncios necesitan atención hoy.</div>
+    </div>
+  </div>
   <div class="page-hdr">
     <div>
       <div class="page-title">Dashboard</div>
@@ -3470,6 +3505,7 @@ if(p==='finanzas'){loadFinanzas();loadCotizacionUSD();loadEscAll();}
   if(p==='userlist')cargarUsuarios();
   if(p==='config')loadConfigPage();
   if(p==='dashboard'&&META_TOKEN&&META_ACCOUNT){syncDashDateSelector();if(!metaCampaigns.length)initDashboardMeta();}
+  if(p==='dashboard'){ dfScan(); }
  if(p==='autopilot'){ apRenderRules(); apRenderLog(); }
   const cm=document.getElementById('cont-cal-mes');if(cm&&!cm.value)cm.value=new Date().toISOString().substring(0,7);
   const cmp=document.getElementById('camp-mes-plan');if(cmp&&!cmp.value)cmp.value=new Date().toISOString().substring(0,7);
@@ -5752,7 +5788,171 @@ async function apExecuteOnAd(adId, adName, action, failedCondsJson, ruleId){
 }
 
 // ── SCHEDULER 23:00hs ARG ─────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════════════════
+// DECISION FEED — Centro de decisiones del día
+// ══════════════════════════════════════════════════════════════════════════════
+async function dfScan(){
+  const list = document.getElementById('df-list');
+  const btn = document.getElementById('df-scan-btn');
+  if(!list) return;
+  if(!META_ACCOUNT){ list.innerHTML='<div class="df-empty">Conectá Meta Ads primero.</div>'; return; }
 
+  // Estado de carga
+  list.innerHTML=`<div class="df-scanning"><div class="df-dot"></div> Analizando tus anuncios activos...</div>`;
+  if(btn) btn.disabled = true;
+
+  const decisions = [];
+  const protected_ = apLoadProtected();
+
+  try {
+    const rules = await apLoadRules();
+    const activeRules = rules.filter(r=>r.active);
+
+    const until = new Date();
+    const since7 = new Date(Date.now() - 7*86400000);
+    const since3 = new Date(Date.now() - 3*86400000);
+    const fmt = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+
+    // Traer todos los anuncios activos con insights 7 días
+    const adsData = await metaGet(`act_${META_ACCOUNT}/ads`, {
+      fields: `id,name,effective_status,adset_id,campaign{id,name},insights.time_range({"since":"${fmt(since7)}","until":"${fmt(until)}"}){spend,action_values,actions,impressions,cpc}`,
+      limit: 200
+    });
+
+    const ads = (adsData?.data||[]).filter(a => a.effective_status === 'ACTIVE');
+
+    for(const ad of ads){
+      const ins = ad.insights?.data?.[0] || {};
+      const spend = +(ins.spend||0);
+      const revenue = +(ins.action_values?.find(a=>a.action_type==='purchase')?.value||0);
+      const purchases = +(ins.actions?.find(a=>a.action_type==='purchase')?.value||0);
+      const roas = spend>0&&revenue>0 ? revenue/spend : 0;
+      const cpa = purchases>0 ? spend/purchases : 0;
+      const isProtected = protected_.some(p=>p.id===ad.id);
+      const campName = ad.campaign?.name || '—';
+
+      // ── OPORTUNIDAD: ROAS alto, listo para escalar ──
+      if(roas >= 3 && spend >= 20){
+        decisions.push({
+          type: 'opportunity',
+          priority: 1,
+          ad, campName, spend, roas, cpa, isProtected,
+          title: `Escalar "${ad.name}"`,
+          desc: `ROAS ${roas.toFixed(2)}x con USD ${spend.toFixed(0)} gastados en 7 días. Este anuncio está listo para una CBO con más presupuesto.`,
+          actions: [
+            { label:'Escalar a CBO', fn:`dfEscalar('${ad.id}','${(ad.name||'').replace(/'/g,"\\'")}','${ad.adset_id}')`, style:'btn-accent' },
+            { label:'Ver anuncio', fn:`showPage('meta-campanas')`, style:'btn-outline' }
+          ]
+        });
+      }
+
+      // ── URGENTE: gasto sin compras ──
+      if(spend >= 15 && purchases === 0){
+        decisions.push({
+          type: 'urgent',
+          priority: 3,
+          ad, campName, spend, roas, cpa, isProtected,
+          title: `Sin compras: "${ad.name}"`,
+          desc: `Lleva USD ${spend.toFixed(0)} gastados en 7 días sin generar ninguna compra. Considerá pausarlo o cambiar el creativo.`,
+          actions: [
+            !isProtected ? { label:'Pausar ahora', fn:`dfPausar('${ad.id}','${(ad.name||'').replace(/'/g,"\\'")}')`, style:'btn-red' } : null,
+            { label:isProtected?'Quitar protección':'Proteger', fn:`apToggleProtected('${ad.id}','${(ad.name||'').replace(/'/g,"\\'")}')`, style:'btn-outline' }
+          ].filter(Boolean)
+        });
+      }
+
+      // ── ALERTA: ROAS bajo el breakeven según reglas del autopiloto ──
+      for(const rule of activeRules){
+        const conditions = rule.conditions||[];
+        const metrics = { roas, cpa, spend, purchases, cpc: +(ins.cpc||0) };
+        const allFail = conditions.length > 0 && conditions.every(c => {
+          const val = metrics[c.metric]??0;
+          if(c.op==='lt') return val < c.value;
+          if(c.op==='gt') return val > c.value;
+          return Math.abs(val-c.value)<0.001;
+        });
+        if(allFail && spend >= (rule.min_spend||0) && !isProtected){
+          const condStr = conditions.map(c=>`${c.metric} ${c.op==='lt'?'<':c.op==='gt'?'>':'='} ${c.value}`).join(' y ');
+          decisions.push({
+            type: 'urgent',
+            priority: 2,
+            ad, campName, spend, roas, cpa, isProtected,
+            title: `Regla disparada: "${ad.name}"`,
+            desc: `La regla "${rule.name}" se cumple: ${condStr}. Gasto: USD ${spend.toFixed(0)}.`,
+            actions: [
+              { label: rule.action==='pause'?'Pausar':'Notificar', fn:`dfPausar('${ad.id}','${(ad.name||'').replace(/'/g,"\\'")}')`, style:'btn-red' },
+              { label:'Ignorar', fn:`dfIgnorar('${ad.id}')`, style:'btn-ghost' }
+            ]
+          });
+          break; // una alerta por anuncio máximo
+        }
+      }
+    }
+
+    // Ordenar por prioridad (1=oportunidad, 2=alerta regla, 3=sin compras)
+    decisions.sort((a,b)=>a.priority-b.priority);
+
+    if(!decisions.length){
+      list.innerHTML=`<div class="df-empty">
+        <svg width="28" height="28" viewBox="0 0 28 28" fill="none" stroke="var(--primary-green)" stroke-width="1.3" stroke-linecap="round" style="margin-bottom:8px"><circle cx="14" cy="14" r="12"/><path d="M9 14l4 4 6-6"/></svg>
+        <div style="font-weight:700;color:var(--text);margin-bottom:4px">Todo bajo control</div>
+        <div>Ningún anuncio requiere atención ahora mismo.</div>
+      </div>`;
+    } else {
+      const svgMap = {
+        opportunity:`<svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M8 2v12M3 7l5-5 5 5"/></svg>`,
+        urgent:`<svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M8 2L14.5 13.5H1.5z"/><path d="M8 6v4M8 11.5v.5"/></svg>`,
+        warning:`<svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="8" cy="8" r="6.5"/><path d="M8 5v3M8 10v1"/></svg>`
+      };
+      list.innerHTML = `<div class="df-wrap">${decisions.map(d=>`
+        <div class="df-card ${d.type}" data-ad-id="${d.ad.id}">
+          <div class="df-icon ${d.type}">${svgMap[d.type]||''}</div>
+          <div class="df-body">
+            <div class="df-title">${d.title}</div>
+            <div class="df-meta">${d.campName} · ROAS: <strong style="color:${d.roas>=2?'var(--primary-green)':'var(--red)'}">${d.roas.toFixed(2)}x</strong> · Gasto 7d: USD ${d.spend.toFixed(0)}</div>
+            <div class="df-desc">${d.desc}</div>
+            <div class="df-actions">
+              ${d.actions.map(a=>`<button class="btn btn-sm ${a.style}" onclick="${a.fn}">${a.label}</button>`).join('')}
+            </div>
+          </div>
+        </div>`).join('')}
+      </div>
+      <div style="font-size:11px;color:var(--text3);text-align:right;margin-top:8px">${decisions.length} decisión${decisions.length!==1?'es':''} pendiente${decisions.length!==1?'s':''}</div>`;
+    }
+  } catch(e){
+    list.innerHTML=`<div class="df-empty" style="color:var(--red)">Error al analizar: ${e.message}</div>`;
+  }
+
+  if(btn) btn.disabled = false;
+}
+
+async function dfPausar(adId, adName){
+  if(!confirm(`¿Pausar "${adName}"?`)) return;
+  const r = await metaPost(adId, { status:'PAUSED' });
+  if(r.error){ toast('Error: '+r.error.message); return; }
+  await apPushLog({ action:'pause', message:`Se pausó "<strong>${adName}</strong>" desde el Decision Feed.`, ad_id:adId, ad_name:adName });
+  toast(`"${adName}" pausado`);
+  // Remover la card del feed
+  document.querySelector(`.df-card[data-ad-id="${adId}"]`)?.remove();
+}
+
+function dfIgnorar(adId){
+  document.querySelector(`.df-card[data-ad-id="${adId}"]`)?.remove();
+  toast('Decisión ignorada');
+}
+
+async function dfEscalar(adId, adName, adsetId){
+  // Abre el sandbox con el adset pre-seleccionado para escalar
+  toast(`Abriendo sandbox para escalar "${adName}"...`);
+  // Seleccionar el adset en el mapa de seleccionados
+  tsSelectedItems.set(`adset:${adsetId}`, { type:'adset', id:adsetId, name:adName });
+  const badge = document.getElementById('ts-dup-count-badge');
+  const btn = document.getElementById('ts-dup-selected-btn');
+  if(badge) badge.textContent = '1';
+  if(btn){ btn.style.display='inline-flex'; btn.style.opacity='1'; }
+  showPage('meta-campanas');
+  setTimeout(() => tsOpenDupModal(), 400);
+}
 function tsResetAdvControls(){
   Object.keys(ADV_CONTROLS).forEach(k => ADV_CONTROLS[k].value = true);
   advMasterKillActive = false;
