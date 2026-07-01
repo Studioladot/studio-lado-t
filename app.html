@@ -4967,66 +4967,125 @@ async function tsEjecutarDuplicacion(){
 
   toast('Duplicando conjuntos...');
 
+  // Timestamp único para unicar nombres de creative en esta sesión de duplicación
+  // y evitar que Meta rechace el segundo creativo por nombre repetido.
+  const sessionTs = Date.now();
+  let globalCreativeIdx = 0;
+
   for(const original of selectedAdsets){
     const full = await tsGetAdsetFull(original.id);
     if(full.error){ toast(`No se pudo leer "${original.name}": ${full.error.message}`); continue; }
 
     let idx = 1;
     for(const bloque of bloques){
+      globalCreativeIdx++;
       const adsetName = bloques.length > 1 ? `${baseAdsetName} - ${idx}` : baseAdsetName;
-      const adName = bloque.querySelector('.tsdup-ad-name').value.trim() || `Anuncio (copia) ${idx}`;
-      const link = bloque.querySelector('.tsdup-link').value.trim();
-      const headline = bloque.querySelector('.tsdup-headline').value.trim();
-      const copy = bloque.querySelector('.tsdup-copy').value.trim();
+      const adName = bloque.querySelector('.tsdup-ad-name')?.value.trim() || `Anuncio (copia) ${idx}`;
+      const link = bloque.querySelector('.tsdup-link')?.value.trim() || '';
+      const headline = bloque.querySelector('.tsdup-headline')?.value.trim() || '';
+      const copy = bloque.querySelector('.tsdup-copy')?.value.trim() || '';
       const file = tsDupFiles.get(idx) || null;
+
+      // ── LOG: verificar que los datos del bloque son correctos antes de postear
+      console.group(`[DUP] Bloque ${idx} / Conjunto: ${original.name}`);
+      console.log('adsetName:', adsetName);
+      console.log('adName:', adName);
+      console.log('campaign_id:', full.campaign_id);
+      console.log('targeting:', full.targeting);
+      console.log('file:', file ? `${file.name} (${file.type})` : 'sin archivo');
+      console.log('link:', link, '| headline:', headline, '| copy:', copy?.substring(0,40));
+      console.groupEnd();
+
+      // Validación mínima antes de postear
+      if(!full.campaign_id){
+        toast(`Bloque ${idx}: no se pudo leer campaign_id del conjunto original`);
+        idx++; continue;
+      }
 
       const adsetPayload = {
         name: adsetName,
         campaign_id: full.campaign_id,
-        billing_event: full.billing_event,
-        optimization_goal: full.optimization_goal,
-        targeting: JSON.stringify(full.targeting),
+        billing_event: full.billing_event || 'IMPRESSIONS',
+        optimization_goal: full.optimization_goal || 'OFFSITE_CONVERSIONS',
+        targeting: JSON.stringify(full.targeting || { geo_locations:{ countries:['AR'] } }),
         status: 'PAUSED'
       };
       if(full.bid_strategy) adsetPayload.bid_strategy = full.bid_strategy;
       if(full.daily_budget) adsetPayload.daily_budget = full.daily_budget;
       if(full.promoted_object) adsetPayload.promoted_object = JSON.stringify(full.promoted_object);
 
+      console.log('[DUP] adsetPayload →', JSON.stringify(adsetPayload));
       const adsetRes = await metaPost(`act_${META_ACCOUNT}/adsets`, adsetPayload);
-      if(adsetRes.error){ toast(`Conjunto "${adsetName}" fallo: ${adsetRes.error.message}`); idx++; continue; }
+      if(adsetRes.error){
+        console.error('[DUP] adset error:', adsetRes.error);
+        toast(`Conjunto "${adsetName}" fallo: ${adsetRes.error.message}`);
+        idx++; continue;
+      }
+      console.log('[DUP] adsetRes.id:', adsetRes.id);
 
+      // ── CREATIVE: nombre único por sesión + índice global para evitar dupes en Meta
+      const creativeName = `${adName} - Creative [${sessionTs}-${globalCreativeIdx}]`;
       const isVideo = file && file.type.startsWith('video');
       let objectStorySpec;
 
       if(isVideo){
         const dz = bloque.querySelector('.ts-dropzone');
-        const videoRes = await tsUploadVideo(file, pct => { if(dz){ dz.querySelector('.ts-dz-bar').style.width=pct+'%'; dz.querySelector('.ts-dz-text').textContent=`Subiendo... ${pct}%`; } });
-        if(videoRes.error){ toast(`Video fallo: ${videoRes.error.message}`); idx++; continue; }
+        const videoRes = await tsUploadVideo(file, pct => {
+          if(dz){ dz.querySelector('.ts-dz-bar').style.width=pct+'%'; dz.querySelector('.ts-dz-text').textContent=`Subiendo... ${pct}%`; }
+        });
+        if(videoRes.error){ console.error('[DUP] video error:', videoRes.error); toast(`Video fallo: ${videoRes.error.message}`); idx++; continue; }
         const ready = await tsWaitVideoReady(videoRes.id);
         const thumbnailUrl = ready ? await tsGetVideoThumbnail(videoRes.id) : null;
-        objectStorySpec = { page_id: META_PAGE_ID, video_data: { video_id: videoRes.id, image_url: thumbnailUrl, title: headline, message: copy, call_to_action: { type: 'SHOP_NOW', value: { link } } } };
+        objectStorySpec = {
+          page_id: META_PAGE_ID,
+          video_data: { video_id: videoRes.id, image_url: thumbnailUrl, title: headline, message: copy, call_to_action: { type: 'SHOP_NOW', value: { link } } }
+        };
       } else if(file){
         const base64 = await tsFileToBase64(file);
         const imgRes = await metaPost(`act_${META_ACCOUNT}/adimages`, { bytes: base64 });
-        const imageHash = !imgRes.error ? Object.values(imgRes.images||{})[0]?.hash : null;
-        objectStorySpec = { page_id: META_PAGE_ID, link_data: { image_hash: imageHash, link, name: headline, message: copy } };
+        if(imgRes.error){ console.error('[DUP] image error:', imgRes.error); toast(`Imagen fallo: ${imgRes.error.message}`); idx++; continue; }
+        const imageHash = Object.values(imgRes.images||{})[0]?.hash || null;
+        console.log('[DUP] imageHash:', imageHash);
+        objectStorySpec = {
+          page_id: META_PAGE_ID,
+          link_data: { image_hash: imageHash, link, name: headline, message: copy }
+        };
       } else {
-        objectStorySpec = { page_id: META_PAGE_ID, link_data: { link, name: headline, message: copy } };
+        objectStorySpec = {
+          page_id: META_PAGE_ID,
+          link_data: { link, name: headline, message: copy }
+        };
       }
 
-      const creativeRes = await metaPost(`act_${META_ACCOUNT}/adcreatives`, {
-        name: adName + ' - Creative',
+      const creativePayload = {
+        name: creativeName,
         object_story_spec: JSON.stringify(objectStorySpec)
-      });
-      if(creativeRes.error){ toast(`Creative "${adName}" fallo: ${creativeRes.error.message}`); idx++; continue; }
+      };
+      console.log('[DUP] creativePayload →', JSON.stringify(creativePayload));
 
-      const adRes = await metaPost(`act_${META_ACCOUNT}/ads`, {
+      const creativeRes = await metaPost(`act_${META_ACCOUNT}/adcreatives`, creativePayload);
+      if(creativeRes.error){
+        console.error('[DUP] creative error:', creativeRes.error);
+        toast(`Creative "${adName}" fallo: ${creativeRes.error.message}`);
+        idx++; continue;
+      }
+      console.log('[DUP] creativeRes.id:', creativeRes.id);
+
+      const adPayload = {
         name: adName,
         adset_id: adsetRes.id,
         creative: JSON.stringify({ creative_id: creativeRes.id }),
         status: 'PAUSED'
-      });
-      if(adRes.error){ toast(`Anuncio "${adName}" fallo: ${adRes.error.message}`); }
+      };
+      console.log('[DUP] adPayload →', JSON.stringify(adPayload));
+
+      const adRes = await metaPost(`act_${META_ACCOUNT}/ads`, adPayload);
+      if(adRes.error){
+        console.error('[DUP] ad error:', adRes.error);
+        toast(`Anuncio "${adName}" fallo: ${adRes.error.message}`);
+      } else {
+        console.log('[DUP] ✓ Anuncio creado:', adRes.id);
+      }
 
       idx++;
     }
