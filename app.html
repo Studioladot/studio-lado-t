@@ -388,6 +388,10 @@ body.focus-mode #main{margin-left:0}
   /* ── AUTOPILOT ── */
 .ap-rule-card{background:var(--surface2);border:1px solid var(--border);border-radius:var(--rl);padding:16px 18px;margin-bottom:10px;transition:border-color .2s}
 .ap-rule-card:hover{border-color:var(--primary-green-border)}
+  .preset-card{background:var(--surface2);border:1px solid var(--border);border-radius:var(--rl);padding:12px 14px;cursor:pointer;transition:border-color .15s,box-shadow .15s;display:flex;align-items:center;justify-content:space-between;gap:10px}
+.preset-card:hover{border-color:var(--primary-green-border);box-shadow:0 0 14px rgba(11,185,128,.07)}
+.preset-card-name{font-size:13px;font-weight:700;color:var(--text);margin-bottom:3px}
+.preset-card-meta{font-size:11px;color:var(--text3)}
 .ap-rule-header{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px}
 .ap-rule-name{font-size:13px;font-weight:700;color:var(--text)}
 .ap-status-badge{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;padding:2px 8px;border-radius:10px}
@@ -2916,7 +2920,13 @@ create policy "own" on contacts for all using (auth.uid()=user_id);</div>
 <!-- TESTING SANDBOX -->
 <div class="modal-backdrop" id="modal-testing-sandbox">
   <div class="modal" style="max-width:640px">
-    <div class="modal-title">Lanzar Testeo</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:4px">
+      <div class="modal-title" style="margin:0">Lanzar Testeo</div>
+      <button class="btn btn-sm btn-outline" onclick="tsOpenPresetPicker()" style="display:flex;align-items:center;gap:5px;flex-shrink:0">
+        <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><rect x="1" y="2" width="12" height="10" rx="1.3"/><path d="M4 6h6M4 8.5h4"/></svg>
+        Usar Preset
+      </button>
+    </div>
     <div style="font-size:12px;color:var(--text2);margin-bottom:16px">Configurá la campaña y agregá tantos conjuntos y anuncios como necesites.</div>
 
     <div class="form-row">
@@ -2990,10 +3000,44 @@ create policy "own" on contacts for all using (auth.uid()=user_id);</div>
 
     <div class="modal-footer">
       <button class="btn btn-outline" onclick="closeModal('modal-testing-sandbox')">Cancelar</button>
+      <button class="btn btn-ghost" onclick="tsSaveCurrentAsPreset()" title="Guardar configuración actual como preset">
+        <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M2 2h8l2 2v8a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V2z"/><path d="M9 2v4H5V2M5 8h4"/></svg>
+        Guardar como Preset
+      </button>
       <button class="btn btn-accent" onclick="tsGenerarTesteo()">Generar Testeo</button>
     </div>
   </div>
 </div>
+
+<!-- MODAL: SELECTOR DE PRESETS -->
+<div class="modal-backdrop" id="modal-preset-picker">
+  <div class="modal" style="max-width:500px">
+    <div class="modal-title">Usar Preset</div>
+    <div style="font-size:12px;color:var(--text2);margin-bottom:14px">Seleccioná un preset para autocompletar la configuración. Solo tendrás que subir el creativo y el copy.</div>
+    <div id="preset-picker-list" style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px"></div>
+    <div class="modal-footer" style="padding-top:0">
+      <button class="btn btn-outline" onclick="closeModal('modal-preset-picker')">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: GUARDAR PRESET -->
+<div class="modal-backdrop" id="modal-save-preset">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-title">Guardar como Preset</div>
+    <div style="font-size:12px;color:var(--text2);margin-bottom:14px">Guardá esta configuración para reutilizarla en futuros lanzamientos.</div>
+    <div class="fg" style="margin-bottom:14px">
+      <label>Nombre del Preset</label>
+      <input id="preset-save-name" type="text" placeholder="Ej: Estrategia Retargeting Invierno"/>
+    </div>
+    <div style="font-size:11px;color:var(--text3);background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:10px 12px;margin-bottom:4px" id="preset-save-preview"></div>
+    <div class="modal-footer" style="padding-top:12px">
+      <button class="btn btn-outline" onclick="closeModal('modal-save-preset')">Cancelar</button>
+      <button class="btn btn-accent" onclick="tsConfirmSavePreset()">Guardar Preset</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal-backdrop" id="modal-dup-selected">
   <div class="modal" style="max-width:600px">
     <div class="modal-title">Duplicar Conjuntos Seleccionados</div>
@@ -5092,6 +5136,134 @@ function tsGetAdvPayload(){
   if(!ADV_CONTROLS.advantage_plus_catalog.value) payload._catalog_off = true;
 
   return payload;
+}
+  // ══════════════════════════════════════════════════════════════════════════════
+// PRESETS DE CAMPAÑA
+// ══════════════════════════════════════════════════════════════════════════════
+const PRESETS_KEY = 'gotix_presets_v1';
+
+function presetsLoad(){ try{ return JSON.parse(localStorage.getItem(PRESETS_KEY)||'[]'); }catch{ return []; } }
+function presetsSave(p){ localStorage.setItem(PRESETS_KEY, JSON.stringify(p)); }
+
+// Leer la configuración actual del sandbox y armar el objeto preset
+function tsReadCurrentConfig(){
+  return {
+    campaign: {
+      budget_type: tsBudgetType,
+      daily_budget_usd: +document.getElementById('ts-camp-presupuesto').value||0,
+      bid_strategy: 'LOWEST_COST_WITHOUT_CAP'
+    },
+    targeting: {
+      countries: ['AR'],
+      advantage_plus: true,
+      exclusions: []
+    },
+    advantage_controls: Object.fromEntries(
+      Object.entries(ADV_CONTROLS).map(([k,v])=>[k,v.value])
+    ),
+    autopilot_rule_ids: apLoadRules().filter(r=>r.active).map(r=>r.id),
+    url_producto: document.getElementById('ts-camp-url').value.trim()
+  };
+}
+
+// Abrir el modal de guardar preset
+function tsSaveCurrentAsPreset(){
+  const cfg = tsReadCurrentConfig();
+  const budgetLbl = cfg.campaign.budget_type==='CBO'?'CBO':'ABO';
+  const advOff = Object.values(cfg.advantage_controls).filter(v=>!v).length;
+  const rules = apLoadRules().filter(r=>cfg.autopilot_rule_ids.includes(r.id));
+  document.getElementById('preset-save-preview').innerHTML =
+    `<strong>Presupuesto:</strong> ${budgetLbl} — USD ${cfg.campaign.daily_budget_usd}/día<br>
+     <strong>Advantage+:</strong> ${advOff===0?'Todo activado':advOff+' opciones desactivadas'}<br>
+     <strong>URL:</strong> ${cfg.url_producto||'(sin URL)'}<br>
+     <strong>Reglas Autopiloto:</strong> ${rules.length?rules.map(r=>r.name).join(', '):'Ninguna'}`;
+  document.getElementById('preset-save-name').value = '';
+  openModal('modal-save-preset');
+}
+
+function tsConfirmSavePreset(){
+  const name = document.getElementById('preset-save-name').value.trim();
+  if(!name){ toast('Poné un nombre al preset'); return; }
+  const presets = presetsLoad();
+  const p = {
+    id: 'preset_'+Date.now(),
+    name,
+    created_at: new Date().toISOString(),
+    ...tsReadCurrentConfig()
+  };
+  presets.unshift(p);
+  presetsSave(presets);
+  closeModal('modal-save-preset');
+  toast('Preset guardado ✓ — "'+name+'"');
+}
+
+// Abrir el selector de presets
+function tsOpenPresetPicker(){
+  const list = document.getElementById('preset-picker-list');
+  const presets = presetsLoad();
+  if(!presets.length){
+    list.innerHTML='<div class="empty" style="padding:16px 0"><div class="empty-msg">Sin presets guardados</div><div class="empty-sub">Configurá una campaña y hacé clic en "Guardar como Preset"</div></div>';
+    openModal('modal-preset-picker');
+    return;
+  }
+  list.innerHTML = presets.map(p=>{
+    const budgetLbl = p.campaign?.budget_type==='CBO'?'CBO':'ABO';
+    const advOff = p.advantage_controls ? Object.values(p.advantage_controls).filter(v=>!v).length : 0;
+    const d = new Date(p.created_at);
+    const dateStr = d.toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit',year:'2-digit'});
+    return `<div class="preset-card" onclick="tsApplyPreset('${p.id}')">
+      <div>
+        <div class="preset-card-name">${p.name}</div>
+        <div class="preset-card-meta">${budgetLbl} · USD ${p.campaign?.daily_budget_usd||0}/día · Adv+ ${advOff===0?'completo':advOff+' off'} · ${dateStr}</div>
+      </div>
+      <div style="display:flex;gap:6px;align-items:center">
+        <button class="btn btn-sm btn-accent" onclick="event.stopPropagation();tsApplyPreset('${p.id}')">Usar</button>
+        <button class="btn btn-sm btn-ghost" onclick="event.stopPropagation();tsDeletePreset('${p.id}')" title="Eliminar">${tsTrashIcon(12)}</button>
+      </div>
+    </div>`;
+  }).join('');
+  openModal('modal-preset-picker');
+}
+
+// Aplicar un preset al formulario del sandbox
+function tsApplyPreset(presetId){
+  const p = presetsLoad().find(x=>x.id===presetId);
+  if(!p){ toast('Preset no encontrado'); return; }
+
+  // Campaña
+  if(p.campaign){
+    const bt = p.campaign.budget_type||'CBO';
+    tsBudgetType = bt;
+    document.querySelectorAll('#ts-budget-toggle .ft').forEach(f=>f.classList.remove('active'));
+    const btEl = document.querySelector(`#ts-budget-toggle .ft[data-budget-type="${bt}"]`);
+    if(btEl) btEl.classList.add('active');
+    document.getElementById('ts-camp-presupuesto').value = p.campaign.daily_budget_usd||'';
+    document.getElementById('ts-presupuesto-label').textContent =
+      bt==='CBO' ? 'Presupuesto Diario (USD) — Campaña' : 'Presupuesto Diario (USD) — por Conjunto';
+  }
+
+  // URL
+  if(p.url_producto) document.getElementById('ts-camp-url').value = p.url_producto;
+
+  // Advantage+ controls
+  if(p.advantage_controls){
+    Object.entries(p.advantage_controls).forEach(([k,v])=>{ if(ADV_CONTROLS[k]) ADV_CONTROLS[k].value = v; });
+    // Sincronizar badge maestro
+    const allOff = Object.values(ADV_CONTROLS).every(v=>!v.value);
+    advMasterKillActive = allOff;
+    const badge = document.getElementById('adv-kill-badge');
+    if(badge){ badge.textContent=allOff?'Bloqueadas':'Permitidas'; badge.className=allOff?'adv-kill-badge off':'adv-kill-badge on'; }
+    if(advDetailOpen) tsRenderAdvGranular();
+  }
+
+  closeModal('modal-preset-picker');
+  toast('Preset "'+p.name+'" aplicado — solo falta el creativo y el copy');
+}
+
+function tsDeletePreset(presetId){
+  if(!confirm('¿Eliminar este preset?')) return;
+  presetsSave(presetsLoad().filter(p=>p.id!==presetId));
+  tsOpenPresetPicker(); // refrescar la lista
 }
 // ══════════════════════════════════════════════════════════════════════════════
 // AUTOPILOTO DE RENTABILIDAD — Motor multiparamétrico
