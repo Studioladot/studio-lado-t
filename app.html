@@ -1277,6 +1277,16 @@ body.focus-mode #main{margin-left:0}
     <div><div class="page-title">Biblioteca de Anuncios</div><div class="page-sub">Todos tus creativos en un lugar</div></div>
     <button class="btn btn-accent" onclick="newScript();showPage('guiones')">+ Nuevo</button>
   </div>
+   <div class="card" id="bib-roas-panel" style="margin-bottom:14px">
+    <div class="card-title" style="margin-bottom:12px">
+      <span style="display:flex;align-items:center;gap:8px">
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="var(--primary-green)" stroke-width="1.5" stroke-linecap="round"><path d="M1 13h14M3 13V7M7 13V4M11 13V9M13 13V2"/></svg>
+        ROAS promedio por ángulo/guion
+      </span>
+      <button class="btn btn-sm btn-outline" onclick="bibLoadRoas()">Actualizar</button>
+    </div>
+    <div id="bib-roas-list"><div class="empty" style="padding:16px 0"><div class="empty-msg">Sin datos aún</div><div class="empty-sub">Creá anuncios desde el Sandbox usando guiones para ver el rendimiento acá.</div></div></div>
+  </div>
   <div class="filters" id="bib-filters">
     <div class="ft active" onclick="filterBib('all',this)">Todos</div>
     <div class="ft" onclick="filterBib('activo',this)">&#10003; Activos</div>
@@ -3505,7 +3515,7 @@ if(p==='finanzas'){loadFinanzas();loadCotizacionUSD();loadEscAll();}
   if(p==='userlist')cargarUsuarios();
   if(p==='config')loadConfigPage();
   if(p==='dashboard'&&META_TOKEN&&META_ACCOUNT){syncDashDateSelector();if(!metaCampaigns.length)initDashboardMeta();}
-  if(p==='dashboard'){ dfScan(); }
+  if(p==='biblioteca'){ bibLoadRoas(); }
  if(p==='autopilot'){ apRenderRules(); apRenderLog(); }
   const cm=document.getElementById('cont-cal-mes');if(cm&&!cm.value)cm.value=new Date().toISOString().substring(0,7);
   const cmp=document.getElementById('camp-mes-plan');if(cmp&&!cmp.value)cmp.value=new Date().toISOString().substring(0,7);
@@ -4902,7 +4912,7 @@ function renderMetaAdsHeader()    { renderMetaTableHeader('meta-ads-thead-row', 
   // ── TESTING SANDBOX: estructura 100% dinamica (Campana > Conjuntos > Anuncios) ──
 let tsConjuntoSeq = 0;
 const tsFiles = new Map(); // anuncioId -> File
-
+const tsGuionLinks = new Map(); // aId -> { id, titulo }
 // ── SELECCION VISUAL + DUPLICACION MASIVA ──────────────────────────────────
 const tsSelectedItems = new Map(); // key `${type}:${id}` -> {type,id,name}
 
@@ -5314,7 +5324,7 @@ function tsReadCurrentConfig(){
     advantage_controls: Object.fromEntries(
       Object.entries(ADV_CONTROLS).map(([k,v])=>[k,v.value])
     ),
-    autopilot_rule_ids: apLoadRules().filter(r=>r.active).map(r=>r.id),
+    autopilot_rule_ids: [],
     url_producto: document.getElementById('ts-camp-url').value.trim()
   };
 }
@@ -5324,7 +5334,7 @@ function tsSaveCurrentAsPreset(){
   const cfg = tsReadCurrentConfig();
   const budgetLbl = cfg.campaign.budget_type==='CBO'?'CBO':'ABO';
   const advOff = Object.values(cfg.advantage_controls).filter(v=>!v).length;
-  const rules = apLoadRules().filter(r=>cfg.autopilot_rule_ids.includes(r.id));
+  const rules = [];
   document.getElementById('preset-save-preview').innerHTML =
     `<strong>Presupuesto:</strong> ${budgetLbl} — USD ${cfg.campaign.daily_budget_usd}/día<br>
      <strong>Advantage+:</strong> ${advOff===0?'Todo activado':advOff+' opciones desactivadas'}<br>
@@ -5593,7 +5603,7 @@ async function apToggleRuleActive(id){
 }
 
 function apEditRule(id){
-  const r = apLoadRules().find(x=>x.id===id); if(!r) return;
+ const rules_ = await apLoadRules(); const r = rules_.find(x=>x.id===id); if(!r) return;
   document.getElementById('ap-rule-edit-id').value = r.id;
   document.getElementById('ap-rule-modal-title').textContent = 'Editar Regla';
   document.getElementById('ap-rule-name').value = r.name;
@@ -5671,7 +5681,7 @@ function apToggleProtected(adId, adName){
 async function apScanNow(){
   const riskList=document.getElementById('ap-risk-list'); if(!riskList) return;
   if(!META_ACCOUNT){ riskList.innerHTML='<div class="empty" style="padding:16px 0"><div class="empty-msg">Conectá Meta Ads primero</div></div>'; return; }
-  const rules=apLoadRules().filter(r=>r.active);
+  const rules=(await apLoadRules()).filter(r=>r.active);
   if(!rules.length){ riskList.innerHTML='<div class="empty" style="padding:16px 0"><div class="empty-msg">Sin reglas activas</div></div>'; return; }
   riskList.innerHTML='<div style="padding:12px;color:var(--text2);font-size:12px">Analizando anuncios activos...</div>';
 
@@ -5953,6 +5963,69 @@ async function dfEscalar(adId, adName, adsetId){
   showPage('meta-campanas');
   setTimeout(() => tsOpenDupModal(), 400);
 }
+  async function bibLoadRoas(){
+  const container = document.getElementById('bib-roas-list');
+  if(!container || !me) return;
+  container.innerHTML = '<div style="padding:12px;color:var(--text2);font-size:12px">Cruzando datos...</div>';
+
+  const { data: links } = await db.from('ad_script_links').select('*').eq('user_id', me.id);
+  if(!links?.length){
+    container.innerHTML = '<div class="empty" style="padding:16px 0"><div class="empty-msg">Sin datos aún</div><div class="empty-sub">Creá anuncios desde el Sandbox usando guiones para ver el rendimiento acá.</div></div>';
+    return;
+  }
+
+  const until = new Date();
+  const since = new Date(Date.now() - 30*86400000);
+  const fmt = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+
+  const byScript = {};
+  for(const link of links){
+    const key = link.script_id || 'sin-guion';
+    if(!byScript[key]) byScript[key] = { titulo: link.script_title||'Sin título', ads: [] };
+    byScript[key].ads.push(link.ad_id);
+  }
+
+  const results = [];
+  for(const [scriptId, data] of Object.entries(byScript)){
+    let totalSpend = 0, totalRevenue = 0;
+    for(const adId of data.ads){
+      try {
+        const ins = await metaGet(adId, { fields:`insights.time_range({"since":"${fmt(since)}","until":"${fmt(until)}"}){spend,action_values}` });
+        const d = ins?.insights?.data?.[0];
+        if(d){
+          totalSpend += +(d.spend||0);
+          totalRevenue += +(d.action_values?.find(a=>a.action_type==='purchase')?.value||0);
+        }
+      } catch {}
+    }
+    const roas = totalSpend>0&&totalRevenue>0 ? totalRevenue/totalSpend : 0;
+    results.push({ titulo: data.titulo, roas, totalSpend, totalAds: data.ads.length });
+  }
+
+  results.sort((a,b)=>b.roas-a.roas);
+
+  if(!results.length){
+    container.innerHTML = '<div class="empty" style="padding:16px 0"><div class="empty-msg">Sin métricas disponibles aún</div></div>';
+    return;
+  }
+
+  container.innerHTML = `<table style="width:100%">
+    <thead><tr>
+      <th>Ángulo / Guion</th>
+      <th style="text-align:right">Anuncios</th>
+      <th style="text-align:right">Gasto 30d</th>
+      <th style="text-align:right">ROAS prom.</th>
+    </tr></thead>
+    <tbody>${results.map(r=>`<tr>
+      <td style="font-weight:600">${r.titulo}</td>
+      <td style="text-align:right;color:var(--text2)">${r.totalAds}</td>
+      <td style="text-align:right;color:var(--text2)">USD ${r.totalSpend.toFixed(0)}</td>
+      <td style="text-align:right;font-weight:700;color:${r.roas>=2?'var(--primary-green)':'var(--red)'}">
+        ${r.roas>0?r.roas.toFixed(2)+'x':'Sin datos'}
+      </td>
+    </tr>`).join('')}</tbody>
+  </table>`;
+}
 function tsResetAdvControls(){
   Object.keys(ADV_CONTROLS).forEach(k => ADV_CONTROLS[k].value = true);
   advMasterKillActive = false;
@@ -5989,6 +6062,7 @@ function openTestingSandbox(){
   document.getElementById('ts-presupuesto-label').textContent = 'Presupuesto Diario (USD) — Campaña';
 tsEngMode.clear();
   tsEngSelected.clear();
+  tsGuionLinks.clear();
   tsEngAdsCache = null; // limpiar cache al abrir para forzar re-fetch
   tsResetAdvControls();
   tsAddConjunto(); // arranca con Conjunto 1 + Anuncio 1
@@ -6271,9 +6345,10 @@ async function tsOfferEngagementOnScale(campaignId, onConfirm){
 // Trae los guiones disponibles. Tabla real en Supabase: "scripts"
 // (columnas: title, hook, body, copy_feed) — mapeados aca a titulo/texto_completo.
 async function fetchGuiones(){
-  const { data, error } = await db.from('scripts').select('title,hook,body,copy_feed').order('updated_at',{ascending:false});
+ const { data, error } = await db.from('scripts').select('id,title,hook,body,copy_feed').order('updated_at',{ascending:false});
   if(error || !data) return [];
   return data.map(s => ({
+    id: s.id,
     titulo: s.title || 'Sin titulo',
     texto_completo: s.copy_feed || s.body || s.hook || ''
   }));
@@ -6310,6 +6385,10 @@ async function tsToggleGuionDropdown(aId){
       const idx = +item.dataset.guionIdx;
       const row = dd.closest('.ts-anuncio-row');
       row.querySelector('.ts-anuncio-copy').value = guiones[idx].texto_completo;
+      tsGuionLinks.set(aId, { id: guiones[idx].id, titulo: guiones[idx].titulo });
+      let badge = row.querySelector('.ts-guion-badge');
+      if(!badge){ badge = document.createElement('div'); badge.className='ts-guion-badge'; badge.style.cssText='font-size:10px;color:var(--primary-green);margin-top:4px;display:flex;align-items:center;gap:4px'; row.querySelector('.ts-anuncio-detail').appendChild(badge); }
+      badge.innerHTML = `<svg width="10" height="10" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><rect x="2" y="1.5" width="10" height="11" rx="1.2"/><path d="M4.5 5h5M4.5 7.5h5M4.5 10h3"/></svg> Guion: ${guiones[idx].titulo}`;
       dd.classList.remove('open');
     });
   });
@@ -6713,12 +6792,25 @@ if(isVideo){
         };
       tsConsoleStep(4);
         const adRes = await metaPost(`act_${META_ACCOUNT}/ads`, adPayload);
-        if(adRes.error){ tsConsoleError(`anuncio "${anuncio.nombre}": ${adRes.error.message}`); continue; }
+       if(adRes.error){ toast(`Anuncio "${anuncio.nombre}" fallo: ${adRes.error.message}`); continue; }
+
+        const guionLink = tsGuionLinks.get(anuncio.aId);
+        if(guionLink && me){
+          await db.from('ad_script_links').insert({
+            user_id: me.id,
+            ad_id: adRes.id,
+            ad_name: anuncio.nombre,
+            script_id: guionLink.id,
+            script_title: guionLink.titulo,
+            campaign_id: campaignId,
+            campaign_name: campania.nombre
+          });
+        }
       }
     }
     }
 
-   tsConsoleStep(5);
+    tsConsoleStep(5);
     tsConsoleDone();
     setTimeout(() => {
       closeModal('modal-testing-sandbox');
