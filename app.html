@@ -5752,27 +5752,7 @@ async function apExecuteOnAd(adId, adName, action, failedCondsJson, ruleId){
 }
 
 // ── SCHEDULER 23:00hs ARG ─────────────────────────────────────────────────────
-function apStartScheduler(){
-  function msToNext23Arg(){
-    const now=new Date(); const argOffset=-3*60;
-    const argNow=new Date(now.getTime()+(argOffset-(-now.getTimezoneOffset()))*60000);
-    const target=new Date(argNow); target.setHours(23,0,0,0);
-    if(argNow>=target) target.setDate(target.getDate()+1);
-    return target-argNow;
-  }
-  function runNightly(){
-    const lastRun=localStorage.getItem(AP_SCHEDULER_KEY); const today=new Date().toISOString().substring(0,10);
-    if(lastRun===today) return;
-    localStorage.setItem(AP_SCHEDULER_KEY,today);
-    apPushLog({action:'notify',message:'<strong>Autopiloto nocturno</strong> — Análisis automático de las 23:00hs iniciado.'});
-    apScanNow().then(()=>apRenderLog());
-  }
-  setTimeout(()=>{ runNightly(); setInterval(runNightly,60*60*1000); },msToNext23Arg());
-}
 
-(function apInit(){
-  if(typeof META_ACCOUNT!=='undefined') apStartScheduler();
-})();
 function tsResetAdvControls(){
   Object.keys(ADV_CONTROLS).forEach(k => ADV_CONTROLS[k].value = true);
   advMasterKillActive = false;
