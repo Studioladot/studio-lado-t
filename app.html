@@ -5602,8 +5602,8 @@ async function apToggleRuleActive(id){
   apRenderRules();
 }
 
-function apEditRule(id){
- const rules_ = await apLoadRules(); const r = rules_.find(x=>x.id===id); if(!r) return;
+async function apEditRule(id){
+  const rules_ = await apLoadRules(); const r = rules_.find(x=>x.id===id); if(!r) return;
   document.getElementById('ap-rule-edit-id').value = r.id;
   document.getElementById('ap-rule-modal-title').textContent = 'Editar Regla';
   document.getElementById('ap-rule-name').value = r.name;
