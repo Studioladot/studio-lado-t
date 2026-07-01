@@ -392,6 +392,28 @@ body.focus-mode #main{margin-left:0}
 .preset-card:hover{border-color:var(--primary-green-border);box-shadow:0 0 14px rgba(11,185,128,.07)}
 .preset-card-name{font-size:13px;font-weight:700;color:var(--text);margin-bottom:3px}
 .preset-card-meta{font-size:11px;color:var(--text3)}
+  /* ── ENGAGEMENT / POST ID SELECTOR ── */
+.eng-mode-toggle{display:flex;gap:6px;margin-bottom:8px}
+.eng-mode-btn{flex:1;padding:6px 10px;border:1px solid var(--border);border-radius:var(--r);background:transparent;color:var(--text2);font-size:11px;font-weight:600;cursor:pointer;text-align:center;transition:all .15s}
+.eng-mode-btn.active{border-color:var(--primary-green);background:rgba(11,185,128,.08);color:var(--primary-green)}
+.eng-search-wrap{position:relative}
+.eng-search-input{width:100%;border:0.5px solid var(--border);border-radius:var(--r);padding:7px 10px 7px 30px;font-size:12px;background:var(--surface2);color:var(--text);outline:none;transition:border-color .12s}
+.eng-search-input:focus{border-color:var(--primary-green)}
+.eng-search-icon{position:absolute;left:9px;top:50%;transform:translateY(-50%);pointer-events:none;color:var(--text3)}
+.eng-results{background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);margin-top:4px;max-height:200px;overflow-y:auto;display:none}
+.eng-results.open{display:block}
+.eng-item{display:flex;align-items:center;gap:8px;padding:8px 10px;cursor:pointer;border-bottom:0.5px solid var(--border);transition:background .12s}
+.eng-item:last-child{border-bottom:none}
+.eng-item:hover{background:var(--surface)}
+.eng-item-thumb{width:36px;height:36px;border-radius:4px;object-fit:cover;flex-shrink:0;background:var(--border)}
+.eng-item-thumb-placeholder{width:36px;height:36px;border-radius:4px;background:var(--surface);border:1px solid var(--border);flex-shrink:0;display:flex;align-items:center;justify-content:center;color:var(--text3)}
+.eng-item-info{flex:1;min-width:0}
+.eng-item-name{font-size:11px;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.eng-item-camp{font-size:10px;color:var(--text3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.eng-selected-preview{display:flex;align-items:center;gap:8px;padding:8px 10px;background:rgba(11,185,128,.06);border:1px solid var(--primary-green-border);border-radius:var(--r)}
+.eng-selected-name{font-size:12px;font-weight:600;color:var(--primary-green);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.eng-locked{opacity:.4;pointer-events:none;user-select:none;position:relative}
+.eng-locked::after{content:'Heredado del anuncio original';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;color:var(--text3);background:rgba(0,0,0,.3);border-radius:var(--r)}
 .ap-rule-header{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px}
 .ap-rule-name{font-size:13px;font-weight:700;color:var(--text)}
 .ap-status-badge{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;padding:2px 8px;border-radius:10px}
@@ -5729,22 +5751,228 @@ function tsAddAnuncio(cId){
       </label>
       <button type="button" class="ts-trash-btn-sm" onclick="tsRemoveAnuncio('${aId}')" title="Eliminar anuncio">${tsTrashIcon(12)}</button>
     </div>
-    <div class="ts-anuncio-detail">
-      <input class="ts-anuncio-link" type="text" placeholder="Link de destino (URL)">
-      <input class="ts-anuncio-headline" type="text" placeholder="Título (Headline)">
-      <div class="ts-copy-row">
-        <textarea class="ts-anuncio-copy" rows="3" placeholder="Copy (texto principal del anuncio)"></textarea>
-        <button type="button" class="ts-import-guion-btn" onclick="tsToggleGuionDropdown('${aId}')">
-          <svg width="11" height="11" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><rect x="2" y="1.5" width="10" height="11" rx="1.2"/><path d="M4.5 5h5M4.5 7.5h5M4.5 10h3"/></svg>
-          Importar Guion
+   <div class="ts-anuncio-detail">
+      <!-- Selector de modo: creativo nuevo vs engagement existente -->
+      <div class="eng-mode-toggle">
+        <button type="button" class="eng-mode-btn active" onclick="tsSetEngMode('${aId}','new',this)">
+          <svg width="10" height="10" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" style="vertical-align:-1px;margin-right:3px"><path d="M7 1.5v11M1.5 7h11"/></svg>
+          Creativo nuevo
         </button>
-        <div class="ts-guion-dropdown" id="ts-guion-dd-${aId}"></div>
+        <button type="button" class="eng-mode-btn" onclick="tsSetEngMode('${aId}','existing',this)">
+          <svg width="10" height="10" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" style="vertical-align:-1px;margin-right:3px"><path d="M2 7c0-2.8 2.2-5 5-5s5 2.2 5 5-2.2 5-5 5S2 9.8 2 7z"/><path d="M5.5 7l1.5 1.5 3-3"/></svg>
+          Usar engagement existente
+        </button>
+      </div>
+
+      <!-- Panel: engagement existente -->
+      <div id="eng-panel-${aId}" style="display:none">
+        <div class="eng-search-wrap">
+          <svg class="eng-search-icon" width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="6" cy="6" r="4"/><path d="M10 10l2.5 2.5"/></svg>
+          <input class="eng-search-input" id="eng-search-${aId}" type="text" placeholder="Buscar anuncio por nombre..." oninput="tsEngSearch('${aId}',this.value)" onfocus="tsEngOpenResults('${aId}')">
+        </div>
+        <div class="eng-results" id="eng-results-${aId}"></div>
+        <div id="eng-selected-${aId}" style="display:none;margin-top:6px"></div>
+      </div>
+
+      <!-- Panel: creativo nuevo (oculta si eng mode activo) -->
+      <div id="new-creative-panel-${aId}">
+        <input class="ts-anuncio-link" type="text" placeholder="Link de destino (URL)">
+        <input class="ts-anuncio-headline" type="text" placeholder="Título (Headline)" style="margin-top:8px">
+        <div class="ts-copy-row" style="margin-top:8px">
+          <textarea class="ts-anuncio-copy" rows="3" placeholder="Copy (texto principal del anuncio)"></textarea>
+          <button type="button" class="ts-import-guion-btn" onclick="tsToggleGuionDropdown('${aId}')">
+            <svg width="11" height="11" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><rect x="2" y="1.5" width="10" height="11" rx="1.2"/><path d="M4.5 5h5M4.5 7.5h5M4.5 10h3"/></svg>
+            Importar Guion
+          </button>
+          <div class="ts-guion-dropdown" id="ts-guion-dd-${aId}"></div>
+        </div>
       </div>
     </div>`;
   conjunto.querySelector('.ts-anuncios-wrap').appendChild(row);
   tsWireDropzone(row.querySelector('.ts-dropzone'), aId);
 }
+// ══════════════════════════════════════════════════════════════════════════════
+// ENGAGEMENT: usar publicación existente (post ID / creative_id)
+// ══════════════════════════════════════════════════════════════════════════════
+const tsEngMode    = new Map(); // aId -> 'new' | 'existing'
+const tsEngSelected = new Map(); // aId -> { adId, name, creativeId, thumbUrl, campaignName }
+let tsEngAdsCache  = null; // cache de ads activos para no re-fetchear en cada búsqueda
 
+// Cambiar modo: nuevo creativo vs engagement existente
+function tsSetEngMode(aId, mode, btn){
+  tsEngMode.set(aId, mode);
+  const row = document.querySelector(`.ts-anuncio-row[data-anuncio-id="${aId}"]`);
+  if(!row) return;
+  row.querySelectorAll('.eng-mode-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+
+  const engPanel = document.getElementById(`eng-panel-${aId}`);
+  const newPanel = document.getElementById(`new-creative-panel-${aId}`);
+  const dropzone = row.querySelector('.ts-dropzone')?.closest('label');
+
+  if(mode === 'existing'){
+    if(engPanel) engPanel.style.display = 'block';
+    if(newPanel) newPanel.classList.add('eng-locked');
+    if(dropzone) dropzone.classList.add('eng-locked');
+    // Pre-cargar lista de ads si no está cacheada
+    if(!tsEngAdsCache) tsEngLoadAds();
+  } else {
+    if(engPanel) engPanel.style.display = 'none';
+    if(newPanel) newPanel.classList.remove('eng-locked');
+    if(dropzone) dropzone.classList.remove('eng-locked');
+    tsEngSelected.delete(aId);
+  }
+}
+
+// Cargar ads activos desde Meta (con cache de sesión)
+async function tsEngLoadAds(){
+  if(!META_ACCOUNT) return;
+  try {
+    const res = await metaGet(`act_${META_ACCOUNT}/ads`, {
+      fields: 'id,name,effective_status,campaign{id,name},adset{name},creative{id,thumbnail_url,object_story_spec}',
+      filtering: JSON.stringify([{ field:'effective_status', operator:'IN', value:['ACTIVE','PAUSED'] }]),
+      limit: 200
+    });
+    tsEngAdsCache = (res.data||[]).map(ad => ({
+      adId: ad.id,
+      name: ad.name || ad.id,
+      campaignName: ad.campaign?.name || '—',
+      adsetName: ad.adset?.name || '—',
+      creativeId: ad.creative?.id || null,
+      thumbUrl: ad.creative?.thumbnail_url || null,
+      objectStorySpec: ad.creative?.object_story_spec || null
+    }));
+  } catch(e) {
+    tsEngAdsCache = [];
+  }
+}
+
+// Abrir dropdown de resultados
+function tsEngOpenResults(aId){
+  const resultsEl = document.getElementById(`eng-results-${aId}`);
+  if(!resultsEl) return;
+  if(!tsEngAdsCache){
+    resultsEl.innerHTML = '<div style="padding:10px;font-size:11px;color:var(--text2)">Cargando anuncios...</div>';
+    resultsEl.classList.add('open');
+    tsEngLoadAds().then(() => tsEngSearch(aId, document.getElementById(`eng-search-${aId}`)?.value||''));
+    return;
+  }
+  tsEngRenderResults(aId, tsEngAdsCache);
+  resultsEl.classList.add('open');
+
+  // Cerrar al clickear fuera
+  setTimeout(() => {
+    document.addEventListener('click', function closeEng(e){
+      if(!e.target.closest(`#eng-results-${aId}`) && !e.target.closest(`#eng-search-${aId}`)){
+        resultsEl.classList.remove('open');
+        document.removeEventListener('click', closeEng);
+      }
+    });
+  }, 0);
+}
+
+// Filtrar por texto
+function tsEngSearch(aId, query){
+  if(!tsEngAdsCache) return;
+  const q = query.toLowerCase().trim();
+  const filtered = q ? tsEngAdsCache.filter(a =>
+    a.name.toLowerCase().includes(q) || a.campaignName.toLowerCase().includes(q)
+  ) : tsEngAdsCache;
+  tsEngRenderResults(aId, filtered);
+  document.getElementById(`eng-results-${aId}`)?.classList.add('open');
+}
+
+// Renderizar lista de resultados
+function tsEngRenderResults(aId, ads){
+  const el = document.getElementById(`eng-results-${aId}`); if(!el) return;
+  if(!ads.length){ el.innerHTML='<div style="padding:10px;font-size:11px;color:var(--text2)">Sin resultados</div>'; return; }
+
+  el.innerHTML = ads.slice(0,50).map(a => `
+    <div class="eng-item" onclick="tsEngSelectAd('${aId}', '${a.adId}')">
+      ${a.thumbUrl
+        ? `<img class="eng-item-thumb" src="${a.thumbUrl}" onerror="this.style.display='none'">`
+        : `<div class="eng-item-thumb-placeholder"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"><rect x="1" y="3" width="12" height="9" rx="1.2"/><path d="M4 6.5l2 2 4-3"/></svg></div>`
+      }
+      <div class="eng-item-info">
+        <div class="eng-item-name">${a.name}</div>
+        <div class="eng-item-camp">${a.campaignName} · ${a.adsetName}</div>
+      </div>
+    </div>`).join('');
+}
+
+// Seleccionar un anuncio de la lista
+function tsEngSelectAd(aId, adId){
+  const ad = tsEngAdsCache?.find(a => a.adId === adId); if(!ad) return;
+  tsEngSelected.set(aId, ad);
+
+  // Mostrar preview del seleccionado
+  const preview = document.getElementById(`eng-selected-${aId}`);
+  if(preview){
+    preview.style.display = 'flex';
+    preview.className = 'eng-selected-preview';
+    preview.innerHTML = `
+      ${ad.thumbUrl ? `<img src="${ad.thumbUrl}" style="width:36px;height:36px;border-radius:4px;object-fit:cover;flex-shrink:0">` : ''}
+      <div style="flex:1;min-width:0">
+        <div class="eng-selected-name">${ad.name}</div>
+        <div style="font-size:10px;color:var(--text3)">${ad.campaignName} · Creative ID: ${ad.creativeId||'—'}</div>
+      </div>
+      <button type="button" class="ts-trash-btn-sm" onclick="tsEngClearSelection('${aId}')" title="Quitar selección">${tsTrashIcon(12)}</button>`;
+  }
+
+  // Limpiar el buscador y cerrar dropdown
+  const searchEl = document.getElementById(`eng-search-${aId}`);
+  if(searchEl) searchEl.value = ad.name;
+  document.getElementById(`eng-results-${aId}`)?.classList.remove('open');
+}
+
+// Quitar selección
+function tsEngClearSelection(aId){
+  tsEngSelected.delete(aId);
+  const preview = document.getElementById(`eng-selected-${aId}`);
+  if(preview) preview.style.display = 'none';
+  const searchEl = document.getElementById(`eng-search-${aId}`);
+  if(searchEl) searchEl.value = '';
+}
+
+// ── DETECCIÓN DE TOP 3 GANADORES PARA ESCALAR CON ENGAGEMENT ─────────────────
+async function tsDetectTopWinnersForScale(campaignId){
+  if(!META_ACCOUNT || !campaignId) return [];
+  try {
+    const until = new Date();
+    const since = new Date(Date.now() - 7 * 86400000);
+    const fmt = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+
+    const res = await metaGet(`${campaignId}/ads`, {
+      fields: `id,name,effective_status,creative{id,thumbnail_url},insights.time_range({"since":"${fmt(since)}","until":"${fmt(until)}"}){spend,action_values,actions}`,
+      limit: 100
+    });
+
+    return (res.data||[])
+      .filter(ad => (ad.effective_status==='ACTIVE'||ad.effective_status==='PAUSED') && ad.insights?.data?.[0])
+      .map(ad => {
+        const ins = ad.insights.data[0];
+        const spend = +(ins.spend||0);
+        const revenue = +(ins.action_values?.find(a=>a.action_type==='purchase')?.value||0);
+        const roas = spend>0&&revenue>0 ? revenue/spend : 0;
+        return { adId:ad.id, name:ad.name, roas, spend, creativeId:ad.creative?.id, thumbUrl:ad.creative?.thumbnail_url };
+      })
+      .sort((a,b) => b.roas - a.roas)
+      .slice(0,3);
+  } catch { return []; }
+}
+
+// Mostrar modal de oferta de engagement al escalar
+async function tsOfferEngagementOnScale(campaignId, onConfirm){
+  const winners = await tsDetectTopWinnersForScale(campaignId);
+  if(!winners.length){ onConfirm([]); return; }
+
+  // Modal rápido inline (confirm nativo para no agregar otro modal)
+  const names = winners.map((w,i)=>`${i+1}. ${w.name} (ROAS: ${w.roas.toFixed(2)}x)`).join('\n');
+  const keep = confirm(
+    `Detectamos los 3 anuncios ganadores de los últimos 7 días:\n\n${names}\n\n¿Querés mantener el engagement social (likes, comentarios) de estos anuncios en la nueva CBO?\n\n[Aceptar = Sí, mantener engagement]\n[Cancelar = No, crear creativos nuevos]`
+  );
+  onConfirm(keep ? winners : []);
+}
 // Trae los guiones disponibles. Tabla real en Supabase: "scripts"
 // (columnas: title, hook, body, copy_feed) — mapeados aca a titulo/texto_completo.
 async function fetchGuiones(){
@@ -5996,6 +6224,20 @@ const existingCampaignId = document.getElementById('ts-camp-existing-id').value.
       const adsetId = adsetRes.id;
 
       for(const anuncio of conjunto.anuncios){
+        // ── MODO ENGAGEMENT: reusar creative_id existente ─────────────────────
+        const engSel = tsEngSelected.get(anuncio.aId);
+        if(engSel?.creativeId){
+          // Usar el creative original — se preserva todo el engagement social
+          const adRes = await metaPost(`act_${META_ACCOUNT}/ads`, {
+            name: anuncio.nombre,
+            adset_id: adsetId,
+            creative: JSON.stringify({ creative_id: engSel.creativeId }),
+            status: 'PAUSED'
+          });
+          if(adRes.error){ toast(`Anuncio "${anuncio.nombre}" fallo: ${adRes.error.message}`); continue; }
+          continue; // saltar la creación de creativo nuevo
+        }
+
         const isVideo = anuncio.archivo && anuncio.archivo.type.startsWith('video');
         let objectStorySpec;
 
