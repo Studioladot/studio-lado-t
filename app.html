@@ -392,6 +392,26 @@ body.focus-mode #main{margin-left:0}
 .preset-card:hover{border-color:var(--primary-green-border);box-shadow:0 0 14px rgba(11,185,128,.07)}
 .preset-card-name{font-size:13px;font-weight:700;color:var(--text);margin-bottom:3px}
 .preset-card-meta{font-size:11px;color:var(--text3)}
+  /* ── CONSOLA DE ESTADO ── */
+.ts-console{display:none;margin-top:12px;background:#0a0c0f;border:1px solid var(--border);border-radius:var(--r);padding:12px 14px;font-family:'SF Mono','Fira Code','Cascadia Code',monospace;font-size:11px;line-height:1.7}
+.ts-console.active{display:block}
+.ts-console-line{display:flex;align-items:flex-start;gap:8px;opacity:0;transform:translateY(4px);transition:opacity .25s,transform .25s}
+.ts-console-line.visible{opacity:1;transform:none}
+.ts-console-line.done .ts-con-dot{background:var(--primary-green);box-shadow:0 0 6px rgba(11,185,128,.5)}
+.ts-console-line.error .ts-con-dot{background:var(--red);box-shadow:0 0 6px rgba(255,49,49,.5)}
+.ts-console-line.error .ts-con-msg{color:#ff3131}
+.ts-console-line.active-line .ts-con-dot{animation:ts-pulse 1s ease-in-out infinite}
+.ts-console-line.active-line .ts-con-msg{color:var(--text)}
+.ts-con-dot{width:6px;height:6px;border-radius:50%;background:var(--text3);flex-shrink:0;margin-top:4px;transition:all .3s}
+.ts-con-msg{color:var(--text2);flex:1}
+.ts-con-time{color:var(--text3);flex-shrink:0;font-size:9px;margin-top:2px}
+.ts-console-final{margin-top:8px;padding-top:8px;border-top:1px solid var(--border);font-size:11px;font-family:'SF Mono','Fira Code','Cascadia Code',monospace;color:var(--primary-green);display:none}
+.ts-console-final.error{color:#ff3131}
+@keyframes ts-pulse{0%,100%{opacity:1}50%{opacity:.3}}
+/* Modo lectura: bloquea interacción mientras procesa */
+.ts-processing .modal-footer button{pointer-events:none;opacity:.4}
+.ts-processing #ts-conjuntos-wrap{pointer-events:none;opacity:.6}
+.ts-processing #ts-budget-toggle{pointer-events:none;opacity:.6}
   /* ── ENGAGEMENT / POST ID SELECTOR ── */
 .eng-mode-toggle{display:flex;gap:6px;margin-bottom:8px}
 .eng-mode-btn{flex:1;padding:6px 10px;border:1px solid var(--border);border-radius:var(--r);background:transparent;color:var(--text2);font-size:11px;font-weight:600;cursor:pointer;text-align:center;transition:all .15s}
@@ -3019,6 +3039,12 @@ create policy "own" on contacts for all using (auth.uid()=user_id);</div>
       <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M7 1.5v11M1.5 7h11"/></svg>
       Agregar Conjunto
     </button>
+
+   <!-- Consola de estado -->
+    <div class="ts-console" id="ts-console">
+      <div id="ts-console-lines"></div>
+      <div class="ts-console-final" id="ts-console-final"></div>
+    </div>
 
     <div class="modal-footer">
       <button class="btn btn-outline" onclick="closeModal('modal-testing-sandbox')">Cancelar</button>
