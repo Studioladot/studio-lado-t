@@ -78,7 +78,20 @@ export default async function handler(req) {
     if (req.method === 'POST') {
       // Lista blanca de endpoints de creacion permitidos, SOLO dentro de la cuenta propia del usuario
       // (isOwnAccountPath ya garantiza que el path empieza con act_{cleanAccountId}/).
-     const ALLOWED_CREATE_PATHS = ['campaigns', 'adsets', 'ads', 'adimages', 'adcreatives', 'advideos'];
+    const ALLOWED_CREATE_PATHS = ['campaigns', 'adsets', 'ads', 'adimages', 'adcreatives', 'advideos'];
+      // /copies es un path de objeto numérico con sub-recurso — se permite explícitamente
+      // para clonar anuncios preservando engagement social (likes/comentarios)
+      const isCopiesPath = /^\d+\/copies$/.test(path);
+      if(isCopiesPath){
+        const graphBody = new URLSearchParams({ ...bodyParams, access_token: conn.token });
+        const graphRes = await fetch(`https://graph.facebook.com/v19.0/${path}`, {
+          method: 'POST',
+          headers: { 'content-type': 'application/x-www-form-urlencoded' },
+          body: graphBody,
+        });
+        const data = await graphRes.json();
+        return json(data, graphRes.status);
+      }
       const createSubPath = isOwnAccountPath ? path.slice(`act_${cleanAccountId}/`.length) : null;
       const isAllowedCreatePath = isOwnAccountPath && ALLOWED_CREATE_PATHS.includes(createSubPath);
 
