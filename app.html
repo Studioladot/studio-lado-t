@@ -5541,7 +5541,7 @@ function apOpenNewRule(){
   openModal('modal-ap-rule');
 }
 
-function apSaveRule(){
+async function apSaveRule(){
   const name = document.getElementById('ap-rule-name').value.trim();
   if(!name){ toast('Poné un nombre a la regla'); return; }
 
@@ -5555,7 +5555,7 @@ function apSaveRule(){
   });
   if(!conditions.length){ toast('Agregá al menos una condición'); return; }
 
-  const rules = apLoadRules();
+  const rules = await apLoadRules();
   const editId = document.getElementById('ap-rule-edit-id').value;
   const rule = {
     id: editId || ('ap_'+Date.now()),
