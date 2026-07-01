@@ -6291,17 +6291,28 @@ const existingCampaignId = document.getElementById('ts-camp-existing-id').value.
         // ── MODO ENGAGEMENT: reusar creative_id existente ─────────────────────
        const engSel = tsEngSelected.get(anuncio.aId);
         if(engSel?.creativeId){
-          // source_ad_id clona el anuncio original incluyendo su configuración de catálogo,
-          // evitando el error 3858040 que ocurre al adjuntar un creative_id con Catalog activado
-          // a un adset sin catálogo configurado.
-          console.log('[ENG] source_ad_id:', engSel.adId, '| engSel:', JSON.stringify(engSel));
-          const adRes = await metaPost(`act_${META_ACCOUNT}/ads`, {
-            name: anuncio.nombre,
+          // Para preservar engagement (likes/comentarios), copiamos el anuncio original
+          // usando el endpoint /copies de Meta, que clona el ad con todo su contexto.
+          const copyRes = await metaPost(`${engSel.adId}/copies`, {
+            campaign_id: campaignId,
             adset_id: adsetId,
-            source_ad_id: engSel.adId,
-            status: 'PAUSED'
+            rename_options: JSON.stringify({
+              rename_strategy: 'CUSTOM_STRING',
+              custom_string: anuncio.nombre
+            }),
+            status_option: 'PAUSED'
           });
-          if(adRes.error){ toast(`Anuncio "${anuncio.nombre}" fallo: ${adRes.error.message}`); continue; }
+          if(copyRes.error){
+            // Fallback: si /copies falla, usar creative_id directo (pierde engagement pero crea el ad)
+            console.warn('[ENG] /copies falló, fallback a creative_id:', copyRes.error.message);
+            const adRes = await metaPost(`act_${META_ACCOUNT}/ads`, {
+              name: anuncio.nombre,
+              adset_id: adsetId,
+              creative: JSON.stringify({ creative_id: engSel.creativeId }),
+              status: 'PAUSED'
+            });
+            if(adRes.error){ toast(`Anuncio "${anuncio.nombre}" fallo: ${adRes.error.message}`); continue; }
+          }
           continue;
         }
 
