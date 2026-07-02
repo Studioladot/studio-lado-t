@@ -4718,7 +4718,7 @@ async function safeInsertMetric(rec) {
 function renderSnaps(){
   const el=document.getElementById('snaps-list'); if(!el)return;
   let list=[...metrics];
-  const typeF=(document.getElementById('snap-filter-type')?.value)||'all';
+  const typeF=_snapLevel||'campaign';
   const dateF=(document.getElementById('snap-filter-date')?.value)||'';
   const search=((document.getElementById('snap-search')?.value)||'').trim().toLowerCase();
   if(typeF!=='all'){ if(typeF==='manual') list=list.filter(m=>!m.snap_type||m.snap_type==='manual'); else list=list.filter(m=>m.snap_type===typeF); }
@@ -9002,14 +9002,84 @@ function trendChip(delta,invert=false){
   return `<span style="font-size:12px;font-weight:700;color:${color}">${arrow} ${Math.abs(delta).toFixed(1)}%</span>`;
 }
 let _activeBatchIdx=0;
-const RANGE_LABELS = {today:'Hoy',yesterday:'Ayer',last_7d:'Últimos 7 días',last_14d:'Últimos 14 días',last_30d:'Últimos 30 días',custom:'Rango personalizado'};
+let _snapLevel='campaign';
+window._selectedGroupName=null;
+window._pendingDeleteBatchIdx=null;
+
+function setSnapLevel(level, btnEl){
+  _snapLevel=level; window._selectedGroupName=null;
+  document.querySelectorAll('#snap-level-seg button').forEach(b=>{ b.style.background='transparent'; b.style.color='var(--text2)'; });
+  btnEl.style.background='var(--primary-green-m)'; btnEl.style.color='#fff';
+  renderSnaps();
+}
+
+function selectSnapGroup(name){
+  window._selectedGroupName = (window._selectedGroupName===name) ? null : name;
+  renderSnaps();
+}
+
+function kpiCardsBlock(agg, prevAgg){
+  return `<div class="stats-grid">
+      <div class="stat-card"><div class="stat-label">Gasto</div><div class="stat-value">USD ${agg.spend.toFixed(2)}</div><div class="stat-sub">${trendChip(pctDelta(agg.spend,prevAgg?.spend),true)}</div></div>
+      <div class="stat-card"><div class="stat-label">ROAS</div><div class="stat-value" style="color:${roasColor(agg.roas)}">${agg.roas.toFixed(2)}x</div><div class="stat-sub">${trendChip(pctDelta(agg.roas,prevAgg?.roas))}</div></div>
+      <div class="stat-card"><div class="stat-label">Conversiones</div><div class="stat-value">${agg.purchases}</div><div class="stat-sub">${trendChip(pctDelta(agg.purchases,prevAgg?.purchases))}</div></div>
+      <div class="stat-card"><div class="stat-label">CPA</div><div class="stat-value">USD ${agg.cpa.toFixed(2)}</div><div class="stat-sub">${trendChip(pctDelta(agg.cpa,prevAgg?.cpa),true)}</div></div>
+    </div>`;
+}
+
+function askDeleteBatch(i){
+  window._pendingDeleteBatchIdx=i;
+  const menu=document.getElementById('snap-dropdown-menu'); if(menu) menu.style.display='none';
+  openModal('modal-confirm-delete-snap');
+}
+
+async function confirmDeleteSnapshot(){
+  const batches=getSnapshotBatches();
+  const b=batches[window._pendingDeleteBatchIdx];
+  closeModal('modal-confirm-delete-snap');
+  if(!b) return;
+  const ids=b.items.map(m=>m.id).filter(Boolean);
+  try{
+    await db.from('metrics').delete().in('id', ids);
+    metrics = metrics.filter(m=>!ids.includes(m.id));
+    if(_activeBatchIdx>=batches.length-1) _activeBatchIdx=0;
+    toast('Snapshot eliminado');
+    renderSnaps();
+  }catch(e){ toast('Error al eliminar: '+(e.message||'').slice(0,80)); }
+}
+
 function renderSnapshotDashboard(){
   const wrap=document.getElementById('snap-dash-wrap'); if(!wrap)return;
+  const titleEl=document.getElementById('snap-page-title');
   const batches=getSnapshotBatches();
   if(!batches.length){
     wrap.innerHTML='<div class="empty"><div class="empty-icon">&#128202;</div><div class="empty-msg">Todavia sin snapshots</div><div class="empty-sub">Usa "Snapshot ahora" para tu primera lectura del dia</div></div>';
+    if(titleEl) titleEl.textContent='Snapshot Diario: Rendimiento Global';
     return;
   }
+
+  if(window._selectedGroupName){
+    const snaps=(window._snapGroups||{})[window._selectedGroupName]||[];
+    if(snaps.length){
+      const sorted=snaps.slice().sort((a,b)=>new Date(b.snap_time||b.created_at)-new Date(a.snap_time||a.created_at));
+      const latest=sorted[0], prevRec=sorted[1];
+      const agg={spend:+latest.spend||0,roas:+latest.roas||0,purchases:+latest.purchases||0,cpa:+latest.cpa||0};
+      const prevAgg=prevRec?{spend:+prevRec.spend||0,roas:+prevRec.roas||0,purchases:+prevRec.purchases||0,cpa:+prevRec.cpa||0}:null;
+      const d=new Date(latest.snap_time||latest.created_at);
+      if(titleEl) titleEl.textContent=`Snapshot Diario: Viendo ${window._selectedGroupName}`;
+      wrap.innerHTML=`
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px">
+          <span style="display:inline-flex;align-items:center;gap:8px;padding:8px 16px;background:var(--primary-green-m);border:1px solid var(--primary-green);border-radius:20px;font-size:13px;font-weight:800;color:#fff">&#128204; ${window._selectedGroupName}</span>
+          <span style="font-size:12px;color:var(--text2)">Última lectura: ${d.toLocaleDateString('es-AR')} ${d.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'})}</span>
+          <button type="button" onclick="window._selectedGroupName=null;renderSnaps()" style="margin-left:auto;padding:6px 12px;border-radius:16px;border:0.5px solid var(--border);background:transparent;color:var(--text2);font-size:11px;cursor:pointer">&#10005; Ver global</button>
+        </div>
+        ${kpiCardsBlock(agg, prevAgg)}`;
+      return;
+    }
+    window._selectedGroupName=null;
+  }
+
+  if(titleEl) titleEl.textContent='Snapshot Diario: Rendimiento Global';
   if(_activeBatchIdx>=batches.length)_activeBatchIdx=0;
   const active=batches[_activeBatchIdx], agg=aggregateBatch(active);
   const prev=batches.slice(_activeBatchIdx+1).find(b=>b.range_key===active.range_key);
@@ -9018,24 +9088,26 @@ function renderSnapshotDashboard(){
   const timeLabel=dt.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'});
   const dateLabel=dt.toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long'});
   const rangeLabel=RANGE_LABELS[active.range_key]||active.range_key;
-  const pills=batches.slice(0,8).map((b,i)=>{
+
+  const dropdownItems=batches.slice(0,15).map((b,i)=>{
     const d=new Date(b.snap_time);
-    const lbl=`${RANGE_LABELS[b.range_key]||b.range_key} · ${d.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'})}`;
-    const st=i===_activeBatchIdx?'background:var(--primary-green-m);color:#fff;border-color:var(--primary-green)':'';
-    return `<span onclick="_activeBatchIdx=${i};renderSnapshotDashboard()" style="padding:5px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:14px;font-size:11px;font-weight:600;color:var(--text2);cursor:pointer;white-space:nowrap;${st}">${lbl}</span>`;
+    const lbl=`${RANGE_LABELS[b.range_key]||b.range_key} · ${d.toLocaleDateString('es-AR')} ${d.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'})}`;
+    return `<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 12px;font-size:12px;color:var(--text2);border-bottom:0.5px solid var(--border)">
+      <span onclick="_activeBatchIdx=${i};document.getElementById('snap-dropdown-menu').style.display='none';renderSnapshotDashboard()" style="flex:1;cursor:pointer">${lbl}</span>
+      <span onclick="event.stopPropagation();askDeleteBatch(${i})" style="color:var(--red);cursor:pointer;padding:2px 4px" title="Eliminar">&#128465;</span>
+    </div>`;
   }).join('');
+
   wrap.innerHTML=`
-    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px">
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:16px">
       <span style="display:inline-flex;align-items:center;gap:8px;padding:8px 16px;background:var(--primary-green-m);border:1px solid var(--primary-green);border-radius:20px;font-size:13px;font-weight:800;color:#fff">&#128197; ${rangeLabel} <span style="opacity:.6">·</span> ${timeLabel}</span>
       <span style="font-size:12px;color:var(--text2);text-transform:capitalize">${dateLabel}</span>
+      <div style="position:relative;margin-left:auto">
+        <button type="button" onclick="const m=document.getElementById('snap-dropdown-menu');m.style.display=m.style.display==='block'?'none':'block'" style="padding:7px 14px;border-radius:20px;border:0.5px solid var(--border);background:var(--surface2);color:var(--text2);font-size:12px;font-weight:600;cursor:pointer">Ver capturas anteriores &#9662;</button>
+        <div id="snap-dropdown-menu" style="display:none;position:absolute;right:0;top:36px;width:280px;max-height:280px;overflow-y:auto;background:var(--surface);border:1px solid var(--border);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.5);z-index:20">${dropdownItems}</div>
+      </div>
     </div>
-    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px">${pills}</div>
-    <div class="stats-grid">
-      <div class="stat-card"><div class="stat-label">Gasto</div><div class="stat-value">USD ${agg.spend.toFixed(2)}</div><div class="stat-sub">${trendChip(pctDelta(agg.spend,prevAgg?.spend),true)}</div></div>
-      <div class="stat-card"><div class="stat-label">ROAS</div><div class="stat-value" style="color:${roasColor(agg.roas)}">${agg.roas.toFixed(2)}x</div><div class="stat-sub">${trendChip(pctDelta(agg.roas,prevAgg?.roas))}</div></div>
-      <div class="stat-card"><div class="stat-label">Conversiones</div><div class="stat-value">${agg.purchases}</div><div class="stat-sub">${trendChip(pctDelta(agg.purchases,prevAgg?.purchases))}</div></div>
-      <div class="stat-card"><div class="stat-label">CPA</div><div class="stat-value">USD ${agg.cpa.toFixed(2)}</div><div class="stat-sub">${trendChip(pctDelta(agg.cpa,prevAgg?.cpa),true)}</div></div>
-    </div>`;
+    ${kpiCardsBlock(agg, prevAgg)}`;
 }
 // ── RENDER SNAPSHOTS (reemplazada por la version mejorada de abajo) ──────────
 function dateKeyLocal(ts){
@@ -9069,13 +9141,14 @@ function renderSnaps(){
     const typeLbl={campaign:'Campana',adset:'Conjunto',ad:'Anuncio',manual:'Manual'}[sorted[0]?.snap_type]||'';
     const typeBdg={campaign:'b-blue',adset:'b-teal',ad:'b-accent',manual:'b-gray'}[sorted[0]?.snap_type]||'b-gray';
     const best=Math.max(...sorted.map(s=>parseFloat(s.roas)||0));
-    return `<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px 16px;background:#111111;border:1px solid #222222;border-radius:8px;margin-bottom:8px;cursor:pointer" onclick="openSnapDetail('${name.replace(/'/g,"\\'")}')">
+   const isSel = window._selectedGroupName===name;
+    return `<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px 16px;background:${isSel?'rgba(11,185,128,.1)':'#111111'};border:1px solid ${isSel?'var(--primary-green)':'#222222'};border-radius:8px;margin-bottom:8px;cursor:pointer;transition:all .15s" onclick="selectSnapGroup('${name.replace(/'/g,"\\'")}')">
       <div style="flex:1;min-width:0">
         <div style="font-size:13px;font-weight:700;color:#ffffff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${name}">${name}</div>
         <div style="font-size:11px;color:#666666;margin-top:2px">${sorted.length} snapshot${sorted.length>1?'s':''} · Mejor ROAS: <span style="color:${roasColor(best)};font-weight:700">${best>0?best+'x':'—'}</span></div>
       </div>
       ${typeLbl?`<span class="badge ${typeBdg}" style="font-size:9px;flex-shrink:0">${typeLbl}</span>`:''}
-     <span style="font-size:11px;color:#666666;flex-shrink:0">Analizar Historial &#8594;</span>
+     <span style="font-size:11px;color:#666666;flex-shrink:0" onclick="event.stopPropagation();openSnapDetail('${name.replace(/'/g,"\\'")}')">Ver historial &#8594;</span>
     </div>`;
   }).join('');
   renderSnapshotDashboard();
