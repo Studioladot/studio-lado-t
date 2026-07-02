@@ -8993,6 +8993,7 @@ function trendChip(delta,invert=false){
   return `<span style="font-size:12px;font-weight:700;color:${color}">${arrow} ${Math.abs(delta).toFixed(1)}%</span>`;
 }
 let _activeBatchIdx=0;
+const RANGE_LABELS = {today:'Hoy',yesterday:'Ayer',last_7d:'Últimos 7 días',last_14d:'Últimos 14 días',last_30d:'Últimos 30 días',custom:'Rango personalizado'};
 function renderSnapshotDashboard(){
   const wrap=document.getElementById('snap-dash-wrap'); if(!wrap)return;
   const batches=getSnapshotBatches();
