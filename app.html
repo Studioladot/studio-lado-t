@@ -10669,7 +10669,10 @@ function switchContTab(tab, btn) {
       bt.style.fontWeight=t===tab?'600':'500';
     }
   });
-
+  // Renderizar el tab recién visible
+  if(tab==='calendario') renderCalCont();
+  if(tab==='publicaciones') renderPublicaciones();
+  if(tab==='control') renderControlContenido();
 }
 
 // ── CONTROL ───────────────────────────────────────────────────────────────────
