@@ -388,6 +388,26 @@ body.focus-mode #main{margin-left:0}
   /* ── AUTOPILOT ── */
 .ap-rule-card{background:var(--surface2);border:1px solid var(--border);border-radius:var(--rl);padding:16px 18px;margin-bottom:10px;transition:border-color .2s}
 .ap-rule-card:hover{border-color:var(--primary-green-border)}
+  /* ── DIARIO DE MARCA ── */
+.dm-entry{background:var(--surface2);border:1px solid var(--border);border-radius:var(--rl);padding:18px 20px;margin-bottom:12px;transition:border-color .2s}
+.dm-entry:hover{border-color:var(--primary-green-border)}
+.dm-entry-header{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
+.dm-entry-period{font-size:13px;font-weight:800;color:var(--text);letter-spacing:-.01em}
+.dm-entry-badge{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:2px 8px;border-radius:10px}
+.dm-entry-badge.buena{background:rgba(11,185,128,.1);color:var(--primary-green);border:1px solid rgba(11,185,128,.2)}
+.dm-entry-badge.regular{background:rgba(245,166,35,.1);color:var(--amber);border:1px solid rgba(245,166,35,.2)}
+.dm-entry-badge.mala{background:rgba(255,71,87,.1);color:var(--red);border:1px solid rgba(255,71,87,.2)}
+.dm-narrative{font-size:13px;color:var(--text2);line-height:1.7;margin-bottom:14px}
+.dm-narrative strong{color:var(--text)}
+.dm-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.dm-stat{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:10px 12px;text-align:center}
+.dm-stat-val{font-size:18px;font-weight:800;letter-spacing:-.02em}
+.dm-stat-lbl{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-top:2px}
+.dm-actions-log{margin-top:12px;padding-top:12px;border-top:0.5px solid var(--border)}
+.dm-action-item{display:flex;align-items:flex-start;gap:8px;padding:5px 0;font-size:12px;color:var(--text2);border-bottom:0.5px solid rgba(255,255,255,.03)}
+.dm-action-item:last-child{border-bottom:none}
+.dm-action-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;margin-top:4px}
+@media(max-width:768px){.dm-stats{grid-template-columns:repeat(2,1fr)}}
   /* ── DECISION FEED ── */
 .df-wrap{display:flex;flex-direction:column;gap:8px}
 .df-card{background:var(--surface2);border:1px solid var(--border);border-radius:var(--rl);padding:14px 16px;display:flex;align-items:flex-start;gap:12px;transition:border-color .2s}
@@ -810,6 +830,7 @@ body.focus-mode #main{margin-left:0}
     <div class="nav-item" onclick="showPage('notas')" data-page="notas" data-section="contenido"><span class="ni"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14l2-5.5L14.5 1l3 3L9 12.5z"/><path d="M4 14h4"/><path d="M10.5 3.5l3 3"/></svg></span><span>Notas</span></div>
     <div class="nav-item" onclick="showPage('campanas-contenido')" data-page="campanas-contenido" data-section="contenido"><span class="ni"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><rect x="1" y="3" width="16" height="14" rx="2"/><path d="M1 8h16"/><path d="M6 1v4M12 1v4"/><circle cx="6" cy="12" r="1" fill="currentColor" stroke="none"/><circle cx="9" cy="12" r="1" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1" fill="currentColor" stroke="none"/></svg></span><span>Campaña de Contenido</span></div>
     <div class="sb-section">Inteligencia</div>
+      <div class="nav-item" onclick="showPage('diario')" data-page="diario" data-section="ia"><span class="ni"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="1" width="12" height="16" rx="1.5"/><path d="M6 5h6M6 8h6M6 11h4"/></svg></span><span>Diario de Marca</span></div>
     <div class="nav-item" onclick="showPage('autopilot')" data-page="autopilot" data-section="ia"><span class="ni"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="9" r="7.5"/><path d="M9 5v4l2.5 2.5"/><path d="M3.5 3.5l11 11"/></svg></span><span>Autopiloto</span></div>
     <div class="nav-item" onclick="showPage('ia')" data-page="ia" data-section="ia"><span class="ni"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 1L10.5 6H16L11.5 9.5 13 14.5 9 11.5 5 14.5 6.5 9.5 2 6H7.5z"/></svg></span><span>IA Estratégica</span></div>
    <div class="sb-section">Planes</div>
@@ -2432,7 +2453,26 @@ body.focus-mode #main{margin-left:0}
       </div>
     </div>
   </div>
+<!-- DIARIO DE MARCA -->
+<div id="page-diario" class="page">
+  <div class="page-hdr">
+    <div>
+      <div class="page-title">Diario de Marca</div>
+      <div class="page-sub">Narrativa automática mensual de lo que pasó con tu presupuesto y creativos</div>
+    </div>
+    <button class="btn btn-accent" onclick="dmGenerar()">
+      <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M7 1.5v11M1.5 7h11"/></svg>
+      Generar entrada de este mes
+    </button>
+  </div>
 
+  <div id="dm-list">
+    <div class="empty" style="padding:40px 0">
+      <div class="empty-msg">Sin entradas todavía</div>
+      <div class="empty-sub">Hacé clic en "Generar entrada de este mes" para crear la primera narrativa automática.</div>
+    </div>
+  </div>
+</div>
 <!-- AUTOPILOTO -->
 <div id="page-autopilot" class="page">
   <div class="page-hdr">
@@ -3723,6 +3763,7 @@ if(p==='finanzas'){loadFinanzas();loadCotizacionUSD();loadEscAll();}
     });
   }
   if(p==='biblioteca'){ bibLoadRoas(); }
+  if(p==='diario'){ dmRender(); }
  if(p==='autopilot'){ apRenderRules(); apRenderLog(); }
   const cm=document.getElementById('cont-cal-mes');if(cm&&!cm.value)cm.value=new Date().toISOString().substring(0,7);
   const cmp=document.getElementById('camp-mes-plan');if(cmp&&!cmp.value)cmp.value=new Date().toISOString().substring(0,7);
@@ -7034,6 +7075,185 @@ function ptBadgeHtml(adId, adName, ins, campId){
 
   const safeAdName = (adName||'').replace(/'/g,"\\'").replace(/"/g,'&quot;');
   return `<button class="pt-badge ${clase}" onclick="event.stopPropagation();ptOpen(this,'${adId}','${safeAdName}',${JSON.stringify(ins||{}).replace(/'/g,"\\'")},'${campId||''}')">${label}</button>`;
+}
+  // ══════════════════════════════════════════════════════════════════════════════
+// DIARIO DE MARCA — Narrativa automática mensual
+// ══════════════════════════════════════════════════════════════════════════════
+const DM_STORAGE_KEY = 'gotix_diario_v1';
+
+function dmLoadEntries(){ try{ return JSON.parse(localStorage.getItem(DM_STORAGE_KEY)||'[]'); }catch{ return []; } }
+function dmSaveEntries(e){ localStorage.setItem(DM_STORAGE_KEY, JSON.stringify(e.slice(0,24))); } // máx 24 meses
+
+async function dmGenerar(){
+  const btn = document.querySelector('#page-diario .btn-accent');
+  if(btn) btn.disabled = true;
+
+  const ahora = new Date();
+  const mesKey = `${ahora.getFullYear()}-${String(ahora.getMonth()+1).padStart(2,'0')}`;
+  const mesLabel = ahora.toLocaleDateString('es-AR',{month:'long',year:'numeric'});
+
+  // ── 1) Métricas de campañas del mes ──────────────────────────────────────
+  let totalSpend=0, totalRevenue=0, totalPurchases=0, totalImpressions=0;
+  let campanaActiva=0, campanaPausada=0;
+  let mejorCamp=null, mejorRoas=0;
+
+  if(META_ACCOUNT && metaCampaigns.length){
+    for(const c of metaCampaigns){
+      const ins = c.insights||{};
+      const spend    = +(ins.spend||0);
+      const revenue  = +(ins.action_values?.find?.(a=>a.action_type==='purchase')?.value||0);
+      const purchases= +(ins.actions?.find?.(a=>a.action_type==='purchase')?.value||0);
+      const impressions = +(ins.impressions||0);
+      const roas = spend>0&&revenue>0 ? revenue/spend : 0;
+      totalSpend += spend;
+      totalRevenue += revenue;
+      totalPurchases += purchases;
+      totalImpressions += impressions;
+      if((c.effective_status||c.status)==='ACTIVE') campanaActiva++;
+      else campanaPausada++;
+      if(roas > mejorRoas){ mejorRoas=roas; mejorCamp=c; }
+    }
+  }
+
+  // ── 2) Acciones del Autopiloto del mes ───────────────────────────────────
+  let logItems = [];
+  if(me){
+    const desde = new Date(ahora.getFullYear(), ahora.getMonth(), 1).toISOString();
+    const { data } = await db.from('autopilot_log').select('action,message,created_at').eq('user_id',me.id).gte('created_at',desde).order('created_at',{ascending:false}).limit(20);
+    logItems = data||[];
+  }
+  const pausasAuto = logItems.filter(l=>l.action==='pause').length;
+  const reduccionesAuto = logItems.filter(l=>l.action==='reduce').length;
+
+  // ── 3) Guiones usados este mes ────────────────────────────────────────────
+  let guionesUsados = [];
+  if(me){
+    const desde = new Date(ahora.getFullYear(), ahora.getMonth(), 1).toISOString();
+    const { data } = await db.from('ad_script_links').select('script_title').eq('user_id',me.id).gte('created_at',desde);
+    const uniq = new Set((data||[]).map(d=>d.script_title).filter(Boolean));
+    guionesUsados = [...uniq];
+  }
+
+  // ── 4) Construir narrativa ────────────────────────────────────────────────
+  const roas = totalSpend>0&&totalRevenue>0 ? totalRevenue/totalSpend : 0;
+  const targets = getMetaTargetsFor('');
+  const breakeven = targets.breakEvenRoas || 2;
+  const roasVsBreak = roas / breakeven;
+
+  let semana = roasVsBreak >= 1.5 ? 'buena' : roasVsBreak >= 0.8 ? 'regular' : 'mala';
+  let semanaLabel = { buena:'Mes positivo', regular:'Mes neutro', mala:'Mes difícil' }[semana];
+
+  let narrativa = '';
+
+  // Apertura
+  if(totalSpend === 0){
+    narrativa = `Durante <strong>${mesLabel}</strong>, no se registró actividad publicitaria activa en Meta Ads.`;
+  } else {
+    narrativa = `Durante <strong>${mesLabel}</strong>, invertiste <strong>USD ${totalSpend.toFixed(0)}</strong> en Meta Ads `;
+    if(totalPurchases > 0){
+      narrativa += `y generaste <strong>${totalPurchases} compra${totalPurchases!==1?'s':''}</strong> con un ROAS de <strong>${roas.toFixed(2)}x</strong>`;
+      narrativa += roas >= breakeven ? ` — por encima del breakeven de ${breakeven}x. ` : ` — por debajo del breakeven de ${breakeven}x. `;
+    } else {
+      narrativa += `sin registrar compras directas atribuidas. `;
+    }
+  }
+
+  // Mejor campaña
+  if(mejorCamp && mejorRoas > 0){
+    narrativa += `Tu campaña más rentable fue <strong>"${mejorCamp.name}"</strong> con ROAS <strong>${mejorRoas.toFixed(2)}x</strong>. `;
+  }
+
+  // Autopiloto
+  if(pausasAuto > 0 || reduccionesAuto > 0){
+    narrativa += `El Autopiloto intervino <strong>${pausasAuto+reduccionesAuto} veces</strong>`;
+    if(pausasAuto > 0) narrativa += `, pausando ${pausasAuto} anuncio${pausasAuto!==1?'s':''}`;
+    if(reduccionesAuto > 0) narrativa += ` y reduciendo presupuesto en ${reduccionesAuto} caso${reduccionesAuto!==1?'s':''}`;
+    narrativa += `. `;
+  }
+
+  // Guiones/ángulos
+  if(guionesUsados.length > 0){
+    narrativa += `Lanzaste creativos con ${guionesUsados.length} ángulo${guionesUsados.length!==1?'s':''} diferente${guionesUsados.length!==1?'s':''}: <strong>${guionesUsados.join(', ')}</strong>. `;
+  }
+
+  // Cierre con plata
+  if(totalRevenue > 0 && totalSpend > 0){
+    const ganancia = totalRevenue - totalSpend;
+    narrativa += `Resultado neto estimado del mes: <strong style="color:${ganancia>=0?'var(--primary-green)':'var(--red)'}">${ganancia>=0?'+':''}USD ${ganancia.toFixed(0)}</strong>.`;
+  }
+
+  // ── 5) Guardar entrada ────────────────────────────────────────────────────
+  const entrada = {
+    mesKey,
+    mesLabel,
+    semana,
+    semanaLabel,
+    narrativa,
+    stats: { spend:totalSpend, revenue:totalRevenue, purchases:totalPurchases, roas, campanaActiva, campanaPausada },
+    logItems: logItems.slice(0,8),
+    guionesUsados,
+    generadoEn: new Date().toISOString()
+  };
+
+  const entries = dmLoadEntries().filter(e=>e.mesKey!==mesKey); // reemplaza si ya existe
+  entries.unshift(entrada);
+  dmSaveEntries(entries);
+
+  dmRender();
+  if(btn) btn.disabled = false;
+  toast(`Entrada de ${mesLabel} generada ✓`);
+}
+
+function dmRender(){
+  const list = document.getElementById('dm-list');
+  if(!list) return;
+  const entries = dmLoadEntries();
+  if(!entries.length){
+    list.innerHTML = '<div class="empty" style="padding:40px 0"><div class="empty-msg">Sin entradas todavía</div><div class="empty-sub">Hacé clic en "Generar entrada de este mes" para crear la primera narrativa automática.</div></div>';
+    return;
+  }
+
+  list.innerHTML = entries.map(e => {
+    const statsHtml = `
+      <div class="dm-stats">
+        <div class="dm-stat"><div class="dm-stat-val" style="color:var(--text)">USD ${(e.stats?.spend||0).toFixed(0)}</div><div class="dm-stat-lbl">Invertido</div></div>
+        <div class="dm-stat"><div class="dm-stat-val" style="color:${(e.stats?.roas||0)>=2?'var(--primary-green)':'var(--red)'}"> ${(e.stats?.roas||0).toFixed(2)}x</div><div class="dm-stat-lbl">ROAS</div></div>
+        <div class="dm-stat"><div class="dm-stat-val" style="color:var(--text)">${e.stats?.purchases||0}</div><div class="dm-stat-lbl">Compras</div></div>
+        <div class="dm-stat"><div class="dm-stat-val" style="color:var(--primary-green)">${e.stats?.campanaActiva||0}</div><div class="dm-stat-lbl">Camp. activas</div></div>
+      </div>`;
+
+    const logHtml = e.logItems?.length ? `
+      <div class="dm-actions-log">
+        <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Acciones del Autopiloto</div>
+        ${e.logItems.map(l=>`<div class="dm-action-item">
+          <div class="dm-action-dot" style="background:${l.action==='pause'?'var(--red)':l.action==='reduce'?'var(--amber)':'var(--primary-green)'}"></div>
+          <div>${l.message.replace(/<[^>]*>/g,' ').trim()}</div>
+        </div>`).join('')}
+      </div>` : '';
+
+    const gen = new Date(e.generadoEn);
+    const genStr = gen.toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit',year:'2-digit'})+' '+gen.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'})+'hs';
+
+    return `<div class="dm-entry">
+      <div class="dm-entry-header">
+        <div class="dm-entry-period">${e.mesLabel}</div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span class="dm-entry-badge ${e.semana}">${e.semanaLabel}</span>
+          <button class="btn btn-sm btn-ghost" onclick="dmEliminar('${e.mesKey}')" title="Eliminar entrada">${tsTrashIcon(12)}</button>
+        </div>
+      </div>
+      <div class="dm-narrative">${e.narrativa}</div>
+      ${statsHtml}
+      ${logHtml}
+      <div style="margin-top:10px;font-size:10px;color:var(--text3);text-align:right">Generado el ${genStr}</div>
+    </div>`;
+  }).join('');
+}
+
+function dmEliminar(mesKey){
+  if(!confirm('¿Eliminar esta entrada del Diario?')) return;
+  dmSaveEntries(dmLoadEntries().filter(e=>e.mesKey!==mesKey));
+  dmRender();
 }
 function tsResetAdvControls(){
   Object.keys(ADV_CONTROLS).forEach(k => ADV_CONTROLS[k].value = true);
