@@ -1291,11 +1291,17 @@ body.focus-mode #main{margin-left:0}
 <!-- META SNAPSHOTS -->
 <div id="page-meta-live" class="page">
   <div class="page-hdr">
-    <div><div class="page-title">Historial de Snapshots</div><div class="page-sub">Registro automatico y manual de metricas por momento del dia</div></div>
+    <div><div class="page-title">Snapshot Diario</div><div class="page-sub">Lectura rápida del rendimiento — comparado contra tu última captura del mismo rango</div></div>
     <div style="display:flex;gap:8px">
       <button class="btn btn-outline" onclick="autoSnapshot()">&#128248; Snapshot ahora</button>
       <button class="btn btn-accent" onclick="openModal('modal-snap')">+ Manual</button>
     </div>
+  </div>
+
+  <div id="snap-dash-wrap" style="margin-bottom:26px"></div>
+
+  <div style="display:flex;align-items:center;gap:8px;margin:8px 0 12px;padding-top:10px;border-top:0.5px solid var(--border)">
+    <span style="font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.08em">Historial detallado</span>
   </div>
 
   <!-- FILTROS SNAPSHOT -->
@@ -8901,8 +8907,9 @@ async function autoSnapshot() {
   for(const c of toSnap) {
     const ins = c.insights||{};
     if(!ins.spend || +ins.spend===0) continue;
-    const rec = {
+   const rec = {
       user_id: me.id,
+      range_key: document.getElementById('meta-date-range')?.value || 'custom',
       name: `[${timeLabel}] ${c.name}`,
       spend: +ins.spend||0, roas: +ins.roas||0,
       purchases: +ins.purchases||0, cpa: +ins.cpa||0,
@@ -8942,8 +8949,9 @@ async function snapshotAd(id, name) {
 async function saveMetricSnapshot(ins, name, snap_type, meta_id) {
   const now = new Date();
   const timeLabel = now.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'});
-  const rec = {
+ const rec = {
     user_id: me.id,
+    range_key: document.getElementById('meta-date-range')?.value || 'custom',
     name: `[${timeLabel}] ${name}`,
     spend: +ins.spend||0, roas: +ins.roas||0,
     purchases: +ins.purchases||0, cpa: +ins.cpa||0,
@@ -8959,7 +8967,66 @@ async function saveMetricSnapshot(ins, name, snap_type, meta_id) {
     toast(`✓ Snapshot "${name}" guardado a las ${timeLabel}`);
   } catch(e) { toast('Error: '+e.message.slice(0,100)); }
 }
-
+function getSnapshotBatches(){
+  const map = {};
+  metrics.forEach(m=>{
+    const t = m.snap_time || m.created_at; if(!t) return;
+    if(!map[t]) map[t] = { snap_time:t, range_key:m.range_key||'custom', items:[] };
+    map[t].items.push(m);
+  });
+  return Object.values(map).sort((a,b)=>new Date(b.snap_time)-new Date(a.snap_time));
+}
+function aggregateBatch(b){
+  const items=b.items;
+  const spend=items.reduce((s,m)=>s+(+m.spend||0),0);
+  const purchases=items.reduce((s,m)=>s+(+m.purchases||0),0);
+  const roas=spend>0?items.reduce((s,m)=>s+((+m.spend||0)*(+m.roas||0)),0)/spend:0;
+  const cpa=purchases>0?spend/purchases:0;
+  return {spend,roas,purchases,cpa};
+}
+function pctDelta(c,p){ return (!p&&p!==0)||p===0?null:((c-p)/p)*100; }
+function trendChip(delta,invert=false){
+  if(delta===null||!isFinite(delta)) return '<span style="font-size:11px;color:var(--text3)">Sin comparativa previa</span>';
+  const flat=Math.abs(delta)<0.5, good=invert?delta<0:delta>0;
+  const color=flat?'var(--text2)':(good?'var(--primary-green)':'var(--red)');
+  const arrow=flat?'→':(delta>0?'↑':'↓');
+  return `<span style="font-size:12px;font-weight:700;color:${color}">${arrow} ${Math.abs(delta).toFixed(1)}%</span>`;
+}
+let _activeBatchIdx=0;
+function renderSnapshotDashboard(){
+  const wrap=document.getElementById('snap-dash-wrap'); if(!wrap)return;
+  const batches=getSnapshotBatches();
+  if(!batches.length){
+    wrap.innerHTML='<div class="empty"><div class="empty-icon">&#128202;</div><div class="empty-msg">Todavia sin snapshots</div><div class="empty-sub">Usa "Snapshot ahora" para tu primera lectura del dia</div></div>';
+    return;
+  }
+  if(_activeBatchIdx>=batches.length)_activeBatchIdx=0;
+  const active=batches[_activeBatchIdx], agg=aggregateBatch(active);
+  const prev=batches.slice(_activeBatchIdx+1).find(b=>b.range_key===active.range_key);
+  const prevAgg=prev?aggregateBatch(prev):null;
+  const dt=new Date(active.snap_time);
+  const timeLabel=dt.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'});
+  const dateLabel=dt.toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long'});
+  const rangeLabel=RANGE_LABELS[active.range_key]||active.range_key;
+  const pills=batches.slice(0,8).map((b,i)=>{
+    const d=new Date(b.snap_time);
+    const lbl=`${RANGE_LABELS[b.range_key]||b.range_key} · ${d.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'})}`;
+    const st=i===_activeBatchIdx?'background:var(--primary-green-m);color:#fff;border-color:var(--primary-green)':'';
+    return `<span onclick="_activeBatchIdx=${i};renderSnapshotDashboard()" style="padding:5px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:14px;font-size:11px;font-weight:600;color:var(--text2);cursor:pointer;white-space:nowrap;${st}">${lbl}</span>`;
+  }).join('');
+  wrap.innerHTML=`
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px">
+      <span style="display:inline-flex;align-items:center;gap:8px;padding:8px 16px;background:var(--primary-green-m);border:1px solid var(--primary-green);border-radius:20px;font-size:13px;font-weight:800;color:#fff">&#128197; ${rangeLabel} <span style="opacity:.6">·</span> ${timeLabel}</span>
+      <span style="font-size:12px;color:var(--text2);text-transform:capitalize">${dateLabel}</span>
+    </div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px">${pills}</div>
+    <div class="stats-grid">
+      <div class="stat-card"><div class="stat-label">Gasto</div><div class="stat-value">USD ${agg.spend.toFixed(2)}</div><div class="stat-sub">${trendChip(pctDelta(agg.spend,prevAgg?.spend),true)}</div></div>
+      <div class="stat-card"><div class="stat-label">ROAS</div><div class="stat-value" style="color:${roasColor(agg.roas)}">${agg.roas.toFixed(2)}x</div><div class="stat-sub">${trendChip(pctDelta(agg.roas,prevAgg?.roas))}</div></div>
+      <div class="stat-card"><div class="stat-label">Conversiones</div><div class="stat-value">${agg.purchases}</div><div class="stat-sub">${trendChip(pctDelta(agg.purchases,prevAgg?.purchases))}</div></div>
+      <div class="stat-card"><div class="stat-label">CPA</div><div class="stat-value">USD ${agg.cpa.toFixed(2)}</div><div class="stat-sub">${trendChip(pctDelta(agg.cpa,prevAgg?.cpa),true)}</div></div>
+    </div>`;
+}
 // ── RENDER SNAPSHOTS (reemplazada por la version mejorada de abajo) ──────────
 function dateKeyLocal(ts){
   if(!ts) return '—';
@@ -8998,9 +9065,10 @@ function renderSnaps(){
         <div style="font-size:11px;color:#666666;margin-top:2px">${sorted.length} snapshot${sorted.length>1?'s':''} · Mejor ROAS: <span style="color:${roasColor(best)};font-weight:700">${best>0?best+'x':'—'}</span></div>
       </div>
       ${typeLbl?`<span class="badge ${typeBdg}" style="font-size:9px;flex-shrink:0">${typeLbl}</span>`:''}
-      <span style="font-size:11px;color:#666666;flex-shrink:0">Analizar Historial &#8594;</span>
+     <span style="font-size:11px;color:#666666;flex-shrink:0">Analizar Historial &#8594;</span>
     </div>`;
   }).join('');
+  renderSnapshotDashboard();
 }
 
 function openSnapDetail(name){
