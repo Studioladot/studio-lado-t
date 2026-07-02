@@ -1085,11 +1085,10 @@ body.focus-mode #main{margin-left:0}
       </div>
 
       <!-- Botón principal -->
-      <button class="btn btn-accent" onclick="openTestingSandbox()" title="Crear campaña de testeo">
+      <button class="btn btn-accent" onclick="msOpenModal()" title="Modo Estratega — lanzar estructura en 60 segundos">
         <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 1.5v11M1.5 7h11"/></svg>
         Lanzar Testeo
       </button>
-
       <!-- Duplicar (aparece solo cuando hay checkboxes seleccionados) -->
       <button class="btn btn-accent" id="ts-dup-selected-btn" onclick="tsOpenDupModal()" style="display:none;opacity:0;transition:opacity .2s">
         <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="8" height="8" rx="1.3"/><path d="M5 4V2.8a1 1 0 0 1 1-1h5a1 1 0 0 1 1 1V9a1 1 0 0 1-1 1h-1.5"/></svg>
@@ -3195,6 +3194,70 @@ create policy "own" on contacts for all using (auth.uid()=user_id);</div>
     <div class="modal-footer">
       <button class="btn btn-outline" onclick="closeModal('modal-cv-restock')">Ahora no</button>
       <button class="btn btn-accent" id="cv-restock-confirm-btn">Reactivar anuncio</button>
+    </div>
+  </div>
+</div>
+  <!-- MODO ESTRATEGA -->
+<div class="modal-backdrop" id="modal-estratega">
+  <div class="modal" style="max-width:600px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+      <div class="modal-title" style="margin:0">Modo Estratega</div>
+      <div style="font-size:11px;color:var(--text3)" id="ms-step-indicator">Paso 1 de 3</div>
+    </div>
+    <div style="font-size:12px;color:var(--text2);margin-bottom:18px" id="ms-step-desc">Elegí la estructura que querés lanzar</div>
+
+    <!-- PASO 1: elegir modo -->
+    <div class="ms-step active" id="ms-step-1">
+      <div class="ms-modal-btns">
+        <div class="ms-mode-btn" id="ms-btn-test" onclick="msSelectMode('test')">
+          <div class="ms-mode-icon" style="background:rgba(11,185,128,.1);color:var(--primary-green)">
+            <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M10 2v16M2 10h16"/></svg>
+          </div>
+          <div class="ms-mode-title">Testeo de Creativos</div>
+          <div class="ms-mode-sub">CBO con múltiples ABO para probar ángulos nuevos</div>
+        </div>
+        <div class="ms-mode-btn" id="ms-btn-scale" onclick="msSelectMode('scale')">
+          <div class="ms-mode-icon" style="background:rgba(59,130,246,.1);color:var(--blue)">
+            <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M2 18L10 4l8 14"/><path d="M5 13h10"/></svg>
+          </div>
+          <div class="ms-mode-title">Escalar Ganadores</div>
+          <div class="ms-mode-sub">CBO con los mejores anuncios de los últimos 7 días</div>
+        </div>
+        <div class="ms-mode-btn" id="ms-btn-retarget" onclick="msSelectMode('retarget')">
+          <div class="ms-mode-icon" style="background:rgba(245,166,35,.1);color:var(--amber)">
+            <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="10" cy="10" r="8"/><circle cx="10" cy="10" r="4"/><circle cx="10" cy="10" r="1"/></svg>
+          </div>
+          <div class="ms-mode-title">Retargeting / Liquidación</div>
+          <div class="ms-mode-sub">ABO para visitantes y carritos abandonados</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PASO 2: configuración rápida -->
+    <div class="ms-step" id="ms-step-2">
+      <div class="form-row">
+        <div class="fg wide"><label>Nombre de campaña</label><input id="ms-nombre" type="text" placeholder=""/></div>
+      </div>
+      <div class="form-row">
+        <div class="fg"><label id="ms-presupuesto-label">Presupuesto diario (USD)</label><input id="ms-presupuesto" type="number" step="0.01" placeholder="30"/></div>
+        <div class="fg wide"><label>URL del producto</label><input id="ms-url" type="text" placeholder="https://kirizproject.com.ar/productos/..."/></div>
+      </div>
+      <div id="ms-creativos-wrap"></div>
+    </div>
+
+    <!-- PASO 3: confirmar -->
+    <div class="ms-step" id="ms-step-3">
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--rl);padding:16px;margin-bottom:4px" id="ms-resumen"></div>
+      <div class="ts-console" id="ms-console" style="margin-top:12px">
+        <div id="ms-console-lines"></div>
+        <div class="ts-console-final" id="ms-console-final"></div>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-outline" id="ms-btn-back" onclick="msBack()" style="display:none">Atrás</button>
+      <button class="btn btn-outline" onclick="closeModal('modal-estratega')">Cancelar</button>
+      <button class="btn btn-accent" id="ms-btn-next" onclick="msNext()">Siguiente</button>
     </div>
   </div>
 </div>
