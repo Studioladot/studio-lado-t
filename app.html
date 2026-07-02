@@ -6472,6 +6472,295 @@ async function cvCheckRestock(){
     break; // una sugerencia por vez, no spamear
   }
 }
+  // ══════════════════════════════════════════════════════════════════════════════
+// MODO ESTRATEGA — Lanzamiento de estructura en 60 segundos
+// ══════════════════════════════════════════════════════════════════════════════
+const MS_FINGERPRINT_KEY = 'gotix_ms_fingerprint';
+let msMode = null; // 'test' | 'scale' | 'retarget'
+let msStep = 1;
+let msFiles = new Map(); // slotIdx -> File
+let msWinners = []; // anuncios ganadores para modo scale
+
+function msLoadFingerprint(){
+  try{ return JSON.parse(localStorage.getItem(MS_FINGERPRINT_KEY)||'{}'); }catch{ return {}; }
+}
+function msSaveFingerprint(fp){
+  localStorage.setItem(MS_FINGERPRINT_KEY, JSON.stringify({ ...msLoadFingerprint(), ...fp }));
+}
+
+function msOpenModal(){
+  msMode = null; msStep = 1; msFiles.clear(); msWinners = [];
+  document.querySelectorAll('.ms-mode-btn').forEach(b=>b.classList.remove('selected'));
+  document.querySelectorAll('.ms-step').forEach(s=>s.classList.remove('active'));
+  document.getElementById('ms-step-1').classList.add('active');
+  document.getElementById('ms-step-indicator').textContent = 'Paso 1 de 3';
+  document.getElementById('ms-step-desc').textContent = 'Elegí la estructura que querés lanzar';
+  document.getElementById('ms-btn-back').style.display = 'none';
+  document.getElementById('ms-btn-next').textContent = 'Siguiente';
+  document.getElementById('ms-console').classList.remove('active');
+  document.getElementById('ms-console-final').style.display = 'none';
+  openModal('modal-estratega');
+}
+
+function msSelectMode(mode){
+  msMode = mode;
+  document.querySelectorAll('.ms-mode-btn').forEach(b=>b.classList.remove('selected'));
+  document.getElementById(`ms-btn-${mode}`).classList.add('selected');
+}
+
+async function msNext(){
+  if(msStep === 1){
+    if(!msMode){ toast('Elegí una estructura primero'); return; }
+    await msSetupStep2();
+    msShowStep(2);
+  } else if(msStep === 2){
+    if(!msValidateStep2()) return;
+    msSetupStep3();
+    msShowStep(3);
+  } else if(msStep === 3){
+    await msLanzar();
+  }
+}
+
+function msBack(){
+  if(msStep === 2) msShowStep(1);
+  else if(msStep === 3) msShowStep(2);
+}
+
+function msShowStep(n){
+  msStep = n;
+  document.querySelectorAll('.ms-step').forEach(s=>s.classList.remove('active'));
+  document.getElementById(`ms-step-${n}`).classList.add('active');
+  document.getElementById('ms-step-indicator').textContent = `Paso ${n} de 3`;
+  document.getElementById('ms-btn-back').style.display = n > 1 ? 'inline-flex' : 'none';
+  document.getElementById('ms-btn-next').textContent = n === 3 ? 'Lanzar ahora' : 'Siguiente';
+
+  const descs = {
+    1: 'Elegí la estructura que querés lanzar',
+    2: 'Configuración rápida — solo lo esencial',
+    3: 'Revisá y confirmá el lanzamiento'
+  };
+  document.getElementById('ms-step-desc').textContent = descs[n];
+}
+
+async function msSetupStep2(){
+  const fp = msLoadFingerprint();
+  const modeLabels = { test:'Testeo de Creativos', scale:'Escalar Ganadores', retarget:'Retargeting / Liquidación' };
+  const modePrefs = { test:{ prefix:'TESTEO CBO', budget: fp.test_budget||30, slots:3 }, scale:{ prefix:'ESCALAR CBO', budget: fp.scale_budget||50, slots:0 }, retarget:{ prefix:'RETARGETING ABO', budget: fp.retarget_budget||15, slots:2 } };
+  const pref = modePrefs[msMode];
+  const today = new Date().toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit',year:'2-digit'}).replace(/\//g,'');
+
+  document.getElementById('ms-nombre').value = `${pref.prefix} | ${today}`;
+  document.getElementById('ms-presupuesto').value = pref.budget;
+  document.getElementById('ms-url').value = fp.last_url || '';
+  document.getElementById('ms-presupuesto-label').textContent = msMode === 'retarget' ? 'Presupuesto diario por Conjunto (USD)' : 'Presupuesto diario Campaña (USD)';
+
+  const wrap = document.getElementById('ms-creativos-wrap');
+
+  if(msMode === 'scale'){
+    // Detectar ganadores automáticamente
+    wrap.innerHTML = '<div style="padding:12px;color:var(--text2);font-size:12px">Detectando anuncios ganadores de los últimos 7 días...</div>';
+    msWinners = await tsDetectTopWinnersForScale(null);
+    if(!msWinners.length){
+      wrap.innerHTML = '<div style="font-size:12px;color:var(--text3);padding:8px 0">No se encontraron anuncios activos con datos suficientes. Podés subir creativos nuevos abajo.</div>';
+      msRenderCreativeSlots(wrap, 3);
+    } else {
+      wrap.innerHTML = `<div style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Anuncios detectados — se reutilizará su engagement</div>` +
+        msWinners.map((w,i)=>`<div class="ms-creative-slot has-file">
+          ${w.thumbUrl?`<img class="ms-slot-thumb" src="${w.thumbUrl}">`:`<div class="ms-slot-thumb"></div>`}
+          <div><div class="ms-slot-name">${w.name}</div><div class="ms-slot-sub">ROAS ${w.roas.toFixed(2)}x · Gasto USD ${w.spend.toFixed(0)}</div></div>
+        </div>`).join('');
+    }
+  } else {
+    const numSlots = pref.slots;
+    wrap.innerHTML = `<div style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin:12px 0 8px">Creativos (${numSlots} anuncios)</div>`;
+    msRenderCreativeSlots(wrap, numSlots);
+  }
+}
+
+function msRenderCreativeSlots(wrap, n){
+  msFiles.clear();
+  for(let i=1;i<=n;i++){
+    const slot = document.createElement('div');
+    slot.className = 'ms-creative-slot';
+    slot.dataset.slot = i;
+    slot.innerHTML = `
+      <label style="display:flex;align-items:center;gap:10px;cursor:pointer;width:100%">
+        <div class="ms-slot-thumb" style="display:flex;align-items:center;justify-content:center;border:1px dashed var(--border2)">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="var(--text3)" stroke-width="1.4" stroke-linecap="round"><path d="M8 2v12M2 8h12"/></svg>
+        </div>
+        <div style="flex:1">
+          <div class="ms-slot-name" id="ms-slot-name-${i}">Anuncio ${i} — subí el creativo</div>
+          <div class="ms-slot-sub">Imagen o video</div>
+        </div>
+        <input type="file" accept="image/*,video/*" hidden onchange="msOnFileChange(${i},this)">
+      </label>`;
+    wrap.appendChild(slot);
+  }
+}
+
+function msOnFileChange(idx, input){
+  const file = input.files[0]; if(!file) return;
+  msFiles.set(idx, file);
+  const slot = document.querySelector(`.ms-creative-slot[data-slot="${idx}"]`);
+  if(slot){
+    slot.classList.add('has-file');
+    document.getElementById(`ms-slot-name-${idx}`).textContent = file.name;
+    const thumb = slot.querySelector('.ms-slot-thumb');
+    if(thumb && file.type.startsWith('image')){
+      const url = URL.createObjectURL(file);
+      thumb.innerHTML = `<img src="${url}" style="width:40px;height:40px;object-fit:cover;border-radius:6px">`;
+    }
+  }
+}
+
+function msValidateStep2(){
+  if(!document.getElementById('ms-nombre').value.trim()){ toast('Falta el nombre de la campaña'); return false; }
+  if(!document.getElementById('ms-presupuesto').value){ toast('Falta el presupuesto'); return false; }
+  return true;
+}
+
+function msSetupStep3(){
+  const nombre = document.getElementById('ms-nombre').value.trim();
+  const presupuesto = document.getElementById('ms-presupuesto').value;
+  const url = document.getElementById('ms-url').value.trim();
+  const modeLabels = { test:'CBO Testeo + 3 conjuntos ABO', scale:'CBO con anuncios ganadores', retarget:'ABO Retargeting / Liquidación' };
+  const numCreativos = msMode === 'scale' ? msWinners.length||msFiles.size : msFiles.size;
+
+  document.getElementById('ms-resumen').innerHTML = `
+    <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">Resumen del lanzamiento</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px">
+      <div><span style="color:var(--text3)">Estructura</span><br><strong>${modeLabels[msMode]}</strong></div>
+      <div><span style="color:var(--text3)">Presupuesto</span><br><strong>USD ${presupuesto}/día</strong></div>
+      <div><span style="color:var(--text3)">Creativos</span><br><strong>${numCreativos} anuncio${numCreativos!==1?'s':''}</strong></div>
+      <div><span style="color:var(--text3)">URL</span><br><strong style="word-break:break-all;font-size:10px">${url||'—'}</strong></div>
+    </div>
+    <div style="margin-top:10px;padding-top:10px;border-top:0.5px solid var(--border);font-size:11px;color:var(--text3)">Todo se crea en pausa — vos decidís cuándo activar.</div>`;
+}
+
+async function msLanzar(){
+  const nombre = document.getElementById('ms-nombre').value.trim();
+  const presupuesto = +document.getElementById('ms-presupuesto').value;
+  const url = document.getElementById('ms-url').value.trim();
+  if(!META_ACCOUNT){ toast('Conectá Meta primero'); return; }
+
+  // Guardar en fingerprint para la próxima vez
+  const fpUpdate = { last_url: url };
+  if(msMode==='test') fpUpdate.test_budget = presupuesto;
+  if(msMode==='scale') fpUpdate.scale_budget = presupuesto;
+  if(msMode==='retarget') fpUpdate.retarget_budget = presupuesto;
+  msSaveFingerprint(fpUpdate);
+
+  // Iniciar consola
+  const con = document.getElementById('ms-console');
+  const linesEl = document.getElementById('ms-console-lines');
+  const finalEl = document.getElementById('ms-console-final');
+  con.classList.add('active');
+  finalEl.style.display = 'none';
+  document.getElementById('ms-btn-next').disabled = true;
+  document.getElementById('ms-btn-back').style.display = 'none';
+
+  const log = (msg, done=false, err=false) => {
+    const line = document.createElement('div');
+    line.className = 'ts-console-line visible' + (done?' done':'') + (err?' error':'');
+    line.innerHTML = `<div class="ts-con-dot"></div><div class="ts-con-msg">${msg}</div>`;
+    linesEl.appendChild(line);
+    line.scrollIntoView({ behavior:'smooth', block:'nearest' });
+  };
+
+  try {
+    // 1) Crear campaña
+    log('Creando estructura de campaña...');
+    const isABO = msMode === 'retarget';
+    const campPayload = {
+      name: nombre,
+      objective: 'OUTCOME_SALES',
+      status: 'PAUSED',
+      special_ad_categories: JSON.stringify([]),
+      is_adset_budget_sharing_enabled: false
+    };
+    if(!isABO){ campPayload.daily_budget = Math.round(presupuesto*100); campPayload.bid_strategy = 'LOWEST_COST_WITHOUT_CAP'; }
+    const campRes = await metaPost(`act_${META_ACCOUNT}/campaigns`, campPayload);
+    if(campRes.error) throw new Error('Campaña: '+campRes.error.message);
+    log(`Campaña creada: "${nombre}"`, true);
+
+    // 2) Crear conjuntos y anuncios según el modo
+    const numSlots = msMode==='retarget' ? 2 : (msMode==='scale' ? (msWinners.length||msFiles.size) : msFiles.size||3);
+    const conjuntoNames = {
+      test: (i) => `Creativo ${i}`,
+      scale: (i) => msWinners[i-1]?.name || `Ganador ${i}`,
+      retarget: (i) => i===1 ? 'Visitantes' : 'Carritos abandonados'
+    };
+
+    for(let i=1;i<=numSlots;i++){
+      const adsetName = conjuntoNames[msMode](i);
+      log(`Configurando conjunto: "${adsetName}"...`);
+      const adsetPayload = {
+        name: adsetName,
+        campaign_id: campRes.id,
+        billing_event: 'IMPRESSIONS',
+        optimization_goal: 'OFFSITE_CONVERSIONS',
+        bid_strategy: 'LOWEST_COST_WITHOUT_CAP',
+        promoted_object: JSON.stringify({ pixel_id: META_PIXEL_ID, custom_event_type: 'PURCHASE' }),
+        targeting: JSON.stringify({ geo_locations:{ countries:['AR'] } }),
+        status: 'PAUSED'
+      };
+      if(isABO){ adsetPayload.daily_budget = Math.round(presupuesto*100); }
+      const adsetRes = await metaPost(`act_${META_ACCOUNT}/adsets`, adsetPayload);
+      if(adsetRes.error){ log(`Conjunto "${adsetName}" falló: ${adsetRes.error.message}`, false, true); continue; }
+      log(`Conjunto "${adsetName}" listo`, true);
+
+      // 3) Anuncio: modo scale usa engagement, otros suben creativo
+      log(`Creando anuncio ${i}...`);
+      if(msMode==='scale' && msWinners[i-1]?.creativeId){
+        const engSel = msWinners[i-1];
+        let creativeId = engSel.creativeId;
+        if(engSel.objectStoryId){
+          const cr = await metaPost(`act_${META_ACCOUNT}/adcreatives`, { name:`${adsetName} - Creative [${Date.now()}]`, object_story_id: engSel.objectStoryId });
+          if(!cr.error) creativeId = cr.id;
+        }
+        const adRes = await metaPost(`act_${META_ACCOUNT}/ads`, { name:adsetName, adset_id:adsetRes.id, creative:JSON.stringify({creative_id:creativeId}), status:'PAUSED' });
+        if(adRes.error){ log(`Anuncio falló: ${adRes.error.message}`, false, true); continue; }
+        log(`Anuncio "${adsetName}" creado con engagement`, true);
+      } else {
+        const file = msFiles.get(i);
+        if(!file){ log(`Anuncio ${i}: sin creativo, omitido`, false, true); continue; }
+        const isVideo = file.type.startsWith('video');
+        let objectStorySpec;
+        if(isVideo){
+          const vRes = await tsUploadVideo(file, () => {});
+          if(vRes.error){ log(`Video falló: ${vRes.error.message}`, false, true); continue; }
+          const ready = await tsWaitVideoReady(vRes.id);
+          const thumb = ready ? await tsGetVideoThumbnail(vRes.id) : null;
+          objectStorySpec = { page_id:META_PAGE_ID, video_data:{ video_id:vRes.id, image_url:thumb, message:adsetName, call_to_action:{ type:'SHOP_NOW', value:{ link:url } } } };
+        } else {
+          const base64 = await tsFileToBase64(file);
+          const imgRes = await metaPost(`act_${META_ACCOUNT}/adimages`, { bytes:base64 });
+          const imageHash = !imgRes.error ? Object.values(imgRes.images||{})[0]?.hash : null;
+          objectStorySpec = { page_id:META_PAGE_ID, link_data:{ image_hash:imageHash, link:url, message:adsetName } };
+        }
+        const cr = await metaPost(`act_${META_ACCOUNT}/adcreatives`, { name:`${adsetName} - Creative [${Date.now()}]`, object_story_spec:JSON.stringify(objectStorySpec) });
+        if(cr.error){ log(`Creative falló: ${cr.error.message}`, false, true); continue; }
+        const adRes = await metaPost(`act_${META_ACCOUNT}/ads`, { name:adsetName, adset_id:adsetRes.id, creative:JSON.stringify({creative_id:cr.id}), status:'PAUSED' });
+        if(adRes.error){ log(`Anuncio falló: ${adRes.error.message}`, false, true); continue; }
+        log(`Anuncio "${adsetName}" creado`, true);
+      }
+    }
+
+    finalEl.textContent = '✓ Estructura completa — todo en pausa. Revisá antes de activar.';
+    finalEl.style.display = 'block';
+    finalEl.className = 'ts-console-final';
+    document.getElementById('ms-btn-next').textContent = 'Cerrar';
+    document.getElementById('ms-btn-next').disabled = false;
+    document.getElementById('ms-btn-next').onclick = () => { closeModal('modal-estratega'); applyMetaDateRange(); };
+
+  } catch(e){
+    finalEl.textContent = '✗ Error: ' + e.message;
+    finalEl.style.display = 'block';
+    finalEl.className = 'ts-console-final error';
+    document.getElementById('ms-btn-next').disabled = false;
+  }
+}
 function tsResetAdvControls(){
   Object.keys(ADV_CONTROLS).forEach(k => ADV_CONTROLS[k].value = true);
   advMasterKillActive = false;
