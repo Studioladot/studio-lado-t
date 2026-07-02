@@ -6889,10 +6889,9 @@ function ptOpen(el, adId, adName, ins, campId){
   const panel = document.getElementById('pt-panel');
   if(!panel) return;
 
-  const targets = getMetaTargets(campId);
+  const targets = getMetaTargetsFor(campId);
   const breakeven = +targets.breakEvenRoas || 2;
   const targetCpa = +targets.targetCpa || 18;
-
   // Calcular métricas reales
   const spend       = +(ins?.spend||0);
   const revenue     = +(ins?.action_values?.find?.(a=>a.action_type==='purchase')?.value||0);
