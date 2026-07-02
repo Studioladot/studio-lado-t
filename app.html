@@ -3237,6 +3237,13 @@ create policy "own" on contacts for all using (auth.uid()=user_id);</div>
         </div>
       </div>
     </div>
+    <!-- Acceso al Sandbox manual -->
+      <div style="text-align:center;margin-top:14px">
+        <button type="button" class="btn btn-ghost" style="font-size:12px;color:var(--text3)" onclick="closeModal('modal-estratega');openTestingSandbox()">
+          <svg width="11" height="11" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><rect x="1" y="1" width="12" height="12" rx="1.5"/><path d="M4 7h6M7 4v6"/></svg>
+          Configuración manual avanzada
+        </button>
+      </div>
 <!-- Presets guardados del usuario -->
       <div id="ms-presets-section" style="display:none;margin-top:14px">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
