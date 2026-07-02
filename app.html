@@ -3226,6 +3226,24 @@ create policy "own" on contacts for all using (auth.uid()=user_id);</div>
   <div class="pt-panel-plata" id="pt-panel-plata"></div>
   <div class="pt-panel-actions" id="pt-panel-actions"></div>
 </div>
+  <!-- MODAL: ajuste de objetivo por campaña (Meta Rule Override) -->
+<div class="modal-backdrop" id="modal-meta-rule-override">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-title">Ajustar objetivo</div>
+    <div style="font-size:12px;color:var(--text2);margin-bottom:14px">Definí el Target CPA y Break-Even ROAS para esta campaña puntual. Si los dejás vacíos, se usan los valores globales.</div>
+    <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:12px" id="mro-camp-name"></div>
+    <input type="hidden" id="mro-camp-id">
+    <div class="form-row">
+      <div class="fg"><label>Target CPA (USD)</label><input id="mro-target-cpa" type="number" step="0.01" placeholder="Usar global"/></div>
+      <div class="fg"><label>Break-Even ROAS</label><input id="mro-breakeven-roas" type="number" step="0.01" placeholder="Usar global"/></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="openMetaRuleOverrideDelete()">Resetear a global</button>
+      <button class="btn btn-outline" onclick="closeModal('modal-meta-rule-override')">Cancelar</button>
+      <button class="btn btn-accent" onclick="saveMetaRuleOverride()">Guardar</button>
+    </div>
+  </div>
+</div>
   <!-- MODO ESTRATEGA -->
 <div class="modal-backdrop" id="modal-estratega">
   <div class="modal" style="max-width:600px">
