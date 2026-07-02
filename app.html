@@ -1291,7 +1291,7 @@ body.focus-mode #main{margin-left:0}
 <!-- META SNAPSHOTS -->
 <div id="page-meta-live" class="page">
   <div class="page-hdr">
-    <div><div class="page-title">Snapshot Diario</div><div class="page-sub">Lectura rápida del rendimiento — comparado contra tu última captura del mismo rango</div></div>
+   <div><div class="page-title" id="snap-page-title">Snapshot Diario: Rendimiento Global</div><div class="page-sub">Lectura rápida del rendimiento — comparado contra tu última captura del mismo rango</div></div>
     <div style="display:flex;gap:8px">
       <button class="btn btn-outline" onclick="autoSnapshot()">&#128248; Snapshot ahora</button>
       <button class="btn btn-accent" onclick="openModal('modal-snap')">+ Manual</button>
@@ -1312,17 +1312,26 @@ body.focus-mode #main{margin-left:0}
         style="width:100%;border:0.5px solid var(--border);border-radius:20px;padding:8px 12px 8px 32px;font-size:13px;background:var(--surface);color:var(--text);outline:none;transition:border-color .15s"
         oninput="renderSnaps()" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'"/>
     </div>
-    <select id="snap-filter-type" style="border:0.5px solid var(--border);border-radius:var(--r);padding:7px 10px;font-size:13px;background:var(--surface);color:var(--text);outline:none" onchange="renderSnaps()">
-      <option value="all">Todos</option>
-      <option value="campaign">Campanas</option>
-      <option value="adset">Conjuntos</option>
-      <option value="ad">Anuncios</option>
-      <option value="manual">Manuales</option>
-    </select>
+   <div id="snap-level-seg" style="display:flex;border:0.5px solid var(--border);border-radius:20px;overflow:hidden">
+      <button type="button" onclick="setSnapLevel('campaign',this)" style="padding:7px 14px;font-size:12px;font-weight:600;border:none;cursor:pointer;background:var(--primary-green-m);color:#fff">Campañas</button>
+      <button type="button" onclick="setSnapLevel('adset',this)" style="padding:7px 14px;font-size:12px;font-weight:600;border:none;cursor:pointer;background:transparent;color:var(--text2)">Conjuntos</button>
+      <button type="button" onclick="setSnapLevel('ad',this)" style="padding:7px 14px;font-size:12px;font-weight:600;border:none;cursor:pointer;background:transparent;color:var(--text2)">Anuncios</button>
+    </div>
     <input type="date" id="snap-filter-date" style="border:0.5px solid var(--border);border-radius:var(--r);padding:7px 10px;font-size:13px;background:var(--surface);color:var(--text);outline:none" onchange="renderSnaps()">
     <button class="btn btn-ghost btn-sm" onclick="document.getElementById('snap-filter-date').value='';document.getElementById('snap-search').value='';renderSnaps()">&#10005; Limpiar</button>
   </div>
   <div id="snap-name-pills" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px"></div>
+
+  <div class="modal-backdrop" id="modal-confirm-delete-snap">
+    <div class="modal" style="max-width:380px">
+      <div class="modal-title">&#128465; Eliminar snapshot</div>
+      <div style="font-size:13px;color:var(--text2);margin:10px 0 18px">¿Estás seguro de eliminar este snapshot? Esta acción no se puede deshacer.</div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="closeModal('modal-confirm-delete-snap')">Cancelar</button>
+        <button class="btn" style="background:var(--red);color:#fff" onclick="confirmDeleteSnapshot()">Sí, eliminar</button>
+      </div>
+    </div>
+  </div>
 
   <div id="snaps-list"><div class="empty"><div class="empty-icon">&#128248;</div><div class="empty-msg">Sin snapshots</div><div class="empty-sub">Usa "Snapshot ahora" para capturar las metricas actuales de Meta</div></div></div>
 
