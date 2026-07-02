@@ -406,6 +406,23 @@ body.focus-mode #main{margin-left:0}
 .df-actions{display:flex;gap:6px;flex-wrap:wrap}
 .df-empty{text-align:center;padding:28px;color:var(--text3);font-size:13px}
 .df-scanning{display:flex;align-items:center;gap:8px;padding:16px;color:var(--text2);font-size:12px}
+  /* ── PANEL DE TRADUCCIÓN ── */
+.pt-badge{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;padding:3px 9px;border-radius:10px;cursor:pointer;white-space:nowrap;border:none;background:transparent;transition:all .15s}
+.pt-badge.win{color:var(--primary-green);background:rgba(11,185,128,.1);border:1px solid rgba(11,185,128,.2)}
+.pt-badge.scale{color:var(--blue);background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.2)}
+.pt-badge.warn{color:var(--amber);background:rgba(245,166,35,.1);border:1px solid rgba(245,166,35,.2)}
+.pt-badge.lose{color:var(--red);background:rgba(255,71,87,.1);border:1px solid rgba(255,71,87,.2)}
+.pt-badge.neutral{color:var(--text3);background:var(--surface2);border:1px solid var(--border)}
+.pt-panel{position:fixed;z-index:200;width:300px;background:#111317;border:1px solid var(--border);border-radius:var(--rl);box-shadow:0 12px 40px rgba(0,0,0,.6);padding:16px;display:none}
+.pt-panel.open{display:block}
+.pt-panel-title{font-size:12px;font-weight:700;color:var(--text);margin-bottom:6px;display:flex;align-items:center;gap:6px}
+.pt-panel-veredicto{font-size:13px;line-height:1.6;color:var(--text2);margin-bottom:10px}
+.pt-panel-veredicto strong{color:var(--text)}
+.pt-panel-plata{font-size:12px;font-weight:700;padding:8px 10px;border-radius:var(--r);margin-bottom:10px}
+.pt-panel-plata.positivo{background:rgba(11,185,128,.08);color:var(--primary-green);border:1px solid rgba(11,185,128,.15)}
+.pt-panel-plata.negativo{background:rgba(255,71,87,.08);color:var(--red);border:1px solid rgba(255,71,87,.15)}
+.pt-panel-plata.neutro{background:var(--surface2);color:var(--text2);border:1px solid var(--border)}
+.pt-panel-actions{display:flex;gap:6px;flex-wrap:wrap}
 .df-dot{width:6px;height:6px;border-radius:50%;background:var(--primary-green);animation:ts-pulse 1s ease-in-out infinite}
   .preset-card{background:var(--surface2);border:1px solid var(--border);border-radius:var(--rl);padding:12px 14px;cursor:pointer;transition:border-color .15s,box-shadow .15s;display:flex;align-items:center;justify-content:space-between;gap:10px}
 .preset-card:hover{border-color:var(--primary-green-border);box-shadow:0 0 14px rgba(11,185,128,.07)}
@@ -3202,6 +3219,13 @@ create policy "own" on contacts for all using (auth.uid()=user_id);</div>
     </div>
   </div>
 </div>
+  <!-- PANEL DE TRADUCCIÓN flotante -->
+<div class="pt-panel" id="pt-panel" onclick="event.stopPropagation()">
+  <div class="pt-panel-title" id="pt-panel-title"></div>
+  <div class="pt-panel-veredicto" id="pt-panel-veredicto"></div>
+  <div class="pt-panel-plata" id="pt-panel-plata"></div>
+  <div class="pt-panel-actions" id="pt-panel-actions"></div>
+</div>
   <!-- MODO ESTRATEGA -->
 <div class="modal-backdrop" id="modal-estratega">
   <div class="modal" style="max-width:600px">
@@ -5061,7 +5085,7 @@ row.innerHTML = `<th style="width:28px"></th><th>${firstColLabel}</th><th>Estado
     metaActiveColumns.map(id => `<th>${META_METRIC_DEFS[id].label}</th>`).join('') +
     `<th></th>` +
     (includeStrategic ? `<th>Estado Estrategico</th>` : '') +
-    (includeDiagnostico ? `<th>Diagnostico</th>` : '');
+    (includeDiagnostico ? `<th>Diagnostico</th><th>Traducción</th>` : '');
 }
 function renderMetaCampHeader()   { renderMetaTableHeader('meta-camp-thead-row',   'Campana',  true,  false); }
 function renderMetaAdsetsHeader() { renderMetaTableHeader('meta-adsets-thead-row', 'Conjunto', true,  true); }
@@ -6833,6 +6857,160 @@ async function msLanzar(){
     document.getElementById('ms-btn-next').disabled = false;
   }
 }
+      // ══════════════════════════════════════════════════════════════════════════════
+// PANEL DE TRADUCCIÓN — Métricas → Oraciones en español + plata en juego
+// ══════════════════════════════════════════════════════════════════════════════
+
+function ptClose(){
+  document.getElementById('pt-panel')?.classList.remove('open');
+}
+
+document.addEventListener('click', () => ptClose());
+
+function ptOpen(el, adId, adName, ins, campId){
+  const panel = document.getElementById('pt-panel');
+  if(!panel) return;
+
+  const targets = getMetaTargets(campId);
+  const breakeven = +targets.breakEvenRoas || 2;
+  const targetCpa = +targets.targetCpa || 18;
+
+  // Calcular métricas reales
+  const spend       = +(ins?.spend||0);
+  const revenue     = +(ins?.action_values?.find?.(a=>a.action_type==='purchase')?.value||0);
+  const purchases   = +(ins?.actions?.find?.(a=>a.action_type==='purchase')?.value||0);
+  const impressions = +(ins?.impressions||0);
+  const clicks      = +(ins?.clicks||0);
+  const roas        = spend>0&&revenue>0 ? revenue/spend : 0;
+  const cpa         = purchases>0 ? spend/purchases : 0;
+  const ctr         = impressions>0 ? (clicks/impressions)*100 : 0;
+  const hook        = +(ins?.video_thruplay_watched_actions?.[0]?.value||0);
+  const hookRate    = impressions>0 ? (hook/impressions)*100 : 0;
+  const ventasDia   = purchases / 7;
+  const gastoDia    = spend / 7;
+
+  // ── Determinar estado y veredicto ────────────────────────────────────────
+  let estado, titulo, veredicto, plataMsg, plataClass, acciones = [];
+
+  if(spend < 5){
+    estado = 'neutral';
+    titulo = 'Sin datos suficientes';
+    veredicto = 'Este anuncio todavía no tiene gasto suficiente para sacar conclusiones. Dejalo correr hasta los USD 10-15 antes de tomar decisiones.';
+    plataMsg = 'Necesitás más datos antes de actuar.';
+    plataClass = 'neutro';
+  } else if(roas >= breakeven * 1.8){
+    estado = 'win';
+    const gananciaDia = (ventasDia * (revenue/purchases||0)) - gastoDia;
+    titulo = 'Anuncio ganador — escalar ahora';
+    veredicto = `ROAS <strong>${roas.toFixed(2)}x</strong> con USD <strong>${spend.toFixed(0)}</strong> gastados. Está generando <strong>${purchases} compras</strong> en el período — muy por encima de tu breakeven de ${breakeven}x.`;
+    plataMsg = `Si escalás el presupuesto ahora, podrías sumar ~USD ${(gananciaDia*1.5).toFixed(0)}/día adicionales.`;
+    plataClass = 'positivo';
+    acciones = [
+      { label:'Escalar a CBO', fn:`dfEscalar('${adId}','${(adName||'').replace(/'/g,"\\'")}','')`, style:'btn-accent btn-sm' },
+      { label:'Cerrar', fn:'ptClose()', style:'btn-outline btn-sm' }
+    ];
+  } else if(roas >= breakeven){
+    const diasFatiga = 18;
+    estado = 'scale';
+    titulo = 'Rentable — dentro del breakeven';
+    veredicto = `ROAS <strong>${roas.toFixed(2)}x</strong> — está cubriendo costos. ${cpa>0?`CPA de USD <strong>${cpa.toFixed(0)}</strong> ${cpa<=targetCpa?'dentro del objetivo.':'por encima del objetivo de USD '+targetCpa+'.'}` : ''} Históricamente los anuncios de esta cuenta decaen cerca del día ${diasFatiga}.`;
+    plataMsg = `Genera ~USD ${(gastoDia*(roas-1)).toFixed(0)}/día de ganancia neta estimada.`;
+    plataClass = 'positivo';
+    acciones = [
+      { label:'Ver anuncio', fn:`showPage('meta-campanas')`, style:'btn-outline btn-sm' },
+      { label:'Cerrar', fn:'ptClose()', style:'btn-ghost btn-sm' }
+    ];
+  } else if(roas > 0 && roas < breakeven){
+    const perdidaDia = gastoDia * (1 - roas/breakeven);
+    estado = 'warn';
+    if(hookRate > 55 && ctr < 1){
+      titulo = 'El video engancha, el problema es después';
+      veredicto = `ROAS <strong>${roas.toFixed(2)}x</strong> bajo el breakeven de ${breakeven}x, pero el Hook Rate es <strong>${hookRate.toFixed(0)}%</strong> — la gente ve el video. El problema está en la página de destino o el precio, no en el creativo.`;
+    } else if(hookRate < 30){
+      titulo = 'El creativo no está enganchando';
+      veredicto = `ROAS <strong>${roas.toFixed(2)}x</strong> bajo el breakeven. Hook Rate de solo <strong>${hookRate.toFixed(0)}%</strong> — la gente no está viendo el video. Probá un nuevo ángulo o un gancho más fuerte en los primeros 3 segundos.`;
+    } else {
+      titulo = 'Por debajo del breakeven';
+      veredicto = `ROAS <strong>${roas.toFixed(2)}x</strong> — cada USD gastado te devuelve <strong>${roas.toFixed(2)} USD</strong> en ventas, pero necesitás <strong>${breakeven}x</strong> para cubrir costos.`;
+    }
+    plataMsg = `Estás perdiendo ~USD ${perdidaDia.toFixed(0)}/día. Si lo pausás ahora, dejás de perder eso.`;
+    plataClass = 'negativo';
+    acciones = [
+      { label:'Pausar anuncio', fn:`dfPausar('${adId}','${(adName||'').replace(/'/g,"\\'")}')`, style:'btn-red btn-sm' },
+      { label:'Proteger', fn:`apToggleProtected('${adId}','${(adName||'').replace(/'/g,"\\'")}')`, style:'btn-outline btn-sm' },
+      { label:'Cerrar', fn:'ptClose()', style:'btn-ghost btn-sm' }
+    ];
+  } else if(spend >= 10 && purchases === 0){
+    estado = 'lose';
+    titulo = 'Sin conversiones — actuar ya';
+    veredicto = `USD <strong>${spend.toFixed(0)}</strong> gastados y <strong>ninguna compra</strong>. ${ctr>2?`El CTR de ${ctr.toFixed(1)}% es bueno — el problema está en el checkout o el precio, no en el anuncio.`:`CTR de ${ctr.toFixed(1)}% — el anuncio no está generando interés suficiente.`}`;
+    plataMsg = `Cada día que corre sin pausarlo perdés ~USD ${gastoDia.toFixed(0)}.`;
+    plataClass = 'negativo';
+    acciones = [
+      { label:'Pausar ahora', fn:`dfPausar('${adId}','${(adName||'').replace(/'/g,"\\'")}')`, style:'btn-red btn-sm' },
+      { label:'Cerrar', fn:'ptClose()', style:'btn-ghost btn-sm' }
+    ];
+  } else {
+    estado = 'neutral';
+    titulo = 'En observación';
+    veredicto = `Gasto de USD <strong>${spend.toFixed(0)}</strong> — todavía sin suficientes datos para diagnosticar. Dejalo correr hasta los USD ${Math.max(15, Math.ceil(spend/5)*5+5)}.`;
+    plataMsg = 'Sin acción recomendada por ahora.';
+    plataClass = 'neutro';
+    acciones = [{ label:'Cerrar', fn:'ptClose()', style:'btn-ghost btn-sm' }];
+  }
+
+  // ── Renderizar panel ──────────────────────────────────────────────────────
+  const iconMap = {
+    win:    `<svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="var(--primary-green)" stroke-width="1.5" stroke-linecap="round"><path d="M2 10l3-3 3 3 4-5"/></svg>`,
+    scale:  `<svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="var(--blue)" stroke-width="1.5" stroke-linecap="round"><circle cx="7" cy="7" r="5.5"/><path d="M7 4.5v3l2 1.5"/></svg>`,
+    warn:   `<svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="var(--amber)" stroke-width="1.5" stroke-linecap="round"><path d="M7 1.5L13 12H1z"/><path d="M7 5.5v3M7 10v.5"/></svg>`,
+    lose:   `<svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="var(--red)" stroke-width="1.5" stroke-linecap="round"><circle cx="7" cy="7" r="5.5"/><path d="M5 5l4 4M9 5l-4 4"/></svg>`,
+    neutral:`<svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="var(--text3)" stroke-width="1.5" stroke-linecap="round"><circle cx="7" cy="7" r="5.5"/><path d="M5 7h4"/></svg>`
+  };
+
+  document.getElementById('pt-panel-title').innerHTML = `${iconMap[estado]} ${titulo}`;
+  document.getElementById('pt-panel-veredicto').innerHTML = veredicto;
+  document.getElementById('pt-panel-plata').innerHTML = plataMsg;
+  document.getElementById('pt-panel-plata').className = `pt-panel-plata ${plataClass}`;
+  document.getElementById('pt-panel-actions').innerHTML = acciones.map(a=>`<button class="btn ${a.style}" onclick="${a.fn}">${a.label}</button>`).join('');
+
+  // Posicionar panel relativo al elemento clickeado
+  panel.classList.add('open');
+  const rect = el.getBoundingClientRect();
+  const panelW = 300;
+  let left = rect.left;
+  if(left + panelW > window.innerWidth - 10) left = window.innerWidth - panelW - 10;
+  let top = rect.bottom + 6 + window.scrollY;
+  panel.style.left = left + 'px';
+  panel.style.top = top + 'px';
+}
+
+function ptBadgeHtml(adId, adName, ins, campId){
+  const targets = getMetaTargets(campId);
+  const breakeven = +targets.breakEvenRoas || 2;
+  const spend    = +(ins?.spend||0);
+  const revenue  = +(ins?.action_values?.find?.(a=>a.action_type==='purchase')?.value||0);
+  const purchases= +(ins?.actions?.find?.(a=>a.action_type==='purchase')?.value||0);
+  const roas     = spend>0&&revenue>0 ? revenue/spend : 0;
+
+  let clase, label;
+  if(spend < 5){
+    clase='neutral'; label='Sin datos';
+  } else if(roas >= breakeven * 1.8){
+    clase='win'; label='Escalar';
+  } else if(roas >= breakeven){
+    clase='scale'; label='Rentable';
+  } else if(purchases===0 && spend>=10){
+    clase='lose'; label='Sin compras';
+  } else if(roas > 0){
+    clase='warn'; label='Bajo breakeven';
+  } else {
+    clase='neutral'; label='En observación';
+  }
+
+  const safeAdName = (adName||'').replace(/'/g,"\\'").replace(/"/g,'&quot;');
+  return `<button class="pt-badge ${clase}" onclick="event.stopPropagation();ptOpen(this,'${adId}','${safeAdName}',${JSON.stringify(ins||{}).replace(/'/g,"\\'")},'${campId||''}')">${label}</button>`;
+}
 function tsResetAdvControls(){
   Object.keys(ADV_CONTROLS).forEach(k => ADV_CONTROLS[k].value = true);
   advMasterKillActive = false;
@@ -8411,8 +8589,9 @@ tbody.innerHTML = list.map(a => {
       <td>
         <button class="btn btn-sm btn-accent" onclick="snapshotAd('${a.id}','${(a.name||'').replace(/'/g,"\'")}')">&#128248; Snap</button>
       </td>
-      <td>${metaDiagnosticoHtml(ins, currentCampaignId)}</td>
+     <td>${metaDiagnosticoHtml(ins, currentCampaignId)}</td>
       <td>${apBadgeHtml(a.id)}</td>
+      <td>${ptBadgeHtml(a.id, a.name, ins, currentCampaignId)}</td>
       <td>${cvStockBadgeHtml(a.id)}</td>
     </tr>`;
   }).join('');
