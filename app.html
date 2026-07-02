@@ -3291,6 +3291,19 @@ create policy "own" on contacts for all using (auth.uid()=user_id);</div>
     </div>
   </div>
 </div>
+      <!-- MODAL: confirmación de eliminación genérico -->
+<div class="modal-backdrop" id="modal-confirm-delete">
+  <div class="modal" style="max-width:400px">
+    <div class="modal-title" id="mcd-title">¿Eliminar publicación?</div>
+    <div style="font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:4px" id="mcd-body">
+      ¿Estás seguro de que querés eliminar esta publicación? Esta acción no se puede deshacer.
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-confirm-delete')">Cancelar</button>
+      <button class="btn" id="mcd-confirm-btn" style="background:var(--red);color:#fff;font-weight:700;border:none">Sí, eliminar</button>
+    </div>
+  </div>
+</div>
   <!-- MODO ESTRATEGA -->
 <div class="modal-backdrop" id="modal-estratega">
   <div class="modal" style="max-width:600px">
@@ -4446,7 +4459,19 @@ function renderCont(){
       <div class="cp-meta"><span class="badge ${sBadge[p.status]||'b-gray'}">${p.status}</span><span class="badge b-blue">${p.format}</span><button class="btn btn-sm btn-red btn-ghost" onclick="delPost('${p.id}')" style="margin-left:auto">&#10005;</button></div>
     </div>`).join('');
 }
-async function delPost(id){await db.from('content_posts').delete().eq('id',id);posts=posts.filter(p=>String(p.id)!==String(id));renderCont();renderCalCont();if(document.getElementById('cont-pub-grid'))renderPublicaciones();toast('Eliminado');}
+function delPost(id){
+  confirmDelete(
+    '¿Eliminar publicación?',
+    '¿Estás seguro de que querés eliminar esta publicación? Esta acción no se puede deshacer.',
+    async () => {
+      await db.from('content_posts').delete().eq('id',id);
+      posts = posts.filter(p=>String(p.id)!==String(id));
+      renderCont(); renderCalCont();
+      if(document.getElementById('cont-pub-grid')) renderPublicaciones();
+      toast('Publicación eliminada');
+    }
+  );
+}
 // ── CRM ───────────────────────────────────────────────────────────────────────
 async function saveCRM(){
   const name=document.getElementById('crm-name').value.trim();
@@ -4639,6 +4664,13 @@ function closeModal(id){document.getElementById(id).classList.remove('open');}
 const fmt=n=>Math.round(n).toLocaleString('es-AR');
 function fmtDate(d){if(!d)return'—';try{return new Date(d).toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit'});}catch{return d;}}
 function toast(msg,t=2400){const el=document.getElementById('toast');el.textContent=msg;el.classList.add('show');setTimeout(()=>el.classList.remove('show'),t);}
+function confirmDelete(title, body, onConfirm){
+  document.getElementById('mcd-title').textContent = title || '¿Eliminar?';
+  document.getElementById('mcd-body').textContent = body || 'Esta acción no se puede deshacer.';
+  const btn = document.getElementById('mcd-confirm-btn');
+  btn.onclick = () => { closeModal('modal-confirm-delete'); onConfirm(); };
+  openModal('modal-confirm-delete');
+}
 
 // ── BOOT ──────────────────────────────────────────────────────────────────────
 window.addEventListener('load',init);
