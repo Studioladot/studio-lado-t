@@ -11500,9 +11500,11 @@ function renderCalCont(){
       porDia[d].push(p);
     });
   };
-  addToDia(getUnifiedContentItems());
-  // posts sueltos que NO están ya en getUnifiedContentItems (evitar duplicado)
-  const unifiedIds=new Set(getUnifiedContentItems().map(p=>String(p.id)));
+  // Una sola llamada — se reutiliza el resultado en ambos usos
+  const unifiedItems = getUnifiedContentItems();
+  addToDia(unifiedItems);
+  // posts sueltos que NO están ya en unifiedItems (evitar duplicado)
+  const unifiedIds = new Set(unifiedItems.map(p=>String(p.id)));
   addToDia(posts.filter(p=>!unifiedIds.has(String(p.id))).map(p=>({
     ...p,
     date:p.date,
@@ -11585,9 +11587,11 @@ function renderCalCont(){
     daysGrid.appendChild(cell);
   }
 
-  grid.appendChild(daysGrid);
+ grid.appendChild(daysGrid);
 
-  // Leyenda de campañas del mes
+  // Leyenda y chips se inyectan de forma diferida para no bloquear el primer paint
+  requestAnimationFrame(() => {
+    // Leyenda de campañas del mes
   const campsConPiezas=[...new Set(contentPiezas.filter(p=>(p.fecha_planificada||'').startsWith(mesVal)).map(p=>p.campaign_id))].map(id=>contentCamps.find(cc=>cc.id===id)).filter(Boolean);
   if(campsConPiezas.length){
     const leyenda=document.createElement('div');
@@ -11595,6 +11599,7 @@ function renderCalCont(){
     leyenda.innerHTML=campsConPiezas.map(cc=>`<span style="display:flex;align-items:center;gap:4px"><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${cc.color||'var(--accent)'}"></span>${cc.nombre}</span>`).join('');
     grid.appendChild(leyenda);
   }
+  }); // cierre requestAnimationFrame
 }
 function openDiaPiezas(date){
   const items = getUnifiedContentItems().filter(p=>p.date===date);
