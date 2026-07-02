@@ -471,6 +471,22 @@ body.focus-mode #main{margin-left:0}
 .ap-badge.pause{background:rgba(255,71,87,.1);color:var(--red);border:1px solid rgba(255,71,87,.2)}
 .ap-badge.reduce{background:rgba(245,166,35,.1);color:var(--amber);border:1px solid rgba(245,166,35,.2)}
 .ap-badge.notify{background:rgba(11,185,128,.08);color:var(--primary-green);border:1px solid var(--primary-green-border)}
+  /* ── MODO ESTRATEGA ── */
+.ms-modal-btns{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:4px}
+.ms-mode-btn{background:var(--surface2);border:1px solid var(--border);border-radius:var(--rl);padding:18px 14px;cursor:pointer;text-align:center;transition:all .2s;display:flex;flex-direction:column;align-items:center;gap:8px}
+.ms-mode-btn:hover{border-color:var(--primary-green-border);background:rgba(11,185,128,.04)}
+.ms-mode-btn.selected{border-color:var(--primary-green);background:rgba(11,185,128,.08);box-shadow:0 0 16px rgba(11,185,128,.1)}
+.ms-mode-icon{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center}
+.ms-mode-title{font-size:12px;font-weight:700;color:var(--text)}
+.ms-mode-sub{font-size:10px;color:var(--text3);line-height:1.4}
+.ms-step{display:none}
+.ms-step.active{display:block}
+.ms-creative-slot{background:var(--surface2);border:1px dashed var(--border2);border-radius:var(--r);padding:12px;display:flex;align-items:center;gap:10px;margin-bottom:8px;transition:border-color .15s}
+.ms-creative-slot.has-file{border-style:solid;border-color:var(--primary-green)}
+.ms-slot-thumb{width:40px;height:40px;border-radius:6px;object-fit:cover;background:var(--surface);flex-shrink:0}
+.ms-slot-name{flex:1;font-size:12px;font-weight:600;color:var(--text)}
+.ms-slot-sub{font-size:10px;color:var(--text3)}
+@media(max-width:600px){.ms-modal-btns{grid-template-columns:1fr}}
   /* ── CICLO VIVO ── */
 .cv-stock-badge{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:600;padding:2px 8px;border-radius:10px;white-space:nowrap;cursor:pointer}
 .cv-stock-badge.ok{background:rgba(11,185,128,.08);color:var(--primary-green);border:1px solid var(--primary-green-border)}
