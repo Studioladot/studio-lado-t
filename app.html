@@ -6595,16 +6595,31 @@ function msShowStep(n){
 
 async function msSetupStep2(){
   const fp = msLoadFingerprint();
-  const modeLabels = { test:'Testeo de Creativos', scale:'Escalar Ganadores', retarget:'Retargeting / Liquidación' };
-  const modePrefs = { test:{ prefix:'TESTEO CBO', budget: fp.test_budget||30, slots:3 }, scale:{ prefix:'ESCALAR CBO', budget: fp.scale_budget||50, slots:0 }, retarget:{ prefix:'RETARGETING ABO', budget: fp.retarget_budget||15, slots:2 } };
-  const pref = modePrefs[msMode];
   const today = new Date().toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit',year:'2-digit'}).replace(/\//g,'');
 
+  // Si viene de preset, pre-completar con sus valores y salir
+  if(msMode === 'preset' && msFromPreset){
+    const p = msFromPreset;
+    const bt = p.campaign?.budget_type || 'CBO';
+    document.getElementById('ms-nombre').value = `${p.name} | ${today}`;
+    document.getElementById('ms-presupuesto').value = p.campaign?.daily_budget_usd || 30;
+    document.getElementById('ms-url').value = p.url_producto || fp.last_url || '';
+    document.getElementById('ms-presupuesto-label').textContent = `Presupuesto diario (USD) — ${bt}`;
+    if(p.advantage_controls){
+      Object.entries(p.advantage_controls).forEach(([k,v])=>{ if(ADV_CONTROLS[k]) ADV_CONTROLS[k].value=v; });
+    }
+    const wrap = document.getElementById('ms-creativos-wrap');
+    wrap.innerHTML = `<div style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin:12px 0 8px">Creativos</div>`;
+    msRenderCreativeSlots(wrap, 3);
+    return;
+  }
+
+  const modePrefs = { test:{ prefix:'TESTEO CBO', budget: fp.test_budget||30, slots:3 }, scale:{ prefix:'ESCALAR CBO', budget: fp.scale_budget||50, slots:0 }, retarget:{ prefix:'RETARGETING ABO', budget: fp.retarget_budget||15, slots:2 } };
+  const pref = modePrefs[msMode];
   document.getElementById('ms-nombre').value = `${pref.prefix} | ${today}`;
   document.getElementById('ms-presupuesto').value = pref.budget;
   document.getElementById('ms-url').value = fp.last_url || '';
   document.getElementById('ms-presupuesto-label').textContent = msMode === 'retarget' ? 'Presupuesto diario por Conjunto (USD)' : 'Presupuesto diario Campaña (USD)';
-
   const wrap = document.getElementById('ms-creativos-wrap');
 
   if(msMode === 'scale'){
