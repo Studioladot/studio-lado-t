@@ -479,6 +479,11 @@ body.focus-mode #main{margin-left:0}
 .ms-mode-icon{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center}
 .ms-mode-title{font-size:12px;font-weight:700;color:var(--text)}
 .ms-mode-sub{font-size:10px;color:var(--text3);line-height:1.4}
+  .ms-preset-item{display:flex;align-items:center;justify-content:space-between;padding:8px 10px;cursor:pointer;transition:background .12s;border-bottom:0.5px solid var(--border)}
+.ms-preset-item:last-child{border-bottom:none}
+.ms-preset-item:hover{background:var(--surface2)}
+.ms-preset-name{font-size:12px;font-weight:600;color:var(--text)}
+.ms-preset-meta{font-size:10px;color:var(--text3)}
 .ms-step{display:none}
 .ms-step.active{display:block}
 .ms-creative-slot{background:var(--surface2);border:1px dashed var(--border2);border-radius:var(--r);padding:12px;display:flex;align-items:center;gap:10px;margin-bottom:8px;transition:border-color .15s}
@@ -3232,7 +3237,15 @@ create policy "own" on contacts for all using (auth.uid()=user_id);</div>
         </div>
       </div>
     </div>
-
+<!-- Presets guardados del usuario -->
+      <div id="ms-presets-section" style="display:none;margin-top:14px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+          <div style="flex:1;height:1px;background:var(--border)"></div>
+          <span style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.06em">o usá un preset</span>
+          <div style="flex:1;height:1px;background:var(--border)"></div>
+        </div>
+        <div id="ms-presets-list" style="border:1px solid var(--border);border-radius:var(--r);overflow:hidden;max-height:200px;overflow-y:auto"></div>
+      </div>
     <!-- PASO 2: configuración rápida -->
     <div class="ms-step" id="ms-step-2">
       <div class="form-row">
@@ -6488,18 +6501,55 @@ function msSaveFingerprint(fp){
   localStorage.setItem(MS_FINGERPRINT_KEY, JSON.stringify({ ...msLoadFingerprint(), ...fp }));
 }
 
-function msOpenModal(){
-  msMode = null; msStep = 1; msFiles.clear(); msWinners = [];
+let msFromPreset = null;
+
+async function msOpenModal(){
+  msMode = null; msStep = 1; msFiles.clear(); msWinners = []; msFromPreset = null;
   document.querySelectorAll('.ms-mode-btn').forEach(b=>b.classList.remove('selected'));
   document.querySelectorAll('.ms-step').forEach(s=>s.classList.remove('active'));
   document.getElementById('ms-step-1').classList.add('active');
   document.getElementById('ms-step-indicator').textContent = 'Paso 1 de 3';
-  document.getElementById('ms-step-desc').textContent = 'Elegí la estructura que querés lanzar';
+  document.getElementById('ms-step-desc').textContent = 'Elegí una estructura o usá un preset guardado';
   document.getElementById('ms-btn-back').style.display = 'none';
   document.getElementById('ms-btn-next').textContent = 'Siguiente';
-  document.getElementById('ms-console').classList.remove('active');
-  document.getElementById('ms-console-final').style.display = 'none';
+  if(document.getElementById('ms-console')) document.getElementById('ms-console').classList.remove('active');
+  if(document.getElementById('ms-console-final')) document.getElementById('ms-console-final').style.display = 'none';
+  if(document.getElementById('ms-console-lines')) document.getElementById('ms-console-lines').innerHTML = '';
+
+  // Cargar presets del usuario
+  const presets = await presetsLoad();
+  const section = document.getElementById('ms-presets-section');
+  const listEl = document.getElementById('ms-presets-list');
+  if(presets.length && section && listEl){
+    section.style.display = 'block';
+    listEl.innerHTML = presets.map(p => {
+      const budgetLbl = p.campaign?.budget_type==='CBO'?'CBO':'ABO';
+      const d = new Date(p.created_at).toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit',year:'2-digit'});
+      return `<div class="ms-preset-item" onclick="msSelectPreset('${p.id}',this)">
+        <div>
+          <div class="ms-preset-name">${p.name}</div>
+          <div class="ms-preset-meta">${budgetLbl} · USD ${p.campaign?.daily_budget_usd||0}/día · ${d}</div>
+        </div>
+        <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="var(--text3)" stroke-width="1.5" stroke-linecap="round"><path d="M3 7h8M7 3l4 4-4 4"/></svg>
+      </div>`;
+    }).join('');
+  } else if(section){
+    section.style.display = 'none';
+  }
+
   openModal('modal-estratega');
+}
+
+async function msSelectPreset(presetId, el){
+  const presets = await presetsLoad();
+  const p = presets.find(x=>x.id===presetId);
+  if(!p) return;
+  msFromPreset = p;
+  msMode = 'preset';
+  document.querySelectorAll('.ms-mode-btn').forEach(b=>b.classList.remove('selected'));
+  document.querySelectorAll('.ms-preset-item').forEach(item=>{ item.style.background=''; item.style.borderColor=''; });
+  if(el){ el.style.background='rgba(11,185,128,.08)'; el.style.outline='1px solid var(--primary-green)'; }
+  toast(`Preset "${p.name}" seleccionado`);
 }
 
 function msSelectMode(mode){
