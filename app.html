@@ -7003,7 +7003,7 @@ function ptOpen(el, adId, adName, ins, campId){
 }
 
 function ptBadgeHtml(adId, adName, ins, campId){
-  const targets = getMetaTargets(campId);
+  const targets = getMetaTargetsFor(campId);
   const breakeven = +targets.breakEvenRoas || 2;
   const spend    = +(ins?.spend||0);
   const revenue  = +(ins?.action_values?.find?.(a=>a.action_type==='purchase')?.value||0);
