@@ -732,6 +732,21 @@ body.focus-mode #main{margin-left:0}
 .an-prod-card-cost{font-size:11px;font-weight:700}
 @media(max-width:1200px){#an-prod-grid{grid-template-columns:repeat(6,1fr)!important}}
 @media(max-width:760px){#an-prod-grid{grid-template-columns:repeat(3,1fr)!important}}
+.snap-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px}
+.snap-card{position:relative;padding:16px;border-radius:14px;background:linear-gradient(180deg,rgba(255,255,255,.03),rgba(255,255,255,.01));backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,.06);cursor:pointer;transition:border-color .15s,transform .15s}
+.snap-card:hover{border-color:rgba(255,255,255,.14);transform:translateY(-1px)}
+.snap-card.is-dying{border-color:rgba(239,68,68,.35)}
+.snap-card.is-sel{border-color:var(--primary-green);background:linear-gradient(180deg,rgba(11,185,128,.08),rgba(11,185,128,.02))}
+.snap-card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:10px}
+.snap-card-name{font-size:13px;font-weight:600;color:#f2f2f2;line-height:1.3;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.snap-card-type{font-size:9px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:rgba(255,255,255,.35);white-space:nowrap;flex-shrink:0;padding-top:2px}
+.snap-card-metrics{display:flex;align-items:flex-end;justify-content:space-between;gap:10px}
+.snap-card-roas{font-size:22px;font-weight:700;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.snap-card-roas-lbl{font-size:10px;color:rgba(255,255,255,.4);font-weight:500;margin-top:2px}
+.snap-spark{flex-shrink:0}
+.snap-card-status{display:inline-flex;align-items:center;gap:5px;font-size:10px;font-weight:600;margin-top:10px}
+.snap-variant-btn{margin-top:10px;width:100%;display:flex;align-items:center;justify-content:center;gap:6px;padding:7px 0;border-radius:8px;border:1px solid rgba(239,68,68,.3);background:rgba(239,68,68,.08);color:#f87171;font-size:11px;font-weight:600;cursor:pointer;transition:background .15s}
+.snap-variant-btn:hover{background:rgba(239,68,68,.15)}
 </style>
 </head>
 <body>
@@ -1333,7 +1348,7 @@ body.focus-mode #main{margin-left:0}
     </div>
   </div>
 
-  <div id="snaps-list"><div class="empty"><div class="empty-icon">&#128248;</div><div class="empty-msg">Sin snapshots</div><div class="empty-sub">Usa "Snapshot ahora" para capturar las metricas actuales de Meta</div></div></div>
+  <div id="snaps-list" class="snap-grid"></div>
 
   <!-- PANEL DE DETALLE -->
   <div id="snap-detail-overlay" style="position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:300;display:none;align-items:flex-start;justify-content:center;padding:40px 20px;overflow-y:auto" onclick="if(event.target===this)closeSnapDetail()">
@@ -9136,19 +9151,42 @@ function renderSnaps(){
   list.forEach(m=>{ const k=(m.name||'').replace(/^\[[^\]]+\]\s*/,''); if(!byName[k])byName[k]=[]; byName[k].push(m); });
   window._snapGroups = byName;
 
-  el.innerHTML = Object.entries(byName).map(([name,snaps])=>{
-    const sorted = snaps.sort((a,b)=>new Date(b.snap_time||b.created_at)-new Date(a.snap_time||a.created_at));
-    const typeLbl={campaign:'Campana',adset:'Conjunto',ad:'Anuncio',manual:'Manual'}[sorted[0]?.snap_type]||'';
-    const typeBdg={campaign:'b-blue',adset:'b-teal',ad:'b-accent',manual:'b-gray'}[sorted[0]?.snap_type]||'b-gray';
-    const best=Math.max(...sorted.map(s=>parseFloat(s.roas)||0));
-   const isSel = window._selectedGroupName===name;
-    return `<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px 16px;background:${isSel?'rgba(11,185,128,.1)':'#111111'};border:1px solid ${isSel?'var(--primary-green)':'#222222'};border-radius:8px;margin-bottom:8px;cursor:pointer;transition:all .15s" onclick="selectSnapGroup('${name.replace(/'/g,"\\'")}')">
-      <div style="flex:1;min-width:0">
-        <div style="font-size:13px;font-weight:700;color:#ffffff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${name}">${name}</div>
-        <div style="font-size:11px;color:#666666;margin-top:2px">${sorted.length} snapshot${sorted.length>1?'s':''} · Mejor ROAS: <span style="color:${roasColor(best)};font-weight:700">${best>0?best+'x':'—'}</span></div>
+el.innerHTML = Object.entries(byName).map(([name,snaps])=>{
+    const sorted = snaps.sort((a,b)=>new Date(a.snap_time||a.created_at)-new Date(b.snap_time||b.created_at)).slice(-5);
+    const latest = sorted[sorted.length-1];
+    const typeLbl={campaign:'Campaña',adset:'Conjunto',ad:'Anuncio',manual:'Manual'}[latest?.snap_type]||'';
+    const roasVals = sorted.map(s=>parseFloat(s.roas)||0);
+    const curRoas = roasVals[roasVals.length-1]||0;
+    const prevRoas = roasVals.length>1?roasVals[roasVals.length-2]:null;
+    const isDying = curRoas>0 && curRoas<2 && prevRoas!==null && curRoas<=prevRoas;
+    const isSel = window._selectedGroupName===name;
+
+    const w=90,h=28,max=Math.max(...roasVals,0.01),min=Math.min(...roasVals,0);
+    const range=(max-min)||1;
+    const pts = roasVals.map((v,i)=>{ const x=roasVals.length>1?(i/(roasVals.length-1))*w:w/2; const y=h-((v-min)/range)*h; return `${x.toFixed(1)},${y.toFixed(1)}`; }).join(' ');
+    const sparkColor = isDying ? '#f87171' : (curRoas>=2 ? '#0bb980' : '#a3a3a3');
+    const spark = `<svg class="snap-spark" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}"><polyline points="${pts}" fill="none" stroke="${sparkColor}" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+
+    const statusIcon = isDying
+      ? `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#f87171" stroke-width="2" stroke-linecap="round"><path d="M3 17l6-6 4 4 8-8"/><path d="M17 7h4v4"/></svg>`
+      : `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#0bb980" stroke-width="2" stroke-linecap="round"><path d="M3 7l6 6 4-4 8 8"/><path d="M21 11V7h-4"/></svg>`;
+    const statusTxt = isDying ? 'Cayendo' : 'Estable';
+    const statusColor = isDying ? '#f87171' : '#0bb980';
+
+    return `<div class="snap-card ${isDying?'is-dying':''} ${isSel?'is-sel':''}" onclick="selectSnapGroup('${name.replace(/'/g,"\\'")}')">
+      <div class="snap-card-top">
+        <div class="snap-card-name" title="${name}">${name}</div>
+        <div class="snap-card-type">${typeLbl}</div>
       </div>
-      ${typeLbl?`<span class="badge ${typeBdg}" style="font-size:9px;flex-shrink:0">${typeLbl}</span>`:''}
-     <span style="font-size:11px;color:#666666;flex-shrink:0" onclick="event.stopPropagation();openSnapDetail('${name.replace(/'/g,"\\'")}')">Ver historial &#8594;</span>
+      <div class="snap-card-metrics">
+        <div>
+          <div class="snap-card-roas" style="color:${roasColor(curRoas)}">${curRoas>0?curRoas.toFixed(2)+'x':'—'}</div>
+          <div class="snap-card-roas-lbl">ROAS actual</div>
+        </div>
+        ${spark}
+      </div>
+      <div class="snap-card-status" style="color:${statusColor}">${statusIcon} ${statusTxt} · ${sorted.length} lectura${sorted.length>1?'s':''}</div>
+      ${isDying?`<button class="snap-variant-btn" onclick="event.stopPropagation();openModal('modal-snap')"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg> Crear Variante</button>`:''}
     </div>`;
   }).join('');
   renderSnapshotDashboard();
