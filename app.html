@@ -340,6 +340,12 @@ body.focus-mode #main{margin-left:0}
 .modal{background:var(--surface);border-radius:var(--rl);padding:26px;width:100%;max-width:560px;max-height:90vh;overflow-y:auto;box-shadow:0 8px 40px rgba(0,0,0,.15)}
 .modal-title{font-size:17px;font-weight:700;margin-bottom:18px}
 .modal-footer{display:flex;justify-content:flex-end;gap:8px;margin-top:20px;padding-top:14px;border-top:0.5px solid var(--border)}
+  .snap-detail-panel{background:rgba(17,17,19,.82);backdrop-filter:blur(20px) saturate(160%);-webkit-backdrop-filter:blur(20px) saturate(160%);border:1px solid rgba(255,255,255,.06);border-radius:14px;width:100%;max-width:980px;max-height:85vh;overflow-y:auto;box-shadow:0 24px 60px -12px rgba(0,0,0,.6);animation:snapPanelIn .38s cubic-bezier(.34,1.56,.64,1);will-change:transform,opacity}
+.snap-detail-header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid rgba(255,255,255,.05);position:sticky;top:0;background:rgba(17,17,19,.82);backdrop-filter:blur(20px);z-index:1}
+.snap-detail-close{background:transparent;border:1px solid rgba(255,255,255,.08);border-radius:8px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;color:rgba(255,255,255,.5);cursor:pointer;transition:color .15s,border-color .15s,transform .15s cubic-bezier(.16,1,.3,1)}
+.snap-detail-close:hover{color:#fff;border-color:rgba(255,255,255,.16)}
+.snap-detail-close:active{transform:scale(.96)}
+@keyframes snapPanelIn{from{opacity:0;transform:scale(.95) translateY(4px)}to{opacity:1;transform:scale(1) translateY(0)}}
 #toast{position:fixed;bottom:20px;right:20px;background:#1a1a1a;color:#fff;padding:9px 15px;border-radius:var(--r);font-size:13px;font-weight:500;z-index:1000;opacity:0;transform:translateY(8px);transition:all .25s;pointer-events:none;border:1px solid var(--border)}
 #toast.show{opacity:1;transform:translateY(0)}
 .ld{display:inline-block;width:5px;height:5px;background:currentColor;border-radius:50%;animation:bounce .8s ease infinite;margin:0 1px}
@@ -733,6 +739,7 @@ body.focus-mode #main{margin-left:0}
 @media(max-width:1200px){#an-prod-grid{grid-template-columns:repeat(6,1fr)!important}}
 @media(max-width:760px){#an-prod-grid{grid-template-columns:repeat(3,1fr)!important}}
 .snap-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px}
+  @media(max-width:600px){.snap-grid{grid-template-columns:1fr}}
 .snap-card{position:relative;padding:16px;border-radius:14px;background:linear-gradient(180deg,rgba(255,255,255,.03),rgba(255,255,255,.01));backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,.06);cursor:pointer;transition:border-color .15s,transform .15s}
 .snap-card:hover{border-color:rgba(255,255,255,.14);transform:translateY(-1px)}
 .snap-card.is-dying{border-color:rgba(239,68,68,.35)}
@@ -1353,18 +1360,20 @@ body.focus-mode #main{margin-left:0}
   <div id="snaps-list" class="snap-grid"></div>
 
   <!-- PANEL DE DETALLE -->
-  <div id="snap-detail-overlay" style="position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:300;display:none;align-items:flex-start;justify-content:center;padding:40px 20px;overflow-y:auto" onclick="if(event.target===this)closeSnapDetail()">
-    <div id="snap-detail-panel" style="background:#111111;border:1px solid #222222;border-radius:10px;width:100%;max-width:980px;max-height:85vh;overflow-y:auto">
-      <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid #222222;position:sticky;top:0;background:#111111;z-index:1">
-        <div>
-          <div id="snap-detail-title" style="font-size:16px;font-weight:700;color:#ffffff">—</div>
-          <div id="snap-detail-sub" style="font-size:11px;color:#666666;margin-top:3px">—</div>
-        </div>
-        <button class="btn btn-sm btn-ghost" onclick="closeSnapDetail()">&#10005; Cerrar</button>
+ <div id="snap-detail-overlay" style="position:fixed;inset:0;background:rgba(8,8,10,.6);z-index:300;display:none;align-items:flex-start;justify-content:center;padding:40px 20px;overflow-y:auto" onclick="if(event.target===this)closeSnapDetail()">
+  <div id="snap-detail-panel" class="snap-detail-panel">
+    <div class="snap-detail-header">
+      <div>
+        <div id="snap-detail-title" style="font-size:16px;font-weight:700;color:#fff">—</div>
+        <div id="snap-detail-sub" style="font-size:11px;color:rgba(255,255,255,.4);margin-top:3px">—</div>
       </div>
-      <div id="snap-detail-body" style="padding:16px 20px"></div>
+      <button class="snap-detail-close" onclick="closeSnapDetail()" aria-label="Cerrar">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
     </div>
+    <div id="snap-detail-body" style="padding:16px 20px"></div>
   </div>
+</div>
 </div>
 
 <!-- GUIONES -->
@@ -9131,7 +9140,9 @@ function dateKeyLocal(ts){
   if(!ts) return '—';
   return new Date(ts).toLocaleDateString('en-CA'); // YYYY-MM-DD en horario local (fix del bug de fechas)
 }
-
+function evaluarSaludAnuncio(curRoas, prevRoas, breakEvenROAS = 2){
+  return curRoas > 0 && curRoas < breakEvenROAS && prevRoas !== null && curRoas <= prevRoas;
+}
 function renderSnaps(){
   const el=document.getElementById('snaps-list'); if(!el)return;
   let list=[...metrics];
@@ -9163,13 +9174,14 @@ el.innerHTML = Object.entries(byName).map(([name,snaps])=>{
     const roasVals = sorted.map(s=>parseFloat(s.roas)||0);
     const curRoas = roasVals[roasVals.length-1]||0;
     const prevRoas = roasVals.length>1?roasVals[roasVals.length-2]:null;
-    const isDying = curRoas>0 && curRoas<2 && prevRoas!==null && curRoas<=prevRoas;
+   const breakEvenROAS = window.breakEvenROAS || 2;
+const isDying = evaluarSaludAnuncio(curRoas, prevRoas, breakEvenROAS);
     const isSel = window._selectedGroupName===name;
 
     const w=90,h=28,max=Math.max(...roasVals,0.01),min=Math.min(...roasVals,0);
     const range=(max-min)||1;
     const pts = roasVals.map((v,i)=>{ const x=roasVals.length>1?(i/(roasVals.length-1))*w:w/2; const y=h-((v-min)/range)*h; return `${x.toFixed(1)},${y.toFixed(1)}`; }).join(' ');
-    const sparkColor = isDying ? '#f87171' : (curRoas>=2 ? '#0bb980' : '#a3a3a3');
+    const sparkColor = isDying ? '#f87171' : (curRoas>=breakEvenROAS ? '#0bb980' : '#a3a3a3');
     const spark = `<svg class="snap-spark" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}"><polyline points="${pts}" fill="none" stroke="${sparkColor}" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 
     const statusIcon = isDying
