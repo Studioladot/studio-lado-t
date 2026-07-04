@@ -343,6 +343,11 @@ body.focus-mode #main{margin-left:0}
 .snap-detail-close{background:transparent;border:1px solid rgba(255,255,255,.08);border-radius:8px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;color:rgba(255,255,255,.5);cursor:pointer;transition:color .15s,border-color .15s,transform .15s cubic-bezier(.16,1,.3,1)}
 .snap-detail-close:hover{color:#fff;border-color:rgba(255,255,255,.16)}
 .snap-detail-close:active{transform:scale(.96)}
+  .data-table-dark{border:1px solid rgba(255,255,255,.06);border-radius:8px;overflow:hidden;background:rgba(255,255,255,.015)}
+.data-table-dark table{width:100%;border-collapse:collapse;font-size:12px}
+.data-table-dark thead tr{position:sticky;top:0;background:rgba(20,20,23,.95);backdrop-filter:blur(6px)}
+.data-table-dark th{padding:8px 12px;color:var(--text3);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid rgba(255,255,255,.06);white-space:nowrap}
+.data-table-dark td{padding:8px 12px;color:var(--text);border-bottom:1px solid rgba(255,255,255,.04)}
 @keyframes snapPanelIn{from{opacity:0;transform:scale(.95) translateY(4px)}to{opacity:1;transform:scale(1) translateY(0)}}
 #toast{position:fixed;bottom:20px;right:20px;background:#1a1a1a;color:#fff;padding:9px 15px;border-radius:var(--r);font-size:13px;font-weight:500;z-index:1000;opacity:0;transform:translateY(8px);transition:all .25s;pointer-events:none;border:1px solid var(--border)}
 #toast.show{opacity:1;transform:translateY(0)}
