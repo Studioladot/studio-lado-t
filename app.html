@@ -9290,27 +9290,27 @@ function closeSnapDetail(){ document.getElementById('snap-detail-overlay').style
 function renderDateSnapTable(dateLabel, rows){
   const cols = ['HORA','GASTO','ROAS','CPA','CPM','CTR','HOOK%','ATC','IC','COMPRAS'];
   return `<div style="margin-bottom:18px">
-    <div style="font-size:11px;font-weight:700;color:#666666;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">&#128197; ${dateLabel}</div>
-    <div style="border:1px solid #222222;border-radius:6px;overflow:hidden">
+    <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;display:flex;align-items:center;gap:6px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>${dateLabel}</div>
+    <div class="data-table-dark">
       <div style="overflow-x:auto;${rows.length>10?'max-height:280px;overflow-y:auto':''}">
-        <table style="width:100%;border-collapse:collapse;font-size:12px">
-          <thead><tr style="position:sticky;top:0;background:#111111">
-            ${cols.map(c=>`<th style="text-align:${c==='HORA'?'left':'right'};padding:8px 12px;color:#666666;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid #222222;white-space:nowrap">${c}</th>`).join('')}
+        <table>
+          <thead><tr>
+            ${cols.map(c=>`<th style="text-align:${c==='HORA'?'left':'right'}">${c}</th>`).join('')}
           </tr></thead>
           <tbody>
             ${rows.map(m=>{
               const tl = m.snap_time?new Date(m.snap_time).toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'}):fmtDate(m.created_at);
-              return `<tr style="border-bottom:1px solid #1a1a1a">
-                <td style="padding:8px 12px;color:#ffffff;font-weight:600;white-space:nowrap">${tl}</td>
-                <td style="padding:8px 12px;color:#ffffff;text-align:right">${m.spend?'$'+m.spend:'—'}</td>
-                <td style="padding:8px 12px;text-align:right;font-weight:700;color:${roasColor(m.roas)}">${m.roas?m.roas+'x':'—'}</td>
-                <td style="padding:8px 12px;color:#ffffff;text-align:right">${m.cpa?'$'+m.cpa:'—'}</td>
-                <td style="padding:8px 12px;color:#ffffff;text-align:right">${m.cpm?'$'+m.cpm:'—'}</td>
-                <td style="padding:8px 12px;color:#ffffff;text-align:right">${m.ctr?m.ctr+'%':'—'}</td>
-                <td style="padding:8px 12px;color:#ffffff;text-align:right">${m.hook_rate?m.hook_rate+'%':'—'}</td>
-                <td style="padding:8px 12px;color:#ffffff;text-align:right">${m.atc??'—'}</td>
-                <td style="padding:8px 12px;color:#ffffff;text-align:right">${m.ic??'—'}</td>
-                <td style="padding:8px 12px;color:#ffffff;text-align:right;font-weight:600">${m.purchases??'—'}</td>
+              return `<tr>
+                <td style="white-space:nowrap">${tl}</td>
+                <td style="text-align:right">${m.spend?'$'+m.spend:'—'}</td>
+                <td style="text-align:right;font-weight:700;color:${roasColor(m.roas)}">${m.roas?m.roas+'x':'—'}</td>
+                <td style="text-align:right">${m.cpa?'$'+m.cpa:'—'}</td>
+                <td style="text-align:right">${m.cpm?'$'+m.cpm:'—'}</td>
+                <td style="text-align:right">${m.ctr?m.ctr+'%':'—'}</td>
+                <td style="text-align:right">${m.hook_rate?m.hook_rate+'%':'—'}</td>
+                <td style="text-align:right">${m.atc??'—'}</td>
+                <td style="text-align:right">${m.ic??'—'}</td>
+                <td style="text-align:right;font-weight:600">${m.purchases??'—'}</td>
               </tr>`;
             }).join('')}
           </tbody>
