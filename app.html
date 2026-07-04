@@ -1059,7 +1059,7 @@ body.focus-mode #main{margin-left:0}
       <div style="display:flex;gap:6px;align-items:center">
         <span id="dash-meta-range" style="font-size:11px;color:var(--text2);font-weight:400"></span>
         <button class="btn btn-sm btn-outline" onclick="showPage('meta-campanas');loadMetaCampaigns()">Ver todas &#8594;</button>
-        <button class="btn btn-sm btn-accent" onclick="dashAutoSnapshot()">&#128248; Snapshot ahora</button>
+       <button class="btn btn-sm btn-accent" onclick="dashAutoSnapshot()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4" style="vertical-align:-2px;margin-right:4px"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>Snapshot ahora</button>
       </div>
     </div>
     <div class="tbl-wrap"><table>
@@ -1315,7 +1315,7 @@ body.focus-mode #main{margin-left:0}
   <div class="page-hdr">
    <div><div class="page-title" id="snap-page-title">Snapshot Diario: Rendimiento Global</div><div class="page-sub">Lectura rápida del rendimiento — comparado contra tu última captura del mismo rango</div></div>
     <div style="display:flex;gap:8px">
-      <button class="btn btn-outline" onclick="autoSnapshot()">&#128248; Snapshot ahora</button>
+      <button class="btn btn-sm btn-accent" onclick="dashAutoSnapshot()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4" style="vertical-align:-2px;margin-right:4px"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>Snapshot ahora</button>
       <button class="btn btn-accent" onclick="openModal('modal-snap')">+ Manual</button>
     </div>
   </div>
@@ -1329,7 +1329,20 @@ body.focus-mode #main{margin-left:0}
   <!-- FILTROS SNAPSHOT -->
   <div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap;align-items:center">
     <div style="position:relative;flex:1;min-width:200px;max-width:380px">
-      <span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text3);pointer-events:none">&#128269;</span>
+     <!-- ICON: camera -->
+<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
+
+<!-- ICON: search -->
+<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+
+<!-- ICON: trash -->
+<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+
+<!-- ICON: note -->
+<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+
+<!-- ICON: bar-chart -->
+<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
       <input id="snap-search" type="text" placeholder="Buscar por nombre de anuncio o conjunto..."
         style="width:100%;border:0.5px solid var(--border);border-radius:20px;padding:8px 12px 8px 32px;font-size:13px;background:var(--surface);color:var(--text);outline:none;transition:border-color .15s"
         oninput="renderSnaps()" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'"/>
@@ -1348,7 +1361,7 @@ body.focus-mode #main{margin-left:0}
 
   <div class="modal-backdrop" id="modal-confirm-delete-snap">
     <div class="modal" style="max-width:380px">
-      <div class="modal-title">&#128465; Eliminar snapshot</div>
+     <div class="modal-title" style="display:flex;align-items:center;gap:8px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>Eliminar snapshot</div>
       <div style="font-size:13px;color:var(--text2);margin:10px 0 18px">¿Estás seguro de eliminar este snapshot? Esta acción no se puede deshacer.</div>
       <div class="modal-footer">
         <button class="btn btn-outline" onclick="closeModal('modal-confirm-delete-snap')">Cancelar</button>
@@ -4191,7 +4204,7 @@ async function saveSnap(){
 }
 function renderSnaps(){
   const el=document.getElementById('snaps-list');
-  if(!metrics.length){el.innerHTML='<div class="empty"><div class="empty-icon">&#128248;</div><div class="empty-msg">Sin snapshots</div><div class="empty-sub">Guarda tus primeras metricas</div></div>';return;}
+  if(!metrics.length){el.innerHTML='<div class="empty"><div class="empty-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg></div><div class="empty-msg">Sin snapshots</div><div class="empty-sub">Guarda tus primeras metricas</div></div>';return;}
   el.innerHTML=metrics.map(m=>`
   <div class="snap-card">
     <div class="snap-hdr">
