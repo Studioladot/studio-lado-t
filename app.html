@@ -9108,7 +9108,18 @@ async function confirmDeleteSnapshot(){
     renderSnaps();
   }catch(e){ toast('Error al eliminar: '+(e.message||'').slice(0,80)); }
 }
-
+const RANGE_LABELS = {
+  today: 'Hoy',
+  yesterday: 'Ayer',
+  last_7d: 'Últimos 7 días',
+  last_14d: 'Últimos 14 días',
+  last_30d: 'Últimos 30 días',
+  last_90d: 'Últimos 90 días',
+  this_month: 'Este mes',
+  last_month: 'Mes pasado',
+  maximum: 'Máximo histórico',
+  custom: 'Personalizado'
+};
 function renderSnapshotDashboard(){
   const wrap=document.getElementById('snap-dash-wrap'); if(!wrap)return;
   const titleEl=document.getElementById('snap-page-title');
