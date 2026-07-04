@@ -744,7 +744,7 @@ body.focus-mode #main{margin-left:0}
 .snap-card-roas{font-size:22px;font-weight:700;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
 .snap-card-roas-lbl{font-size:10px;color:rgba(255,255,255,.4);font-weight:500;margin-top:2px}
 .snap-spark{flex-shrink:0}
-.snap-card-status{display:inline-flex;align-items:center;gap:5px;font-size:10px;font-weight:600;margin-top:10px}
+.snap-card-status{display:flex;align-items:center;gap:5px;font-size:10px;font-weight:600;margin-top:10px}
 .snap-variant-btn{margin-top:10px;width:100%;display:flex;align-items:center;justify-content:center;gap:6px;padding:7px 0;border-radius:8px;border:1px solid rgba(239,68,68,.3);background:rgba(239,68,68,.08);color:#f87171;font-size:11px;font-weight:600;cursor:pointer;transition:background .15s}
 .snap-variant-btn:hover{background:rgba(239,68,68,.15)}
 </style>
@@ -1332,8 +1332,10 @@ body.focus-mode #main{margin-left:0}
       <button type="button" onclick="setSnapLevel('adset',this)" style="padding:7px 14px;font-size:12px;font-weight:600;border:none;cursor:pointer;background:transparent;color:var(--text2)">Conjuntos</button>
       <button type="button" onclick="setSnapLevel('ad',this)" style="padding:7px 14px;font-size:12px;font-weight:600;border:none;cursor:pointer;background:transparent;color:var(--text2)">Anuncios</button>
     </div>
-    <input type="date" id="snap-filter-date" style="border:0.5px solid var(--border);border-radius:var(--r);padding:7px 10px;font-size:13px;background:var(--surface);color:var(--text);outline:none" onchange="renderSnaps()">
-    <button class="btn btn-ghost btn-sm" onclick="document.getElementById('snap-filter-date').value='';document.getElementById('snap-search').value='';renderSnaps()">&#10005; Limpiar</button>
+   <input type="date" id="snap-filter-date-from" style="border:0.5px solid var(--border);border-radius:var(--r);padding:7px 10px;font-size:13px;background:var(--surface);color:var(--text);outline:none" onchange="renderSnaps()">
+    <span style="color:var(--text3);font-size:12px">→</span>
+    <input type="date" id="snap-filter-date-to" style="border:0.5px solid var(--border);border-radius:var(--r);padding:7px 10px;font-size:13px;background:var(--surface);color:var(--text);outline:none" onchange="renderSnaps()">
+   <button class="btn btn-ghost btn-sm" onclick="document.getElementById('snap-filter-date-from').value='';document.getElementById('snap-filter-date-to').value='';document.getElementById('snap-search').value='';renderSnaps()">&#10005; Limpiar</button>
   </div>
   <div id="snap-name-pills" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px"></div>
 
@@ -9133,11 +9135,14 @@ function dateKeyLocal(ts){
 function renderSnaps(){
   const el=document.getElementById('snaps-list'); if(!el)return;
   let list=[...metrics];
-  const typeF=(document.getElementById('snap-filter-type')?.value)||'all';
-  const dateF=(document.getElementById('snap-filter-date')?.value)||'';
+  const typeF=_snapLevel||'campaign';
+  if(typeF==='all'){/*no-op, compat*/}
+  const dateFrom=(document.getElementById('snap-filter-date-from')?.value)||'';
+  const dateTo=(document.getElementById('snap-filter-date-to')?.value)||'';
   const search=((document.getElementById('snap-search')?.value)||'').trim().toLowerCase();
   if(typeF!=='all'){ if(typeF==='manual') list=list.filter(m=>!m.snap_type||m.snap_type==='manual'); else list=list.filter(m=>m.snap_type===typeF); }
-  if(dateF) list=list.filter(m=>dateKeyLocal(m.snap_time||m.created_at)===dateF);
+  if(dateFrom) list=list.filter(m=>dateKeyLocal(m.snap_time||m.created_at)>=dateFrom);
+  if(dateTo) list=list.filter(m=>dateKeyLocal(m.snap_time||m.created_at)<=dateTo);
   if(search) list=list.filter(m=>(m.name||'').toLowerCase().includes(search));
 
   const pillsEl=document.getElementById('snap-name-pills'); if(pillsEl) pillsEl.innerHTML='';
@@ -9185,7 +9190,12 @@ el.innerHTML = Object.entries(byName).map(([name,snaps])=>{
         </div>
         ${spark}
       </div>
-      <div class="snap-card-status" style="color:${statusColor}">${statusIcon} ${statusTxt} · ${sorted.length} lectura${sorted.length>1?'s':''}</div>
+      <div class="snap-card-status" style="color:${statusColor};justify-content:space-between">
+        <span style="display:inline-flex;align-items:center;gap:5px">${statusIcon} ${statusTxt} · ${sorted.length} lectura${sorted.length>1?'s':''}</span>
+        <span onclick="event.stopPropagation();openSnapDetail('${name.replace(/'/g,"\\'")}')" title="Ver historial completo" style="color:rgba(255,255,255,.35);cursor:pointer;display:inline-flex">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+        </span>
+      </div>
       ${isDying?`<button class="snap-variant-btn" onclick="event.stopPropagation();openModal('modal-snap')"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg> Crear Variante</button>`:''}
     </div>`;
   }).join('');
