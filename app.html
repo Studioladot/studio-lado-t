@@ -3633,14 +3633,31 @@ async function loadPnLEngine(){
     d.meta += gastoMetaPorOrden;
     d.ordenes += 1;
   });
-
+function renderPnlWaterfall(bruto, costoProducto, metaAds, envios, pasarelas, neto){
+  const max = bruto>0 ? bruto : 1;
+  const setBar = (valId, barId, val, isNeg)=>{
+    const v = document.getElementById(valId);
+    const b = document.getElementById(barId);
+    if(v) v.textContent = (isNeg&&val>0?'-':'') + '$' + fmtN(Math.round(Math.abs(val)));
+    if(b) b.style.height = Math.min(100, (Math.abs(val)/max*100)) + '%';
+  };
+  setBar('wf-bruto-value','wf-bruto-bar', bruto, false);
+  setBar('wf-costo-producto-value','wf-costo-producto-bar', costoProducto, true);
+  setBar('wf-meta-ads-value','wf-meta-ads-bar', metaAds, true);
+  setBar('wf-envios-value','wf-envios-bar', envios, true);
+  setBar('wf-pasarelas-value','wf-pasarelas-bar', pasarelas, true);
+  setBar('wf-neto-value','wf-neto-bar', neto, false);
+  const netoEl = document.getElementById('wf-neto-value');
+  if(netoEl) netoEl.style.color = neto>=0 ? 'var(--green)' : 'var(--red)';
+}
   const days = Object.keys(byDay).sort().reverse();
-  let totBruto=0,totGross=0,totCostosOp=0,totNeto=0;
+  let totBruto=0,totGross=0,totCostosOp=0,totNeto=0,totCostoProducto=0,totCostoPasarela=0,totEnvio=0,totMeta=0;
   days.forEach(day=>{
     const d=byDay[day];
     const gross = d.bruto - d.costoProducto - d.costoPasarela - d.envio;
     const neto = gross - d.meta - gastoFijoDiario;
-    totBruto+=d.bruto; totGross+=gross; totCostosOp+=(d.meta+gastoFijoDiario); totNeto+=neto;
+   totBruto+=d.bruto; totGross+=gross; totCostosOp+=(d.meta+gastoFijoDiario); totNeto+=neto;
+    totCostoProducto+=d.costoProducto; totCostoPasarela+=d.costoPasarela; totEnvio+=d.envio; totMeta+=d.meta;
     d.gross=gross; d.neto=neto;
   });
   const poas = gastoMetaTotal>0 ? (totGross/gastoMetaTotal) : 0;
@@ -3651,6 +3668,7 @@ async function loadPnLEngine(){
   setT('pnl-neto','$'+fmtN(Math.round(totNeto)));
   document.getElementById('pnl-neto').style.color = totNeto>=0 ? 'var(--green)' : 'var(--red)';
 setT('pnl-poas', poas.toFixed(2)+'x');
+  renderPnlWaterfall(totBruto, totCostoProducto, totMeta, totEnvio, totCostoPasarela, totNeto);
   const cpaReal = ordenesTotales>0 ? (gastoMetaTotal/ordenesTotales) : 0;
   setT('n1-cpa-real','$'+fmtN(Math.round(cpaReal)));
 // --- UNIFICADO WEB + SHOWROOM (con COGS real cuando esta vinculado) ---
