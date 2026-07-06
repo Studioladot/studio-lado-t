@@ -199,23 +199,45 @@ export default async function handler(req) {
       ordenes: byDay[day].ordenes,
     }));
 
-    let carritosAbandonados = 0, topProductos = [], productosMuertos = [];
+   let carritosAbandonados = 0, topProductos = [], productosMuertos = [];
     if (wantAdvanced) {
       const [checkouts, productos] = await Promise.all([checkoutsPromise, productsPromise]);
       carritosAbandonados = Array.isArray(checkouts) ? checkouts.length : 0;
 
-      const porProducto = {};
-      lineItems.forEach(li => {
-        const key = li.product_id;
-        if (!porProducto[key]) porProducto[key] = { name: li.name, unidades: 0, facturacion: 0 };
-        porProducto[key].unidades += li.qty;
-        porProducto[key].facturacion += li.qty * li.price;
-      });
-      topProductos = Object.values(porProducto).sort((a, b) => b.facturacion - a.facturacion).slice(0, 5);
+      // Helper: arma "Nombre — Color / Talle" a partir de variant_values de Tienda Nube
+      const variantSuffix = (values) => {
+        if (!Array.isArray(values)) return '';
+        const parts = values.map(v => (v && (v.es || v.pt || v.en || Object.values(v || {})[0])) || '').filter(Boolean);
+        return parts.length ? ' — ' + parts.join(' / ') : '';
+      };
 
-      const vendidosIds = new Set(Object.keys(porProducto).map(Number));
-      productosMuertos = (Array.isArray(productos) ? productos : []).filter(p => !vendidosIds.has(p.id)).slice(0, 10)
-        .map(p => ({ name: p.name?.es || p.name || 'Producto', diasSinVentas: '30+' }));
+      // Agrupa por VARIANTE, no por producto padre — cada talle/color compite individualmente
+      const porVariante = {};
+      const vendidosVariantIds = new Set();
+      const vendidosProductIds = new Set();
+      lineItems.forEach(li => {
+        const key = li.variant_id ?? `p${li.product_id}`;
+        if (!porVariante[key]) porVariante[key] = { name: li.name, unidades: 0, facturacion: 0 };
+        porVariante[key].unidades += li.qty;
+        porVariante[key].facturacion += li.qty * li.price;
+        if (li.variant_id != null) vendidosVariantIds.add(li.variant_id);
+        if (li.product_id != null) vendidosProductIds.add(li.product_id);
+      });
+      topProductos = Object.values(porVariante).sort((a, b) => b.facturacion - a.facturacion).slice(0, 5);
+
+      // Productos muertos: baja a nivel variante real (talle/color), no solo producto padre
+      productosMuertos = [];
+      (Array.isArray(productos) ? productos : []).forEach(p => {
+        const baseName = p.name?.es || p.name || 'Producto';
+        (p.variants || []).forEach(v => {
+          if (vendidosVariantIds.has(v.id)) return;
+          productosMuertos.push({ name: baseName + variantSuffix(v.values), diasSinVentas: '30+' });
+        });
+        if (!p.variants?.length && !vendidosProductIds.has(p.id)) {
+          productosMuertos.push({ name: baseName, diasSinVentas: '30+' });
+        }
+      });
+      productosMuertos = productosMuertos.slice(0, 10);
     }
 
     const responseData = {
