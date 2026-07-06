@@ -3653,10 +3653,9 @@ setT('pnl-poas', poas.toFixed(2)+'x');
           </tr>
           <tr class="pnl-daily-detail"><td colspan="6" style="padding:0">
             <div style="display:none;padding:10px 14px 14px;background:rgba(255,255,255,.015);gap:4px;flex-direction:column;font-size:12px">
-              <div style="display:flex;justify-content:space-between"><span style="color:var(--text2)">Producto</span><span style="color:var(--text)">$${fmtN(Math.round(d.costoProducto))}</span></div>
-              <div style="display:flex;justify-content:space-between"><span style="color:var(--text2)">Pasarela</span><span style="color:var(--text)">$${fmtN(Math.round(d.costoPasarela))}</span></div>
-              <div style="display:flex;justify-content:space-between"><span style="color:var(--text2)">Envio</span><span style="color:var(--text)">$${fmtN(Math.round(d.envio))}</span></div>
-            </div>
+             .pnl-daily-row:hover td{background:rgba(255,255,255,.02)}
+.pnl-daily-detail.open > td > div{display:flex !important}
+.pnl-daily-row.open .pnl-chevron{transform:rotate(90deg)}
           </td></tr>`;
         }).join('')}
       </tbody>
