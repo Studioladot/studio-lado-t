@@ -12650,45 +12650,6 @@ function escOrderCosts(o) {
   return { cogs, comisionTN, impuestos, pasarela, envio, neto };
 }
 
-// ── TABLA DE VENTAS (con paginacion) ──────────────────────────────────────────
-function renderFinVentasTabla() {
-  const tbody = document.getElementById('fin-ventas-tbody');
-  if(!tbody) return;
-  setT('fin-ventas-count', `${finVentasCache.length} ordenes`);
-  if(!finVentasCache.length) {
-    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--ad-text3);padding:20px">Sin ventas en el periodo seleccionado</td></tr>';
-    const pager = document.getElementById('esc-ventas-pager'); if(pager) pager.innerHTML='';
-    return;
-  }
-  const totalPages = Math.max(1, Math.ceil(finVentasCache.length/ESC_PAGE_SIZE));
-  if(escVentasPage>totalPages) escVentasPage = totalPages;
-  const start = (escVentasPage-1)*ESC_PAGE_SIZE;
-  const pageItems = finVentasCache.slice(start, start+ESC_PAGE_SIZE);
-
-  tbody.innerHTML = pageItems.map(o=>{
-    const { neto } = escOrderCosts(o);
-    return `
-    <tr>
-      <td style="font-weight:600">#${o.number||o.id}</td>
-      <td><span class="an-pill-row"><span class="an-channel-dot" style="background:var(--accent)"></span>Tienda Nube</span></td>
-      <td><span class="an-pill" style="background:var(--green-l);color:var(--green)">Pagado</span></td>
-      <td style="color:var(--ad-text2)">${new Date(o.created_at).toLocaleDateString('es-AR',{day:'2-digit',month:'short'})}</td>
-      <td>${fmtMoney(o.total)}</td>
-      <td style="font-weight:700">${fmtMoney(neto)}</td>
-      <td><span onclick="openVentaDetalle('${o.id}')" style="color:var(--accent);cursor:pointer;font-size:12px;font-weight:600">Ver detalle</span></td>
-    </tr>`;
-  }).join('');
-
-  const pager = document.getElementById('esc-ventas-pager');
-  if(pager) {
-    let html = `<button class="btn btn-sm btn-outline" ${escVentasPage<=1?'disabled':''} onclick="escVentasGoPage(${escVentasPage-1})">&#8592;</button>`;
-    html += `<span style="font-size:12px;color:var(--ad-text2);padding:0 8px">Pagina ${escVentasPage} de ${totalPages}</span>`;
-    html += `<button class="btn btn-sm btn-outline" ${escVentasPage>=totalPages?'disabled':''} onclick="escVentasGoPage(${escVentasPage+1})">&#8594;</button>`;
-    pager.innerHTML = html;
-  }
-}
-function escVentasGoPage(p) { escVentasPage = p; renderFinVentasTabla(); }
-
 function openVentaDetalle(orderId) {
   const o = window.vcRawOrders?.[orderId];
   if(!o) return;
@@ -12706,44 +12667,6 @@ function openVentaDetalle(orderId) {
   setT('vd-comision-tn', '-'+fmtMoney(comisionTN));
   setT('vd-neto', fmtMoney(neto));
   openModal('modal-venta-detalle');
-}
-
-// ── METRICAS / META ───────────────────────────────────────────────────────────
-async function escFetchMetaSummary() {
-  escMetaSummary = { spend:0, ctr:0, purchases:0 };
-  if(!(META_TOKEN && META_ACCOUNT)) return;
-  try {
-    const { since, until } = escResolveDates();
-    const j = await metaGet(`act_${META_ACCOUNT}/insights`, { fields: AD_FIELDS, time_range: JSON.stringify({since,until}), level:'account' });
-    const d = j.data?.[0] || {};
-    escMetaSummary = {
-      spend: convertirUSD(+d.spend||0),
-      ctr: +d.ctr || 0,
-      purchases: +(d.actions?.find(a=>a.action_type==='purchase')?.value || 0),
-    };
-  } catch(e) { console.error('[GOTIX] error Meta summary', e); }
-}
-
-function escRenderMetricCards() {
-  let bruto=0, comisiones=0, neto=0;
-  finVentasCache.forEach(o=>{
-    const c = escOrderCosts(o);
-    bruto += o.total;
-    comisiones += c.comisionTN + c.impuestos + c.pasarela;
-    neto += c.neto;
-  });
-  const ordenes = finVentasCache.length;
-  const gastoMeta = escMetaSummary.spend||0;
-  const trueRoas = gastoMeta>0 ? (neto/gastoMeta) : 0;
-  const trueCpa = ordenes>0 ? (gastoMeta/ordenes) : 0;
-
-  setT('esc-m-compras', fmtMoney(bruto));
-  setT('esc-m-ordenes', ordenes);
-  setT('esc-m-comisiones', fmtMoney(comisiones));
-  setT('esc-m-ctr', (META_TOKEN&&META_ACCOUNT) ? (escMetaSummary.ctr.toFixed(2)+'%') : '—');
-  setT('esc-m-neta', fmtMoney(neto));
-  setT('esc-m-roas', trueRoas.toFixed(2)+'x');
-  setT('esc-m-cpa', (META_TOKEN&&META_ACCOUNT) ? fmtMoney(trueCpa) : '—');
 }
 
 // ── PRODUCTOS: rendimiento ────────────────────────────────────────────────────
