@@ -354,6 +354,17 @@ body.focus-mode #main{margin-left:0}
 .inv-badge{display:inline-flex;align-items:center;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600}
 .inv-badge-instock{background:rgba(11,185,128,.1);color:var(--green);border:1px solid rgba(11,185,128,.25)}
 .inv-badge-out{background:rgba(248,113,113,.1);color:var(--red);border:1px solid rgba(248,113,113,.25)}
+  .inv-parent-row{cursor:pointer;background:rgba(255,255,255,.02)}
+.inv-parent-row:hover{background:rgba(255,255,255,.04)}
+.inv-chevron{transition:transform .2s cubic-bezier(.16,1,.3,1);color:var(--text3);flex-shrink:0}
+.inv-chevron.open{transform:rotate(90deg)}
+.inv-apply-btn{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:6px;border:1px solid rgba(255,255,255,.08);background:transparent;color:var(--text2);cursor:pointer;transition:color .15s cubic-bezier(.16,1,.3,1),border-color .15s cubic-bezier(.16,1,.3,1),transform .15s cubic-bezier(.16,1,.3,1)}
+.inv-apply-btn:hover{color:var(--accent);border-color:rgba(11,185,128,.35)}
+.inv-apply-btn:active{transform:scale(.92)}
+.inv-child-row{background:rgba(0,0,0,.15)}
+.inv-child-row td{border-bottom:1px solid rgba(255,255,255,.03)}
+.inv-child-connector{position:absolute;left:18px;top:0;bottom:0;width:1px;background:rgba(255,255,255,.08)}
+.inv-cost-input-sm{width:78px;font-size:12px;padding:4px 6px}
   .wf-chart{display:flex;align-items:flex-end;gap:4px;padding:20px 4px 0}
 .wf-col{flex:1;display:flex;flex-direction:column;align-items:center;min-width:0}
 .wf-col-final{flex:1.15}
@@ -2097,16 +2108,20 @@ body.focus-mode #main{margin-left:0}
           <th style="text-align:center">Estado</th>
         </tr></thead>
         <tbody id="esc-inv-tbl">
-          <tr>
-            <td>
-              <div style="font-weight:600;color:var(--text)">Campera Eme — Talle M</div>
-              <div style="font-size:11px;color:var(--text3)">SKU: CE-M-001</div>
+          <tr class="inv-parent-row">
+            <td colspan="6">
+              <div style="display:flex;align-items:center;gap:10px">
+                <svg class="inv-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+                <span style="font-weight:700;color:var(--text)">Jean Baggy "Duko" — Negro</span>
+                <span style="font-size:12px;color:var(--text3)">3 variantes · stock total 0</span>
+                <div style="margin-left:auto;display:flex;align-items:center;gap:6px">
+                  <input type="number" class="inv-cost-input" placeholder="Costo maestro" disabled>
+                  <button class="inv-apply-btn" disabled title="Aplicar a todas las variantes">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+                  </button>
+                </div>
+              </div>
             </td>
-            <td style="text-align:right">12</td>
-            <td style="text-align:right"><input type="number" class="inv-cost-input" placeholder="$ ---" disabled></td>
-            <td style="text-align:right">$45.000</td>
-            <td style="text-align:right">— %</td>
-            <td style="text-align:center"><span class="inv-badge inv-badge-instock">En Stock</span></td>
           </tr>
         </tbody>
       </table>
@@ -12686,19 +12701,41 @@ function renderEscInventario() {
   const rows = [];
   anProductos.forEach(p=>{
     if(q && !p.product_name.toLowerCase().includes(q) && !(p.variants||[]).some(v=>(v.sku||'').toLowerCase().includes(q))) return;
-    (p.variants||[]).forEach(v=>{
+    const variants = p.variants||[];
+    if(!variants.length) return;
+    const stockTotal = variants.reduce((s,v)=>s+(+v.stock||0),0);
+    const firstCost = variants[0]?.cost || 0;
+    variants.forEach(v=> totalValor += (+v.stock||0)*(+v.cost||0));
+
+    rows.push(`<tr class="inv-parent-row" onclick="toggleInvGroup('${p.product_id}')">
+      <td colspan="6">
+        <div style="display:flex;align-items:center;gap:10px">
+          <svg class="inv-chevron" id="inv-chev-${p.product_id}" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+          <span style="font-weight:700;color:var(--text)">${p.product_name}</span>
+          <span style="font-size:12px;color:var(--text3)">${variants.length} variante${variants.length>1?'s':''} · stock total ${stockTotal}</span>
+          <div style="margin-left:auto;display:flex;align-items:center;gap:6px" onclick="event.stopPropagation()">
+            <input type="number" class="inv-cost-input" id="inv-master-${p.product_id}" placeholder="Costo maestro" value="${firstCost||''}">
+            <button class="inv-apply-btn" title="Aplicar a todas las variantes" onclick="applyMasterCostToProduct('${p.product_id}', document.getElementById('inv-master-${p.product_id}').value)">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+            </button>
+          </div>
+        </div>
+      </td>
+    </tr>`);
+
+    variants.forEach(v=>{
       const stock = +v.stock||0;
       const cost = +v.cost||0;
       const price = +v.price||0;
       const margen = price>0 ? ((price-cost)/price*100) : null;
-      totalValor += stock*cost;
-      rows.push(`<tr>
-        <td>
-          <div style="font-weight:600;color:var(--text)">${p.product_name}${v.variant_name?' — '+v.variant_name:''}</div>
+      rows.push(`<tr class="inv-child-row inv-child-group-${p.product_id}" style="display:none">
+        <td style="padding-left:36px;position:relative">
+          <span class="inv-child-connector"></span>
+          <div style="font-size:13px;color:var(--text)">${v.variant_name||'Unica'}</div>
           <div style="font-size:11px;color:var(--text3)">SKU: ${v.sku||'—'}</div>
         </td>
         <td style="text-align:right">${stock}</td>
-        <td style="text-align:right"><input type="number" class="inv-cost-input" value="${cost||''}" placeholder="$ ---" onchange="updateAnProductCost('${v.variant_id}','${p.product_id}',this.value)"></td>
+        <td style="text-align:right"><input type="number" class="inv-cost-input inv-cost-input-sm" value="${cost||''}" placeholder="$ ---" onchange="updateAnProductCost('${v.variant_id}','${p.product_id}',this.value)"></td>
         <td style="text-align:right">${price>0?fmtMoney(price):'—'}</td>
         <td style="text-align:right;${margen===null?'':'font-weight:700;color:'+(margen>=0?'var(--green)':'var(--red)')}">${margen===null?'—':margen.toFixed(1)+'%'}</td>
         <td style="text-align:center"><span class="inv-badge ${stock>0?'inv-badge-instock':'inv-badge-out'}">${stock>0?'En Stock':'Agotado'}</span></td>
@@ -12707,6 +12744,24 @@ function renderEscInventario() {
   });
   tbl.innerHTML = rows.length ? rows.join('') : '<tr><td colspan="6" style="text-align:center;color:var(--text2);padding:24px">Sin productos. Sincroniza desde Tienda Nube.</td></tr>';
   setT('esc-inv-total', fmtMoney(totalValor));
+}
+
+function toggleInvGroup(productId){
+  const groupRows = document.querySelectorAll('.inv-child-group-'+productId);
+  const chev = document.getElementById('inv-chev-'+productId);
+  const isOpen = groupRows.length && groupRows[0].style.display !== 'none';
+  groupRows.forEach(r=> r.style.display = isOpen ? 'none' : 'table-row');
+  if(chev) chev.classList.toggle('open', !isOpen);
+}
+
+async function applyMasterCostToProduct(productId, value){
+  const cost = +value || 0;
+  const p = anProductos.find(x=>x.product_id===productId);
+  if(!p || !p.variants.length) return;
+  const rows = p.variants.map(v=>{ v.cost = cost; return { user_id: me.id, variant_id: v.variant_id, product_id: productId, cost }; });
+  await db.from('tn_product_costs').upsert(rows, { onConflict: 'user_id,variant_id' });
+  renderEscInventario();
+  toast(`Costo aplicado a ${rows.length} variante${rows.length>1?'s':''}`);
 }
 
 // ── AJUSTES ────────────────────────────────────────────────────────────────────
