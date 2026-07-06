@@ -1992,51 +1992,7 @@ body.focus-mode #main{margin-left:0}
     </div>
   </div>
 
-  <!-- Modal detalle de venta: desglose de costos -->
-  <div class="modal-backdrop" id="modal-venta-detalle">
-    <div class="modal" style="max-width:380px">
-      <div class="modal-title">Orden <span id="vd-id" style="color:var(--text2);font-weight:400"></span></div>
-      <div style="font-size:11px;color:var(--text3);margin-bottom:8px" id="vd-fecha"></div>
-      <div style="display:flex;flex-direction:column;gap:0">
-        <div style="display:flex;justify-content:space-between;padding:9px 0;border-bottom:0.5px solid var(--border)">
-          <span style="color:var(--text2);font-size:13px">Total orden</span>
-          <span style="font-weight:700" id="vd-total">$0</span>
-        </div>
-        <div style="display:flex;justify-content:space-between;padding:9px 0;border-bottom:0.5px solid var(--border)">
-          <span style="color:var(--text2);font-size:13px">Costo de productos</span>
-          <span style="color:var(--red)" id="vd-cogs">-$0</span>
-        </div>
-        <div style="display:flex;justify-content:space-between;padding:9px 0;border-bottom:0.5px solid var(--border)">
-          <span style="color:var(--text2);font-size:13px">Costo de envio</span>
-          <span style="color:var(--red)" id="vd-envio">-$0</span>
-        </div>
-        <div style="display:flex;justify-content:space-between;padding:9px 0;border-bottom:0.5px solid var(--border)">
-          <span style="color:var(--text2);font-size:13px">Impuestos</span>
-          <span style="color:var(--red)" id="vd-impuestos">-$0</span>
-        </div>
-        <div style="display:flex;justify-content:space-between;padding:9px 0;border-bottom:0.5px solid var(--border)">
-          <span style="color:var(--text2);font-size:13px">Comision Tienda Nube</span>
-          <span style="color:var(--red)" id="vd-comision-tn">-$0</span>
-        </div>
-        <div style="display:flex;justify-content:space-between;padding:9px 0;border-bottom:0.5px solid var(--border)">
-          <span style="color:var(--text2);font-size:13px">Comision pasarela personalizada</span>
-          <span style="color:var(--red)" id="vd-pasarela">-$0</span>
-        </div>
-        <div style="display:flex;justify-content:space-between;padding:9px 0;border-bottom:0.5px solid var(--border)">
-          <span style="color:var(--text2);font-size:13px">Costo publicitario (CPA prorrateado)</span>
-          <span style="color:var(--red)" id="vd-cpa">-$0</span>
-        </div>
-        <div style="display:flex;justify-content:space-between;padding:12px 0 2px">
-          <span style="font-weight:700;font-size:14px">Neto real</span>
-          <span style="font-weight:800;font-size:18px;color:var(--accent)" id="vd-neto">$0</span>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button class="btn btn-outline" onclick="closeModal('modal-venta-detalle')">Cerrar</button>
-      </div>
-    </div>
-  </div>
-
+ 
   <!-- SUBMENU FINANZAS -->
   <div style="display:flex;gap:0;border-bottom:0.5px solid var(--border);margin-bottom:20px;flex-wrap:wrap">
     <button class="esc-tab active" onclick="escTab('dashboard',this)" id="esctab-dashboard" style="padding:9px 18px;border:none;background:transparent;font-size:13px;font-weight:600;color:var(--accent);border-bottom:2px solid var(--accent);cursor:pointer">Dashboard</button>
@@ -2953,6 +2909,50 @@ create policy "own" on contacts for all using (auth.uid()=user_id);</div>
     </div>
   </div>
 </div>
+ <!-- Modal detalle de venta: desglose de costos -->
+  <div class="modal-backdrop" id="modal-venta-detalle">
+    <div class="modal" style="max-width:380px">
+      <div class="modal-title">Orden <span id="vd-id" style="color:var(--text2);font-weight:400"></span></div>
+      <div style="font-size:11px;color:var(--text3);margin-bottom:8px" id="vd-fecha"></div>
+      <div style="display:flex;flex-direction:column;gap:0">
+        <div style="display:flex;justify-content:space-between;padding:9px 0;border-bottom:0.5px solid var(--border)">
+          <span style="color:var(--text2);font-size:13px">Total orden</span>
+          <span style="font-weight:700" id="vd-total">$0</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:9px 0;border-bottom:0.5px solid var(--border)">
+          <span style="color:var(--text2);font-size:13px">Costo de productos</span>
+          <span style="color:var(--red)" id="vd-cogs">-$0</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:9px 0;border-bottom:0.5px solid var(--border)">
+          <span style="color:var(--text2);font-size:13px">Costo de envio</span>
+          <span style="color:var(--red)" id="vd-envio">-$0</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:9px 0;border-bottom:0.5px solid var(--border)">
+          <span style="color:var(--text2);font-size:13px">Impuestos</span>
+          <span style="color:var(--red)" id="vd-impuestos">-$0</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:9px 0;border-bottom:0.5px solid var(--border)">
+          <span style="color:var(--text2);font-size:13px">Comision Tienda Nube</span>
+          <span style="color:var(--red)" id="vd-comision-tn">-$0</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:9px 0;border-bottom:0.5px solid var(--border)">
+          <span style="color:var(--text2);font-size:13px">Comision pasarela personalizada</span>
+          <span style="color:var(--red)" id="vd-pasarela">-$0</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:9px 0;border-bottom:0.5px solid var(--border)">
+          <span style="color:var(--text2);font-size:13px">Costo publicitario (CPA prorrateado)</span>
+          <span style="color:var(--red)" id="vd-cpa">-$0</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:12px 0 2px">
+          <span style="font-weight:700;font-size:14px">Neto real</span>
+          <span style="font-weight:800;font-size:18px;color:var(--accent)" id="vd-neto">$0</span>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="closeModal('modal-venta-detalle')">Cerrar</button>
+      </div>
+    </div>
+  </div>
 
 <!-- Modal Venta del dia -->
 <div class="modal-backdrop" id="modal-venta-dia">
