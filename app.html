@@ -9549,22 +9549,6 @@ async function loadFinanzas() {
   renderGastos();
 }
 
-// ── FINANZAS TABS ─────────────────────────────────────────────────────────────
-function switchFinTab(tab, btn) {
-  finActiveTab = tab;
-  if(tab==='ventas') loadFinVentasTab();
-  ['panel','gastos','ventas'].forEach(t => {
-    const el = document.getElementById('fin-tab-'+t);
-    const bt = document.getElementById('ftab-'+t);
-    if(el) el.style.display = t === tab ? 'block' : 'none';
-    if(bt) {
-      bt.style.color = t === tab ? 'var(--accent)' : 'var(--text2)';
-      bt.style.borderBottomColor = t === tab ? 'var(--accent)' : 'transparent';
-      bt.style.fontWeight = t === tab ? '600' : '500';
-    }
-  });
-}
-
 // ── PANEL FINANCIERO ──────────────────────────────────────────────────────────
 function renderFinPanel() {
   const margen   = (finConfig.margen_bruto || 48) / 100;
@@ -10932,29 +10916,6 @@ function convertirUSD(monto) {
   if((finConfig?.meta_moneda||'ARS') !== 'USD') return monto;
   return monto * (cotizacionUSD || 0);
 }
-  async function loadFinVentasTab() {
-  if(!tnConnection) return;
-  const since = new Date(); since.setDate(since.getDate()-29);
-  const sinceStr = since.toISOString().split('T')[0];
-  const untilStr = new Date().toISOString().split('T')[0];
-
-  const session = (await db.auth.getSession()).data.session;
-  const r = await fetch(`/api/tiendanube-orders?from=${sinceStr}&to=${untilStr}`, { headers:{Authorization:`Bearer ${session.access_token}`} });
-  const j = await r.json();
-  if(j.error) { console.error('[FinVentas] error TN', j.error); return; }
-  finVentasCache = j.orders || [];
-
-  finVentasMetaCpaProrrateado = 0;
-  if(META_TOKEN && META_ACCOUNT && finVentasCache.length) {
-    try {
-      const mj = await metaGet(`act_${META_ACCOUNT}/insights`, { fields:'spend', time_range:JSON.stringify({since:sinceStr,until:untilStr}), level:'account' });
-      const spend = +(mj.data?.[0]?.spend || 0);
-     finVentasMetaCpaProrrateado = finVentasCache.length>0 ? convertirUSD(spend/finVentasCache.length) : 0;
-    } catch(e) { console.error('[FinVentas] error Meta spend', e); }
-  }
-  if(typeof loadAnProductosFromCache==='function') await loadAnProductosFromCache();
-  renderFinVentasTabla();
-}
 
 function finComisionTNPct() { return (+finConfig?.comision_tn_pct || 2) / 100; }
 
@@ -11047,9 +11008,6 @@ async function togglePagado(id) {
   toast(nuevo ? '✓ Marcado como pagado' : 'Marcado como pendiente');
 }
 
-// ── SWITCHFINTAB actualizado con aprender ────────────────────────────────────
-// Override switchFinTab para incluir el nuevo tab
-const _origSwitchFinTab = switchFinTab;
 function switchFinTab(tab, btn) {
   finActiveTab = tab;
   const allTabs = ['panel','gastos','ventas','aprender'];
