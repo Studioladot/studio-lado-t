@@ -2044,53 +2044,11 @@ body.focus-mode #main{margin-left:0}
  
   <!-- SUBMENU FINANZAS -->
   <div style="display:flex;gap:0;border-bottom:0.5px solid var(--border);margin-bottom:20px;flex-wrap:wrap">
-    <button class="esc-tab active" onclick="escTab('dashboard',this)" id="esctab-dashboard" style="padding:9px 18px;border:none;background:transparent;font-size:13px;font-weight:600;color:var(--accent);border-bottom:2px solid var(--accent);cursor:pointer">Dashboard</button>
-    <button class="esc-tab" onclick="escTab('productos',this)" id="esctab-productos" style="padding:9px 18px;border:none;background:transparent;font-size:13px;font-weight:500;color:var(--text2);border-bottom:2px solid transparent;cursor:pointer">Productos</button>
+<button class="esc-tab active" onclick="escTab('productos',this)" id="esctab-productos" style="padding:9px 18px;border:none;background:transparent;font-size:13px;font-weight:600;color:var(--accent);border-bottom:2px solid var(--accent);cursor:pointer">Productos</button>
     <button class="esc-tab" onclick="escTab('inventario',this)" id="esctab-inventario" style="padding:9px 18px;border:none;background:transparent;font-size:13px;font-weight:500;color:var(--text2);border-bottom:2px solid transparent;cursor:pointer">Inventario</button>
     <button class="esc-tab" onclick="escTab('ajustes',this)" id="esctab-ajustes" style="padding:9px 18px;border:none;background:transparent;font-size:13px;font-weight:500;color:var(--text2);border-bottom:2px solid transparent;cursor:pointer">&#9881; Ajustes</button>
   </div>
 
-  <!-- ════════════════════ DASHBOARD ════════════════════ -->
-  <div id="esc-tab-dashboard">
-    <div id="esc-not-connected" style="display:none">
-      <div class="card" style="max-width:560px;text-align:center;padding:36px 28px">
-        <div style="font-size:36px;margin-bottom:14px">&#127968;</div>
-        <div style="font-size:17px;font-weight:700;margin-bottom:8px">Conecta tu tienda</div>
-        <div style="font-size:13px;color:var(--text2);margin-bottom:22px;line-height:1.6">El motor financiero de GOTIX necesita Tienda Nube conectada para traer tus ventas reales.</div>
-        <button class="btn btn-accent" onclick="showPage('tiendanube-connect')" style="padding:11px 24px">Ir a Conexiones</button>
-      </div>
-    </div>
-
-    <div id="esc-dashboard-content" style="display:none">
-      <div class="card" style="margin-bottom:14px">
-        <div class="an-grid" style="grid-template-columns:repeat(4,1fr)">
-          <div class="an-card"><div class="an-card-top"><span class="an-card-label">Compras</span></div><div class="an-card-val" id="esc-m-compras">$0</div></div>
-          <div class="an-card"><div class="an-card-top"><span class="an-card-label">Ordenes</span></div><div class="an-card-val" id="esc-m-ordenes">0</div></div>
-          <div class="an-card"><div class="an-card-top"><span class="an-card-label">Comisiones</span></div><div class="an-card-val" id="esc-m-comisiones">$0</div></div>
-          <div class="an-card"><div class="an-card-top"><span class="an-card-label">CTR (Meta Ads)</span></div><div class="an-card-val" id="esc-m-ctr">—</div></div>
-          <div class="an-card"><div class="an-card-top"><span class="an-card-label">Facturacion neta</span></div><div class="an-card-val" id="esc-m-neta">$0</div></div>
-          <div class="an-card"><div class="an-card-top"><span class="an-card-label">True ROAS</span></div><div class="an-card-val" id="esc-m-roas">0x</div></div>
-          <div class="an-card"><div class="an-card-top"><span class="an-card-label">True CPA</span></div><div class="an-card-val" id="esc-m-cpa">$0</div></div>
-        </div>
-      </div>
-
-      <div class="an-dark">
-        <div class="an-dark-hdr">
-          <div class="an-dark-title">Ventas del periodo</div>
-          <span style="font-size:11px;color:var(--ad-text3)" id="fin-ventas-count">—</span>
-        </div>
-        <div class="tbl-wrap" style="margin:-2px -2px 0"><table class="an-table-dark">
-          <thead><tr>
-            <th>Id orden</th><th>Origen</th><th>Estado</th><th>Fecha</th><th>Total orden</th><th>Total neto</th><th></th>
-          </tr></thead>
-          <tbody id="fin-ventas-tbody">
-            <tr><td colspan="7" style="text-align:center;color:var(--ad-text3);padding:20px">Conecta Tienda Nube para ver tus ventas</td></tr>
-          </tbody>
-        </table></div>
-        <div id="esc-ventas-pager" style="display:flex;justify-content:center;align-items:center;gap:6px;margin-top:12px;padding-top:12px;border-top:0.5px solid var(--ad-border)"></div>
-      </div>
-    </div>
-  </div>
 
   <!-- ════════════════════ PRODUCTOS ════════════════════ -->
   <div id="esc-tab-productos" style="display:none">
@@ -12635,7 +12593,7 @@ function escTab(tab, btn) {
 }
 
 function escSubTab(tab, btn) {
-  ['integraciones','costos','envios','comisiones'].forEach(t=>{
+  ['productos','inventario','ajustes'].forEach(t=>{
     const el = document.getElementById('esc-sub-'+t);
     const bt = document.getElementById('escsub-'+t);
     if(el) el.style.display = t===tab ? 'block' : 'none';
@@ -12650,21 +12608,10 @@ function escSubTab(tab, btn) {
 // ── CARGA PRINCIPAL ───────────────────────────────────────────────────────────
 async function loadEscAll() {
   if(!me) return;
-  const notConn = document.getElementById('esc-not-connected');
-  const content = document.getElementById('esc-dashboard-content');
-  if(!tnConnection) {
-    if(notConn) notConn.style.display = 'block';
-    if(content) content.style.display = 'none';
-    return;
-  }
-  if(notConn) notConn.style.display = 'none';
-  if(content) content.style.display = 'block';
-
-  escVentasPage = 1;
+  if(!tnConnection) return;
   await loadPaymentGatewayFees();
   await loadFinVentasTabEsc();
-  await escFetchMetaSummary();
-  escRenderMetricCards();
+  escTab('productos', document.getElementById('esctab-productos'));
 }
 
 async function loadFinVentasTabEsc() {
@@ -12685,7 +12632,6 @@ async function loadFinVentasTabEsc() {
     } catch(e) { console.error('[GOTIX] error Meta spend', e); }
   }
   if(typeof loadAnProductosFromCache==='function') await loadAnProductosFromCache();
-  renderFinVentasTabla();
 }
 
 // ── helpers de comisiones/impuestos/envio ─────────────────────────────────────
