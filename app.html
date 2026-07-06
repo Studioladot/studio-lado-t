@@ -12537,7 +12537,7 @@ function escTab(tab, btn) {
 }
 
 function escSubTab(tab, btn) {
-  ['productos','inventario','ajustes'].forEach(t=>{
+ ['integraciones','costos','envios','comisiones'].forEach(t=>{
     const el = document.getElementById('esc-sub-'+t);
     const bt = document.getElementById('escsub-'+t);
     if(el) el.style.display = t===tab ? 'block' : 'none';
