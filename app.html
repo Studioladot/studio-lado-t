@@ -9948,10 +9948,14 @@ async function renderConsolidatedSales() {
   if(tnConnection) {
     const { since, until } = tnResolveDates();
     const tn = await fetchTNOrders(since, until);
+    const metaCpaProrrateado = tn.orders?.length ? convertirUSD((tnFunnelData.gastoMeta||0)/tn.orders.length) : 0;
+    window.vcMetaCpaProrrateado = metaCpaProrrateado;
+    window.vcRawOrders = {};
     tnRows = (tn.orders||[]).map(o=>{
       const cogs = typeof calcAnCOGS==='function' ? calcAnCOGS(o.line_items||[]) : 0;
       const comisionTN = o.total*finComisionTNPct();
-      const neto = o.total - (o.shipping_cost||0) - cogs - comisionTN;
+      const neto = o.total - metaCpaProrrateado - (o.shipping_cost||0) - cogs - comisionTN;
+      window.vcRawOrders[o.id] = o;
       return {
         origen: 'tn', origenLabel: 'Tienda Online', estado: 'Pagado',
         fecha: o.created_at, idOrden: '#'+(o.number||o.id),
@@ -9993,7 +9997,9 @@ function renderConsolidatedSalesPage() {
       <td style="color:var(--ad-text2)">${new Date(r.fecha.length===10?r.fecha+'T12:00:00':r.fecha).toLocaleDateString('es-AR',{day:'2-digit',month:'short'})}</td>
       <td>${fmtMoney(r.total)}</td>
       <td style="font-weight:700">${fmtMoney(r.neto)}</td>
-      <td>${r.origen==='manual'?`<span onclick="delVentaDia('${r.id}').then(()=>renderConsolidatedSales())" style="color:var(--red);cursor:pointer;font-size:12px;font-weight:600">Eliminar</span>`:''}</td>
+      <td>${r.origen==='manual'
+        ? `<span onclick="delVentaDia('${r.id}').then(()=>renderConsolidatedSales())" style="color:var(--red);cursor:pointer;font-size:12px;font-weight:600">Eliminar</span>`
+        : `<span onclick="openVentaDetalle('${r.id}')" style="color:var(--accent);cursor:pointer;font-size:12px;font-weight:600">Ver detalle</span>`}</td>
     </tr>`;
   }).join('');
   const pager = document.getElementById('vc-pager');
@@ -10949,16 +10955,17 @@ function renderFinVentasTabla() {
 }
 
 function openVentaDetalle(orderId) {
-  const o = finVentasCache.find(x=>String(x.id)===String(orderId));
+  const o = window.vcRawOrders?.[orderId];
   if(!o) return;
   const cogs = typeof calcAnCOGS==='function' ? calcAnCOGS(o.line_items||[]) : 0;
   const comisionTN = o.total*finComisionTNPct();
-  const neto = o.total - finVentasMetaCpaProrrateado - o.shipping_cost - cogs - comisionTN;
+  const metaCpa = window.vcMetaCpaProrrateado||0;
+  const neto = o.total - metaCpa - (o.shipping_cost||0) - cogs - comisionTN;
 
   setT('vd-id', '#'+(o.number||o.id));
   setT('vd-fecha', new Date(o.created_at).toLocaleDateString('es-AR',{day:'2-digit',month:'long',year:'numeric'}));
   setT('vd-total', fmtMoney(o.total));
-  setT('vd-cpa', '-'+fmtMoney(finVentasMetaCpaProrrateado));
+  setT('vd-cpa', '-'+fmtMoney(metaCpa));
   setT('vd-envio', '-'+fmtMoney(o.shipping_cost));
   setT('vd-cogs', '-'+fmtMoney(cogs));
   setT('vd-comision-tn', '-'+fmtMoney(comisionTN));
@@ -12667,18 +12674,20 @@ function renderFinVentasTabla() {
 function escVentasGoPage(p) { escVentasPage = p; renderFinVentasTabla(); }
 
 function openVentaDetalle(orderId) {
-  const o = finVentasCache.find(x=>String(x.id)===String(orderId));
+  const o = window.vcRawOrders?.[orderId];
   if(!o) return;
-  const { cogs, comisionTN, impuestos, pasarela, envio, neto } = escOrderCosts(o);
+  const cogs = typeof calcAnCOGS==='function' ? calcAnCOGS(o.line_items||[]) : 0;
+  const comisionTN = o.total*finComisionTNPct();
+  const metaCpa = window.vcMetaCpaProrrateado||0;
+  const neto = o.total - metaCpa - (o.shipping_cost||0) - cogs - comisionTN;
+
   setT('vd-id', '#'+(o.number||o.id));
   setT('vd-fecha', new Date(o.created_at).toLocaleDateString('es-AR',{day:'2-digit',month:'long',year:'numeric'}));
   setT('vd-total', fmtMoney(o.total));
+  setT('vd-cpa', '-'+fmtMoney(metaCpa));
+  setT('vd-envio', '-'+fmtMoney(o.shipping_cost));
   setT('vd-cogs', '-'+fmtMoney(cogs));
-  setT('vd-envio', '-'+fmtMoney(envio));
-  setT('vd-impuestos', '-'+fmtMoney(impuestos));
   setT('vd-comision-tn', '-'+fmtMoney(comisionTN));
-  setT('vd-pasarela', '-'+fmtMoney(pasarela));
-  setT('vd-cpa', '-'+fmtMoney(finVentasMetaCpaProrrateado));
   setT('vd-neto', fmtMoney(neto));
   openModal('modal-venta-detalle');
 }
