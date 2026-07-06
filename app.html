@@ -1700,7 +1700,7 @@ body.focus-mode #main{margin-left:0}
 
 <div id="page-tiendanube-connect" class="page">
   <div class="page-hdr">
-    <div><div class="page-title">&#127968; Ventas y Operaciones</div>
+    <div><div class="page-title" style="display:flex;align-items:center;gap:8px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><path d="M3 9.5 12 3l9 6.5"/><path d="M5 9.5V20a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V9.5"/></svg>Ventas y Operaciones</div>
     <div class="page-sub" id="tn-sub">Tienda Nube + ventas manuales, costos y rentabilidad en un solo lugar</div></div>
     <div id="tn-date-controls" style="display:none;gap:8px;flex-wrap:wrap;align-items:center">
       <select id="tn-date-range" class="fg" style="margin:0;min-width:0" onchange="onTNDateRangeChange()">
@@ -1820,48 +1820,38 @@ body.focus-mode #main{margin-left:0}
   </div>
   <div id="an-chart-wrap-vop" style="height:200px"></div>
 </div>
-    <!-- UTILIDAD NETA DEL NEGOCIO (Web + Showroom) -->
-<div class="card" id="unif-pnl" style="margin-top:14px">
-  <div class="card-title">Utilidad Neta del Negocio (Web + Showroom)</div>
-  <div class="an-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:14px">
-    <div class="an-card"><div class="an-card-top"><span class="an-card-label">Ventas Totales</span></div><div class="an-card-val" id="unif-ventas-totales">$0</div></div>
-    <div class="an-card"><div class="an-card-top"><span class="an-card-label">Ganancia Neta Total</span></div><div class="an-card-val" id="unif-ganancia-total">$0</div></div>
-    <div class="an-card"><div class="an-card-top"><span class="an-card-label">Ventas Showroom</span></div><div class="an-card-val" id="unif-ventas-showroom">$0</div></div>
+ <!-- NIVEL 1: EXECUTIVE SUMMARY -->
+<div class="card" id="n1-summary" style="margin-top:14px">
+  <div class="card-title">Resultado del negocio</div>
+  <div style="text-align:center;padding:6px 0 18px">
+    <div style="font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Resultado Neto Real</div>
+    <div class="an-card-val" id="pnl-neto" style="font-size:34px;color:#fff">$0</div>
   </div>
-  <div>
-    <div style="display:flex;justify-content:space-between;font-size:11px;color:#888888;margin-bottom:5px" id="unif-pct-label">
-      <span>0% Web</span><span>0% Local</span>
-    </div>
-    <div style="height:6px;border-radius:3px;background:#7c3aed;overflow:hidden;display:flex">
-      <div id="unif-bar-web" style="height:100%;background:var(--accent);width:0%;transition:width .4s"></div>
-    </div>
+  <div class="an-grid" style="grid-template-columns:repeat(3,1fr)">
+    <div class="an-card"><div class="an-card-top"><span class="an-card-label">Margen Neto</span></div><div class="an-card-val" id="n1-margen-neto">0%</div></div>
+    <div class="an-card accent"><div class="an-card-top"><span class="an-card-label">ROAS Efectivo</span></div><div class="an-card-val" id="pnl-poas">0x</div></div>
+    <div class="an-card"><div class="an-card-top"><span class="an-card-label">CPA Real</span></div><div class="an-card-val" id="n1-cpa-real">$0</div></div>
   </div>
-</div>
-<!-- P&L AUTOMATIZADO -->
-<div class="card" id="pnl-engine" style="margin-top:14px" draggable="true">
-  <div class="card-title">Ganancias y Pérdidas Reales (P&amp;L)</div>
-
-  <div class="an-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:14px">
-    <div class="an-card"><div class="an-card-top"><span class="an-card-label">Ingresos Brutos</span></div><div class="an-card-val" id="pnl-bruto">$0</div></div>
-   <div class="an-card"><div class="an-card-top"><span class="an-card-label">Margen Bruto</span></div><div class="an-card-val" id="pnl-gross">$0</div><div style="font-size:10px;color:#71717a;margin-top:2px">(Ingresos - Costo de producto)</div></div>
-    <div class="an-card"><div class="an-card-top"><span class="an-card-label">Ads + Gastos Fijos</span></div><div class="an-card-val" id="pnl-costos">$0</div><div style="font-size:10px;color:#71717a;margin-top:2px">(Meta Ads + Comisiones + Envíos)</div></div>
-    <div class="an-card"><div class="an-card-top"><span class="an-card-label">Resultado Neto Real</span></div><div class="an-card-val" id="pnl-neto" style="color:#ffffff">$0</div></div>
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-top:14px;font-size:11px;color:var(--text2)">
+    <span>Ventas: <b id="unif-ventas-totales" style="color:var(--text)">$0</b> · Showroom: <b id="unif-ventas-showroom" style="color:var(--text)">$0</b> <span id="unif-pct-label"></span></span>
+    <button class="btn btn-sm btn-outline" onclick="togglePnlGatewayConfig()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4" style="vertical-align:-2px;margin-right:4px"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Pasarelas de pago</button>
   </div>
-
-  <div style="margin-bottom:14px">
-    <div style="display:flex;justify-content:space-between;font-size:12px;color:#888888;margin-bottom:6px">
+  <div style="height:6px;border-radius:3px;background:rgba(255,255,255,.05);overflow:hidden;display:flex;margin-top:10px">
+    <div id="unif-bar-web" style="height:100%;background:var(--accent);width:0%;transition:width .4s cubic-bezier(.16,1,.3,1)"></div>
+  </div>
+  <div style="margin-top:14px">
+    <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text2);margin-bottom:6px">
       <span>Break-even del dia</span><span id="pnl-breakeven-label">$0 / $0</span>
     </div>
     <div style="height:10px;border-radius:5px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06)">
-      <div id="pnl-breakeven-bar" style="height:100%;border-radius:5px;background:var(--accent);width:0%;transition:width .4s"></div>
+      <div id="pnl-breakeven-bar" style="height:100%;border-radius:5px;background:var(--accent);width:0%;transition:width .4s cubic-bezier(.16,1,.3,1)"></div>
     </div>
   </div>
-
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-    <span style="font-size:11px;color:#888888;text-transform:uppercase;letter-spacing:.06em">Retorno Real de Anuncios (POAS): <span id="pnl-poas" style="color:#ffffff;font-weight:700">0x</span></span>
-   <button class="btn btn-sm btn-outline" onclick="togglePnlGatewayConfig()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Pasarelas de pago</button>
-  </div>
-
+</div>
+<!-- WATERFALL BRUTO -> NETO: siguiente bloque quirurgico -->
+<div class="card" id="pnl-engine-hidden" style="display:none">
+  <span id="pnl-bruto"></span><span id="pnl-gross"></span><span id="pnl-costos"></span>
+</div>
  <div id="pnl-gateway-config" class="card" style="display:none;flex-wrap:wrap;gap:10px;padding:10px 12px;margin-bottom:14px">
     <div style="display:flex;align-items:center;gap:6px"><input id="pgw-name" placeholder="Ej: Pago Nube 3 cuotas" style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);color:var(--text);border-radius:5px;padding:5px 8px;font-size:12px;width:170px"></div>
     <div style="display:flex;align-items:center;gap:6px"><input id="pgw-pct" type="number" step="0.1" placeholder="%" style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);color:var(--text);border-radius:5px;padding:5px 8px;font-size:12px;width:70px"></div>
@@ -3606,7 +3596,9 @@ async function loadPnLEngine(){
   setT('pnl-costos','$'+fmtN(Math.round(totCostosOp)));
   setT('pnl-neto','$'+fmtN(Math.round(totNeto)));
   document.getElementById('pnl-neto').style.color = totNeto>=0 ? 'var(--green)' : 'var(--red)';
-  setT('pnl-poas', poas.toFixed(2)+'x');
+setT('pnl-poas', poas.toFixed(2)+'x');
+  const cpaReal = ordenesTotales>0 ? (gastoMetaTotal/ordenesTotales) : 0;
+  setT('n1-cpa-real','$'+fmtN(Math.round(cpaReal)));
 // --- UNIFICADO WEB + SHOWROOM (con COGS real cuando esta vinculado) ---
   const margenUnif = (finConfig?.margen_bruto||48)/100;
   const showroomList = (ventasDia||[]).filter(v => v.fecha >= since && v.fecha <= until);
@@ -3623,7 +3615,10 @@ async function loadPnLEngine(){
   setT('unif-ventas-totales','$'+fmtN(Math.round(ventasTotalesUnif)));
   setT('unif-ganancia-total','$'+fmtN(Math.round(gananciaTotalUnif)));
   const gananciaUnifEl = document.getElementById('unif-ganancia-total');
-  if(gananciaUnifEl) gananciaUnifEl.style.color = gananciaTotalUnif>=0 ? 'var(--green)' : 'var(--red)';
+  const margenNetoPct = ventasTotalesUnif>0 ? (gananciaTotalUnif/ventasTotalesUnif*100) : 0;
+  setT('n1-margen-neto', margenNetoPct.toFixed(1)+'%');
+  const margenNetoEl = document.getElementById('n1-margen-neto');
+  if(margenNetoEl) margenNetoEl.style.color = margenNetoPct>=0 ? 'var(--green)' : 'var(--red)';
   setT('unif-ventas-showroom','$'+fmtN(Math.round(showroomTotal)));
   const barWeb = document.getElementById('unif-bar-web');
   if(barWeb) barWeb.style.width = pctWeb+'%';
