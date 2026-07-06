@@ -348,6 +348,19 @@ body.focus-mode #main{margin-left:0}
 .data-table-dark thead tr{position:sticky;top:0;background:rgba(20,20,23,.95);backdrop-filter:blur(6px)}
 .data-table-dark th{padding:8px 12px;color:var(--text3);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid rgba(255,255,255,.06);white-space:nowrap}
 .data-table-dark td{padding:8px 12px;color:var(--text);border-bottom:1px solid rgba(255,255,255,.04)}
+  .wf-chart{display:flex;align-items:flex-end;gap:4px;padding:20px 4px 0}
+.wf-col{flex:1;display:flex;flex-direction:column;align-items:center;min-width:0}
+.wf-col-final{flex:1.15}
+.wf-value{font-size:12px;font-weight:700;color:var(--text);margin-bottom:8px;white-space:nowrap}
+.wf-value-neg{color:var(--red)}
+.wf-value-final{color:var(--green);font-size:14px}
+.wf-bar-track{width:100%;max-width:52px;height:120px;display:flex;align-items:flex-end;background:rgba(255,255,255,.03);border-radius:4px;overflow:hidden}
+.wf-bar{width:100%;border-radius:4px 4px 0 0;transition:height .5s cubic-bezier(.16,1,.3,1);will-change:height}
+.wf-bar-pos{background:rgba(11,185,128,.35)}
+.wf-bar-neg{background:rgba(248,113,113,.35)}
+.wf-bar-final{background:var(--green)}
+.wf-label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.04em;margin-top:8px;text-align:center}
+.wf-connector{color:var(--text3);padding-bottom:70px;flex-shrink:0}
   .pnl-daily-row:hover td{background:rgba(255,255,255,.02)}
 .pnl-daily-detail.open > td > div{display:flex !important}
 .pnl-daily-row.open .pnl-chevron{transform:rotate(90deg)}
@@ -1854,9 +1867,46 @@ body.focus-mode #main{margin-left:0}
     </div>
   </div>
 </div>
-<!-- WATERFALL BRUTO -> NETO: siguiente bloque quirurgico -->
-<div class="card" id="pnl-engine-hidden" style="display:none">
-  <span id="pnl-bruto"></span><span id="pnl-gross"></span><span id="pnl-costos"></span>
+<div class="card" id="pnl-waterfall" style="margin-top:14px">
+  <div class="card-title">Cascada de Rentabilidad</div>
+  <div class="wf-chart">
+    <div class="wf-col">
+      <div class="wf-value" id="wf-bruto-value">$ ---</div>
+      <div class="wf-bar-track"><div class="wf-bar wf-bar-pos" id="wf-bruto-bar" style="height:0%"></div></div>
+      <div class="wf-label">Ventas Brutas</div>
+    </div>
+    <div class="wf-connector"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></div>
+    <div class="wf-col">
+      <div class="wf-value wf-value-neg" id="wf-costo-producto-value">$ ---</div>
+      <div class="wf-bar-track"><div class="wf-bar wf-bar-neg" id="wf-costo-producto-bar" style="height:0%"></div></div>
+      <div class="wf-label">Costo Producto</div>
+    </div>
+    <div class="wf-connector"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></div>
+    <div class="wf-col">
+      <div class="wf-value wf-value-neg" id="wf-meta-ads-value">$ ---</div>
+      <div class="wf-bar-track"><div class="wf-bar wf-bar-neg" id="wf-meta-ads-bar" style="height:0%"></div></div>
+      <div class="wf-label">Meta Ads</div>
+    </div>
+    <div class="wf-connector"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></div>
+    <div class="wf-col">
+      <div class="wf-value wf-value-neg" id="wf-envios-value">$ ---</div>
+      <div class="wf-bar-track"><div class="wf-bar wf-bar-neg" id="wf-envios-bar" style="height:0%"></div></div>
+      <div class="wf-label">Envios</div>
+    </div>
+    <div class="wf-connector"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></div>
+    <div class="wf-col">
+      <div class="wf-value wf-value-neg" id="wf-pasarelas-value">$ ---</div>
+      <div class="wf-bar-track"><div class="wf-bar wf-bar-neg" id="wf-pasarelas-bar" style="height:0%"></div></div>
+      <div class="wf-label">Pasarelas</div>
+    </div>
+    <div class="wf-connector"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></div>
+    <div class="wf-col wf-col-final">
+      <div class="wf-value wf-value-final" id="wf-neto-value">$ ---</div>
+      <div class="wf-bar-track"><div class="wf-bar wf-bar-final" id="wf-neto-bar" style="height:0%"></div></div>
+      <div class="wf-label">Ganancia Neta</div>
+    </div>
+  </div>
+</div>
 </div>
  <div id="pnl-gateway-config" class="card" style="display:none;flex-wrap:wrap;gap:10px;padding:10px 12px;margin-bottom:14px">
     <div style="display:flex;align-items:center;gap:6px"><input id="pgw-name" placeholder="Ej: Pago Nube 3 cuotas" style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);color:var(--text);border-radius:5px;padding:5px 8px;font-size:12px;width:170px"></div>
