@@ -11273,6 +11273,7 @@ function openEditPost(id){
   document.getElementById('post-platform').value = p.platform||'Instagram';
   document.getElementById('post-format').value = p.format||'Post';
   document.getElementById('post-date').value = p.date||'';
+  document.getElementById('post-turno').value = p.turno||'Temprano';
   document.getElementById('post-status').value = p.status||'pendiente';
   openModal('modal-post');
 }
@@ -11284,6 +11285,7 @@ function openNewPost(){
   document.getElementById('post-platform').value = 'Instagram';
   document.getElementById('post-format').value = 'Reel';
   document.getElementById('post-date').value = new Date().toISOString().split('T')[0];
+  document.getElementById('post-turno').value = 'Temprano';
   document.getElementById('post-status').value = 'pendiente';
   document.getElementById('modal-post-titulo').textContent = 'Nueva publicacion';
   openModal('modal-post');
@@ -11306,6 +11308,7 @@ async function saveEditPost(){
     platform: document.getElementById('post-platform').value,
     format: document.getElementById('post-format').value,
     date: document.getElementById('post-date').value || null,
+    turno: document.getElementById('post-turno').value,
     status: document.getElementById('post-status').value,
   };
   if(file && media_url){ rec.media_url = media_url; rec.media_type = media_type; }
@@ -12903,6 +12906,11 @@ function escRenderPgwList2() {
     </div>
     <div class="form-row">
       <div class="fg"><label>Fecha</label><input id="post-date" type="date"/></div>
+      <div class="fg"><label>Turno</label>
+        <select id="post-turno" required>
+          <option>Temprano</option><option>Tarde</option><option>Noche</option>
+        </select>
+      </div>
       <div class="fg"><label>Estado</label>
         <select id="post-status">
         <option value="pendiente">Pendiente</option>
