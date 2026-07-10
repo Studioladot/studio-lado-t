@@ -667,7 +667,7 @@ body.focus-mode #main{margin-left:0}
   [style*="grid-template-columns:repeat(3,1fr)"]{grid-template-columns:1fr !important}
 
   /* Grids de cards auto-fill → una sola columna para que no se corten */
- #cont-pub-grid,#cont-ideas-grid,#notas-grid{grid-template-columns:1fr !important}
+#cont-pub-grid,#notas-grid{grid-template-columns:1fr !important}
   /* Calendario responsive: sin scroll horizontal */
   #cont-tab-calendario,#cont-cal-card,#cont-cal-grid{width:100%;max-width:100%;overflow-x:hidden;box-sizing:border-box}
   #cont-cal-days-grid{gap:2px !important}
@@ -2238,7 +2238,6 @@ body.focus-mode #main{margin-left:0}
   <div class="page-hdr">
     <div><div class="page-title">Contenido</div><div class="page-sub">Planificacion, control y ranking de tu estrategia de contenido</div></div>
     <div style="display:flex;gap:8px">
-      <button class="btn btn-outline" onclick="openModal('modal-idea')"><svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-0.15em"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.1v.2h6v-.2c0-.8.4-1.5 1-2.1A7 7 0 0 0 12 2Z"/></svg> Idea</button>
     <button class="btn btn-accent" onclick="openNewPost()">+ Publicacion</button>
     </div>
   </div>
@@ -2247,8 +2246,7 @@ body.focus-mode #main{margin-left:0}
   <div style="display:flex;gap:0;border-bottom:0.5px solid var(--border);margin-bottom:20px">
   <button onclick="switchContTab('control',this)" id="ctab-control" style="padding:9px 18px;border:none;background:transparent;font-size:13px;font-weight:600;color:var(--accent);border-bottom:2px solid var(--accent);cursor:pointer;display:inline-flex;align-items:center;gap:6px"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><rect x="1" y="1" width="6" height="6" rx="1"/><rect x="9" y="1" width="6" height="6" rx="1"/><rect x="1" y="9" width="6" height="6" rx="1"/><rect x="9" y="9" width="6" height="6" rx="1"/></svg> Control</button>
     <button onclick="switchContTab('calendario',this)" id="ctab-calendario" style="padding:9px 18px;border:none;background:transparent;font-size:13px;font-weight:500;color:var(--text2);border-bottom:2px solid transparent;cursor:pointer;display:inline-flex;align-items:center;gap:6px"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><rect x="1" y="2" width="14" height="13" rx="1.5"/><path d="M5 1v2M11 1v2M1 6h14"/></svg> Calendario</button>
-    <button onclick="switchContTab('publicaciones',this)" id="ctab-publicaciones" style="padding:9px 18px;border:none;background:transparent;font-size:13px;font-weight:500;color:var(--text2);border-bottom:2px solid transparent;cursor:pointer;display:inline-flex;align-items:center;gap:6px"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><rect x="2" y="1" width="12" height="14" rx="1.5"/><path d="M5 5h6M5 8h6M5 11h4"/></svg> Publicaciones</button>
-    <button onclick="switchContTab('ideas',this)" id="ctab-ideas" style="padding:9px 18px;border:none;background:transparent;font-size:13px;font-weight:500;color:var(--text2);border-bottom:2px solid transparent;cursor:pointer;display:inline-flex;align-items:center;gap:6px"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="8" cy="7" r="4.5"/><path d="M6 12h4M7 14h2"/></svg> Ideas</button>
+     <button onclick="switchContTab('publicaciones',this)" id="ctab-publicaciones" style="padding:9px 18px;border:none;background:transparent;font-size:13px;font-weight:500;color:var(--text2);border-bottom:2px solid transparent;cursor:pointer;display:inline-flex;align-items:center;gap:6px"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><rect x="2" y="1" width="12" height="14" rx="1.5"/><path d="M5 5h6M5 8h6M5 11h4"/></svg> Publicaciones</button>
   </div>
 
   <!-- CONTROL TAB -->
@@ -2342,18 +2340,7 @@ body.focus-mode #main{margin-left:0}
     <div id="cont-pub-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px"></div>
   </div>
 
-  <!-- IDEAS TAB -->
-  <div id="cont-tab-ideas" style="display:none">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
-      <div style="font-size:13px;color:var(--text2)">Banco de ideas — capturá todo antes de que se te vaya</div>
-      <button class="btn btn-accent btn-sm" onclick="openModal('modal-idea')">+ Nueva idea</button>
-    </div>
-    <div id="cont-ideas-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px">
-      <div class="empty" style="grid-column:1/-1"><div class="empty-icon"><svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-0.15em"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.1v.2h6v-.2c0-.8.4-1.5 1-2.1A7 7 0 0 0 12 2Z"/></svg></div><div class="empty-msg">Sin ideas guardadas</div><div class="empty-sub">Cada vez que se te ocurra algo, anotalo aca</div></div>
-    </div>
-  </div>
-
-</div>
+ </div>
 
 <!-- NOTAS -->
 <div id="page-notas" class="page">
@@ -3927,6 +3914,7 @@ if(p==='finanzas'){loadFinanzas();loadCotizacionUSD();loadEscAll();}
   }
   if(p==='analisis')loadAnalisis();
   if(p==='notas')loadNotas();
+ if(p==='contenido')loadContenido();
   if(p==='campanas-contenido')loadCampanas();
   if(p==='userlist')cargarUsuarios();
   if(p==='config')loadConfigPage();
@@ -11020,7 +11008,7 @@ function calcMargen() {
 // ══════════════════════════════════════════════════════════════════════════════
 // CONTENIDO — Sistema completo
 // ══════════════════════════════════════════════════════════════════════════════
-let ideas = [], contFilter2 = 'all';
+let contFilter2 = 'all';
 
 // Cargar meta semanal desde localStorage
 function getContMeta(){ return parseInt(localStorage.getItem('gx_cont_meta')||'5'); }
@@ -11028,12 +11016,18 @@ function saveContMeta(){ localStorage.setItem('gx_cont_meta', document.getElemen
 
 async function loadContenido() {
   if(!me) return;
-  const [pRes, iRes, ccRes, cpRes] = await Promise.all([
+  const [pRes, ccRes, cpRes] = await Promise.all([
     db.from('content_posts').select('*').eq('user_id',me.id).order('date',{ascending:false}),
-    db.from('content_ideas').select('*').eq('user_id',me.id).order('created_at',{ascending:false}),
     db.from('content_campaigns').select('*').eq('user_id',me.id).order('created_at',{ascending:false}),
     db.from('content_piezas').select('*').eq('user_id',me.id).order('fecha_planificada',{ascending:true}),
   ]);
+  posts  = pRes.data || [];
+  contentCamps  = ccRes.data || [];
+  contentPiezas = cpRes.data || [];
+  renderControlContenido();
+  renderCalCont();
+  renderPublicaciones();
+}
   posts  = pRes.data || [];
   ideas  = iRes.data || [];
   contentCamps  = ccRes.data || [];
@@ -11047,7 +11041,7 @@ async function loadContenido() {
 // ── TABS CONTENIDO ────────────────────────────────────────────────────────────
 function switchContTab(tab, btn) {
   finActiveTab = tab;
-  ['control','calendario','publicaciones','ideas'].forEach(t => {
+  ['control','calendario','publicaciones'].forEach(t => {
     const el=document.getElementById('cont-tab-'+t);
     const bt=document.getElementById('ctab-'+t);
     if(el) el.style.display=t===tab?'block':'none';
@@ -11084,8 +11078,8 @@ function getUnifiedContentItems() {
       campaignColor: camp?.color || 'var(--accent)',
       status: p.status === 'publicado' ? 'publicado' : 'pendiente',
       pzStatus: p.status,
-      date: p.fecha_planificada, platform: p.plataforma, format: p.formato,
-      caption: p.titulo, notes: p.notas,
+       date: p.fecha_planificada, platform: p.plataforma, format: p.formato,
+      caption: p.titulo, notes: p.notas, turno: p.turno||'',
       media_url: p.media_url||'', media_type: p.media_type||'',
     };
   });
@@ -11303,21 +11297,6 @@ function openNewPost(){
   document.getElementById('modal-post-titulo').textContent = 'Nueva publicacion';
   openModal('modal-post');
 }
-async function delIdea(id) {
-  await db.from('content_ideas').delete().eq('id', id);
-  ideas = ideas.filter(i => i.id !== id);
-  renderIdeas();
-  toast('Idea eliminada');
-}
-
-async function usarIdea(id, current) {
-  const next = !(current === 'true');
-  await db.from('content_ideas').update({ usado: next }).eq('id', id);
-  const i = ideas.find(x => x.id === id);
-  if(i) i.usado = next;
-  renderIdeas();
-  toast(next ? 'Marcada como usada' : 'Marcada como no usada');
-}
 async function saveEditPost(){
   const id = document.getElementById('post-edit-id').value;
   const fileInput = document.getElementById('post-media-file');
@@ -11489,10 +11468,13 @@ async function delNota(id) {
 let contentCamps = [], contentPiezas = [], currentCampId = null;
 const ST_LBL = {planificacion:'En planificacion',activa:'Activa',terminada:'Terminada'};
 const ST_BADGE = {planificacion:'b-amber',activa:'b-green',terminada:'b-gray'};
-const PZ_CYCLE = ['pendiente','en_produccion','filmado','editado','publicado'];
-const PZ_ICON = {pendiente:'◌',en_produccion:'▶',filmado:'◉',editado:'◐',publicado:''};
-const PZ_COLOR = {pendiente:'var(--text3)',en_produccion:'var(--blue)',filmado:'var(--amber)',editado:'var(--accent)',publicado:'var(--green)'};
-const PZ_LABEL = {pendiente:'Pendiente',en_produccion:'En produccion',filmado:'Filmado',editado:'Editado',publicado:'Publicado'};
+// Estados simplificados: una pieza esta 'pendiente' o 'publicado' (mostrado como "Realizado")
+const PZ_ICON = {pendiente:'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="8"/></svg>',publicado:'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>'};
+const PZ_COLOR = {pendiente:'var(--amber)',publicado:'var(--green)'};
+const PZ_LABEL = {pendiente:'Pendiente',publicado:'Realizado'};
+// Turnos de publicacion
+const TURNO_ICON = {'Mañana':'<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>',Tarde:'<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 18a5.5 5.5 0 1 0-11 0"/><path d="M12 9V2M4.9 5.9l1.4 1.4M19.1 5.9l-1.4 1.4M2 18h20M4 22h16"/></svg>',Noche:'<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8Z"/></svg>'};
+const TURNO_COLOR = {'Mañana':'var(--amber)',Tarde:'var(--blue)',Noche:'#8b5cf6'};
 
 async function loadCampanas() {
   if(!me) return;
@@ -11566,13 +11548,14 @@ function renderCampsList() {
           ${pz.length?pz.map(p=>`
           <div style="display:flex;align-items:center;gap:10px;padding:8px 10px;border-bottom:1px solid var(--border);margin-bottom:0">
            <button onclick="cyclePiezaStatus('${p.id}')" title="Click para cambiar estado"
-              style="width:26px;height:26px;border-radius:50%;border:2px solid ${PZ_COLOR[p.status]};background:${p.status==='publicado'?PZ_COLOR[p.status]:'transparent'};color:${p.status==='publicado'?'#fff':PZ_COLOR[p.status]};font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:700">
-              ${PZ_ICON[p.status]||'◌'}
+              style="width:26px;height:26px;border-radius:50%;border:2px solid ${PZ_COLOR[p.status]};background:${p.status==='publicado'?PZ_COLOR[p.status]:'transparent'};color:${p.status==='publicado'?'#fff':PZ_COLOR[p.status]};cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+              ${PZ_ICON[p.status]||PZ_ICON.pendiente}
             </button>
             ${p.media_url?(p.media_type==='video'?`<div onclick="event.stopPropagation();window.open('${p.media_url}','_blank')" style="width:34px;height:34px;border-radius:6px;background:var(--text);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;font-size:13px;color:#fff" title="Ver video de referencia">&#9654;</div>`:`<img src="${p.media_url}" onclick="event.stopPropagation();window.open('${p.media_url}','_blank')" style="width:34px;height:34px;border-radius:6px;object-fit:cover;cursor:pointer;flex-shrink:0" title="Ver foto de referencia"/>`):''}
             <div onclick="openViewPieza('${p.id}')" style="flex:1;min-width:0;cursor:pointer" title="Click para ver y editar">
               <span style="font-size:13px;font-weight:${p.status==='publicado'?'400':'600'};${p.status==='publicado'?'text-decoration:line-through;color:var(--text2)':''}">${p.titulo}</span>
-              <span class="badge" style="background:var(--surface2);border:1px solid var(--border);color:var(--text2);font-size:9px;margin-left:5px">${p.formato}</span>
+              ${p.turno?`<span class="badge" style="background:${TURNO_COLOR[p.turno]}22;color:${TURNO_COLOR[p.turno]};font-size:9px;margin-left:5px;display:inline-flex;align-items:center;gap:3px">${TURNO_ICON[p.turno]||''} ${p.turno}</span>`:''}
+              <span class="badge" style="background:var(--surface2);border:1px solid var(--border);color:var(--text2);font-size:9px;margin-left:3px">${p.formato}</span>
               <span class="badge" style="background:var(--surface2);border:1px solid var(--border);color:var(--text2);font-size:9px;margin-left:3px">${p.plataforma}</span>
               ${p.fecha_planificada?`<span style="font-size:11px;color:var(--text3);margin-left:5px">${new Date(p.fecha_planificada+'T12:00:00').toLocaleDateString('es-AR',{day:'numeric',month:'short'})}</span>`:''}
               ${p.notas?`<span style="font-size:11px;color:var(--accent);margin-left:5px"><svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-0.15em"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg></span>`:''}
@@ -11663,6 +11646,7 @@ async function delCampana(id) {
 function openAddPieza(campId){
   document.getElementById('pieza-camp-id').value=campId;
   document.getElementById('pieza-fecha').value=new Date().toISOString().split('T')[0];
+  document.getElementById('pieza-turno').value='Mañana';
   ['pieza-titulo','pieza-notas'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
   openModal('modal-pieza');
 }
@@ -11681,9 +11665,11 @@ async function uploadPiezaMedia(file) {
 async function savePieza(){
  const btn = document.getElementById('btn-pieza-guardar');
   if(btn){ if(btn.dataset.loading==='1') return; btn.dataset.loading='1'; btn.disabled=true; btn.textContent='Guardando...'; }
-  const titulo=document.getElementById('pieza-titulo')?.value.trim();
+ const titulo=document.getElementById('pieza-titulo')?.value.trim();
   const campId=document.getElementById('pieza-camp-id')?.value;
+  const turno=document.getElementById('pieza-turno')?.value;
   if(!titulo){toast('Ponele titulo a la pieza');if(btn){btn.disabled=false;btn.dataset.loading='0';btn.textContent='Guardar';}return;}
+  if(!turno){toast('Elegi el turno de publicacion');if(btn){btn.disabled=false;btn.dataset.loading='0';btn.textContent='Guardar';}return;}
   const fileInput = document.getElementById('pieza-media-file');
   const file = fileInput?.files?.[0];
   let media_url = '', media_type = '';
@@ -11696,6 +11682,7 @@ async function savePieza(){
     formato:document.getElementById('pieza-formato')?.value||'Reel',
     plataforma:document.getElementById('pieza-plataforma')?.value||'Instagram',
     fecha_planificada:document.getElementById('pieza-fecha')?.value||null,
+    turno,
     status:document.getElementById('pieza-status')?.value||'pendiente',
     notas:document.getElementById('pieza-notas')?.value.trim()||'',
     media_url, media_type};
@@ -11724,12 +11711,12 @@ async function savePieza(){
 }
 async function cyclePiezaStatus(id){
   const p=contentPiezas.find(x=>x.id===id);if(!p)return;
-  const next=PZ_CYCLE[(PZ_CYCLE.indexOf(p.status)+1)%PZ_CYCLE.length];
+  const next = p.status==='publicado' ? 'pendiente' : 'publicado';
   await db.from('content_piezas').update({status:next}).eq('id',id);
   p.status=next; renderCampsList(); renderCalCont();
   if(document.getElementById('cont-pub-grid')) renderPublicaciones();
   if(document.getElementById('cont-posts-semana')) renderControlContenido();
-  toast(next==='publicado'?' Publicado!':'→ '+PZ_LABEL[next]);
+  toast(next==='publicado'?'Realizado!':'→ Pendiente');
 }
 async function delPieza(id){
   await db.from('content_piezas').delete().eq('id',id);
@@ -11748,7 +11735,8 @@ function openViewPieza(id) {
   document.getElementById('pv-titulo').value = p.titulo||'';
   document.getElementById('pv-formato').value = p.formato||'Reel';
   document.getElementById('pv-plataforma').value = p.plataforma||'Instagram';
-  document.getElementById('pv-fecha').value = p.fecha_planificada||'';
+ document.getElementById('pv-fecha').value = p.fecha_planificada||'';
+  document.getElementById('pv-turno').value = p.turno||'Mañana';
   document.getElementById('pv-status').value = p.status||'pendiente';
   document.getElementById('pv-notas').value = p.notas||'';
   document.getElementById('pv-media-url').value = p.media_url||'';
@@ -11788,9 +11776,11 @@ function removePiezaMedia() {
 }
 
 async function updatePieza() {
-  const id = document.getElementById('pv-id').value;
+    const id = document.getElementById('pv-id').value;
   const titulo = document.getElementById('pv-titulo').value.trim();
   if(!titulo){ toast('Ponele un titulo'); return; }
+  const turno = document.getElementById('pv-turno').value;
+  if(!turno){ toast('Elegi el turno de publicacion'); return; }
 
   // Si se eligio un archivo nuevo, subirlo; si no, respetar lo que haya en pv-media-url
   // (que puede ser la url existente, o vacio si el usuario apreto "Quitar referencia")
@@ -11809,6 +11799,7 @@ async function updatePieza() {
     formato: document.getElementById('pv-formato').value,
     plataforma: document.getElementById('pv-plataforma').value,
     fecha_planificada: document.getElementById('pv-fecha').value||null,
+    turno,
     status: document.getElementById('pv-status').value,
     notas: document.getElementById('pv-notas').value.trim(),
     media_url, media_type,
@@ -11868,30 +11859,39 @@ function renderCalCont(){
     campColor:'var(--blue)',campName:'Sin campana',source:'post',
   })));
 
-  const dias=['Lu','Ma','Mi','Ju','Vi','Sa','Do'];
+ const dias=['Lu','Ma','Mi','Ju','Vi','Sa','Do'];
 
   // Encabezado de mes
   const header=document.createElement('div');
-  header.style.cssText='font-size:13px;font-weight:700;text-align:center;margin-bottom:10px;text-transform:uppercase;letter-spacing:.06em';
+  header.style.cssText='font-size:15px;font-weight:800;letter-spacing:-.01em;margin-bottom:12px;color:var(--text)';
   header.textContent=new Date(year,month-1,1).toLocaleDateString('es-AR',{month:'long',year:'numeric'});
   grid.appendChild(header);
 
-  // Grid días — 100% width, sin scroll
-  const daysGrid=document.createElement('div');
-  daysGrid.id='cont-cal-days-grid';
-  daysGrid.style.cssText='display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:3px;width:100%;box-sizing:border-box';
+  // Contenedor con borde tenue tipo Google Calendar
+  const calWrap=document.createElement('div');
+  calWrap.style.cssText='border:1px solid rgba(255,255,255,.1);border-radius:10px;overflow:hidden';
 
-  // Cabeceras de día
+  // Cabecera de dias de la semana — resaltada
+  const daysHead=document.createElement('div');
+  daysHead.style.cssText='display:grid;grid-template-columns:repeat(7,minmax(0,1fr));background:var(--surface2);border-bottom:1px solid rgba(255,255,255,.1)';
   dias.forEach(d=>{
     const h=document.createElement('div');
-    h.style.cssText='font-size:9px;font-weight:700;text-align:center;color:var(--text3);padding:3px 0;letter-spacing:.05em';
+    h.style.cssText='font-size:10px;font-weight:800;text-align:center;color:var(--text);padding:8px 0;letter-spacing:.08em;text-transform:uppercase';
     h.textContent=d;
-    daysGrid.appendChild(h);
+    daysHead.appendChild(h);
   });
+  calWrap.appendChild(daysHead);
+
+  // Grid días — lineas tenues tipo Google Calendar (gap de 1px = linea divisoria)
+  const daysGrid=document.createElement('div');
+  daysGrid.id='cont-cal-days-grid';
+  daysGrid.style.cssText='display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:1px;width:100%;box-sizing:border-box;background:rgba(255,255,255,.08)';
 
   // Celdas vacías iniciales
   for(let i=0;i<primerLunes;i++){
-    daysGrid.appendChild(document.createElement('div'));
+    const empty=document.createElement('div');
+    empty.style.cssText='background:var(--surface);min-height:82px';
+    daysGrid.appendChild(empty);
   }
 
   // Celdas de días
@@ -11899,58 +11899,63 @@ function renderCalCont(){
     const pd=porDia[d]||[];
     const fd=`${year}-${String(month).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
     const esHoy=d===hoy.getDate()&&month===hoy.getMonth()+1&&year===hoy.getFullYear();
-    const pubs=pd.filter(p=>p.status==='publicado').length;
-    const bgCell=pubs===pd.length&&pd.length>0?'var(--green-l)':pd.length?'var(--surface2)':'transparent';
-    const borderColor=esHoy?'var(--primary-green)':'var(--border)';
 
     const cell=document.createElement('div');
     cell.onclick=()=>openDiaPiezas(fd);
     cell.title=`Ver publicaciones del ${d}/${month}`;
-    cell.style.cssText=`border-radius:6px;padding:3px;min-height:52px;border:1px solid ${borderColor};background:${bgCell};cursor:pointer;transition:border-color .12s;overflow:hidden;box-sizing:border-box`;
-    cell.onmouseover=()=>cell.style.borderColor='var(--primary-green)';
-    cell.onmouseout=()=>cell.style.borderColor=borderColor;
+    cell.style.cssText=`background:var(--surface);padding:5px;min-height:82px;cursor:pointer;transition:background .12s;overflow:hidden;box-sizing:border-box`;
+    cell.onmouseover=()=>cell.style.background='var(--surface2)';
+    cell.onmouseout=()=>cell.style.background='var(--surface)';
 
-    // Número del día
+    // Número del día — circulo resaltado para "hoy", estilo Google Calendar
     const num=document.createElement('div');
-    num.style.cssText=`font-size:10px;font-weight:${esHoy?'800':'600'};color:${esHoy?'var(--primary-green)':'var(--text)'};text-align:center;margin-bottom:2px`;
+    num.style.cssText=`display:flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;font-size:11px;font-weight:${esHoy?'800':'600'};color:${esHoy?'#fff':'var(--text)'};background:${esHoy?'var(--primary-green)':'transparent'};margin-bottom:4px`;
     num.textContent=d;
     cell.appendChild(num);
 
-    // Chips (máx 2) — sin emojis, solo punto de color + texto truncado
-    pd.slice(0,2).forEach(p=>{
+    // Pastillas de contenido (máx 3) — status + turno, sin emojis
+    pd.slice(0,3).forEach(p=>{
+      const isRealizado=p.status==='publicado';
       const chip=document.createElement('div');
-      chip.onclick=e=>{e.stopPropagation();cyclePiezaStatus(p.id);};
-      chip.title=p.titulo||p.caption||'';
-      chip.style.cssText='display:flex;align-items:center;gap:2px;padding:1px 3px;border-radius:4px;background:var(--surface);border:1px solid var(--border);margin-top:2px;cursor:pointer;overflow:hidden';
+      chip.onclick=e=>{e.stopPropagation();if(p.source==='campana')cyclePiezaStatus(p.id);else togglePostStatus(p.id,p.status);};
+      chip.title=`${p.titulo||p.caption||''}${p.turno?' · '+p.turno:''}`;
+      chip.style.cssText=`display:flex;align-items:center;gap:3px;padding:2px 5px;border-radius:5px;background:${isRealizado?'var(--green-l)':'var(--surface2)'};border:1px solid ${isRealizado?'var(--green)':'rgba(255,255,255,.08)'};margin-top:3px;cursor:pointer;overflow:hidden`;
       const dot=document.createElement('span');
       dot.style.cssText=`width:5px;height:5px;border-radius:50%;background:${PZ_COLOR[p.status]||'var(--text3)'};flex-shrink:0`;
+      chip.appendChild(dot);
+      if(p.turno && TURNO_ICON[p.turno]){
+        const ti=document.createElement('span');
+        ti.style.cssText=`color:${TURNO_COLOR[p.turno]||'var(--text2)'};display:flex;flex-shrink:0`;
+        ti.innerHTML=TURNO_ICON[p.turno];
+        chip.appendChild(ti);
+      }
       const label=document.createElement('span');
-      label.style.cssText='font-size:7px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text);min-width:0';
+      label.style.cssText=`font-size:9px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:${isRealizado?'var(--green)':'var(--text)'};min-width:0`;
       label.textContent=p.titulo||p.caption||'';
-      chip.appendChild(dot);chip.appendChild(label);
+      chip.appendChild(label);
       cell.appendChild(chip);
     });
 
     // "+N más"
-    if(pd.length>2){
+    if(pd.length>3){
       const more=document.createElement('div');
-      more.style.cssText='font-size:7px;color:var(--text3);margin-top:1px;text-align:center';
-      more.textContent=`+${pd.length-2}`;
+      more.style.cssText='font-size:9px;font-weight:600;color:var(--text2);margin-top:2px;text-align:center';
+      more.textContent=`+${pd.length-3} más`;
       cell.appendChild(more);
     }
 
     daysGrid.appendChild(cell);
   }
 
- grid.appendChild(daysGrid);
-
+  calWrap.appendChild(daysGrid);
+ grid.appendChild(calWrap);
   // Leyenda y chips se inyectan de forma diferida para no bloquear el primer paint
   requestAnimationFrame(() => {
     // Leyenda de campañas del mes
   const campsConPiezas=[...new Set(contentPiezas.filter(p=>(p.fecha_planificada||'').startsWith(mesVal)).map(p=>p.campaign_id))].map(id=>contentCamps.find(cc=>cc.id===id)).filter(Boolean);
   if(campsConPiezas.length){
     const leyenda=document.createElement('div');
-    leyenda.style.cssText='margin-top:10px;padding-top:8px;border-top:0.5px solid var(--border);display:flex;gap:10px;flex-wrap:wrap;font-size:11px;color:var(--text2)';
+   leyenda.style.cssText='margin-top:10px;padding-top:8px;border-top:1px solid rgba(255,255,255,.08);display:flex;gap:10px;flex-wrap:wrap;font-size:11px;color:var(--text2)'
     leyenda.innerHTML=campsConPiezas.map(cc=>`<span style="display:flex;align-items:center;gap:4px"><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${cc.color||'var(--accent)'}"></span>${cc.nombre}</span>`).join('');
     grid.appendChild(leyenda);
   }
@@ -11999,6 +12004,7 @@ function openAddPiezaForDate(date){
   document.getElementById('btn-pieza-guardar').textContent='Agregar pieza';
   document.getElementById('pieza-camp-id').value=contentCamps[0].id;
   document.getElementById('pieza-fecha').value=date;
+  document.getElementById('pieza-turno').value='Mañana';
   ['pieza-titulo','pieza-notas'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
   openModal('modal-pieza');
 }
@@ -12011,6 +12017,7 @@ function openAddPiezaForDate(date){
   document.getElementById('pieza-formato').value = p.formato||'Reel';
   document.getElementById('pieza-plataforma').value = p.plataforma||'Instagram';
   document.getElementById('pieza-fecha').value = p.fecha_planificada||'';
+  document.getElementById('pieza-turno').value = p.turno||'Mañana';
   document.getElementById('pieza-status').value = p.status||'pendiente';
   document.getElementById('pieza-notas').value = p.notas||'';
   document.getElementById('modal-pieza-titulo').textContent = 'Editar pieza';
@@ -12782,15 +12789,19 @@ function escRenderPgwList2() {
         </select>
       </div>
     </div>
-    <div class="form-row">
+ <div class="form-row">
       <div class="fg"><label>Fecha planificada</label><input id="pieza-fecha" type="date"/></div>
+      <div class="fg"><label>Turno</label>
+        <select id="pieza-turno" required>
+          <option>Mañana</option><option>Tarde</option><option>Noche</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
       <div class="fg"><label>Estado</label>
         <select id="pieza-status">
           <option value="pendiente">Pendiente</option>
-          <option value="en_produccion">En produccion</option>
-          <option value="filmado">Filmado</option>
-          <option value="editado">Editado</option>
-          <option value="publicado">Publicado</option>
+          <option value="publicado">Realizado</option>
         </select>
       </div>
     </div>
@@ -12838,15 +12849,19 @@ function escRenderPgwList2() {
         </select>
       </div>
     </div>
-    <div class="form-row">
+   <div class="form-row">
       <div class="fg"><label>Fecha planificada</label><input id="pv-fecha" type="date"/></div>
+      <div class="fg"><label>Turno</label>
+        <select id="pv-turno" required>
+          <option>Mañana</option><option>Tarde</option><option>Noche</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
       <div class="fg"><label>Estado</label>
         <select id="pv-status">
           <option value="pendiente">Pendiente</option>
-          <option value="en_produccion">En produccion</option>
-          <option value="filmado">Filmado</option>
-          <option value="editado">Editado</option>
-          <option value="publicado">Publicado</option>
+          <option value="publicado">Realizado</option>
         </select>
       </div>
     </div>
@@ -12975,34 +12990,7 @@ function escRenderPgwList2() {
   </div>
 </div>
 
-<!-- Modal Nueva Idea -->
-<div class="modal-backdrop" id="modal-idea">
-  <div class="modal" style="max-width:460px">
-    <div class="modal-title"><svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-0.15em"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.1v.2h6v-.2c0-.8.4-1.5 1-2.1A7 7 0 0 0 12 2Z"/></svg> Nueva idea de contenido</div>
-    <div class="form-row"><div class="fg full"><label>La idea</label><textarea id="idea-texto" rows="3" placeholder="Describí la idea. Ej: Mostrar cómo queda la campera con distintos outfits..."></textarea></div></div>
-    <div class="form-row">
-      <div class="fg"><label>Formato</label>
-        <select id="idea-formato">
-          <option>Reel</option><option>TikTok</option><option>Carrusel</option>
-          <option>Historia</option><option>Post</option><option>Otro</option>
-        </select>
-      </div>
-      <div class="fg"><label>Angulo / Tipo</label>
-        <select id="idea-angulo">
-          <option>Entretenimiento</option><option>Detras de escena</option>
-          <option>Prueba social</option><option>Educativo</option>
-          <option>Producto</option><option>Personal</option><option>Otro</option>
-        </select>
-      </div>
-    </div>
-    <div class="form-row"><div class="fg full"><label>Hook (primeras palabras / apertura)</label><input id="idea-hook" type="text" placeholder="Ej: No esperabamos que pase esto..."/></div></div>
-    <div class="modal-footer">
-      <button class="btn btn-outline" onclick="closeModal('modal-idea')">Cancelar</button>
-      <button class="btn btn-accent" onclick="saveIdea()">Guardar idea</button>
-    </div>
-  </div>
-</div>
- <script>
+<script>
   window.addEventListener('load', () => {
     setTimeout(() => {
       window.scrollTo(0, 0);
