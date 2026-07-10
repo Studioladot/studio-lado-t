@@ -11248,7 +11248,7 @@ async function togglePostStatus(id, current){
   if (isCamp) {
     const p = contentPiezas.find(x => x.id === id);
     if (!p) { toast('Pieza no encontrada'); return; }
-    titulo = p.titulo || 'Pieza'; notas = p.notas || ''; media_url = p.media_url; media_type = p.media_type;
+    titulo = p.titulo || 'Pieza'; notas = p.notas || ''; media_url = p.media_url; media_type = p.media_type; titulo += p.turno ? ` · ${p.turno}` : '';
   } else {
     const p = posts.find(x => String(x.id) === String(id));
     if (!p) { toast('Publicacion no encontrada'); return; }
