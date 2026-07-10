@@ -3250,6 +3250,13 @@ create policy "own" on contacts for all using (auth.uid()=user_id);</div>
       <div class="fg wide"><label>URL del Producto</label><input id="ts-camp-url" type="text" placeholder="https://kirizproject.com.ar/productos/..."/></div>
     </div>
     <div class="form-row">
+      <div class="fg"><label>Programar inicio (opcional)</label><input id="ts-camp-schedule" type="datetime-local"/></div>
+      <div class="fg" style="display:flex;align-items:center;gap:8px;margin-top:22px">
+        <input type="checkbox" id="ts-camp-activar" style="accent-color:var(--accent)"/>
+        <label style="margin:0">Publicar activa (si no, queda en pausa)</label>
+      </div>
+    </div>
+    <div class="form-row">
       <div class="fg wide"><label>ID de Campaña Existente (opcional)</label><input id="ts-camp-existing-id" type="text" placeholder="Dejar vacio para crear una campaña nueva"/></div>
       <div class="fg"><label>Duplicados por Conjunto</label><input id="ts-dup-count" type="number" min="1" step="1" value="1"/></div>
     </div>
@@ -3472,6 +3479,13 @@ create policy "own" on contacts for all using (auth.uid()=user_id);</div>
       <div class="form-row">
         <div class="fg"><label id="ms-presupuesto-label">Presupuesto diario (USD)</label><input id="ms-presupuesto" type="number" step="0.01" placeholder="30"/></div>
         <div class="fg wide"><label>URL del producto</label><input id="ms-url" type="text" placeholder="https://kirizproject.com.ar/productos/..."/></div>
+        </div>
+      <div class="form-row">
+        <div class="fg"><label>Programar inicio (opcional)</label><input id="ms-schedule" type="datetime-local"/></div>
+        <div class="fg" style="display:flex;align-items:center;gap:8px;margin-top:22px">
+          <input type="checkbox" id="ms-activar" style="accent-color:var(--accent)"/>
+          <label style="margin:0">Publicar activa (si no, queda en pausa)</label>
+        </div>
       </div>
       <div id="ms-creativos-wrap"></div>
     </div>
@@ -3509,7 +3523,10 @@ create policy "own" on contacts for all using (auth.uid()=user_id);</div>
     </div>
 
     <div class="divider"></div>
-
+<div class="fg" style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
+      <input type="checkbox" id="tsdup-activar" checked style="accent-color:var(--accent)"/>
+      <label style="margin:0">Publicar activa</label>
+    </div>
     <!-- Bloques dinámicos: uno por copia -->
     <div id="tsdup-bloques-wrap" style="display:flex;flex-direction:column;gap:16px;margin-top:4px"></div>
 
@@ -5327,6 +5344,7 @@ async function tsEjecutarDuplicacion(){
   // Timestamp único para unicar nombres de creative en esta sesión de duplicación
   // y evitar que Meta rechace el segundo creativo por nombre repetido.
   const sessionTs = Date.now();
+  const statusFinal = document.getElementById('tsdup-activar').checked ? 'ACTIVE' : 'PAUSED';
   let globalCreativeIdx = 0;
 
   for(const original of selectedAdsets){
@@ -5365,7 +5383,7 @@ async function tsEjecutarDuplicacion(){
         billing_event: full.billing_event || 'IMPRESSIONS',
         optimization_goal: full.optimization_goal || 'OFFSITE_CONVERSIONS',
         targeting: JSON.stringify(full.targeting || { geo_locations:{ countries:['AR'] } }),
-        status: 'PAUSED'
+        status: statusFinal
       };
       if(full.bid_strategy) adsetPayload.bid_strategy = full.bid_strategy;
       if(full.daily_budget) adsetPayload.daily_budget = full.daily_budget;
@@ -6579,7 +6597,7 @@ async function cvMonitorStock(){
     const criticas = cvGetVariantesCriticas(link);
     // Solo pausa si el stock TOTAL es 0, no si hay alguna variante sin stock
     if(stock <= 0){
-      const r = await metaPost(adId, { status: 'PAUSED' });
+      const r = await metaPost(adId, { status: statusFinal });
       if(!r.error){
         await apPushLog({
           action: 'pause',
@@ -6871,13 +6889,18 @@ async function msLanzar(){
     // 1) Crear campaña
     log('Creando estructura de campaña...');
     const isABO = msMode === 'retarget';
+    const scheduleVal = document.getElementById('ms-schedule').value;
+    const startTimeISO = scheduleVal ? new Date(scheduleVal).toISOString() : null;
+    const publicarActiva = document.getElementById('ms-activar').checked;
+    const statusFinal = (startTimeISO || publicarActiva) ? 'ACTIVE' : 'PAUSED';
     const campPayload = {
       name: nombre,
       objective: 'OUTCOME_SALES',
-      status: 'PAUSED',
+     status: statusFinal,
       special_ad_categories: JSON.stringify([]),
       is_adset_budget_sharing_enabled: false
     };
+    if(startTimeISO) campPayload.start_time = startTimeISO;
     if(!isABO){ campPayload.daily_budget = Math.round(presupuesto*100); campPayload.bid_strategy = 'LOWEST_COST_WITHOUT_CAP'; }
     const campRes = await metaPost(`act_${META_ACCOUNT}/campaigns`, campPayload);
     if(campRes.error) throw new Error('Campaña: '+campRes.error.message);
@@ -6902,7 +6925,7 @@ async function msLanzar(){
         bid_strategy: 'LOWEST_COST_WITHOUT_CAP',
         promoted_object: JSON.stringify({ pixel_id: META_PIXEL_ID, custom_event_type: 'PURCHASE' }),
         targeting: JSON.stringify({ geo_locations:{ countries:['AR'] } }),
-        status: 'PAUSED'
+        status: statusFinal
       };
       if(isABO){ adsetPayload.daily_budget = Math.round(presupuesto*100); }
       const adsetRes = await metaPost(`act_${META_ACCOUNT}/adsets`, adsetPayload);
@@ -6918,7 +6941,7 @@ async function msLanzar(){
           const cr = await metaPost(`act_${META_ACCOUNT}/adcreatives`, { name:`${adsetName} - Creative [${Date.now()}]`, object_story_id: engSel.objectStoryId });
           if(!cr.error) creativeId = cr.id;
         }
-        const adRes = await metaPost(`act_${META_ACCOUNT}/ads`, { name:adsetName, adset_id:adsetRes.id, creative:JSON.stringify({creative_id:creativeId}), status:'PAUSED' });
+        const adRes = await metaPost(`act_${META_ACCOUNT}/ads`, { name:adsetName, adset_id:adsetRes.id, creative:JSON.stringify({creative_id:creativeId}), status:statusFinal});
         if(adRes.error){ log(`Anuncio falló: ${adRes.error.message}`, false, true); continue; }
         log(`Anuncio "${adsetName}" creado con engagement`, true);
       } else {
@@ -6940,7 +6963,7 @@ async function msLanzar(){
         }
         const cr = await metaPost(`act_${META_ACCOUNT}/adcreatives`, { name:`${adsetName} - Creative [${Date.now()}]`, object_story_spec:JSON.stringify(objectStorySpec) });
         if(cr.error){ log(`Creative falló: ${cr.error.message}`, false, true); continue; }
-        const adRes = await metaPost(`act_${META_ACCOUNT}/ads`, { name:adsetName, adset_id:adsetRes.id, creative:JSON.stringify({creative_id:cr.id}), status:'PAUSED' });
+        const adRes = await metaPost(`act_${META_ACCOUNT}/ads`, { name:adsetName, adset_id:adsetRes.id, creative:JSON.stringify({creative_id:cr.id}), status:statusFinal });
         if(adRes.error){ log(`Anuncio falló: ${adRes.error.message}`, false, true); continue; }
         log(`Anuncio "${adsetName}" creado`, true);
       }
@@ -7909,6 +7932,10 @@ async function tsGenerarTesteo(){
     console.log('META_ACCOUNT:', META_ACCOUNT);
 const existingCampaignId = document.getElementById('ts-camp-existing-id').value.trim();
     const dupCount = Math.max(1, +document.getElementById('ts-dup-count').value || 1);
+   const scheduleVal = document.getElementById('ts-camp-schedule').value;
+    const startTimeISO = scheduleVal ? new Date(scheduleVal).toISOString() : null;
+    const publicarActiva = document.getElementById('ts-camp-activar').checked;
+    const statusFinal = (startTimeISO || publicarActiva) ? 'ACTIVE' : 'PAUSED';
 
     let campaignId;
     if(existingCampaignId){
@@ -7920,9 +7947,10 @@ const existingCampaignId = document.getElementById('ts-camp-existing-id').value.
       const campaignPayload = {
         name: campania.nombre,
         objective: 'OUTCOME_SALES',
-        status: 'PAUSED',
+       status: statusFinal,
         special_ad_categories: JSON.stringify([])
       };
+      if(startTimeISO) campaignPayload.start_time = startTimeISO;
       if(tsBudgetType === 'CBO'){
         campaignPayload.daily_budget = Math.round(campania.presupuesto_diario * 100);
         campaignPayload.bid_strategy = 'LOWEST_COST_WITHOUT_CAP';
@@ -7946,7 +7974,7 @@ const existingCampaignId = document.getElementById('ts-camp-existing-id').value.
         optimization_goal: 'OFFSITE_CONVERSIONS',
         promoted_object: JSON.stringify({ pixel_id: META_PIXEL_ID, custom_event_type: 'PURCHASE' }),
         targeting: JSON.stringify({ geo_locations: { countries: ['AR'] } }),
-        status: 'PAUSED'
+        status: statusFinal
       };
       if(tsBudgetType === 'ABO'){
         adsetPayload.daily_budget = Math.round(campania.presupuesto_diario * 100);
@@ -7987,7 +8015,7 @@ const existingCampaignId = document.getElementById('ts-camp-existing-id').value.
             name: anuncio.nombre,
             adset_id: adsetId,
             creative: JSON.stringify({ creative_id: engCreativeId }),
-            status: 'PAUSED'
+            status: statusFinal
           };
           console.log('[ENG] adPayload final:', JSON.stringify(adPayload));
           const adRes = await metaPost(`act_${META_ACCOUNT}/ads`, adPayload);
@@ -8054,7 +8082,7 @@ if(isVideo){
           name: anuncio.nombre,
           adset_id: adsetId,
           creative: JSON.stringify({ creative_id: creativeRes.id }),
-          status: 'PAUSED'
+          status: statusFinal
         };
       tsConsoleStep(4);
         const adRes = await metaPost(`act_${META_ACCOUNT}/ads`, adPayload);
