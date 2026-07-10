@@ -4828,29 +4828,6 @@ async function safeInsertMetric(rec) {
   }
   throw new Error('safeInsertMetric: max reintentos');
 }
-
-// ══════════════════════════════════════════════════════════════════════════════
-// RENDER SNAPSHOTS — con buscador, agrupación por nombre y notas
-// ══════════════════════════════════════════════════════════════════════════════
-
-  if(!list.length){
-    el.innerHTML=search?'<div class="empty"><div class="empty-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></div><div class="empty-msg">Sin resultados</div><div class="empty-sub">Intenta con otro termino</div></div>':'<div class="empty"><div class="empty-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg></div><div class="empty-msg">Sin snapshots</div><div class="empty-sub">Usa Snapshot ahora para capturar las metricas de Meta</div></div>';
-    return;
-  }
-
-  const byName={};
-  list.forEach(m=>{ const k=(m.name||'').replace(/^\[[^\]]+\]\s*/,''); if(!byName[k])byName[k]=[]; byName[k].push(m); });
-
-  el.innerHTML = Object.entries(byName).map(([name,snaps])=>{
-    const sorted = snaps.sort((a,b)=>new Date(b.snap_time||b.created_at)-new Date(a.snap_time||a.created_at));
-    const lastDate = sorted[0]?.snap_time||sorted[0]?.created_at;
-    const dateLabel = lastDate ? new Date(lastDate).toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long'}) : '—';
-    const typeLbl={campaign:'Campana',adset:'Conjunto',ad:'Anuncio',manual:'Manual'}[sorted[0]?.snap_type]||'';
-    const typeBdg={campaign:'b-blue',adset:'b-teal',ad:'b-accent',manual:'b-gray'}[sorted[0]?.snap_type]||'b-gray';
-    return renderAdSnapCard(name, sorted, dateLabel, typeLbl, typeBdg);
-  }).join('');
-}
-
 function renderAdSnapCard(name, sorted, dateLabel, typeLbl, typeBdg){
   const rows = sorted.slice(0,5);
   const cols = ['HORA','GASTO','ROAS','CPA','CPM','CTR','HOOK%','ATC','IC','COMPRAS'];
