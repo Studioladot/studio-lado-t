@@ -1300,7 +1300,7 @@ body.focus-mode #main{margin-left:0}
     <select class="meta-filter-select" id="meta-status-select" onchange="tsApplyStatusDropdown(this)">
       <option value="ALL">Estado: Todas</option>
       <option value="ACTIVE">● Activas</option>
-      <option value="PAUSED">⏸ Pausadas</option>
+     <option value="PAUSED">Pausadas</option>
       <option value="ARCHIVED">Archivadas</option>
     </select>
     <select class="meta-filter-select" id="meta-strategy-select" onchange="tsApplyStrategyDropdown(this)">
@@ -3403,11 +3403,11 @@ create policy "own" on contacts for all using (auth.uid()=user_id);</div>
     <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:12px" id="mro-camp-name"></div>
     <input type="hidden" id="mro-camp-id">
     <div class="form-row">
-      <div class="fg"><label>Target CPA (USD)</label><input id="mro-target-cpa" type="number" step="0.01" placeholder="Usar global"/></div>
-      <div class="fg"><label>Break-Even ROAS</label><input id="mro-breakeven-roas" type="number" step="0.01" placeholder="Usar global"/></div>
+     <div class="fg"><label>Target CPA (USD)</label><input id="mro-cpa" type="number" step="0.01" placeholder="Usar global"/></div>
+<div class="fg"><label>Break-Even ROAS</label><input id="mro-roas" type="number" step="0.01" placeholder="Usar global"/></div>
     </div>
     <div class="modal-footer">
-      <button class="btn btn-ghost" onclick="openMetaRuleOverrideDelete()">Resetear a global</button>
+      <button class="btn btn-ghost" onclick="clearMetaRuleOverride()">Resetear a global</button>
       <button class="btn btn-outline" onclick="closeModal('modal-meta-rule-override')">Cancelar</button>
       <button class="btn btn-accent" onclick="saveMetaRuleOverride()">Guardar</button>
     </div>
@@ -4312,38 +4312,6 @@ async function saveSnap(){
   document.getElementById('ms-date').value=new Date().toISOString().split('T')[0];
   toast('Snapshot guardado');
 }
-function renderSnaps(){
-  const el=document.getElementById('snaps-list');
-  if(!metrics.length){el.innerHTML='<div class="empty"><div class="empty-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg></div><div class="empty-msg">Sin snapshots</div><div class="empty-sub">Guarda tus primeras metricas</div></div>';return;}
-  el.innerHTML=metrics.map(m=>`
-  <div class="snap-card">
-    <div class="snap-hdr">
-      <span class="snap-name">${m.name}</span>
-      <div style="display:flex;align-items:center;gap:10px">
-        <span class="snap-date">${m.snapshot_date||fmtDate(m.created_at)}</span>
-        <button class="btn btn-sm btn-red" onclick="delSnap('${m.id}')"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-1px"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
-      </div>
-    </div>
-    <div class="snap-metrics">
-      ${m.spend?`<div class="sm-item"><div class="sm-label">Gasto</div><div class="sm-value">$${(+m.spend).toFixed(0)}</div></div>`:''}
-      ${m.roas?`<div class="sm-item"><div class="sm-label">ROAS</div><div class="sm-value" style="color:${+m.roas>=4?'var(--green)':+m.roas>=2?'var(--blue)':'var(--red)'}">${(+m.roas).toFixed(1)}x</div></div>`:''}
-      ${m.purchases?`<div class="sm-item"><div class="sm-label">Compras</div><div class="sm-value">${m.purchases}</div></div>`:''}
-      ${m.cpa?`<div class="sm-item"><div class="sm-label">CPA</div><div class="sm-value">$${fmt(m.cpa)}</div></div>`:''}
-      ${m.ctr?`<div class="sm-item"><div class="sm-label">CTR</div><div class="sm-value">${m.ctr}%</div></div>`:''}
-      ${m.cpm?`<div class="sm-item"><div class="sm-label">CPM</div><div class="sm-value">$${m.cpm}</div></div>`:''}
-      ${m.frequency?`<div class="sm-item"><div class="sm-label">Frec.</div><div class="sm-value">${m.frequency}</div></div>`:''}
-      ${m.hook_rate?`<div class="sm-item"><div class="sm-label">Hook</div><div class="sm-value">${m.hook_rate}%</div></div>`:''}
-      ${m.p25?`<div class="sm-item"><div class="sm-label">P25</div><div class="sm-value">${m.p25}%</div></div>`:''}
-      ${m.p75?`<div class="sm-item"><div class="sm-label">P75</div><div class="sm-value">${m.p75}%</div></div>`:''}
-      ${m.p100?`<div class="sm-item"><div class="sm-label">P100</div><div class="sm-value">${m.p100}%</div></div>`:''}
-    </div>
-    ${m.notes?`<div style="font-size:12px;color:var(--text2);margin-top:8px;padding-top:8px;border-top:0.5px solid var(--border)">${m.notes}</div>`:''}
-  </div>`).join('');
-}
-async function delSnap(id){
-  await db.from('metrics').delete().eq('id',id);
-  metrics=metrics.filter(m=>m.id!==id); renderDash(); renderSnaps(); toast('Eliminado');
-}
 
 // ── SCRIPTS ───────────────────────────────────────────────────────────────────
 let scriptStatusFilter='all';
@@ -4864,23 +4832,6 @@ async function safeInsertMetric(rec) {
 // ══════════════════════════════════════════════════════════════════════════════
 // RENDER SNAPSHOTS — con buscador, agrupación por nombre y notas
 // ══════════════════════════════════════════════════════════════════════════════
-function renderSnaps(){
-  const el=document.getElementById('snaps-list'); if(!el)return;
-  let list=[...metrics];
-  const typeF=_snapLevel||'campaign';
-  const dateF=(document.getElementById('snap-filter-date')?.value)||'';
-  const search=((document.getElementById('snap-search')?.value)||'').trim().toLowerCase();
-  if(typeF!=='all'){ if(typeF==='manual') list=list.filter(m=>!m.snap_type||m.snap_type==='manual'); else list=list.filter(m=>m.snap_type===typeF); }
-  if(dateF) list=list.filter(m=>(m.snapshot_date||m.date||m.created_at||'').startsWith(dateF));
-  if(search) list=list.filter(m=>(m.name||'').toLowerCase().includes(search));
-
-  const pillsEl=document.getElementById('snap-name-pills');
-  if(pillsEl){
-    if(search){
-      const names=[...new Set(list.map(m=>(m.name||'').replace(/^\[[^\]]+\]\s*/,'')))].filter(Boolean).slice(0,6);
-      pillsEl.innerHTML=names.map(n=>`<span style="padding:3px 10px;background:var(--accent-l);color:var(--accent);border-radius:12px;font-size:11px;font-weight:600;cursor:pointer" onclick="document.getElementById('snap-search').value=this.dataset.n;renderSnaps()" data-n="${n.replace(/"/g,'&quot;')}">${n}</span>`).join('');
-    } else { pillsEl.innerHTML=''; }
-  }
 
   if(!list.length){
     el.innerHTML=search?'<div class="empty"><div class="empty-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></div><div class="empty-msg">Sin resultados</div><div class="empty-sub">Intenta con otro termino</div></div>':'<div class="empty"><div class="empty-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg></div><div class="empty-msg">Sin snapshots</div><div class="empty-sub">Usa Snapshot ahora para capturar las metricas de Meta</div></div>';
@@ -5032,81 +4983,6 @@ function refreshDashboardTopBoxes(){
     const profitEst = ((tnSalesSummary.neto||0)*margen) - gastosMes;
     setT('dbox-profit', '$'+fmtN(Math.round(profitEst)));
   }
-}
-// ══════════════════════════════════════════════════════════════════════════════
-// DASHBOARD — renderDash con datos live de Meta
-// ══════════════════════════════════════════════════════════════════════════════
-function renderDash(){
-  const liveCamps=metaCampaigns.filter(c=>parseFloat(c.insights?.spend)>0);
-  const useLive=liveCamps.length>0;
-  const liveBadge=document.getElementById('dash-live-badge');
-  const dateWrap=document.getElementById('dash-date-wrap');
-  if(liveBadge) liveBadge.style.display=useLive?'inline-block':'none';
-  if(dateWrap) dateWrap.style.display=META_TOKEN?'flex':'none';
-
-  if(useLive){
-    const totalSpend=liveCamps.reduce((a,c)=>a+parseFloat(c.insights.spend||0),0);
-    const totalPurch=liveCamps.reduce((a,c)=>a+parseFloat(c.insights.purchases||0),0);
-    const totalRev=liveCamps.reduce((a,c)=>a+parseFloat(c.insights.revenue||0),0);
-    const roas=totalSpend>0&&totalRev>0?totalRev/totalSpend:0;
-    const cpa=totalPurch>0?totalSpend/totalPurch:0;
-    const rv=document.getElementById('meta-date-range')?.value||'last_30d';
-    const rl={today:'Hoy',yesterday:'Ayer',last_7d:'7 dias',last_14d:'14 dias',last_30d:'30 dias',last_90d:'90 dias',this_month:'Este mes',last_month:'Mes pasado',maximum:'Historico'}[rv]||rv;
-    document.getElementById('ds-gasto').textContent='$'+totalSpend.toFixed(2);
-    document.getElementById('ds-roas').textContent=roas>0?roas.toFixed(1)+'x':'—';
-    document.getElementById('ds-compras').textContent=totalPurch>0?Math.round(totalPurch):'—';
-    document.getElementById('ds-cpa').textContent=cpa>0?'$'+cpa.toFixed(2):'—';
-    const sg=document.getElementById('ds-sub-gasto'); if(sg) sg.textContent=rl+' · '+liveCamps.length+' campanas';
-    const sr=document.getElementById('ds-sub-roas');  if(sr) sr.textContent='Campanas con gasto';
-    const sc=document.getElementById('ds-sub-compras');if(sc) sc.textContent='Periodo: '+rl;
-    const sk=document.getElementById('ds-sub-cpa');   if(sk) sk.textContent='Promedio del periodo';
-    // Ranking — delegado a renderRanking() para soportar campana/conjunto/anuncio
-    // Tabla
-    const tbl=document.getElementById('dash-tbl');
-    tbl.innerHTML=[...liveCamps].sort((a,b)=>parseFloat(b.insights.roas||0)-parseFloat(a.insights.roas||0)).map(camp=>{const ins=camp.insights||{};return`<tr>
-      <td style="font-weight:600;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${camp.name}">${camp.name}</td>
-      <td>$${ins.spend||'—'}</td>
-      <td><span style="font-weight:700;color:${roasColor(ins.roas)}">${ins.roas?ins.roas+'x':'—'}</span></td>
-      <td>${ins.purchases||'—'}</td><td>${ins.cpa?'$'+ins.cpa:'—'}</td>
-      <td>${ins.ctr?ins.ctr+'%':'—'}</td><td>${ins.cpm?'$'+ins.cpm:'—'}</td>
-      <td>${ins.frequency||'—'}</td><td>${ins.hook_rate?ins.hook_rate+'%':'—'}</td>
-      <td style="color:var(--green);font-size:11px;font-weight:600">Live</td>
-    </tr>`}).join('');
-    const upd=document.getElementById('dash-last-update');
-    if(upd) upd.textContent='Act. '+new Date().toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'});
-  } else {
-    // Datos de snapshots guardados
-    const tot=metrics.reduce((a,m)=>a+(+m.spend||0),0);
-    const roasL=metrics.filter(m=>+m.roas>0);
-    const avgR=roasL.length?(roasL.reduce((a,m)=>a+(+m.roas),0)/roasL.length):0;
-    const totP=metrics.reduce((a,m)=>a+(+m.purchases||0),0);
-    const cpaL=metrics.filter(m=>+m.cpa>0);
-    const avgC=cpaL.length?(cpaL.reduce((a,m)=>a+(+m.cpa),0)/cpaL.length):0;
-    document.getElementById('ds-gasto').textContent=tot>0?'$'+tot.toFixed(0):'—';
-    document.getElementById('ds-roas').textContent=avgR?avgR.toFixed(1)+'x':'—';
-    document.getElementById('ds-compras').textContent=totP||'—';
-    document.getElementById('ds-cpa').textContent=avgC?'$'+fmt(avgC):'—';
-    const sg=document.getElementById('ds-sub-gasto'); if(sg) sg.textContent='USD acumulado';
-    const sr=document.getElementById('ds-sub-roas');  if(sr) sr.textContent='Promedio snapshots';
-    const sc=document.getElementById('ds-sub-compras');if(sc) sc.textContent='Total registradas';
-    const sk=document.getElementById('ds-sub-cpa');   if(sk) sk.textContent='Costo por compra';
-    // Ranking — delegado a renderRanking()
-    const tbl=document.getElementById('dash-tbl');
-    tbl.innerHTML=metrics.length?metrics.slice(0,15).map(m=>`<tr>
-      <td style="font-weight:600">${m.name}</td><td>$${(+m.spend||0).toFixed(0)}</td>
-      <td><span style="font-weight:700;color:${roasColor(m.roas)}">${m.roas||'—'}x</span></td>
-      <td>${m.purchases||'—'}</td><td>${m.cpa?'$'+fmt(m.cpa):'—'}</td>
-      <td>${m.ctr?m.ctr+'%':'—'}</td><td>${m.cpm?'$'+m.cpm:'—'}</td>
-      <td>${m.frequency||'—'}</td><td>${m.hook_rate?m.hook_rate+'%':'—'}</td>
-      <td style="color:var(--text2);font-size:12px">${fmtDate(m.created_at)}</td>
-    </tr>`).join('')
-    :'<tr><td colspan="10" style="text-align:center;color:var(--text2);padding:24px">Sin datos — conecta Meta Ads o carga metricas manualmente</td></tr>';
-  }
- renderRanking();
-  renderObjs();
-  renderDashMetaWidget();
-  refreshDashboardTopBoxes();
-  renderBHS();
 }
 
 // ── DASHBOARD META WIDGET ─────────────────────────────────────────────────────
@@ -9553,16 +9429,6 @@ async function editUser(uid) {
   });
   openModal('modal-adm-user');
 }
-async function saveUserAdmin() {
-  const uid    = document.getElementById('adm-uid').value;
-  const status = document.getElementById('adm-status').value;
-  const exp    = document.getElementById('adm-expires').value;
-  const notas  = document.getElementById('adm-notas').value;
-  const upd = { is_approved: status === 'active', notas };
-  if (exp) upd.expires_at = exp;
-  await db.from('user_profiles').update(upd).eq('id', uid);
-  closeModal('modal-adm-user'); toast('Usuario actualizado'); loadAdmin();
-}
 async function suspendUser() {
   const uid = document.getElementById('adm-uid').value;
   await db.from('user_profiles').update({ is_approved: false }).eq('id', uid);
@@ -11376,7 +11242,7 @@ function renderPublicaciones(){
     const isCamp = p.source === 'campana';
     const statusLabel = isCamp ? (PZ_LABEL[p.pzStatus]||p.pzStatus) : p.status;
     const statusColor = isCamp ? (PZ_COLOR[p.pzStatus]||'var(--text2)') : '';
- const toggleFn = isCamp ? `openPzStatusMenu(event,'${p.id}')` : `togglePostStatus('${p.id}','${p.status}')`;
+const toggleFn = isCamp ? `cyclePiezaStatus('${p.id}')` : `togglePostStatus('${p.id}','${p.status}')`;
     const delFn    = isCamp ? `delPieza('${p.id}')` : `delPost('${p.id}')`;
     const editFn   = isCamp ? `openViewPieza('${p.id}')` : `openEditPost('${p.id}')`;
     return `
@@ -11460,57 +11326,21 @@ function openNewPost(){
   document.getElementById('modal-post-titulo').textContent = 'Nueva publicacion';
   openModal('modal-post');
 }
-
-async function saveEditPost(){
-  const id = document.getElementById('post-edit-id').value;
-  if(!id) return;
-  const rec = {
-    caption: document.getElementById('post-caption').value.trim(),
-    platform: document.getElementById('post-platform').value,
-    format: document.getElementById('post-format').value,
-    date: document.getElementById('post-date').value || null,
-    status: document.getElementById('post-status').value,
-  };
-  const {data,error} = await db.from('content_posts').update(rec).eq('id',id).select();
-  if(error){toast('Error: '+error.message);return;}
-  const idx = posts.findIndex(x=>String(x.id)===String(id));
-  if(idx>-1) posts[idx] = data[0];
-  renderCont(); renderPublicaciones(); renderControlContenido(); renderCalCont();
-  closeModal('modal-post');
-  toast('Publicacion actualizada');
-}
-// ── IDEAS ─────────────────────────────────────────────────────────────────────
-async function saveIdea(){
-  const texto=document.getElementById('idea-texto').value.trim();
-  if(!texto){toast('Escribi la idea');return;}
-  const rec={user_id:me.id,idea:texto,formato:document.getElementById('idea-formato').value,angulo:document.getElementById('idea-angulo').value,hook:document.getElementById('idea-hook').value.trim(),usado:false};
-  const {data,error}=await db.from('content_ideas').insert([rec]).select();
-  if(error){toast('Error: '+error.message);return;}
-  ideas.unshift(data[0]); renderIdeas(); closeModal('modal-idea');
-  ['idea-texto','idea-hook'].forEach(id=>document.getElementById(id).value='');
-  toast('Idea guardada');
+async function delIdea(id) {
+  await db.from('content_ideas').delete().eq('id', id);
+  ideas = ideas.filter(i => i.id !== id);
+  renderIdeas();
+  toast('Idea eliminada');
 }
 
-function renderIdeas(){
-  const grid=document.getElementById('cont-ideas-grid'); if(!grid) return;
-  if(!ideas.length){grid.innerHTML='<div class="empty" style="grid-column:1/-1"><div class="empty-icon"><svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-0.15em"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.1v.2h6v-.2c0-.8.4-1.5 1-2.1A7 7 0 0 0 12 2Z"/></svg></div><div class="empty-msg">Sin ideas guardadas</div><div class="empty-sub">Cada vez que se te ocurra algo, anotalo aca</div></div>';return;}
-  const angleColors={Entretenimiento:'b-accent',Producto:'b-blue','Detras de escena':'b-teal','Prueba social':'b-green',Educativo:'b-amber',Personal:'b-gray',Otro:'b-gray'};
-  grid.innerHTML=ideas.map(i=>`
-    <div style="background:${i.usado?'var(--surface2)':'var(--surface)'};border:0.5px solid var(--border);border-radius:var(--rl);padding:14px;opacity:${i.usado?.6:1}">
-      <div style="display:flex;gap:5px;margin-bottom:8px;flex-wrap:wrap">
-        <span class="badge b-accent" style="font-size:9px">${i.formato}</span>
-        <span class="badge ${angleColors[i.angulo]||'b-gray'}" style="font-size:9px">${i.angulo}</span>
-        ${i.usado?'<span class="badge b-green" style="font-size:9px">Usado</span>':''}
-      </div>
-      <div style="font-size:13px;font-weight:600;line-height:1.5;margin-bottom:6px">${i.idea}</div>
-      ${i.hook?`<div style="font-size:12px;color:var(--text2);padding:6px 10px;background:var(--surface2);border-radius:var(--r);margin-bottom:8px;border-left:2px solid var(--accent)"><strong>Hook:</strong> ${i.hook}</div>`:''}
-      <div style="display:flex;justify-content:flex-end;gap:5px">
-        <button class="btn btn-sm btn-outline" onclick="usarIdea('${i.id}','${i.usado}')">${i.usado?'Marcar sin usar':'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-1px"><path d="M20 6 9 17l-5-5"/></svg> Marcar como usada'}</button>
-        <button class="btn btn-sm btn-red" onclick="delIdea('${i.id}')"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-1px"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
-      </div>
-    </div>`).join('');
+async function usarIdea(id, current) {
+  const next = !(current === 'true');
+  await db.from('content_ideas').update({ usado: next }).eq('id', id);
+  const i = ideas.find(x => x.id === id);
+  if(i) i.usado = next;
+  renderIdeas();
+  toast(next ? 'Marcada como usada' : 'Marcada como no usada');
 }
-
 async function saveEditPost(){
   const id = document.getElementById('post-edit-id').value;
   const fileInput = document.getElementById('post-media-file');
@@ -11758,7 +11588,7 @@ function renderCampsList() {
           </div>
           ${pz.length?pz.map(p=>`
           <div style="display:flex;align-items:center;gap:10px;padding:8px 10px;border-bottom:1px solid var(--border);margin-bottom:0">
-           <button onclick="openPzStatusMenu(event,'${p.id}')" title="Click para cambiar estado"
+           <button onclick="cyclePiezaStatus('${p.id}')" title="Click para cambiar estado"
               style="width:26px;height:26px;border-radius:50%;border:2px solid ${PZ_COLOR[p.status]};background:${p.status==='publicado'?PZ_COLOR[p.status]:'transparent'};color:${p.status==='publicado'?'#fff':PZ_COLOR[p.status]};font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:700">
               ${PZ_ICON[p.status]||'◌'}
             </button>
