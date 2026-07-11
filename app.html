@@ -399,6 +399,51 @@ body.focus-mode #main{margin-left:0}
 .ts-conjunto-nombre:focus{border-color:var(--accent)}
   .ts-step-panel{background:linear-gradient(180deg,rgba(255,255,255,.02),rgba(255,255,255,.005));backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.05);border-radius:22px;padding:24px;margin-bottom:16px;transition:border-color .2s ease}
 .ts-step-panel:hover{border-color:rgba(255,255,255,.08)}
+  /* Stepper decorativo superior */
+.ts-stepper{display:flex;align-items:center;margin-bottom:28px;padding:16px 20px;background:#0c0d10;border:1px solid rgba(255,255,255,.05);border-radius:16px}
+.ts-stepper-item{display:flex;align-items:center;gap:10px;flex:1}
+.ts-stepper-num{width:28px;height:28px;border-radius:50%;border:1.5px solid rgba(255,255,255,.12);color:var(--text3);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0}
+.ts-stepper-item.active .ts-stepper-num{border-color:var(--primary-green);color:var(--primary-green);box-shadow:0 0 0 3px rgba(11,185,128,.12)}
+.ts-stepper-text{display:flex;flex-direction:column;line-height:1.25}
+.ts-stepper-title{font-size:12.5px;font-weight:700;color:var(--text)}
+.ts-stepper-sub{font-size:10px;color:var(--text3)}
+.ts-stepper-arrow{color:var(--text3);flex-shrink:0;margin:0 14px}
+
+/* Header de panel con control a la derecha (Timezone / Browse Library) */
+.ts-panel-hdr-row{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:20px}
+.ts-tz-select{background:#0c0d10;border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:9px 14px;font-size:12px;color:var(--text);outline:none}
+
+/* Schedule: fecha + hora + recurrente en fila */
+.ts-schedule-row{display:grid;grid-template-columns:1fr 1fr auto;gap:16px;align-items:stretch}
+.ts-recurring-box{display:flex;align-items:center;gap:10px;background:#0c0d10;border:1px solid rgba(255,255,255,.05);border-radius:16px;padding:14px 18px;min-width:230px}
+
+/* Ad Sets: cards mas grandes, fieles a la imagen */
+.ts-audiencia-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:12px;margin-bottom:18px}
+.ts-audiencia-card{position:relative;background:#16181e;border:1px solid rgba(255,255,255,.05);border-radius:16px;padding:18px 16px;cursor:pointer;text-align:left;transition:all .2s ease}
+.ts-audiencia-card:hover{border-color:rgba(255,255,255,.12);transform:translateY(-1px)}
+.ts-audiencia-card.selected{border-color:var(--primary-green);background:rgba(11,185,128,.06);box-shadow:0 0 0 1px var(--primary-green),0 0 24px rgba(11,185,128,.15)}
+.ts-audiencia-check{position:absolute;top:12px;right:12px;width:20px;height:20px;border-radius:50%;background:var(--primary-green);color:#04150e;display:none;align-items:center;justify-content:center;box-shadow:0 0 10px rgba(11,185,128,.5)}
+.ts-audiencia-card.selected .ts-audiencia-check{display:flex}
+.ts-audiencia-icon{width:36px;height:36px;border-radius:10px;background:#1c1f26;color:var(--text2);display:flex;align-items:center;justify-content:center;margin-bottom:12px}
+.ts-audiencia-card.selected .ts-audiencia-icon{background:rgba(11,185,128,.15);color:var(--primary-green)}
+.ts-audiencia-title{font-size:12.5px;font-weight:700;color:var(--text);margin-bottom:4px}
+.ts-audiencia-sub{font-size:10.5px;color:var(--text3);line-height:1.45;margin-bottom:8px}
+.ts-audiencia-reach{font-size:10px;color:var(--text3);display:flex;align-items:center;gap:4px}
+.ts-audiencia-tag{display:inline-block;font-size:8.5px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--primary-green);background:rgba(11,185,128,.12);border-radius:5px;padding:3px 7px;margin-top:6px}
+
+/* Budget: hint recomendado */
+.ts-budget-hint{display:flex;align-items:center;gap:6px;font-size:10.5px;color:var(--text3);margin-top:10px}
+.ts-budget-hint b{color:var(--primary-green);font-weight:700}
+.ts-budget-hint::before{content:'';width:5px;height:5px;border-radius:50%;background:var(--primary-green);flex-shrink:0}
+
+/* Boton principal — replica exacta del glow verde */
+.ts-launch-btn{flex:1;display:flex;align-items:center;justify-content:center;gap:12px;background:linear-gradient(180deg,#10d999,#0aa974);border:none;border-radius:18px;padding:18px 28px;cursor:pointer;box-shadow:0 0 40px rgba(11,185,128,.4),0 10px 28px -8px rgba(11,185,128,.55);transition:all .2s ease}
+.ts-launch-btn:hover{box-shadow:0 0 56px rgba(11,185,128,.55),0 12px 32px -8px rgba(11,185,128,.65);transform:translateY(-1px)}
+.ts-launch-btn:active{transform:translateY(0) scale(.99)}
+.ts-launch-btn-text{display:flex;flex-direction:column;align-items:flex-start;line-height:1.3}
+.ts-launch-btn-label{font-size:15px;font-weight:800;color:#04150e}
+.ts-launch-btn-sub{font-size:11px;font-weight:500;color:rgba(4,21,14,.65)}
+.ts-footer-secondary{display:flex;flex-direction:column;gap:8px;min-width:170px}
 .ts-step-hdr{display:flex;align-items:center;gap:10px;margin-bottom:4px}
 .ts-step-num{width:26px;height:26px;border-radius:50%;border:1.5px solid var(--primary-green);color:var(--primary-green);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0}
 .ts-step-title{font-size:14px;font-weight:700;color:var(--text)}
@@ -3281,7 +3326,7 @@ create policy "own" on contacts for all using (auth.uid()=user_id);</div>
 <!-- TESTING SANDBOX -->
 <div class="modal-backdrop" id="modal-testing-sandbox">
   <div class="modal ts-modal-xl">
-    <div class="ts-modal-hero" style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px">
+   <div class="ts-modal-hero" style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px">
       <div>
         <div class="ts-modal-hero-title">Lanzar Testeo</div>
         <div class="ts-modal-hero-sub">Configurá la campaña y agregá tantos conjuntos y anuncios como necesites.</div>
@@ -3290,6 +3335,14 @@ create policy "own" on contacts for all using (auth.uid()=user_id);</div>
         <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><rect x="1" y="2" width="12" height="10" rx="1.3"/><path d="M4 6h6M4 8.5h4"/></svg>
         Usar Preset
       </button>
+    </div>
+
+    <div class="ts-stepper">
+      <div class="ts-stepper-item active"><span class="ts-stepper-num">1</span><span class="ts-stepper-text"><span class="ts-stepper-title">Schedule</span><span class="ts-stepper-sub">Cuando arranca</span></span></div>
+      <svg class="ts-stepper-arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg>
+      <div class="ts-stepper-item active"><span class="ts-stepper-num">2</span><span class="ts-stepper-text"><span class="ts-stepper-title">Ad Sets</span><span class="ts-stepper-sub">Conjuntos a incluir</span></span></div>
+      <svg class="ts-stepper-arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg>
+      <div class="ts-stepper-item active"><span class="ts-stepper-num">3</span><span class="ts-stepper-text"><span class="ts-stepper-title">Budget</span><span class="ts-stepper-sub">Presupuesto y estrategia</span></span></div>
     </div>
    <div class="ts-step-panel">
       <div class="ts-step-hdr"><span class="ts-step-num">01</span><span class="ts-step-title">Datos de campaña</span></div>
@@ -3316,33 +3369,42 @@ create policy "own" on contacts for all using (auth.uid()=user_id);</div>
     </div>
 
     <div class="ts-step-panel">
-      <div class="ts-step-hdr"><span class="ts-step-num">02</span><span class="ts-step-title">Schedule</span></div>
-      <div class="ts-step-sub">Elegí cuándo arranca tu campaña.</div>
-      <div class="form-row">
-        <div class="fg wide ts-input-wrap">
-          <span class="ts-field-label">Programar inicio (opcional)</span>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M3 10h18M8 2v4M16 2v4"/></svg>
-          <input id="ts-camp-schedule" type="datetime-local"/>
+      <div class="ts-panel-hdr-row">
+        <div>
+          <div class="ts-step-hdr" style="margin-bottom:2px"><span class="ts-step-num">1</span><span class="ts-step-title">Schedule</span></div>
+          <div class="ts-step-sub" style="margin:2px 0 0 36px">Elegí cuándo arranca tu campaña.</div>
         </div>
-        <div class="fg">
-          <span class="ts-field-label">&nbsp;</span>
-          <label class="ts-switch-row" for="ts-camp-activar" style="cursor:pointer">
-            <span>
-              <span class="ts-switch-row-label">Publicar activa</span>
-              <span class="ts-switch-row-sub" style="display:block">Si no, queda en pausa</span>
-            </span>
-            <span class="ts-switch">
-              <input type="checkbox" id="ts-camp-activar"/>
-              <span class="ts-switch-track"></span>
-              <span class="ts-switch-thumb"></span>
-            </span>
-          </label>
+        <select class="ts-tz-select"><option>(GMT-03:00) Buenos Aires</option></select>
+      </div>
+      <div class="ts-schedule-row">
+        <div class="fg ts-input-wrap">
+          <span class="ts-field-label">Start Date</span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M3 10h18M8 2v4M16 2v4"/></svg>
+          <input id="ts-schedule-date" type="date" oninput="tsSyncSchedule()"/>
+        </div>
+        <div class="fg ts-input-wrap">
+          <span class="ts-field-label">Start Time</span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+          <input id="ts-schedule-time" type="time" oninput="tsSyncSchedule()"/>
+        </div>
+        <div class="ts-recurring-box">
+          <span class="ts-switch"><input type="checkbox" id="ts-recurring-visual"/><span class="ts-switch-track"></span><span class="ts-switch-thumb"></span></span>
+          <span>
+            <span class="ts-switch-row-label">Recurring Campaign</span>
+            <span class="ts-switch-row-sub" style="display:block">Run continuously</span>
+          </span>
         </div>
       </div>
+      <input type="hidden" id="ts-camp-schedule"/>
+      <div style="margin-top:10px">
+        <label class="ts-switch-row" for="ts-camp-activar" style="cursor:pointer;max-width:280px">
+          <span><span class="ts-switch-row-label">Publicar activa</span><span class="ts-switch-row-sub" style="display:block">Si no, queda en pausa</span></span>
+          <span class="ts-switch"><input type="checkbox" id="ts-camp-activar"/><span class="ts-switch-track"></span><span class="ts-switch-thumb"></span></span>
+        </label>
+      </div>
     </div>
-
-    <div class="ts-step-panel">
-      <div class="ts-step-hdr"><span class="ts-step-num">03</span><span class="ts-step-title">Budget</span></div>
+     <div class="ts-step-panel">
+      <div class="ts-step-hdr"><span class="ts-step-num">3</span><span class="ts-step-title">Budget</span></div>
       <div class="ts-step-sub">Definí cuánto gastar y cómo se optimiza.</div>
       <div class="fg" style="margin-bottom:14px">
         <span class="ts-field-label">Tipo de presupuesto</span>
@@ -3352,10 +3414,11 @@ create policy "own" on contacts for all using (auth.uid()=user_id);</div>
         </div>
       </div>
       <div class="form-row">
-        <div class="fg ts-input-wrap">
+         <div class="fg ts-input-wrap">
           <span class="ts-field-label" id="ts-presupuesto-label">Presupuesto Diario (USD)</span>
           <span class="ts-dollar">$</span>
-          <input id="ts-camp-presupuesto" type="number" step="0.01" placeholder="20" style="padding-left:26px"/>
+          <input id="ts-camp-presupuesto" type="number" step="0.01" placeholder="20" style="padding-left:26px" oninput="tsBudgetHint(this.value)"/>
+          <div class="ts-budget-hint" id="ts-budget-hint-text">Recomendado: <b>&nbsp;—&nbsp;</b></div>
         </div>
         <div class="fg ts-input-wrap">
           <span class="ts-field-label">Duplicados por Conjunto</span>
@@ -3405,11 +3468,16 @@ create policy "own" on contacts for all using (auth.uid()=user_id);</div>
 
     <div class="divider"></div>
 
-    <div class="ts-section-label">
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
-      Estructura del testeo
+  <div class="ts-panel-hdr-row" style="margin-bottom:12px">
+      <div>
+        <div class="ts-step-hdr" style="margin-bottom:2px"><span class="ts-step-num">2</span><span class="ts-step-title">Ad Sets</span></div>
+        <div class="ts-step-sub" style="margin:2px 0 0 36px">Elegí y configurá los conjuntos a incluir.</div>
+      </div>
+      <button class="btn btn-sm btn-outline" onclick="tsOpenPresetPicker()" style="display:flex;align-items:center;gap:6px;border-radius:12px;padding:9px 14px">
+        <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><rect x="1" y="2" width="12" height="10" rx="1.3"/><path d="M4 6h6M4 8.5h4"/></svg>
+        Browse Ad Set Library
+      </button>
     </div>
-
     <div id="ts-conjuntos-wrap" style="display:flex;flex-direction:column;gap:16px"></div>
 
     <button type="button" class="ts-add-conjunto-btn" onclick="tsAddConjunto()">
@@ -7516,7 +7584,17 @@ function tsAddConjunto(){
   wrap.appendChild(div);
   tsAddAnuncio(cId);
 }
-
+function tsSyncSchedule(){
+  const d = document.getElementById('ts-schedule-date').value;
+  const t = document.getElementById('ts-schedule-time').value;
+  document.getElementById('ts-camp-schedule').value = (d && t) ? `${d}T${t}` : '';
+}
+function tsBudgetHint(val){
+  const n = parseFloat(val);
+  const el = document.getElementById('ts-budget-hint-text');
+  if(!el) return;
+  el.innerHTML = n>0 ? `Recomendado: <b>$${Math.round(n*0.8)} – $${Math.round(n*1.3)}</b>` : 'Recomendado: <b>&nbsp;—&nbsp;</b>';
+}
 function tsSelectAudiencia(cId, tipo, label, cardEl){
   const conjunto = document.querySelector(`.ts-conjunto[data-conjunto-id="${cId}"]`);
   if(!conjunto) return;
