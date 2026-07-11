@@ -418,7 +418,25 @@ body.focus-mode #main{margin-left:0}
 .ts-recurring-box{display:flex;align-items:center;gap:10px;background:#0c0d10;border:1px solid rgba(255,255,255,.05);border-radius:16px;padding:14px 18px;min-width:230px}
 
 /* Ad Sets: cards mas grandes, fieles a la imagen */
-.ts-audiencia-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:12px;margin-bottom:18px}
+.ts-audiencia-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(128px,1fr));gap:10px;margin-bottom:18px}
+.ts-conjunto-hdr-slim{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.ts-conjunto-hdr-slim .ts-conjunto-nombre{flex:none;width:auto;max-width:220px;background:transparent;border:none;border-bottom:1px solid transparent;border-radius:0;padding:2px 0;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text3)}
+.ts-conjunto-hdr-slim .ts-conjunto-nombre:focus{color:var(--text);border-bottom-color:var(--primary-green)}
+.ts-conjunto-hdr-slim .ts-trash-btn{width:24px;height:24px}
+.ts-audiencia-reach{display:flex;align-items:center;gap:4px}
+.ts-budget-seg-compact{display:inline-flex;background:#0c0d10;border:1px solid rgba(255,255,255,.06);border-radius:10px;padding:2px}
+.ts-budget-seg-compact .ft{padding:6px 12px;font-size:10.5px;border-radius:8px}
+.ts-alloc-row-hdr{display:flex;align-items:center;justify-content:space-between;margin-top:20px}
+.ts-alloc-label{font-size:11px;color:var(--text3);display:flex;align-items:center;gap:6px}
+.ts-alloc-label b{color:var(--text);font-weight:700}
+.ts-rebalance-btn{background:transparent;border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:7px 12px;font-size:11px;font-weight:600;color:var(--text2);cursor:pointer;transition:all .15s}
+.ts-rebalance-btn:hover{border-color:var(--primary-green);color:var(--primary-green)}
+.ts-alloc-bar{display:flex;height:8px;border-radius:999px;overflow:hidden;gap:2px;margin:10px 0 16px}
+.ts-alloc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(90px,1fr));gap:14px}
+.ts-alloc-col{display:flex;flex-direction:column;gap:2px}
+.ts-alloc-pct{font-size:13px;font-weight:800}
+.ts-alloc-amt{font-size:11px;color:var(--text2);font-weight:600}
+.ts-alloc-name{font-size:10px;color:var(--text3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ts-audiencia-card{position:relative;background:#16181e;border:1px solid rgba(255,255,255,.05);border-radius:16px;padding:18px 16px;cursor:pointer;text-align:left;transition:all .2s ease}
 .ts-audiencia-card:hover{border-color:rgba(255,255,255,.12);transform:translateY(-1px)}
 .ts-audiencia-card.selected{border-color:var(--primary-green);background:rgba(11,185,128,.06);box-shadow:0 0 0 1px var(--primary-green),0 0 24px rgba(11,185,128,.15)}
@@ -3403,18 +3421,19 @@ create policy "own" on contacts for all using (auth.uid()=user_id);</div>
         </label>
       </div>
     </div>
-     <div class="ts-step-panel">
-      <div class="ts-step-hdr"><span class="ts-step-num">3</span><span class="ts-step-title">Budget</span></div>
-      <div class="ts-step-sub">Definí cuánto gastar y cómo se optimiza.</div>
-      <div class="fg" style="margin-bottom:14px">
-        <span class="ts-field-label">Tipo de presupuesto</span>
-        <div class="ts-budget-seg" id="ts-budget-toggle">
-          <div class="ft active" data-budget-type="CBO" onclick="tsSetBudgetType('CBO',this)">Campaña (CBO)</div>
-          <div class="ft" data-budget-type="ABO" onclick="tsSetBudgetType('ABO',this)">Conjunto (ABO)</div>
+     <div class="ts-step-panel" style="padding:32px">
+      <div class="ts-panel-hdr-row" style="margin-bottom:16px">
+        <div>
+          <div class="ts-step-hdr" style="margin-bottom:2px"><span class="ts-step-num">3</span><span class="ts-step-title">Presupuesto</span></div>
+          <div class="ts-step-sub" style="margin:2px 0 0 36px">Definí cuánto gastar y cómo se optimiza.</div>
+        </div>
+        <div class="ts-budget-seg ts-budget-seg-compact" id="ts-budget-toggle">
+          <div class="ft active" data-budget-type="CBO" onclick="tsSetBudgetType('CBO',this)">CBO</div>
+          <div class="ft" data-budget-type="ABO" onclick="tsSetBudgetType('ABO',this)">ABO</div>
         </div>
       </div>
       <div class="form-row">
-         <div class="fg ts-input-wrap">
+        <div class="fg ts-input-wrap">
           <span class="ts-field-label" id="ts-presupuesto-label">Presupuesto Diario (USD)</span>
           <span class="ts-dollar">$</span>
           <input id="ts-camp-presupuesto" type="number" step="0.01" placeholder="20" style="padding-left:26px" oninput="tsBudgetHint(this.value)"/>
@@ -3426,6 +3445,11 @@ create policy "own" on contacts for all using (auth.uid()=user_id);</div>
           <input id="ts-dup-count" type="number" min="1" step="1" value="1"/>
         </div>
       </div>
+      <div class="ts-alloc-row-hdr">
+        <span class="ts-alloc-label">Distribución de Presupuesto <b id="ts-budget-alloc-total">Total: —</b></span>
+        <button type="button" class="ts-rebalance-btn" onclick="tsRenderBudgetAlloc()">Rebalancear</button>
+      </div>
+      <div id="ts-budget-alloc-wrap"></div>
     </div>
 
     <div class="divider"></div>
@@ -7548,7 +7572,7 @@ function tsAddConjunto(){
   div.className = 'ts-conjunto';
   div.dataset.conjuntoId = cId;
   div.dataset.anuncioSeq = '0';
-  div.dataset.audiencia = '';
+  div.dataset.audiencia = 'broad';
   const audiencias = [
     { tipo:'broad', label:'Broad – Advantage+', sub:'Maximiza alcance y encontrá clientes nuevos a escala.', reach:'Alcance amplio', rec:true,
       icon:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>' },
@@ -7556,25 +7580,26 @@ function tsAddConjunto(){
       icon:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2"/></svg>' },
     { tipo:'retargeting', label:'Retargeting – Vio Contenido', sub:'Reenganchá audiencias tibias que mostraron interés.', reach:'~320K', rec:false,
       icon:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>' },
+    { tipo:'atc7', label:'Retargeting – ATC 7 días', sub:'Impactá a quienes agregaron al carrito en los últimos 7 días.', reach:'~85K', rec:false,
+      icon:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>' },
     { tipo:'custom', label:'Audiencia Personalizada', sub:'Usá tu propia audiencia o lista de clientes.', reach:'Personalizada', rec:false,
       icon:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>' },
   ];
   const cardsHtml = audiencias.map(a => `
-      <div class="ts-audiencia-card" data-tipo="${a.tipo}" onclick="tsSelectAudiencia('${cId}','${a.tipo}','${a.label.replace(/'/g,"\\'")}',this)">
+      <div class="ts-audiencia-card${a.rec?' selected':''}" data-tipo="${a.tipo}" onclick="tsSelectAudiencia('${cId}','${a.tipo}','${a.label.replace(/'/g,"\\'")}',this)">
         <span class="ts-audiencia-check"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
         <div class="ts-audiencia-icon">${a.icon}</div>
         <div class="ts-audiencia-title">${a.label}</div>
         <div class="ts-audiencia-sub">${a.sub}</div>
-        <div class="ts-audiencia-reach">${a.reach}</div>
-        ${a.rec?'<span class="ts-audiencia-tag">Recomendado</span>':''}
+        ${a.rec?'<span class="ts-audiencia-tag">Recomendado</span>':`<div class="ts-audiencia-reach"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg> ${a.reach}</div>`}
       </div>`).join('');
   div.innerHTML = `
-    <div class="ts-conjunto-hdr">
-      <input class="ts-conjunto-nombre" type="text" value="Conjunto ${tsConjuntoSeq}" placeholder="Nombre del conjunto">
+    <div class="ts-conjunto-hdr ts-conjunto-hdr-slim">
+      <input class="ts-conjunto-nombre" type="text" value="Conjunto ${tsConjuntoSeq}" placeholder="Nombre del conjunto" oninput="tsRenderBudgetAlloc()">
       <button type="button" class="ts-trash-btn" onclick="tsRemoveConjunto('${cId}')" title="Eliminar conjunto">${tsTrashIcon()}</button>
     </div>
     <div class="ts-audiencia-grid">${cardsHtml}</div>
-    <input type="hidden" class="ts-conjunto-audiencia" value="">
+    <input type="hidden" class="ts-conjunto-audiencia" value="broad">
   <div class="ts-anuncios-wrap" data-anuncios-of="${cId}"></div>
     <!-- TEMPLATE usado por tsAddAnuncio para los campos de link/headline/copy/guion -->
     <button type="button" class="ts-add-anuncio-btn" onclick="tsAddAnuncio('${cId}')">
@@ -7583,6 +7608,7 @@ function tsAddConjunto(){
     </button>`;
   wrap.appendChild(div);
   tsAddAnuncio(cId);
+  tsRenderBudgetAlloc();
 }
 function tsSyncSchedule(){
   const d = document.getElementById('ts-schedule-date').value;
@@ -7592,8 +7618,31 @@ function tsSyncSchedule(){
 function tsBudgetHint(val){
   const n = parseFloat(val);
   const el = document.getElementById('ts-budget-hint-text');
-  if(!el) return;
-  el.innerHTML = n>0 ? `Recomendado: <b>$${Math.round(n*0.8)} – $${Math.round(n*1.3)}</b>` : 'Recomendado: <b>&nbsp;—&nbsp;</b>';
+  if(el) el.innerHTML = n>0 ? `Recomendado: <b>$${Math.round(n*0.8)} – $${Math.round(n*1.3)}</b>` : 'Recomendado: <b>&nbsp;—&nbsp;</b>';
+  tsRenderBudgetAlloc();
+}
+function tsRenderBudgetAlloc(){
+  const wrap = document.getElementById('ts-budget-alloc-wrap');
+  if(!wrap) return;
+  const total = parseFloat(document.getElementById('ts-camp-presupuesto').value) || 0;
+  const conjuntos = Array.from(document.querySelectorAll('.ts-conjunto'));
+  const totalLabel = document.getElementById('ts-budget-alloc-total');
+  if(totalLabel) totalLabel.textContent = total>0 ? `Total: $${total.toFixed(2)} USD` : 'Total: —';
+  if(!conjuntos.length || total<=0){
+    wrap.innerHTML = '<div style="font-size:11px;color:var(--text3);padding:8px 0 0">Cargá un presupuesto y al menos un conjunto para ver la distribución.</div>';
+    return;
+  }
+  const n = conjuntos.length, pct = 100/n, colors = ['#0bb980','#3b82f6','#f5a623','#8b5cf6','#ec4899','#14b8a6'];
+  const segsHtml = conjuntos.map((c,i)=>`<span style="flex:1;background:${colors[i%colors.length]}"></span>`).join('');
+  const breakdownHtml = conjuntos.map((c,i)=>{
+    const nombre = c.querySelector('.ts-conjunto-nombre')?.value || `Conjunto ${i+1}`;
+    return `<div class="ts-alloc-col">
+      <div class="ts-alloc-pct" style="color:${colors[i%colors.length]}">${pct.toFixed(0)}%</div>
+      <div class="ts-alloc-amt">$${(total/n).toFixed(2)}</div>
+      <div class="ts-alloc-name">${nombre}</div>
+    </div>`;
+  }).join('');
+  wrap.innerHTML = `<div class="ts-alloc-bar">${segsHtml}</div><div class="ts-alloc-grid">${breakdownHtml}</div>`;
 }
 function tsSelectAudiencia(cId, tipo, label, cardEl){
   const conjunto = document.querySelector(`.ts-conjunto[data-conjunto-id="${cId}"]`);
@@ -7610,6 +7659,7 @@ function tsRemoveConjunto(cId){
   if(!el) return;
   el.querySelectorAll('.ts-anuncio-row').forEach(row => tsFiles.delete(row.dataset.anuncioId));
   el.remove();
+  tsRenderBudgetAlloc();
 }
 
 function tsAddAnuncio(cId){
