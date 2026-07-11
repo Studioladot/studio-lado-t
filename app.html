@@ -396,6 +396,29 @@ body.focus-mode #main{margin-left:0}
 .ts-conjunto-hdr{display:flex;align-items:center;gap:8px;margin-bottom:12px}
 .ts-conjunto-nombre{flex:1;background:transparent;border:0.5px solid var(--border);border-radius:var(--r);padding:7px 10px;font-size:13px;font-weight:700;color:var(--text);outline:none;transition:border-color .12s}
 .ts-conjunto-nombre:focus{border-color:var(--accent)}
+  .ts-step-panel{background:var(--surface2);border:1px solid rgba(255,255,255,.05);border-radius:14px;padding:18px 20px;margin-bottom:14px}
+.ts-step-hdr{display:flex;align-items:center;gap:10px;margin-bottom:4px}
+.ts-step-num{width:26px;height:26px;border-radius:50%;border:1.5px solid var(--primary-green);color:var(--primary-green);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0}
+.ts-step-title{font-size:14px;font-weight:700;color:var(--text)}
+.ts-step-sub{font-size:11px;color:var(--text3);margin:2px 0 16px 36px}
+.ts-input-wrap{position:relative}
+.ts-input-wrap svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text3);pointer-events:none}
+.ts-input-wrap span.ts-dollar{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:13px;font-weight:600}
+.ts-input-wrap input,.ts-input-wrap select{width:100%;background:#0c0d10;border:1px solid rgba(255,255,255,.06);border-radius:var(--r);padding:11px 12px 11px 34px;font-size:13px;color:var(--text);outline:none;transition:border-color .15s;box-sizing:border-box}
+.ts-input-wrap input:focus,.ts-input-wrap select:focus{border-color:var(--primary-green)}
+.ts-field-label{font-size:11px;color:var(--text3);margin-bottom:6px;display:block}
+.ts-switch-row{display:flex;align-items:center;justify-content:space-between;gap:10px;background:#0c0d10;border:1px solid rgba(255,255,255,.06);border-radius:var(--r);padding:11px 12px}
+.ts-switch-row-label{font-size:12px;font-weight:600;color:var(--text)}
+.ts-switch-row-sub{font-size:10px;color:var(--text3);margin-top:1px}
+.ts-switch{position:relative;display:inline-block;width:38px;height:22px;flex-shrink:0}
+.ts-switch input{opacity:0;width:0;height:0;position:absolute}
+.ts-switch-track{position:absolute;inset:0;background:var(--border2);border-radius:999px;transition:background .18s;cursor:pointer}
+.ts-switch input:checked + .ts-switch-track{background:var(--primary-green)}
+.ts-switch-thumb{position:absolute;top:2px;left:2px;width:18px;height:18px;background:#fff;border-radius:50%;transition:transform .18s;pointer-events:none}
+.ts-switch input:checked ~ .ts-switch-thumb{transform:translateX(16px)}
+.ts-budget-seg{display:flex;background:#0c0d10;border:1px solid rgba(255,255,255,.06);border-radius:var(--r);padding:3px;gap:3px}
+.ts-budget-seg .ft{flex:1;text-align:center;border-radius:6px;padding:8px 10px;font-size:11.5px;font-weight:600;color:var(--text3);cursor:pointer;transition:all .15s}
+.ts-budget-seg .ft.active{background:var(--primary-green);color:#04150e}
   /* Cards de audiencia — nuevo selector visual del bloque .ts-conjunto */
 .ts-audiencia-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin-bottom:12px}
 .ts-audiencia-card{position:relative;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:12px 10px;cursor:pointer;text-align:left;transition:border-color .15s,background .15s,transform .1s}
@@ -3249,34 +3272,81 @@ create policy "own" on contacts for all using (auth.uid()=user_id);</div>
     </div>
     <div style="font-size:12px;color:var(--text2);margin-bottom:16px">Configurá la campaña y agregá tantos conjuntos y anuncios como necesites.</div>
 
-    <div class="form-row">
-      <div class="fg wide"><label>Nombre de Campaña</label><input id="ts-camp-nombre" type="text" placeholder="Testeo Drop Invierno - Jun"/></div>
-    </div>
-   <div class="fg" style="margin-bottom:14px">
-      <label>Tipo de presupuesto</label>
-      <div class="filters" id="ts-budget-toggle" style="margin-top:4px">
-        <div class="ft active" data-budget-type="CBO" onclick="tsSetBudgetType('CBO',this)">Presupuesto a nivel de Campaña (CBO)</div>
-        <div class="ft" data-budget-type="ABO" onclick="tsSetBudgetType('ABO',this)">Presupuesto a nivel de Conjunto (ABO)</div>
+   <div class="ts-step-panel">
+      <div class="ts-step-hdr"><span class="ts-step-num">01</span><span class="ts-step-title">Datos de campaña</span></div>
+      <div class="ts-step-sub">Nombre, producto y campaña destino.</div>
+      <div class="form-row">
+        <div class="fg wide ts-input-wrap">
+          <span class="ts-field-label">Nombre de Campaña</span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 9h18"/></svg>
+          <input id="ts-camp-nombre" type="text" placeholder="Testeo Drop Invierno - Jun"/>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="fg wide ts-input-wrap">
+          <span class="ts-field-label">URL del Producto</span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg>
+          <input id="ts-camp-url" type="text" placeholder="https://kirizproject.com.ar/productos/..."/>
+        </div>
+        <div class="fg ts-input-wrap">
+          <span class="ts-field-label">ID Campaña Existente (opcional)</span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M8 12h8"/></svg>
+          <input id="ts-camp-existing-id" type="text" placeholder="Dejar vacio para crear una nueva"/>
+        </div>
       </div>
     </div>
-  <div class="form-row">
-      <div class="fg"><label id="ts-presupuesto-label">Presupuesto Diario (USD) — Campaña</label><input id="ts-camp-presupuesto" type="number" step="0.01" placeholder="20"/></div>
-      <div class="fg wide"><label>URL del Producto</label><input id="ts-camp-url" type="text" placeholder="https://kirizproject.com.ar/productos/..."/></div>
-    </div>
-    <div class="form-row">
-      <div class="fg"><label>Programar inicio (opcional)</label><input id="ts-camp-schedule" type="datetime-local"/></div>
-      <div class="fg" style="display:flex;align-items:center;gap:8px;margin-top:22px">
-        <input type="checkbox" id="ts-camp-activar" style="accent-color:var(--accent)"/>
-        <label style="margin:0">Publicar activa (si no, queda en pausa)</label>
+
+    <div class="ts-step-panel">
+      <div class="ts-step-hdr"><span class="ts-step-num">02</span><span class="ts-step-title">Schedule</span></div>
+      <div class="ts-step-sub">Elegí cuándo arranca tu campaña.</div>
+      <div class="form-row">
+        <div class="fg wide ts-input-wrap">
+          <span class="ts-field-label">Programar inicio (opcional)</span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M3 10h18M8 2v4M16 2v4"/></svg>
+          <input id="ts-camp-schedule" type="datetime-local"/>
+        </div>
+        <div class="fg">
+          <span class="ts-field-label">&nbsp;</span>
+          <label class="ts-switch-row" for="ts-camp-activar" style="cursor:pointer">
+            <span>
+              <span class="ts-switch-row-label">Publicar activa</span>
+              <span class="ts-switch-row-sub" style="display:block">Si no, queda en pausa</span>
+            </span>
+            <span class="ts-switch">
+              <input type="checkbox" id="ts-camp-activar"/>
+              <span class="ts-switch-track"></span>
+              <span class="ts-switch-thumb"></span>
+            </span>
+          </label>
+        </div>
       </div>
     </div>
-    <div class="form-row">
-      <div class="fg wide"><label>ID de Campaña Existente (opcional)</label><input id="ts-camp-existing-id" type="text" placeholder="Dejar vacio para crear una campaña nueva"/></div>
-      <div class="fg"><label>Duplicados por Conjunto</label><input id="ts-dup-count" type="number" min="1" step="1" value="1"/></div>
+
+    <div class="ts-step-panel">
+      <div class="ts-step-hdr"><span class="ts-step-num">03</span><span class="ts-step-title">Budget</span></div>
+      <div class="ts-step-sub">Definí cuánto gastar y cómo se optimiza.</div>
+      <div class="fg" style="margin-bottom:14px">
+        <span class="ts-field-label">Tipo de presupuesto</span>
+        <div class="ts-budget-seg" id="ts-budget-toggle">
+          <div class="ft active" data-budget-type="CBO" onclick="tsSetBudgetType('CBO',this)">Campaña (CBO)</div>
+          <div class="ft" data-budget-type="ABO" onclick="tsSetBudgetType('ABO',this)">Conjunto (ABO)</div>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="fg ts-input-wrap">
+          <span class="ts-field-label" id="ts-presupuesto-label">Presupuesto Diario (USD)</span>
+          <span class="ts-dollar">$</span>
+          <input id="ts-camp-presupuesto" type="number" step="0.01" placeholder="20" style="padding-left:26px"/>
+        </div>
+        <div class="fg ts-input-wrap">
+          <span class="ts-field-label">Duplicados por Conjunto</span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="12" height="12" rx="2"/><path d="M8 16v2a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V10a2 2 0 0 0-2-2h-2"/></svg>
+          <input id="ts-dup-count" type="number" min="1" step="1" value="1"/>
+        </div>
+      </div>
     </div>
 
     <div class="divider"></div>
-
     <!-- ── ADVANTAGE+ KILL SWITCH ────────────────────────────────────────────── -->
     <div class="adv-panel">
       <div class="adv-master-row" onclick="tsToggleKillSwitch()">
