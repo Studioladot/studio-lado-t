@@ -396,6 +396,19 @@ body.focus-mode #main{margin-left:0}
 .ts-conjunto-hdr{display:flex;align-items:center;gap:8px;margin-bottom:12px}
 .ts-conjunto-nombre{flex:1;background:transparent;border:0.5px solid var(--border);border-radius:var(--r);padding:7px 10px;font-size:13px;font-weight:700;color:var(--text);outline:none;transition:border-color .12s}
 .ts-conjunto-nombre:focus{border-color:var(--accent)}
+  /* Cards de audiencia — nuevo selector visual del bloque .ts-conjunto */
+.ts-audiencia-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin-bottom:12px}
+.ts-audiencia-card{position:relative;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:12px 10px;cursor:pointer;text-align:left;transition:border-color .15s,background .15s,transform .1s}
+.ts-audiencia-card:hover{border-color:rgba(11,185,128,.3);transform:translateY(-1px)}
+.ts-audiencia-card.selected{border-color:var(--primary-green);background:rgba(11,185,128,.08);box-shadow:0 0 14px rgba(11,185,128,.12)}
+.ts-audiencia-check{position:absolute;top:8px;right:8px;width:16px;height:16px;border-radius:50%;background:var(--primary-green);color:#fff;display:none;align-items:center;justify-content:center}
+.ts-audiencia-card.selected .ts-audiencia-check{display:flex}
+.ts-audiencia-icon{width:28px;height:28px;border-radius:8px;background:var(--surface2);color:var(--text2);display:flex;align-items:center;justify-content:center;margin-bottom:8px}
+.ts-audiencia-card.selected .ts-audiencia-icon{background:rgba(11,185,128,.15);color:var(--primary-green)}
+.ts-audiencia-title{font-size:12px;font-weight:700;color:var(--text);margin-bottom:3px}
+.ts-audiencia-sub{font-size:10px;color:var(--text3);line-height:1.4;margin-bottom:6px}
+.ts-audiencia-reach{font-size:10px;color:var(--text3);display:flex;align-items:center;gap:4px}
+.ts-audiencia-tag{display:inline-block;font-size:8.5px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--primary-green);background:rgba(11,185,128,.1);border-radius:4px;padding:2px 5px;margin-top:4px}
 .ts-anuncios-wrap{display:flex;flex-direction:column;gap:8px;margin-bottom:10px}
 .ts-anuncio-row{display:flex;align-items:center;gap:8px}
 .ts-anuncio-nombre{flex:0 0 150px;background:var(--surface);border:0.5px solid var(--border);border-radius:var(--r);padding:7px 10px;font-size:12px;color:var(--text);outline:none;transition:border-color .12s}
@@ -7367,11 +7380,33 @@ function tsAddConjunto(){
   div.className = 'ts-conjunto';
   div.dataset.conjuntoId = cId;
   div.dataset.anuncioSeq = '0';
+  div.dataset.audiencia = '';
+  const audiencias = [
+    { tipo:'broad', label:'Broad – Advantage+', sub:'Maximiza alcance y encontrá clientes nuevos a escala.', reach:'Alcance amplio', rec:true,
+      icon:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>' },
+    { tipo:'lookalike', label:'Lookalike 1% – Compradores', sub:'Alcanzá personas similares a tus mejores clientes.', reach:'~1.2M', rec:false,
+      icon:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2"/></svg>' },
+    { tipo:'retargeting', label:'Retargeting – Vio Contenido', sub:'Reenganchá audiencias tibias que mostraron interés.', reach:'~320K', rec:false,
+      icon:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>' },
+    { tipo:'custom', label:'Audiencia Personalizada', sub:'Usá tu propia audiencia o lista de clientes.', reach:'Personalizada', rec:false,
+      icon:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>' },
+  ];
+  const cardsHtml = audiencias.map(a => `
+      <div class="ts-audiencia-card" data-tipo="${a.tipo}" onclick="tsSelectAudiencia('${cId}','${a.tipo}','${a.label.replace(/'/g,"\\'")}',this)">
+        <span class="ts-audiencia-check"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+        <div class="ts-audiencia-icon">${a.icon}</div>
+        <div class="ts-audiencia-title">${a.label}</div>
+        <div class="ts-audiencia-sub">${a.sub}</div>
+        <div class="ts-audiencia-reach">${a.reach}</div>
+        ${a.rec?'<span class="ts-audiencia-tag">Recomendado</span>':''}
+      </div>`).join('');
   div.innerHTML = `
     <div class="ts-conjunto-hdr">
       <input class="ts-conjunto-nombre" type="text" value="Conjunto ${tsConjuntoSeq}" placeholder="Nombre del conjunto">
       <button type="button" class="ts-trash-btn" onclick="tsRemoveConjunto('${cId}')" title="Eliminar conjunto">${tsTrashIcon()}</button>
     </div>
+    <div class="ts-audiencia-grid">${cardsHtml}</div>
+    <input type="hidden" class="ts-conjunto-audiencia" value="">
   <div class="ts-anuncios-wrap" data-anuncios-of="${cId}"></div>
     <!-- TEMPLATE usado por tsAddAnuncio para los campos de link/headline/copy/guion -->
     <button type="button" class="ts-add-anuncio-btn" onclick="tsAddAnuncio('${cId}')">
@@ -7380,6 +7415,15 @@ function tsAddConjunto(){
     </button>`;
   wrap.appendChild(div);
   tsAddAnuncio(cId);
+}
+
+function tsSelectAudiencia(cId, tipo, label, cardEl){
+  const conjunto = document.querySelector(`.ts-conjunto[data-conjunto-id="${cId}"]`);
+  if(!conjunto) return;
+  conjunto.querySelectorAll('.ts-audiencia-card').forEach(c=>c.classList.remove('selected'));
+  cardEl.classList.add('selected');
+  conjunto.dataset.audiencia = tipo;
+  conjunto.querySelector('.ts-conjunto-audiencia').value = tipo;
 }
 
 function tsRemoveConjunto(cId){
