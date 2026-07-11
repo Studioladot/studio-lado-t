@@ -392,11 +392,13 @@ body.focus-mode #main{margin-left:0}
 @keyframes bounce{0%,100%{transform:translateY(0);opacity:.4}50%{transform:translateY(-4px);opacity:1}}
 .sql-box{background:var(--surface2);border-radius:var(--r);padding:12px;font-size:11px;font-family:monospace;color:var(--text2);line-height:1.9;max-height:440px;overflow-y:auto;border:0.5px solid var(--border);white-space:pre}
 /* ── TESTING SANDBOX (Meta Ads) ───────────────────────────────────────── */
-.ts-conjunto{background:var(--surface2);border:0.5px solid var(--border);border-radius:var(--rl);padding:14px 16px}
+.ts-conjunto{background:linear-gradient(180deg,rgba(255,255,255,.025),rgba(255,255,255,.008));backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.05);border-radius:22px;padding:24px;box-shadow:0 8px 24px -12px rgba(0,0,0,.4);transition:border-color .2s ease}
+.ts-conjunto:hover{border-color:rgba(255,255,255,.09)}
 .ts-conjunto-hdr{display:flex;align-items:center;gap:8px;margin-bottom:12px}
 .ts-conjunto-nombre{flex:1;background:transparent;border:0.5px solid var(--border);border-radius:var(--r);padding:7px 10px;font-size:13px;font-weight:700;color:var(--text);outline:none;transition:border-color .12s}
 .ts-conjunto-nombre:focus{border-color:var(--accent)}
-  .ts-step-panel{background:var(--surface2);border:1px solid rgba(255,255,255,.05);border-radius:14px;padding:18px 20px;margin-bottom:14px}
+  .ts-step-panel{background:linear-gradient(180deg,rgba(255,255,255,.02),rgba(255,255,255,.005));backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.05);border-radius:22px;padding:24px;margin-bottom:16px;transition:border-color .2s ease}
+.ts-step-panel:hover{border-color:rgba(255,255,255,.08)}
 .ts-step-hdr{display:flex;align-items:center;gap:10px;margin-bottom:4px}
 .ts-step-num{width:26px;height:26px;border-radius:50%;border:1.5px solid var(--primary-green);color:var(--primary-green);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0}
 .ts-step-title{font-size:14px;font-weight:700;color:var(--text)}
@@ -404,8 +406,9 @@ body.focus-mode #main{margin-left:0}
 .ts-input-wrap{position:relative}
 .ts-input-wrap svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text3);pointer-events:none}
 .ts-input-wrap span.ts-dollar{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:13px;font-weight:600}
-.ts-input-wrap input,.ts-input-wrap select{width:100%;background:#0c0d10;border:1px solid rgba(255,255,255,.06);border-radius:var(--r);padding:11px 12px 11px 34px;font-size:13px;color:var(--text);outline:none;transition:border-color .15s;box-sizing:border-box}
-.ts-input-wrap input:focus,.ts-input-wrap select:focus{border-color:var(--primary-green)}
+.ts-input-wrap input,.ts-input-wrap select{width:100%;background:#0c0d10;border:1px solid rgba(255,255,255,.05);border-radius:16px;padding:14px 14px 14px 36px;font-size:13px;color:var(--text);outline:none;transition:border-color .2s ease,box-shadow .2s ease;box-sizing:border-box}
+.ts-input-wrap input:hover,.ts-input-wrap select:hover{border-color:rgba(255,255,255,.1)}
+.ts-input-wrap input:focus,.ts-input-wrap select:focus{border-color:var(--primary-green);box-shadow:0 0 0 3px rgba(11,185,128,.12)}
 .ts-field-label{font-size:11px;color:var(--text3);margin-bottom:6px;display:block}
 .ts-switch-row{display:flex;align-items:center;justify-content:space-between;gap:10px;background:#0c0d10;border:1px solid rgba(255,255,255,.06);border-radius:var(--r);padding:11px 12px}
 .ts-switch-row-label{font-size:12px;font-weight:600;color:var(--text)}
@@ -419,9 +422,24 @@ body.focus-mode #main{margin-left:0}
 .ts-budget-seg{display:flex;background:#0c0d10;border:1px solid rgba(255,255,255,.06);border-radius:var(--r);padding:3px;gap:3px}
 .ts-budget-seg .ft{flex:1;text-align:center;border-radius:6px;padding:8px 10px;font-size:11.5px;font-weight:600;color:var(--text3);cursor:pointer;transition:all .15s}
 .ts-budget-seg .ft.active{background:var(--primary-green);color:#04150e}
+  .ts-modal-xl{background:rgba(9,10,12,.88) !important;backdrop-filter:blur(24px) saturate(160%);-webkit-backdrop-filter:blur(24px) saturate(160%);border:1px solid rgba(255,255,255,.06) !important;border-radius:26px !important;padding:40px !important;max-width:760px !important;box-shadow:0 32px 80px -16px rgba(0,0,0,.7) !important}
+.ts-modal-hero{margin-bottom:32px}
+.ts-modal-hero-title{font-size:24px;font-weight:800;letter-spacing:-.02em;color:var(--text);margin-bottom:6px}
+.ts-modal-hero-sub{font-size:13px;color:var(--text3)}
+.ts-section-label{display:flex;align-items:center;gap:8px;font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.08em;margin:32px 0 16px}
+.ts-section-label::after{content:'';flex:1;height:1px;background:rgba(255,255,255,.05)}
+.ts-add-conjunto-btn{margin-top:16px;width:100%;display:flex;align-items:center;justify-content:center;gap:8px;background:transparent;border:1px dashed rgba(255,255,255,.12);border-radius:16px;padding:14px;font-size:12.5px;font-weight:600;color:var(--text2);cursor:pointer;transition:all .2s ease}
+.ts-add-conjunto-btn:hover{border-color:var(--primary-green);color:var(--primary-green);background:rgba(11,185,128,.04)}
+.ts-launch-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;background:linear-gradient(180deg,#0ecd8f,#0aa974);border:none;border-radius:18px;padding:16px 24px;cursor:pointer;box-shadow:0 0 32px rgba(11,185,128,.35),0 8px 24px -8px rgba(11,185,128,.5);transition:all .2s ease}
+.ts-launch-btn:hover{box-shadow:0 0 44px rgba(11,185,128,.5),0 10px 28px -8px rgba(11,185,128,.6);transform:translateY(-1px)}
+.ts-launch-btn:active{transform:translateY(0) scale(.99)}
+.ts-launch-btn-label{font-size:14.5px;font-weight:800;color:#04150e;display:flex;align-items:center;gap:8px}
+.ts-launch-btn-sub{font-size:10.5px;font-weight:500;color:rgba(4,21,14,.65)}
+.ts-footer-secondary{display:flex;flex-direction:column;gap:8px}
+@media(max-width:720px){.ts-modal-xl{padding:24px !important}}
   /* Cards de audiencia — nuevo selector visual del bloque .ts-conjunto */
 .ts-audiencia-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin-bottom:12px}
-.ts-audiencia-card{position:relative;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:12px 10px;cursor:pointer;text-align:left;transition:border-color .15s,background .15s,transform .1s}
+.ts-audiencia-card{position:relative;background:#111317;border:1px solid rgba(255,255,255,.05);border-radius:16px;padding:16px 14px;cursor:pointer;text-align:left;transition:all .2s ease}
 .ts-audiencia-card:hover{border-color:rgba(11,185,128,.3);transform:translateY(-1px)}
 .ts-audiencia-card.selected{border-color:var(--primary-green);background:rgba(11,185,128,.08);box-shadow:0 0 14px rgba(11,185,128,.12)}
 .ts-audiencia-check{position:absolute;top:8px;right:8px;width:16px;height:16px;border-radius:50%;background:var(--primary-green);color:#fff;display:none;align-items:center;justify-content:center}
@@ -3262,16 +3280,17 @@ create policy "own" on contacts for all using (auth.uid()=user_id);</div>
 
 <!-- TESTING SANDBOX -->
 <div class="modal-backdrop" id="modal-testing-sandbox">
-  <div class="modal" style="max-width:640px">
-    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:4px">
-      <div class="modal-title" style="margin:0">Lanzar Testeo</div>
-      <button class="btn btn-sm btn-outline" onclick="tsOpenPresetPicker()" style="display:flex;align-items:center;gap:5px;flex-shrink:0">
+  <div class="modal ts-modal-xl">
+    <div class="ts-modal-hero" style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px">
+      <div>
+        <div class="ts-modal-hero-title">Lanzar Testeo</div>
+        <div class="ts-modal-hero-sub">Configurá la campaña y agregá tantos conjuntos y anuncios como necesites.</div>
+      </div>
+      <button class="btn btn-sm btn-outline" onclick="tsOpenPresetPicker()" style="display:flex;align-items:center;gap:6px;flex-shrink:0;border-radius:12px;padding:9px 14px">
         <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><rect x="1" y="2" width="12" height="10" rx="1.3"/><path d="M4 6h6M4 8.5h4"/></svg>
         Usar Preset
       </button>
     </div>
-    <div style="font-size:12px;color:var(--text2);margin-bottom:16px">Configurá la campaña y agregá tantos conjuntos y anuncios como necesites.</div>
-
    <div class="ts-step-panel">
       <div class="ts-step-hdr"><span class="ts-step-num">01</span><span class="ts-step-title">Datos de campaña</span></div>
       <div class="ts-step-sub">Nombre, producto y campaña destino.</div>
@@ -3386,12 +3405,15 @@ create policy "own" on contacts for all using (auth.uid()=user_id);</div>
 
     <div class="divider"></div>
 
-    <div style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">Estructura del testeo</div>
+    <div class="ts-section-label">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+      Estructura del testeo
+    </div>
 
-    <div id="ts-conjuntos-wrap" style="display:flex;flex-direction:column;gap:14px"></div>
+    <div id="ts-conjuntos-wrap" style="display:flex;flex-direction:column;gap:16px"></div>
 
-    <button type="button" class="btn btn-outline" style="margin-top:14px;width:100%;justify-content:center" onclick="tsAddConjunto()">
-      <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M7 1.5v11M1.5 7h11"/></svg>
+    <button type="button" class="ts-add-conjunto-btn" onclick="tsAddConjunto()">
+      <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M7 1.5v11M1.5 7h11"/></svg>
       Agregar Conjunto
     </button>
 
@@ -3401,13 +3423,21 @@ create policy "own" on contacts for all using (auth.uid()=user_id);</div>
       <div class="ts-console-final" id="ts-console-final"></div>
     </div>
 
-    <div class="modal-footer">
-      <button class="btn btn-outline" onclick="closeModal('modal-testing-sandbox')">Cancelar</button>
-      <button class="btn btn-ghost" onclick="tsSaveCurrentAsPreset()" title="Guardar configuración actual como preset">
-        <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M2 2h8l2 2v8a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V2z"/><path d="M9 2v4H5V2M5 8h4"/></svg>
-        Guardar como Preset
+    <div class="modal-footer" style="display:flex;gap:12px;align-items:stretch;border-top:1px solid rgba(255,255,255,.05);margin-top:32px;padding-top:24px">
+      <div class="ts-footer-secondary">
+        <button class="btn btn-outline" style="border-radius:14px;padding:10px 16px" onclick="closeModal('modal-testing-sandbox')">Cancelar</button>
+        <button class="btn btn-ghost" style="border-radius:14px;padding:10px 16px" onclick="tsSaveCurrentAsPreset()" title="Guardar configuración actual como preset">
+          <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M2 2h8l2 2v8a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V2z"/><path d="M9 2v4H5V2M5 8h4"/></svg>
+          Guardar Preset
+        </button>
+      </div>
+      <button class="ts-launch-btn" onclick="tsGenerarTesteo()">
+        <span class="ts-launch-btn-label">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/></svg>
+          Generar Testeo
+        </span>
+        <span class="ts-launch-btn-sub">Revisá la configuración y lanzá</span>
       </button>
-      <button class="btn btn-accent" onclick="tsGenerarTesteo()">Generar Testeo</button>
     </div>
   </div>
 </div>
