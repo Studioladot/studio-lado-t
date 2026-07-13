@@ -4600,9 +4600,10 @@ function selSc(id){selScript=id;renderScripts();const s=scripts.find(x=>x.id===i
 const esc=v=>String(v||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 function renderScEditor(s){
   document.getElementById('sc-editor').innerHTML=`
-  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+ <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
     <input style="font-size:18px;font-weight:700;border:none;outline:none;background:transparent;color:var(--text);flex:1" value="${esc(s.title)}" placeholder="Titulo del guion" oninput="updSc('${s.id}','title',this.value)"/>
     <div style="display:flex;gap:6px">
+      ${s.status==='ganador' ? `<button class="btn btn-sm btn-accent" onclick="openScaleModal('${s.id}')">&#9733; Escalar / Crear Variantes</button>` : ''}
       <button class="btn btn-sm btn-outline" onclick="toggleFocusMode()">&#9974; Modo Enfoque</button>
       <button class="btn btn-sm btn-red" onclick="delSc('${s.id}')">Eliminar</button>
     </div>
@@ -4791,7 +4792,7 @@ function renderBib(){
   const tbl=document.getElementById('bib-tbl');
   if(!filtered.length){tbl.innerHTML=`<tr><td colspan="9" style="text-align:center;color:var(--text2);padding:24px">Sin guiones${bibF!=='all'?' con este estado':''}</td></tr>`;return;}
   tbl.innerHTML=filtered.map(s=>`<tr>
-    <td><span style="font-weight:600;cursor:pointer;color:var(--accent)" onclick="showPage('guiones');selSc('${s.id}')">${s.title||'Sin titulo'}</span></td>
+    <td><span style="font-weight:600;cursor:pointer;color:var(--accent)" onclick="showPage('guiones');selSc('${s.id}')">${s.title||'Sin titulo'}</span>${s.parent_guion_id?`<div style="font-size:10px;color:var(--text3);margin-top:2px">Variante</div>`:''}</td>
     <td>${s.angle||'—'}</td>
     <td>${s.product||'—'}</td>
     <td><span class="badge ${STS_BADGE[s.status]||'b-gray'}">${STS_LBL[s.status]||s.status||'—'}</span></td>
@@ -8481,21 +8482,107 @@ if(isVideo){
 
   // ── REGLAS DE DECISION: Target CPA / Break-Even ROAS ─────────────────────────
 const META_TARGETS_KEY = 'gotix_meta_targets_v1';
+const WINDOW_DAYS = 7;          // ventana de evaluación
+const MIN_DAYS_SOSTENIDO = 4;   // mínimo de días con datos para poder ganar
+const MIN_SPEND_MULT = 3;       // gasto mínimo = target_cpa * 3 (evita "ganador" con 1 venta de suerte)
+const MIN_CONSISTENCIA = 0.7;   // 70% de los días con datos deben cumplir CPA<=target
 
-function loadMetaTargets() {
-  try {
-    const saved = JSON.parse(localStorage.getItem(META_TARGETS_KEY));
-    if(saved && typeof saved === 'object') {
-      return {
-        default: { targetCpa: +saved.default?.targetCpa || 18, breakEvenRoas: +saved.default?.breakEvenRoas || 2 },
-        perCampaign: saved.perCampaign || {}
-      };
-    }
-  } catch(e) {}
-  return { default: { targetCpa: 18, breakEvenRoas: 2 }, perCampaign: {} };
+async function fetchAdTargets(){
+  if(!me) return { targetCpa: 18, targetRoas: 2 };
+  const { data } = await db.from('ad_targets').select('*').eq('user_id', me.id).maybeSingle();
+  if(data) return { targetCpa: +data.target_cpa, targetRoas: +data.target_roas };
+  // fallback retrocompatible mientras se migra el localStorage
+  const legacy = loadMetaTargets();
+  return { targetCpa: +legacy.default.targetCpa, targetRoas: +legacy.default.breakEvenRoas };
+}
+function loadMetaTargets(){
+  try{ const saved=JSON.parse(localStorage.getItem(META_TARGETS_KEY)||'{}');
+    return { default:{ targetCpa:+saved.default?.targetCpa||18, breakEvenRoas:+saved.default?.breakEvenRoas||2 }, perCampaign: saved.perCampaign||{} };
+  }catch{ return { default:{targetCpa:18,breakEvenRoas:2}, perCampaign:{} }; }
 }
 let metaTargets = loadMetaTargets();
 function saveMetaTargets() { localStorage.setItem(META_TARGETS_KEY, JSON.stringify(metaTargets)); }
+
+// ── MOTOR DE DECISIÓN AUTOMATIZADO ──────────────────────────────────────────
+async function evaluateScriptWinner(scriptId){
+  const { targetCpa } = await fetchAdTargets();
+
+  const since = new Date(); since.setDate(since.getDate() - WINDOW_DAYS);
+  const { data: rows, error } = await db.from('metrics')
+    .select('spend,purchases,cpa,snapshot_date')
+    .eq('script_id', scriptId)
+    .gte('snapshot_date', since.toISOString().split('T')[0])
+    .order('snapshot_date', { ascending: true });
+
+  if(error || !rows || !rows.length){
+    return { status: 'test', reason: 'sin_datos_en_ventana' };
+  }
+
+  // Días únicos con datos (puede haber >1 snapshot por día)
+  const porDia = {};
+  rows.forEach(r=>{
+    const d = r.snapshot_date;
+    if(!porDia[d]) porDia[d] = { spend:0, purchases:0 };
+    porDia[d].spend += (+r.spend||0);
+    porDia[d].purchases += (+r.purchases||0);
+  });
+  const dias = Object.values(porDia);
+  const diasConDatos = dias.length;
+
+  const spendTotal = dias.reduce((a,d)=>a+d.spend,0);
+  const purchasesTotal = dias.reduce((a,d)=>a+d.purchases,0);
+  const cpaPonderado = purchasesTotal>0 ? spendTotal/purchasesTotal : Infinity;
+
+  const umbralGasto = targetCpa * MIN_SPEND_MULT;
+
+  // ¿Inactivo en Meta? Sin gasto en los últimos 2 días => se asume pausado en la plataforma
+  const ultimoDia = rows[rows.length-1].snapshot_date;
+  const diasSinActividad = Math.floor((Date.now() - new Date(ultimoDia).getTime()) / 86400000);
+  if(diasSinActividad > 2){
+    return { status: 'pausado', reason: 'inactivo_en_meta', cpaPonderado, spendTotal };
+  }
+
+  // Todavía no hay suficiente data/gasto para decidir
+  if(diasConDatos < MIN_DAYS_SOSTENIDO || spendTotal < umbralGasto){
+    return { status: 'test', reason: 'insuficiente_data_o_gasto', cpaPonderado, spendTotal, diasConDatos };
+  }
+
+  // CPA por encima del target de forma agregada -> perdedor, aunque el ROAS se vea bien
+  if(cpaPonderado > targetCpa){
+    return { status: 'pausado', reason: 'cpa_por_encima_del_target', cpaPonderado, spendTotal };
+  }
+
+  // Consistencia: % de días individuales que cumplieron el target
+  const diasCumplidos = dias.filter(d => d.purchases>0 && (d.spend/d.purchases) <= targetCpa).length;
+  const consistencia = diasCumplidos / diasConDatos;
+
+  if(consistencia >= MIN_CONSISTENCIA){
+    return { status: 'ganador', reason: 'cpa_rentable_sostenido', cpaPonderado, spendTotal, consistencia };
+  }
+  return { status: 'test', reason: 'rentable_pero_inconsistente', cpaPonderado, spendTotal, consistencia };
+}
+
+// Corre la evaluación sobre un guion y persiste el estado si cambió
+async function runWinnerDetection(scriptId){
+  const s = scripts.find(x=>x.id===scriptId); if(!s) return;
+  const result = await evaluateScriptWinner(scriptId);
+  if(result.status !== s.status && s.status !== 'borrador' && s.status !== 'activo'){
+    // no pisa 'borrador' (idea sin lanzar) ni fuerza 'activo' manual; solo mueve entre test/ganador/pausado
+  }
+  if(['test','ganador','pausado'].includes(result.status) && result.status !== s.status){
+    await db.from('scripts').update({ status: result.status, updated_at: new Date().toISOString() }).eq('id', scriptId);
+    s.status = result.status;
+    renderScripts(); renderBib();
+  }
+  return result;
+}
+
+// Corre el motor sobre toda la biblioteca (llamalo desde un botón "Actualizar" o desde el cron)
+async function runWinnerDetectionEngine(){
+  const conDatos = scripts.filter(s => s.status==='test' || s.status==='ganador' || s.status==='pausado');
+  for(const s of conDatos){ await runWinnerDetection(s.id); }
+  toast('Motor de decisión actualizado');
+}
 
 function getMetaTargetsFor(campaignId) {
   const ov = metaTargets.perCampaign[campaignId];
@@ -8522,6 +8609,34 @@ function metaStrategicStatus(ins, campaignId) {
 function metaStatusBadgeHtml(ins, campaignId, campaignName) {
   const { label, cls } = metaStrategicStatus(ins, campaignId);
   return `<span class="badge ${cls}" style="cursor:pointer" onclick="event.stopPropagation();openMetaRuleOverride('${campaignId}','${(campaignName||'').replace(/'/g,"\\'")}')" title="Click para ajustar el objetivo de esta campana">${label}</span>`;
+}
+  function openScaleModal(scriptId){
+  const s = scripts.find(x=>x.id===scriptId); if(!s) return;
+  document.getElementById('scale-parent-id').value = scriptId;
+  document.getElementById('scale-parent-title').textContent = s.title;
+  document.getElementById('scale-new-hook').value = '';
+  openModal('modal-scale-variant');
+}
+async function createVariant(){
+  const parentId = document.getElementById('scale-parent-id').value;
+  const parent = scripts.find(x=>x.id===parentId); if(!parent) return;
+  const newHook = document.getElementById('scale-new-hook').value.trim();
+  const { data, error } = await db.from('scripts').insert([{
+    user_id: me.id,
+    title: parent.title + ' (variante)',
+    angle: parent.angle,
+    product: parent.product,
+    hook: newHook || parent.hook,
+    body: parent.body,
+    cta: parent.cta,
+    copy_feed: parent.copy_feed,
+    status: 'borrador',
+    parent_guion_id: parentId          // trazabilidad al ganador original
+  }]).select();
+  if(error){ toast('Error: '+error.message); return; }
+  scripts.unshift(data[0]);
+  renderScripts(); renderBib(); closeModal('modal-scale-variant');
+  toast('Variante creada — ID independiente, mide su propio rendimiento en Meta');
 }
 // ── DIAGNOSTICO ESTRATEGICO (Conjuntos y Anuncios) ────────────────────────────
 const META_DIAG_THRESHOLDS = {
