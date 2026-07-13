@@ -414,7 +414,7 @@ body.focus-mode #main{margin-left:0}
 .ts-tz-select{background:#F0EFEC;border:1px solid rgba(26,26,24,.06);border-radius:12px;padding:9px 14px;font-size:12px;color:var(--text);outline:none}
 
 /* Schedule: fecha + hora + recurrente en fila */
-.ts-schedule-row{display:grid;grid-template-columns:1fr 1fr auto;gap:16px;align-items:stretch}
+.ts-schedule-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:stretch}
 .ts-recurring-box{display:flex;align-items:center;gap:10px;background:#F0EFEC;border:1px solid rgba(26,26,24,.05);border-radius:16px;padding:14px 18px;min-width:230px}
 
 /* Ad Sets: cards mas grandes, fieles a la imagen */
@@ -488,7 +488,7 @@ body.focus-mode #main{margin-left:0}
 .ts-switch input:checked ~ .ts-switch-thumb{transform:translateX(16px)}
 .ts-budget-seg{display:flex;background:#F0EFEC;border:1px solid rgba(26,26,24,.06);border-radius:var(--r);padding:3px;gap:3px}
 .ts-budget-seg .ft{flex:1;text-align:center;border-radius:6px;padding:8px 10px;font-size:11.5px;font-weight:600;color:var(--text3);cursor:pointer;transition:all .15s}
-.ts-budget-seg .ft.active{background:var(--primary-green);color:#04150e}
+.ts-budget-seg .ft.active{background:var(--primary-green);color:#FFFFFF}
   .ts-modal-xl{background:rgba(252,252,251,.9) !important;backdrop-filter:blur(24px) saturate(160%);-webkit-backdrop-filter:blur(24px) saturate(160%);border:1px solid rgba(26,26,24,.06) !important;border-radius:26px !important;padding:40px !important;max-width:760px !important;box-shadow:0 32px 80px -16px rgba(0,0,0,.11) !important}
 .ts-modal-hero{margin-bottom:32px}
 .ts-modal-hero-title{font-size:24px;font-weight:800;letter-spacing:-.02em;color:var(--text);margin-bottom:6px}
@@ -3459,12 +3459,6 @@ create policy "own" on contacts for all using (auth.uid()=user_id);</div>
             <input id="ts-schedule-time" type="time" oninput="tsSyncSchedule()"/>
           </div>
         </div>
-        <div class="ts-recurring-box">
-          <span class="ts-switch"><input type="checkbox" id="ts-recurring-visual"/><span class="ts-switch-track"></span><span class="ts-switch-thumb"></span></span>
-          <span>
-            <span class="ts-switch-row-label">Recurring Campaign</span>
-            <span class="ts-switch-row-sub" style="display:block">Run continuously</span>
-          </span>
         </div>
       </div>
       <input type="hidden" id="ts-camp-schedule"/>
