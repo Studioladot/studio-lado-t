@@ -467,8 +467,11 @@ body.focus-mode #main{margin-left:0}
 .ts-step-title{font-size:14px;font-weight:700;color:var(--text)}
 .ts-step-sub{font-size:11px;color:var(--text3);margin:2px 0 16px 36px}
 .ts-input-wrap{position:relative}
-.ts-input-wrap svg{position:absolute;left:12px;bottom:15px;color:var(--text3);pointer-events:none}
-.ts-input-wrap span.ts-dollar{position:absolute;left:12px;bottom:13px;color:var(--text3);font-size:13px;font-weight:600}
+.ts-input-wrap svg{position:absolute;left:12px;top:34px;color:var(--text3);pointer-events:none}
+.ts-input-wrap span.ts-dollar{position:absolute;left:12px;top:33px;color:var(--text3);font-size:13px;font-weight:600}
+.ts-input-wrap input[type="date"]::-webkit-calendar-picker-indicator,
+.ts-input-wrap input[type="time"]::-webkit-calendar-picker-indicator,
+.ts-input-wrap input[type="datetime-local"]::-webkit-calendar-picker-indicator{opacity:0;cursor:pointer}
 .ts-input-wrap input,.ts-input-wrap select{width:100%;background:#F0EFEC;border:1px solid rgba(26,26,24,.05);border-radius:16px;padding:14px 14px 14px 36px;font-size:13px;color:var(--text);outline:none;transition:border-color .2s ease,box-shadow .2s ease;box-sizing:border-box}
 .ts-input-wrap input:hover,.ts-input-wrap select:hover{border-color:rgba(26,26,24,.1)}
 .ts-input-wrap input:focus,.ts-input-wrap select:focus{border-color:var(--primary-green);box-shadow:0 0 0 3px rgba(45,91,138,.12)}
