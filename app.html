@@ -8735,23 +8735,49 @@ function clearMetaRuleOverride() {
   refreshMetaStrategicViews();
   toast('Vuelto al default de cuenta');
 }
-function saveMetaDefaultTargets() {
+async function saveMetaDefaultTargets() {
   const cpa  = +document.getElementById('cfg-target-cpa').value     || metaTargets.default.targetCpa;
   const roas = +document.getElementById('cfg-breakeven-roas').value || metaTargets.default.breakEvenRoas;
   metaTargets.default = { targetCpa: cpa, breakEvenRoas: roas };
-  saveMetaTargets();
+  saveMetaTargets(); // localStorage: mantiene compatibilidad mientras dure la migración
+
+  // fuente de verdad real: ad_targets en Supabase (accesible desde el cron / Edge Function)
+  if(me){
+    const { error } = await db.from('ad_targets').upsert({
+      user_id: me.id,
+      target_cpa: cpa,
+      target_roas: roas,
+      updated_at: new Date().toISOString()
+    }, { onConflict: 'user_id' });
+    if(error) toast('Guardado local, pero falló Supabase: '+error.message);
+  }
+
   closeModal('modal-meta-default-targets');
   refreshMetaStrategicViews();
   toast('Reglas por defecto guardadas');
 }
-function populateMetaDefaultTargetsInputs() {
+async function populateMetaDefaultTargetsInputs() {
+  let cpa = metaTargets.default.targetCpa;
+  let roas = metaTargets.default.breakEvenRoas;
+
+  if(me){
+    const { data } = await db.from('ad_targets').select('*').eq('user_id', me.id).maybeSingle();
+    if(data){
+      cpa = +data.target_cpa;
+      roas = +data.target_roas;
+      // sincroniza el localStorage viejo con lo que hay en Supabase
+      metaTargets.default = { targetCpa: cpa, breakEvenRoas: roas };
+      saveMetaTargets();
+    }
+  }
+
   const cpaEl  = document.getElementById('cfg-target-cpa');
   const roasEl = document.getElementById('cfg-breakeven-roas');
-  if(cpaEl)  cpaEl.value  = metaTargets.default.targetCpa;
-  if(roasEl) roasEl.value = metaTargets.default.breakEvenRoas;
+  if(cpaEl)  cpaEl.value  = cpa;
+  if(roasEl) roasEl.value = roas;
 }
-function openMetaDefaultTargetsModal() {
-  populateMetaDefaultTargetsInputs();
+async function openMetaDefaultTargetsModal() {
+  await populateMetaDefaultTargetsInputs();
   openModal('modal-meta-default-targets');
 }
 const GRAPH = 'https://graph.facebook.com/v19.0';
