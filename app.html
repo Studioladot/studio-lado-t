@@ -16,9 +16,9 @@
   --border2:rgba(26,26,24,.14);
 
   /* ── Texto ── */
-  --text:#1A1A18;
-  --text2:#5E5E5A;
-  --text3:#969692;
+  --text:#101828;
+  --text2:#344054;
+  --text3:#667085;
 
   /* ── PRIMARY: acero #2D5B8A — fuente única de verdad ── */
   --primary-green:#2D5B8A;
@@ -9083,7 +9083,7 @@ function renderCampaigns() {
    return `<tr style="cursor:pointer;${rowAccent}" onclick="loadAdsets('${c.id}','${(c.name||'').replace(/'/g,"\'")}')">
       <td onclick="event.stopPropagation()"><input type="checkbox" class="ts-sel-chk" onchange="tsToggleSelect('campaign','${c.id}','${(c.name||'').replace(/'/g,"\\'")}',this)"></td>
       <td><div style="font-weight:600;font-size:13px;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${c.name}">${c.name}</div>
-          <div style="font-size:10px;color:var(--text3);margin-top:1px">${c.objective||''}</div></td>
+          <div style="<div style="font-size:11px;color:var(--text3);margin-top:1px">${c.objective||''}</div></td></div></td>
       <td>${metaStatusCellHtml(c.id, c.effective_status||c.status, 'campaign', ins.spend)}</td>
       ${metricTds}
       <td>
