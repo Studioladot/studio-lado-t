@@ -11633,6 +11633,11 @@ function renderControlContenido() {
   // Posts en el rango seleccionado
   const semana = publicadas.filter(p => p.date >= fmtD(lunesD) && p.date <= fmtD(domingoD));
   const postsSem = semana.length;
+  const pct = Math.min(100, Math.round((postsSem/meta)*100));
+
+  // Posts este mes
+  const mesActual = hoy.toISOString().substring(0,7);
+  const mesPosts = publicadas.filter(p => (p.date||'').startsWith(mesActual));
 
   document.getElementById('cont-posts-semana').textContent = postsSem;
   const pb = document.getElementById('cont-progress-bar');
