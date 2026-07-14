@@ -2483,8 +2483,20 @@ body.focus-mode #main{margin-left:0}
   <div class="page-hdr">
     <div><div class="page-title"><svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-0.15em"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/></svg> Organico</div>
     <div class="page-sub">Planificacion de contenido organico — campanas, piezas y calendario</div></div>
-    <button class="btn btn-accent" onclick="openModal('modal-campana')">+ Nueva campana</button>
+ <button class="btn btn-accent" onclick="openModal('modal-campana')">+ Nueva campana</button>
   </div>
+
+  <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:16px">
+    <select id="camp-filter-estado" onchange="campFilterChange()" style="background:#FFFFFF;border:1px solid #E4E7EC;border-radius:6px;padding:7px 10px;font-size:12px;color:#4A4F57;outline:none">
+      <option value="all">Todas</option>
+      <option value="activa">Activas</option>
+      <option value="apagada">Apagadas</option>
+    </select>
+    <input type="date" id="camp-filter-desde" onchange="campFilterChange()" style="background:#FFFFFF;border:1px solid #E4E7EC;border-radius:6px;padding:7px 10px;font-size:12px;color:#4A4F57;outline:none"/>
+    <span style="font-size:12px;color:#8A8F98">a</span>
+    <input type="date" id="camp-filter-hasta" onchange="campFilterChange()" style="background:#FFFFFF;border:1px solid #E4E7EC;border-radius:6px;padding:7px 10px;font-size:12px;color:#4A4F57;outline:none"/>
+  </div>
+
   <div id="contentCamps-list">
     <div class="empty">
       <div class="empty-icon"><svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-0.15em"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div>
@@ -12056,13 +12068,44 @@ async function loadCampanas() {
 }
 
 // ── RENDER LISTA DE CAMPANAS ──────────────────────────────────────────────────
+let campFilterEstado = 'all', campFilterDesde = '', campFilterHasta = '';
+
+function campFilterChange(){
+  campFilterEstado = document.getElementById('camp-filter-estado')?.value || 'all';
+  campFilterDesde  = document.getElementById('camp-filter-desde')?.value || '';
+  campFilterHasta  = document.getElementById('camp-filter-hasta')?.value || '';
+  renderCampsList();
+}
+
 function renderCampsList() {
   const el = document.getElementById('contentCamps-list'); if(!el) return;
+
+  // Filtrado
+  let visibles = contentCamps.filter(camp => {
+    if(campFilterEstado==='activa' && camp.status!=='activa') return false;
+    if(campFilterEstado==='apagada' && camp.status==='activa') return false;
+    if(campFilterDesde && camp.fecha_inicio && camp.fecha_inicio < campFilterDesde) return false;
+    if(campFilterHasta && camp.fecha_inicio && camp.fecha_inicio > campFilterHasta) return false;
+    return true;
+  });
+
+  // Orden: Activas primero (mas reciente primero), despues el resto (mas reciente primero)
+  visibles = visibles.sort((a,b) => {
+    const aActiva = a.status==='activa' ? 0 : 1;
+    const bActiva = b.status==='activa' ? 0 : 1;
+    if(aActiva !== bActiva) return aActiva - bActiva;
+    return (b.fecha_inicio||'').localeCompare(a.fecha_inicio||'');
+  });
+
   if(!contentCamps.length) {
     el.innerHTML = '<div class="empty"><div class="empty-icon"><svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-0.15em"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div><div class="empty-msg">Sin campanas todavia</div><div class="empty-sub" style="margin-bottom:16px">Crea tu primera campana de contenido</div><button class="btn btn-accent" onclick="openModal(\'modal-campana\')">+ Nueva campana</button></div>';
     return;
   }
-  el.innerHTML = contentCamps.map(camp => {
+  if(!visibles.length) {
+    el.innerHTML = '<div class="empty"><div class="empty-msg">Sin campanas con estos filtros</div></div>';
+    return;
+  }
+  el.innerHTML = visibles.map(camp => {
     const pz = contentPiezas.filter(p=>p.campaign_id===camp.id);
     const done = pz.filter(p=>p.status==='publicado').length;
     const pct  = pz.length>0?Math.round((done/pz.length)*100):0;
