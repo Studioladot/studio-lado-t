@@ -122,6 +122,21 @@ body.dark-mode .snap-detail-panel{
   background:rgba(24,28,37,.92);
   border-color:rgba(255,255,255,.09);
 }
+body.dark-mode .modal{
+  background:var(--surface);
+  border-color:rgba(255,255,255,.1);
+}
+body.dark-mode .ms-mode-btn,
+body.dark-mode .ms-adv-toggle{
+  background:var(--surface2);
+  border-color:var(--border2);
+}
+body.dark-mode .ms-preset-list-wrap,
+body.dark-mode .bc,
+body.dark-mode #meta-insights-panel,
+body.dark-mode .inv-prod-thumb{
+  border-color:var(--border2);
+}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.55;min-height:100vh}
 #main{position:relative}
 #main::before{content:'';position:fixed;inset:0;background:var(--atmosphere);pointer-events:none;z-index:0}
@@ -2576,16 +2591,16 @@ body.focus-mode #main{margin-left:0}
   </div>
 
   <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:16px">
-    <select id="camp-filter-estado" onchange="campFilterChange()" style="background:#FFFFFF;border:1px solid #E4E7EC;border-radius:6px;padding:7px 10px;font-size:12px;color:#4A4F57;outline:none">
+   <select id="camp-filter-estado" onchange="campFilterChange()" style="background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:7px 10px;font-size:12px;color:var(--text2);outline:none">
       <option value="all">Todas</option>
       <option value="activa">Activas</option>
       <option value="apagada">Apagadas</option>
     </select>
-    <input type="date" id="camp-filter-desde" onchange="campFilterChange()" style="background:#FFFFFF;border:1px solid #E4E7EC;border-radius:6px;padding:7px 10px;font-size:12px;color:#4A4F57;outline:none"/>
-    <span style="font-size:12px;color:#8A8F98">a</span>
-    <input type="date" id="camp-filter-hasta" onchange="campFilterChange()" style="background:#FFFFFF;border:1px solid #E4E7EC;border-radius:6px;padding:7px 10px;font-size:12px;color:#4A4F57;outline:none"/>
-    <span style="font-size:12px;color:#8A8F98">·</span>
-    <select id="camp-sort-by" onchange="campFilterChange()" style="background:#FFFFFF;border:1px solid #E4E7EC;border-radius:6px;padding:7px 10px;font-size:12px;color:#4A4F57;outline:none">
+    <input type="date" id="camp-filter-desde" onchange="campFilterChange()" style="background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:7px 10px;font-size:12px;color:var(--text2);outline:none"/>
+    <span style="font-size:12px;color:var(--text3)">a</span>
+    <input type="date" id="camp-filter-hasta" onchange="campFilterChange()" style="background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:7px 10px;font-size:12px;color:var(--text2);outline:none"/>
+    <span style="font-size:12px;color:var(--text3)">·</span>
+    <select id="camp-sort-by" onchange="campFilterChange()" style="background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:7px 10px;font-size:12px;color:var(--text2);outline:none">
       <option value="fecha_inicio">Ordenar por fecha de inicio</option>
       <option value="created_at">Ordenar por fecha de creacion</option>
     </select>
