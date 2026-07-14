@@ -2330,7 +2330,16 @@ body.focus-mode #main{margin-left:0}
   </div>
 
   <!-- CONTROL TAB -->
-  <div id="cont-tab-control">
+ <div id="cont-tab-control">
+
+    <!-- Selector de rango de fechas -->
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:14px">
+      <input type="date" id="cont-range-desde" class="fg" style="margin:0;min-width:0;border:0.5px solid var(--border);border-radius:var(--r);padding:7px 10px;font-size:12px;background:var(--surface);color:var(--text)"/>
+      <span style="font-size:12px;color:var(--text2)">&#8594;</span>
+      <input type="date" id="cont-range-hasta" class="fg" style="margin:0;min-width:0;border:0.5px solid var(--border);border-radius:var(--r);padding:7px 10px;font-size:12px;background:var(--surface);color:var(--text)"/>
+      <button class="btn btn-sm btn-accent" onclick="contApplyRange()">Aplicar</button>
+      <button class="btn btn-sm btn-outline" onclick="contResetRange()">Esta semana</button>
+    </div>
 
     <!-- Hero semanal -->
     <div id="cont-hero" style="border-radius:var(--rl);padding:22px 26px;margin-bottom:14px;color:var(--text);background:var(--surface2);border:1px solid var(--border)">
@@ -11538,7 +11547,8 @@ function getUnifiedContentItems() {
     id: p.id, source: 'manual', campaignName: '', campaignColor: '',
     status: p.status, pzStatus: null,
     date: p.date, platform: p.platform, format: p.format,
-    caption: p.caption, notes: p.notes,
+    caption: p.caption, notes: p.notes, titulo: p.title || '',
+    media_url: p.media_url||'', media_type: p.media_type||'', turno: p.turno||'',
   }));
   const fromPiezas = (contentPiezas||[]).map(p => {
     const camp = (contentCamps||[]).find(c => c.id === p.campaign_id);
@@ -11556,28 +11566,47 @@ function getUnifiedContentItems() {
   return [...fromPosts, ...fromPiezas];
 }
 
+let contRangeOverride = null; // {desde, hasta} en formato YYYY-MM-DD, o null = "esta semana"
+
+function contApplyRange(){
+  const desde = document.getElementById('cont-range-desde')?.value;
+  const hasta = document.getElementById('cont-range-hasta')?.value;
+  if(!desde || !hasta){ toast('Elegi ambas fechas'); return; }
+  if(desde > hasta){ toast('La fecha "desde" no puede ser mayor a "hasta"'); return; }
+  contRangeOverride = { desde, hasta };
+  renderControlContenido();
+}
+function contResetRange(){
+  contRangeOverride = null;
+  const d1=document.getElementById('cont-range-desde'), d2=document.getElementById('cont-range-hasta');
+  if(d1) d1.value=''; if(d2) d2.value='';
+  renderControlContenido();
+}
+
 function renderControlContenido() {
   const meta = getContMeta();
   const inp = document.getElementById('cont-meta-input'); if(inp) inp.value = meta;
   const metaEl = document.getElementById('cont-meta-semana'); if(metaEl) metaEl.textContent = meta;
 
   const hoy = new Date();
-  // Inicio de la semana (lunes)
-  const diaSem = hoy.getDay() === 0 ? 6 : hoy.getDay()-1;
-  const lunesD = new Date(hoy); lunesD.setDate(hoy.getDate()-diaSem); lunesD.setHours(0,0,0,0);
-  const domingoD = new Date(lunesD); domingoD.setDate(lunesD.getDate()+6);
-
   const fmtD = d => d.toISOString().split('T')[0];
+
+  let lunesD, domingoD;
+  if(contRangeOverride){
+    lunesD = new Date(contRangeOverride.desde+'T00:00:00');
+    domingoD = new Date(contRangeOverride.hasta+'T00:00:00');
+  } else {
+    // Inicio de la semana (lunes)
+    const diaSem = hoy.getDay() === 0 ? 6 : hoy.getDay()-1;
+    lunesD = new Date(hoy); lunesD.setDate(hoy.getDate()-diaSem); lunesD.setHours(0,0,0,0);
+    domingoD = new Date(lunesD); domingoD.setDate(lunesD.getDate()+6);
+  }
+
   const publicadas = getUnifiedContentItems().filter(p => p.status==='publicado' && p.date);
 
-  // Posts esta semana
+  // Posts en el rango seleccionado
   const semana = publicadas.filter(p => p.date >= fmtD(lunesD) && p.date <= fmtD(domingoD));
   const postsSem = semana.length;
-  const pct = Math.min(100, Math.round((postsSem/meta)*100));
-
-  // Posts este mes
-  const mesActual = hoy.toISOString().substring(0,7);
-  const mesPosts = publicadas.filter(p => (p.date||'').startsWith(mesActual));
 
   document.getElementById('cont-posts-semana').textContent = postsSem;
   const pb = document.getElementById('cont-progress-bar');
@@ -11587,7 +11616,7 @@ function renderControlContenido() {
 
   // Mensajes de motivación
   const hoyLabel = lunesD.toLocaleDateString('es-AR',{day:'numeric',month:'short'})+' – '+domingoD.toLocaleDateString('es-AR',{day:'numeric',month:'short'});
-  document.getElementById('cont-semana-label').textContent = 'ESTA SEMANA · '+hoyLabel.toUpperCase();
+  document.getElementById('cont-semana-label').textContent = (contRangeOverride?'RANGO SELECCIONADO':'ESTA SEMANA')+' · '+hoyLabel.toUpperCase();
   const hero = document.getElementById('cont-hero');
   const motEl = document.getElementById('cont-motivacion');
   const msgs = {
@@ -11688,9 +11717,9 @@ const toggleFn = isCamp ? `cyclePiezaStatus('${p.id}')` : `togglePostStatus('${p
     const editFn   = isCamp ? `openViewPieza('${p.id}')` : `openEditPost('${p.id}')`;
     return `
     <div style="background:var(--surface);border:0.5px solid var(--border);border-radius:var(--rl);overflow:hidden;transition:border-color .15s" onmouseover="this.style.borderColor='var(--border2)'" onmouseout="this.style.borderColor='var(--border)'">
-      ${p.media_url?(p.media_type==='video'
-        ? `<video src="${p.media_url}" style="width:100%;height:140px;object-fit:cover;background:#000" muted></video>`
-        : `<img src="${p.media_url}" style="width:100%;height:140px;object-fit:cover" alt=""/>`):''}
+    ${p.media_url?(p.media_type==='video'
+        ? `<video src="${p.media_url}" onclick="event.stopPropagation();openMediaLightbox('${p.media_url}','video')" style="width:100%;height:140px;object-fit:cover;background:#000;cursor:pointer" muted title="Tocar para ampliar"></video>`
+        : `<img src="${p.media_url}" onclick="event.stopPropagation();openMediaLightbox('${p.media_url}','image')" style="width:100%;height:140px;object-fit:cover;cursor:pointer" alt="" title="Tocar para ampliar"/>`):''}
       <div style="padding:14px">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
         <div style="display:flex;gap:5px;flex-wrap:wrap">
@@ -11752,17 +11781,17 @@ async function togglePostStatus(id, current){
 
 const mediaList = (isCamp ? contentPiezas.find(x=>x.id===id) : posts.find(x=>String(x.id)===String(id)))?.media_urls;
   const mediaEl = document.getElementById('ver-item-media');
-  if(Array.isArray(mediaList) && mediaList.length > 1){
+ if(Array.isArray(mediaList) && mediaList.length > 1){
     mediaEl.innerHTML = `<div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:4px">${mediaList.map(m=>
       m.type === 'video'
-        ? `<video src="${m.url}" controls style="height:180px;border-radius:var(--r);background:#000;flex-shrink:0"></video>`
-        : `<img src="${m.url}" style="height:180px;border-radius:var(--r);object-fit:cover;flex-shrink:0"/>`
+        ? `<video src="${m.url}" onclick="openMediaLightbox('${m.url}','video')" style="height:180px;border-radius:var(--r);background:#000;flex-shrink:0;cursor:pointer" title="Tocar para ampliar"></video>`
+        : `<img src="${m.url}" onclick="openMediaLightbox('${m.url}','image')" style="height:180px;border-radius:var(--r);object-fit:cover;flex-shrink:0;cursor:pointer" title="Tocar para ampliar"/>`
     ).join('')}</div>`;
   } else {
     mediaEl.innerHTML = media_url
       ? (media_type === 'video'
-          ? `<video src="${media_url}" controls style="width:100%;max-height:240px;border-radius:var(--r);background:#000"></video>`
-          : `<img src="${media_url}" style="width:100%;max-height:240px;object-fit:contain;border-radius:var(--r)"/>`)
+          ? `<video src="${media_url}" onclick="openMediaLightbox('${media_url}','video')" style="width:100%;max-height:240px;border-radius:var(--r);background:#000;cursor:pointer" title="Tocar para ampliar"></video>`
+          : `<img src="${media_url}" onclick="openMediaLightbox('${media_url}','image')" style="width:100%;max-height:240px;object-fit:contain;border-radius:var(--r);cursor:pointer" title="Tocar para ampliar"/>`)
       : '';
   }
   openModal('modal-ver-item');
@@ -12051,8 +12080,8 @@ function renderCampsList() {
               style="width:26px;height:26px;border-radius:50%;border:2px solid ${PZ_COLOR[p.status]};background:${p.status==='publicado'?PZ_COLOR[p.status]:'transparent'};color:${p.status==='publicado'?'#fff':PZ_COLOR[p.status]};cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0">
               ${PZ_ICON[p.status]||PZ_ICON.pendiente}
             </button>
-            ${p.media_url?(p.media_type==='video'?`<div onclick="event.stopPropagation();window.open('${p.media_url}','_blank')" style="width:34px;height:34px;border-radius:6px;background:var(--text);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;font-size:13px;color:#fff" title="Ver video de referencia">&#9654;</div>`:`<img src="${p.media_url}" onclick="event.stopPropagation();window.open('${p.media_url}','_blank')" style="width:34px;height:34px;border-radius:6px;object-fit:cover;cursor:pointer;flex-shrink:0" title="Ver foto de referencia"/>`):''}
-            <div onclick="openViewPieza('${p.id}')" style="flex:1;min-width:0;cursor:pointer" title="Click para ver y editar">
+${p.media_url?(p.media_type==='video'?`<div onclick="event.stopPropagation();openMediaLightbox('${p.media_url}','video')" style="width:34px;height:34px;border-radius:6px;background:var(--text);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;font-size:13px;color:#fff" title="Ver video de referencia">&#9654;</div>`:`<img src="${p.media_url}" onclick="event.stopPropagation();openMediaLightbox('${p.media_url}','image')" style="width:34px;height:34px;border-radius:6px;object-fit:cover;cursor:pointer;flex-shrink:0" title="Ver foto de referencia"/>`):''} 
+<div onclick="openViewPieza('${p.id}')" style="flex:1;min-width:0;cursor:pointer" title="Click para ver y editar">
               <span style="font-size:13px;font-weight:${p.status==='publicado'?'400':'600'};${p.status==='publicado'?'text-decoration:line-through;color:var(--text2)':''}">${p.titulo}</span>
               ${p.turno?`<span class="badge" style="background:${TURNO_COLOR[p.turno]}22;color:${TURNO_COLOR[p.turno]};font-size:9px;margin-left:5px;display:inline-flex;align-items:center;gap:3px">${TURNO_ICON[p.turno]||''} ${p.turno}</span>`:''}
               <span class="badge" style="background:var(--surface2);border:1px solid var(--border);color:var(--text2);font-size:9px;margin-left:3px">${p.formato}</span>
@@ -12168,6 +12197,14 @@ async function uploadMultipleMedia(files) {
     if(uploaded) results.push(uploaded);
   }
   return results;
+}
+function openMediaLightbox(url, type){
+  if(!url) return;
+  const content = document.getElementById('lightbox-media-content');
+  content.innerHTML = type === 'video'
+    ? `<video src="${url}" controls autoplay style="max-width:90vw;max-height:80vh;border-radius:var(--r);background:#000"></video>`
+    : `<img src="${url}" style="max-width:90vw;max-height:80vh;object-fit:contain;border-radius:var(--r)"/>`;
+  openModal('modal-media-lightbox');
 }
 
 async function savePieza(){
@@ -12410,10 +12447,15 @@ function renderCalCont(){
     const fd=`${year}-${String(month).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
     const esHoy=d===hoy.getDate()&&month===hoy.getMonth()+1&&year===hoy.getFullYear();
 
-    const cell=document.createElement('div');
+   const cell=document.createElement('div');
     cell.onclick=()=>openDiaPiezas(fd);
-    cell.title=`Ver publicaciones del ${d}/${month}`;
-    cell.style.cssText=`background:var(--surface);padding:5px;min-height:82px;cursor:pointer;transition:background .12s;overflow:hidden;box-sizing:border-box`;
+
+    // Campana activa en este dia (borde superior sutil, no pisa el resto de la celda)
+    const campActiva = (contentCamps||[]).find(c => c.fecha_inicio && c.fecha_fin && fd >= c.fecha_inicio && fd <= c.fecha_fin);
+    const campBorder = campActiva ? `border-top:3px solid ${campActiva.color||'var(--accent)'};` : '';
+
+    cell.title = campActiva ? `${campActiva.nombre} · Ver publicaciones del ${d}/${month}` : `Ver publicaciones del ${d}/${month}`;
+    cell.style.cssText=`background:var(--surface);padding:5px;min-height:82px;cursor:pointer;transition:background .12s;overflow:hidden;box-sizing:border-box;${campBorder}`;
     cell.onmouseover=()=>cell.style.background='var(--surface2)';
     cell.onmouseout=()=>cell.style.background='var(--surface)';
 
@@ -13334,6 +13376,14 @@ function escRenderPgwList2() {
 </div>
 
 <!-- Modal Ver/Editar Pieza -->
+<!-- Lightbox de imagen/video de referencia -->
+<div class="modal-backdrop" id="modal-media-lightbox" onclick="if(event.target===this)closeModal('modal-media-lightbox')">
+  <div style="max-width:90vw;max-height:90vh;display:flex;flex-direction:column;align-items:center;gap:10px">
+    <div id="lightbox-media-content"></div>
+    <button class="btn btn-outline" style="background:#fff" onclick="closeModal('modal-media-lightbox')">Cerrar</button>
+  </div>
+</div>
+
 <!-- Modal Ver/Editar Pieza -->
  <div class="modal-backdrop" id="modal-ver-item">
   <div class="modal" style="max-width:460px">
