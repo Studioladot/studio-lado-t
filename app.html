@@ -1722,8 +1722,8 @@ body.focus-mode #main{margin-left:0}
     <div class="ft" onclick="filterBib('borrador',this)">&#9676; Borradores</div>
   </div>
   <div class="tbl-wrap"><table>
-    <thead><tr><th>Titulo</th><th>Angulo</th><th>Producto</th><th>Estado</th><th>Hook Rate</th><th>P25</th><th>P75</th><th>P100</th><th>Acciones</th></tr></thead>
-    <tbody id="bib-tbl"><tr><td colspan="9" style="text-align:center;color:var(--text2);padding:24px">Sin guiones guardados</td></tr></tbody>
+<thead><tr><th>Titulo</th><th>Angulo</th><th>Producto</th><th>Estado</th><th>Gasto</th><th>ROAS</th><th>CPA</th><th>Hook Rate</th><th>P25</th><th>P75</th><th>P100</th><th>Acciones</th></tr></thead>
+    <tbody id="bib-tbl"><tr><td colspan="12" style="text-align:center;color:var(--text2);padding:24px">Sin guiones guardados</td></tr></tbody>
   </table></div>
 </div>
 
@@ -4684,22 +4684,24 @@ async function loadTNAdvancedPanel() {
 // ── BIBLIOTECA ────────────────────────────────────────────────────────────────
 function filterBib(f,el){bibF=f;document.querySelectorAll('#bib-filters .ft').forEach(t=>t.classList.remove('active'));if(el)el.classList.add('active');renderBib();}
 function renderBib(){
+function renderBib(){
   const filtered=bibF==='all'?scripts:scripts.filter(s=>s.status===bibF);
   const tbl=document.getElementById('bib-tbl');
-  if(!filtered.length){tbl.innerHTML=`<tr><td colspan="9" style="text-align:center;color:var(--text2);padding:24px">Sin guiones${bibF!=='all'?' con este estado':''}</td></tr>`;return;}
+  if(!filtered.length){tbl.innerHTML=`<tr><td colspan="12" style="text-align:center;color:var(--text2);padding:24px">Sin guiones${bibF!=='all'?' con este estado':''}</td></tr>`;return;}
   tbl.innerHTML=filtered.map(s=>`<tr>
     <td><span style="font-weight:600;cursor:pointer;color:var(--accent)" onclick="showPage('guiones');selSc('${s.id}')">${s.title||'Sin titulo'}</span>${s.parent_guion_id?`<div style="font-size:10px;color:var(--text3);margin-top:2px">Variante</div>`:''}</td>
     <td>${s.angle||'—'}</td>
     <td>${s.product||'—'}</td>
     <td><span class="badge ${STS_BADGE[s.status]||'b-gray'}">${STS_LBL[s.status]||s.status||'—'}</span></td>
+    <td>${s.spend?'$'+s.spend:'—'}</td>
+    <td>${s.roas?'<span style="font-weight:700;color:'+roasColor(s.roas)+'">'+s.roas+'x</span>':'—'}</td>
+    <td>${s.cpa?'$'+s.cpa:'—'}</td>
     <td>${s.hook_rate?s.hook_rate+'%':'—'}</td>
     <td>${s.p25?s.p25+'%':'—'}</td>
     <td>${s.p75?s.p75+'%':'—'}</td>
     <td>${s.p100?s.p100+'%':'—'}</td>
     <td><button class="btn btn-sm btn-ghost" onclick="showPage('guiones');selSc('${s.id}')">Editar</button></td>
   </tr>`).join('');
-}
-
 // ── FINANZAS ──────────────────────────────────────────────────────────────────
 async function saveFin(){
   const product=document.getElementById('fin-prod').value.trim();
@@ -6420,7 +6422,7 @@ async function dfEscalar(adId, adName, adsetId){
   showPage('meta-campanas');
   setTimeout(() => tsOpenDupModal(), 400);
 }
-  async function bibSyncScriptMetrics(){
+async function bibSyncScriptMetrics(){
   if(!me || !META_TOKEN || !META_ACCOUNT || !scripts.length) return;
   const { data: links } = await db.from('ad_script_links').select('*').eq('user_id', me.id);
   if(!links?.length) return;
@@ -6450,7 +6452,18 @@ async function dfEscalar(adId, adName, adsetId){
     }
     if(!parsed.length) continue;
     const avg = key => +(parsed.reduce((sum,p)=>sum+(+p[key]||0),0)/parsed.length).toFixed(1);
-    const updates = { hook_rate: avg('hook_rate'), p25: avg('p25'), p75: avg('p75'), p100: avg('p100') };
+
+    // Gasto/ROAS/CPA: se agregan por suma real (no promedio de ratios) para no distorsionar el numero
+    const spendTotal = parsed.reduce((sum,p)=>sum+(+p.spend||0),0);
+    const revenueTotal = parsed.reduce((sum,p)=>sum+(+p.revenue||0),0);
+    const purchasesTotal = parsed.reduce((sum,p)=>sum+(+p.purchases||0),0);
+    const roasReal = spendTotal>0 && revenueTotal>0 ? +(revenueTotal/spendTotal).toFixed(2) : 0;
+    const cpaReal = purchasesTotal>0 ? +(spendTotal/purchasesTotal).toFixed(2) : 0;
+
+    const updates = {
+      hook_rate: avg('hook_rate'), p25: avg('p25'), p75: avg('p75'), p100: avg('p100'),
+      spend: +spendTotal.toFixed(2), roas: roasReal, cpa: cpaReal
+    };
     Object.assign(s, updates);
     db.from('scripts').update(updates).eq('id', scriptId).then(()=>{});
     changed = true;
