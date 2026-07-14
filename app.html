@@ -1033,6 +1033,8 @@ body.focus-mode #main{margin-left:0}
 .gx-summary-label{ font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:#8A8F98; margin-bottom:4px; }
 .gx-summary-value{ font-size:18px; font-weight:700; color:#1A1A18; font-variant-numeric:tabular-nums; }
 .gx-summary-value.warn{ color:#B23A3A; }
+  .inv-prod-thumb{width:40px;height:40px;border-radius:6px;object-fit:cover;border:1px solid #E4E7EC;flex-shrink:0;background:var(--surface2)}
+.inv-prod-name-wrap{display:flex;align-items:center;gap:10px}
 </style>
 </head>
 <body>
@@ -1775,167 +1777,13 @@ body.focus-mode #main{margin-left:0}
   </div>
 </div>
 
-<!-- ANALISIS -->
-<div id="page-analisis" class="page">
-  <div class="page-hdr">
-    <div><div class="page-title">Analisis</div>
-    <div class="page-sub">Vision financiera real del negocio: Meta + Tienda Nube + costos</div></div>
-    <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
-      <select id="an-date-range" onchange="onAnDateRangeChange()"
-        style="border:0.5px solid var(--border);border-radius:var(--r);padding:6px 10px;font-size:13px;background:var(--surface);color:var(--text);outline:none;cursor:pointer">
-        <option value="today">Hoy</option>
-        <option value="yesterday">Ayer</option>
-        <option value="last_7d">7 dias</option>
-        <option value="last_14d">14 dias</option>
-        <option value="last_30d">30 dias</option>
-        <option value="last_90d">90 dias</option>
-        <option value="this_month" selected>Este mes</option>
-        <option value="last_month">Mes pasado</option>
-        <option value="custom">Personalizado...</option>
-      </select>
-      <div id="an-custom-date-wrap" style="display:none;gap:5px;align-items:center">
-        <input type="date" id="an-date-since" style="border:0.5px solid var(--border);border-radius:var(--r);padding:6px 8px;font-size:12px;background:var(--surface);color:var(--text);outline:none" onchange="loadAnalisis()">
-        <span style="font-size:12px;color:var(--text2)">&#8594;</span>
-        <input type="date" id="an-date-until" style="border:0.5px solid var(--border);border-radius:var(--r);padding:6px 8px;font-size:12px;background:var(--surface);color:var(--text);outline:none" onchange="loadAnalisis()">
-      </div>
-      <button class="btn btn-outline btn-sm" onclick="loadAnalisis()">
-        <svg width="13" height="13" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" style="vertical-align:-2px;margin-right:4px"><path d="M15 5a6.5 6.5 0 10.9 5.5"/><path d="M15 1.5V5h-3.5"/></svg>Actualizar
-      </button>
-    </div>
-  </div>
-
-  <div id="an-not-connected" class="card" style="display:none;text-align:center;padding:30px">
-    <div style="font-size:13px;color:var(--text2)">Conecta Meta Ads y Tienda Nube para ver el analisis completo.</div>
-    <div style="display:flex;gap:8px;justify-content:center;margin-top:12px">
-      <button class="btn btn-outline btn-sm" onclick="showPage('meta-connect')">Conectar Meta</button>
-      <button class="btn btn-outline btn-sm" onclick="showPage('tiendanube-connect')">Conectar Tienda Nube</button>
-    </div>
-  </div>
-
-  <div id="an-content">
-    <!-- METRICAS PRINCIPALES -->
-    <div class="an-dark an-section" id="an-sec-metricas">
-      <div class="an-dark-hdr">
-        <div class="an-dark-title">
-          <span class="an-dark-ico"><svg width="14" height="14" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 15h14"/><path d="M4 15V9l3-3 3 2.5L15 3"/></svg></span>
-          Metricas principales
-        </div>
-      </div>
-      <div class="an-grid" id="an-main-grid">
-        <div class="an-card" id="anc-ordenes" draggable="true">
-        <div class="an-card" id="anc-facturacion"></div>
-        <div class="an-card" id="anc-inversion"></div>
-        <div class="an-card" id="anc-fact-neta"></div>
-        <div class="an-card" id="anc-ganancia"></div>
-        <div class="an-card" id="anc-margen"></div>
-        <div class="an-card accent" id="anc-roas"></div>
-        <div class="an-card" id="anc-true-roas"></div>
-      </div>
-      <div class="an-grid" style="grid-template-columns:1fr;margin-top:10px;max-width:300px">
-        <div class="an-card" id="anc-true-cpa"></div>
-      </div>
-    </div>
-    <!-- TIENDA ONLINE + META -->
-    <div class="an-section" id="an-sec-row" style="display:grid;grid-template-columns:1.4fr 1fr;gap:14px;margin-bottom:14px;align-items:start">
-      <div class="an-dark an-subsection" id="an-sec-tienda" style="margin-bottom:0">
-        <div class="an-dark-hdr">
-          <div class="an-dark-title">
-            <span class="an-dark-ico"><svg width="13" height="13" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6l1.5-3.5h9L15 6"/><path d="M3 6v8a1 1 0 001 1h10a1 1 0 001-1V6"/><path d="M7 15v-4a1 1 0 011-1h2a1 1 0 011 1v4"/><path d="M3 6h12"/></svg></span>
-            Tienda online
-          </div>
-        </div>
-        <div class="an-grid" style="grid-template-columns:repeat(3,1fr)" id="an-tn-grid">
-          <div class="an-card" id="anc-tn-ordenes"></div>
-          <div class="an-card" id="anc-tn-fact"></div>
-          <div class="an-card" id="anc-tn-fact-neta"></div>
-          <div class="an-card" id="anc-tn-aov"></div>
-          <div class="an-card" id="anc-tn-aov-neto"></div>
-        </div>
-      </div>
-      <div class="an-dark an-subsection" id="an-sec-meta" style="margin-bottom:0">
-        <div class="an-dark-hdr">
-          <div class="an-dark-title">
-            <span class="an-dark-ico"><svg width="13" height="13" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M7.5 10.5a4 4 0 005.7 0l2-2a4 4 0 00-5.7-5.7L8 4.3"/><path d="M10.5 7.5a4 4 0 00-5.7 0l-2 2a4 4 0 005.7 5.7L10 13.7"/></svg></span>
-            Meta
-          </div>
-        </div>
-        <div class="an-grid" style="grid-template-columns:1fr 1fr" id="an-meta-grid">
-          <div class="an-card" style="grid-column:1/-1" id="anc-meta-inv"></div>
-          <div class="an-card" id="anc-meta-roas"></div>
-          <div class="an-card" id="anc-meta-cpa"></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- COSTOS -->
-   <div class="an-dark an-section" id="an-sec-costos">
-      <div class="an-dark-hdr">
-        <div class="an-dark-title">
-          <span class="an-dark-ico"><svg width="13" height="13" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="9" cy="9" r="7"/><path d="M9 5v8M6.5 7c0-1 .8-1.7 2.5-1.7s2.5.7 2.5 1.7-1 1.3-2.5 1.3S6.5 9 6.5 10s1 1.7 2.5 1.7 2.5-.7 2.5-1.7"/></svg></span>
-          Costos
-        </div>
-        <div style="display:flex;align-items:center;gap:10px">
-          <button class="btn btn-sm btn-outline" onclick="openModal('modal-an-costos-add')">+ Costo adicional</button>
-        </div>
-      </div>
-      <div class="an-grid" style="grid-template-columns:repeat(3,1fr)">
-        <div class="an-card" id="anc-costo-productos"></div>
-        <div class="an-card" id="anc-costo-envio"></div>
-        <div class="an-card" id="anc-costo-adicional"></div>
-      </div>
-      <div id="an-costo-adicional-list" style="margin-top:10px"></div>
-    </div>
-
-    <!-- CANALES DE MARKETING -->
-    <div class="an-dark">
-      <div class="an-dark-hdr">
-        <div class="an-dark-title">
-          <span class="an-dark-ico"><svg width="13" height="13" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="4.5" cy="9" r="2.5"/><circle cx="13.5" cy="4" r="2.5"/><circle cx="13.5" cy="14" r="2.5"/><path d="M6.7 7.8l4.6-2.7M6.7 10.2l4.6 2.7"/></svg></span>
-          Canales de marketing
-        </div>
-      </div>
-      <div class="tbl-wrap" style="margin:-2px -2px 0"><table class="an-table-dark">
-        <thead><tr><th>Canal</th><th>Ad spend</th><th>ROAS</th><th>True ROAS</th><th>Ordenes</th><th>Revenue</th><th>Net revenue</th><th>True CPA</th><th>AOV</th><th>Net AOV</th></tr></thead>
-        <tbody id="an-canales-tbody"><tr><td colspan="10" style="text-align:center;color:var(--ad-text3);padding:18px">Sin datos</td></tr></tbody>
-      </table></div>
-    </div>
-
-    <!-- ULTIMAS VENTAS + GRAFICO -->
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
-      <div class="an-dark" style="margin-bottom:0">
-        <div class="an-dark-hdr">
-          <div class="an-dark-title">
-            <span class="an-dark-ico"><svg width="13" height="13" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="14" height="14" rx="2"/><path d="M2 7h14"/><path d="M6 2v5"/></svg></span>
-            Ultimas ventas
-          </div>
-        </div>
-       <div class="tbl-wrap" style="margin:-2px -2px 0"><table class="an-table-dark">
-          <thead><tr><th>Producto</th><th>Variante</th><th>Cant.</th><th>Total</th></tr></thead>
-          <tbody id="an-ventas-tbody"><tr><td colspan="4" style="text-align:center;color:var(--ad-text3);padding:18px">Sin datos</td></tr></tbody>
-        </table></div>
-        <div id="an-ventas-pager" style="display:flex;justify-content:center;gap:4px;padding:10px 0 4px"></div>
-      </div>
-      <div class="an-dark" style="margin-bottom:0">
-        <div class="an-dark-hdr">
-          <div class="an-dark-title">
-            <span class="an-dark-ico"><svg width="13" height="13" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 15V9l3.5-3 3.5 2.5L15 3"/><path d="M2 15h14"/></svg></span>
-            Facturacion por dia
-          </div>
-        </div>
-        <div id="an-chart-wrap" style="height:200px"></div>
-      </div>
-    </div>
-  </div>
-</div>
-</div>
-
 <!-- ANALISIS — COSTO DE PRODUCTOS -->
 <div id="page-an-productos" class="page">
   <div class="page-hdr">
     <div><div class="page-title">Costo de productos</div>
     <div class="page-sub">Carga el costo de cada producto de tu Tienda Nube</div></div>
     <div style="display:flex;gap:8px">
-      <button class="btn btn-outline btn-sm" onclick="showPage('analisis')">&#8592; Volver a Analisis</button>
+        <div style="display:flex;gap:8px">
       <button class="btn btn-outline" onclick="openAnBulkModal()">Editar en bulk</button>
       <button class="btn btn-accent" onclick="loadAnProductos(true)">Sincronizar productos</button>
     </div>
@@ -13157,7 +13005,10 @@ function renderEscInventario() {
       <td colspan="6">
         <div style="display:flex;align-items:center;gap:10px">
           <svg class="inv-chevron" id="inv-chev-${p.product_id}" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
-          <span style="font-weight:700;color:var(--text)">${p.product_name}</span>
+          <div class="inv-prod-name-wrap">
+            <img class="inv-prod-thumb" src="${p.image||''}" onerror="this.style.visibility='hidden'" alt="">
+            <span style="font-weight:700;color:var(--text)">${p.product_name}</span>
+          </div>
           <span style="font-size:12px;color:var(--text3)">${variants.length} variante${variants.length>1?'s':''} · stock total ${stockTotal}</span>
           <div style="margin-left:auto;display:flex;align-items:center;gap:6px" onclick="event.stopPropagation()">
             <input type="number" class="inv-cost-input" id="inv-master-${p.product_id}" placeholder="Costo maestro" value="${firstCost||''}">
