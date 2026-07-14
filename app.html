@@ -4684,7 +4684,6 @@ async function loadTNAdvancedPanel() {
 // ── BIBLIOTECA ────────────────────────────────────────────────────────────────
 function filterBib(f,el){bibF=f;document.querySelectorAll('#bib-filters .ft').forEach(t=>t.classList.remove('active'));if(el)el.classList.add('active');renderBib();}
 function renderBib(){
-function renderBib(){
   const filtered=bibF==='all'?scripts:scripts.filter(s=>s.status===bibF);
   const tbl=document.getElementById('bib-tbl');
   if(!filtered.length){tbl.innerHTML=`<tr><td colspan="12" style="text-align:center;color:var(--text2);padding:24px">Sin guiones${bibF!=='all'?' con este estado':''}</td></tr>`;return;}
@@ -4702,6 +4701,7 @@ function renderBib(){
     <td>${s.p100?s.p100+'%':'—'}</td>
     <td><button class="btn btn-sm btn-ghost" onclick="showPage('guiones');selSc('${s.id}')">Editar</button></td>
   </tr>`).join('');
+}
 // ── FINANZAS ──────────────────────────────────────────────────────────────────
 async function saveFin(){
   const product=document.getElementById('fin-prod').value.trim();
