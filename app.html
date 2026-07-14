@@ -12403,6 +12403,57 @@ async function delPiezaFromView() {
 }
 
 // ── CALENDARIO INTERACTIVO ─────────────────────────────────────────────────────
+function nthWeekdayOfMonth(year, month, weekday, n){ // month 1-12, weekday 0=Dom..6=Sab
+  const first = new Date(year, month-1, 1);
+  const day = 1 + ((7 + weekday - first.getDay()) % 7) + (n-1)*7;
+  return new Date(year, month-1, day);
+}
+function lastWeekdayOfMonth(year, month, weekday){
+  const last = new Date(year, month, 0);
+  const diff = (last.getDay() - weekday + 7) % 7;
+  return new Date(year, month-1, last.getDate()-diff);
+}
+function fechaComercialISO(d){ return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
+
+function getFechasComercialesAR(year){
+  const fijas = [
+    {md:'01-06', nombre:'Dia de Reyes'},
+    {md:'02-14', nombre:'San Valentin'},
+    {md:'03-08', nombre:'Dia de la Mujer'},
+    {md:'05-01', nombre:'Dia del Trabajador'},
+    {md:'06-20', nombre:'Dia de la Bandera'},
+    {md:'07-09', nombre:'Dia de la Independencia'},
+    {md:'07-20', nombre:'Dia del Amigo'},
+    {md:'10-31', nombre:'Halloween'},
+    {md:'12-24', nombre:'Nochebuena'},
+    {md:'12-25', nombre:'Navidad'},
+  ].map(f=>({ date: `${year}-${f.md}`, nombre: f.nombre }));
+
+  const diaPadre = nthWeekdayOfMonth(year,6,0,3);
+  const diaNino  = nthWeekdayOfMonth(year,8,0,3);
+  const diaMadre = nthWeekdayOfMonth(year,10,0,3);
+  const blackFriday = lastWeekdayOfMonth(year,11,5);
+  const cyberMonday = new Date(blackFriday); cyberMonday.setDate(blackFriday.getDate()+3);
+
+  const moviles = [
+    { date: fechaComercialISO(diaPadre),      nombre: 'Dia del Padre' },
+    { date: fechaComercialISO(diaNino),       nombre: 'Dia del Nino' },
+    { date: fechaComercialISO(diaMadre),      nombre: 'Dia de la Madre' },
+    { date: fechaComercialISO(blackFriday),   nombre: 'Black Friday' },
+    { date: fechaComercialISO(cyberMonday),   nombre: 'CyberMonday' },
+  ];
+  return [...fijas, ...moviles].sort((a,b)=>a.date.localeCompare(b.date));
+}
+function crearCampanaDesdeFecha(fecha, nombre){
+  const nombreInput = document.getElementById('camp-nombre');
+  const inicioInput = document.getElementById('camp-inicio');
+  const finInput = document.getElementById('camp-fin');
+  if(nombreInput) nombreInput.value = 'Campana ' + nombre;
+  if(inicioInput) inicioInput.value = fecha;
+  if(finInput) finInput.value = fecha;
+  openModal('modal-campana');
+}
+
 function renderCalCont(){
   const mesEl=document.getElementById('cont-cal-mes');if(!mesEl)return;
   const mesVal=mesEl.value||new Date().toISOString().substring(0,7);
@@ -12415,6 +12466,10 @@ function renderCalCont(){
 
   // LIMPIAR antes de renderizar — evita duplicación en cada llamada
   grid.innerHTML='';
+
+ // Fechas comerciales argentinas del año en curso
+  const fechasComercialesMap={};
+  getFechasComercialesAR(year).forEach(f=>{ fechasComercialesMap[f.date]=f.nombre; });
 
   // Construir mapa por día — una sola pasada, sin duplicar fuentes
   const porDia={};
@@ -12483,11 +12538,12 @@ function renderCalCont(){
    const cell=document.createElement('div');
     cell.onclick=()=>openDiaPiezas(fd);
 
-    // Campana activa en este dia (borde superior sutil, no pisa el resto de la celda)
+   // Campana activa en este dia (borde superior sutil, no pisa el resto de la celda)
     const campActiva = (contentCamps||[]).find(c => c.fecha_inicio && c.fecha_fin && fd >= c.fecha_inicio && fd <= c.fecha_fin);
     const campBorder = campActiva ? `border-top:3px solid ${campActiva.color||'var(--accent)'};` : '';
+    const fechaEspecial = fechasComercialesMap[fd];
 
-    cell.title = campActiva ? `${campActiva.nombre} · Ver publicaciones del ${d}/${month}` : `Ver publicaciones del ${d}/${month}`;
+    cell.title = campActiva ? `${campActiva.nombre} · Ver publicaciones del ${d}/${month}` : (fechaEspecial ? `${fechaEspecial} · Ver publicaciones del ${d}/${month}` : `Ver publicaciones del ${d}/${month}`);
     cell.style.cssText=`background:var(--surface);padding:5px;min-height:82px;cursor:pointer;transition:background .12s;overflow:hidden;box-sizing:border-box;${campBorder}`;
     cell.onmouseover=()=>cell.style.background='var(--surface2)';
     cell.onmouseout=()=>cell.style.background='var(--surface)';
@@ -12497,6 +12553,16 @@ function renderCalCont(){
     num.style.cssText=`display:flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;font-size:11px;font-weight:${esHoy?'800':'600'};color:${esHoy?'#fff':'var(--text)'};background:${esHoy?'var(--primary-green)':'transparent'};margin-bottom:4px`;
     num.textContent=d;
     cell.appendChild(num);
+
+    // Fecha comercial argentina — pastilla con boton para crear campana vinculada
+    if(fechaEspecial){
+      const fc=document.createElement('div');
+      fc.style.cssText='display:flex;align-items:center;gap:3px;background:#fef3d8;border:1px solid #e8b923;border-radius:5px;padding:2px 4px;margin-bottom:3px;cursor:pointer;overflow:hidden';
+      fc.title='Crear campana para '+fechaEspecial;
+      fc.onclick=e=>{e.stopPropagation();crearCampanaDesdeFecha(fd,fechaEspecial);};
+      fc.innerHTML=`<span style="font-size:9px;font-weight:700;color:#8a6d1d;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0">${fechaEspecial}</span>`;
+      cell.appendChild(fc);
+    }
 
     // Pastillas de contenido (máx 3) — status + turno, sin emojis
     pd.slice(0,3).forEach(p=>{
