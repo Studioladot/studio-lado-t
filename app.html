@@ -974,6 +974,62 @@ body.focus-mode #main{margin-left:0}
 .snap-icon-btn:hover{color:var(--text);background:rgba(26,26,24,.06);border-color:rgba(26,26,24,.08)}
 .snap-icon-btn:active{transform:scale(.96)}
 .snap-icon-btn[data-action="delete"]:hover{color:#f87171;background:rgba(239,68,68,.1);border-color:rgba(239,68,68,.25)}
+  /* Tabla premium — scope propio, no toca el <th> global de la app */
+.gx-table thead th{
+  background:#fff;
+  color:#8A8F98;
+  font-size:10.5px;
+  font-weight:700;
+  text-transform:uppercase;
+  letter-spacing:.06em;
+  padding:10px 14px;
+  border-bottom:1px solid #E4E7EC;
+  text-align:left;
+  white-space:nowrap;
+}
+.gx-table td{ padding:12px 14px; border-bottom:1px solid #F0F1F3; font-size:13px; }
+.gx-table tr:last-child td{ border-bottom:none; }
+.gx-table .gx-amount{ text-align:right; font-variant-numeric:tabular-nums; font-weight:600; }
+.gx-table th.gx-amount{ text-align:right; }
+
+/* Pills — fondo casi transparente, texto fuerte, dot al costado */
+.gx-pill{
+  display:inline-flex; align-items:center; gap:5px;
+  padding:3px 9px 3px 7px; border-radius:99px;
+  font-size:11px; font-weight:600; letter-spacing:.01em;
+  border:none; cursor:default;
+}
+.gx-pill.clickable{ cursor:pointer; transition:filter .12s; }
+.gx-pill.clickable:hover{ filter:brightness(0.96); }
+.gx-dot{ width:6px; height:6px; border-radius:50%; flex-shrink:0; }
+
+/* Estado */
+.gx-pill-pendiente{ background:#FFF8E1; color:#8A6D1D; }
+.gx-pill-pendiente .gx-dot{ background:#E8A83C; }
+.gx-pill-pagado{ background:#EAFAF1; color:#1D7A4C; }
+.gx-pill-pagado .gx-dot{ background:#2FAE66; }
+
+/* Categoria — mismo lenguaje visual, tono neutro por defecto */
+.gx-pill-cat{ background:#F4F5F7; color:#4A4F57; }
+.gx-pill-cat[data-cat="marketing"]{ background:#EEF1FF; color:#3A4DBA; }
+.gx-pill-cat[data-cat="proveedor"]{ background:#EAF7FA; color:#1D7A8C; }
+.gx-pill-cat[data-cat="personal"]{ background:#EAFAF1; color:#1D7A4C; }
+.gx-pill-cat[data-cat="impuesto"]{ background:#FFF8E1; color:#8A6D1D; }
+.gx-pill-cat[data-cat="deuda"]{ background:#FDEEEE; color:#B23A3A; }
+
+/* Summary Bar */
+.gx-summary-bar{
+  display:flex; gap:0; margin-top:14px;
+  border:1px solid #E4E7EC; border-radius:12px; overflow:hidden;
+}
+.gx-summary-item{
+  flex:1; padding:14px 16px;
+  border-right:1px solid #E4E7EC;
+}
+.gx-summary-item:last-child{ border-right:none; }
+.gx-summary-label{ font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:#8A8F98; margin-bottom:4px; }
+.gx-summary-value{ font-size:18px; font-weight:700; color:#1A1A18; font-variant-numeric:tabular-nums; }
+.gx-summary-value.warn{ color:#B23A3A; }
 </style>
 </head>
 <body>
@@ -2340,15 +2396,26 @@ body.focus-mode #main{margin-left:0}
           <span>Costos adicionales (fijos / variables)</span>
           <button class="btn btn-accent btn-sm" onclick="openModal('modal-gasto')">+ Agregar costo</button>
         </div>
-        <div class="tbl-wrap"><table>
-          <thead><tr><th>Concepto</th><th>Categoria</th><th>Tipo</th><th>Monto</th><th>Vence dia</th><th>Estado</th><th></th></tr></thead>
+        <div class="tbl-wrap"><table class="gx-table">
+          <thead><tr><th>Concepto</th><th>Categoria</th><th>Tipo</th><th class="gx-amount">Monto</th><th>Vence dia</th><th>Estado</th><th></th></tr></thead>
           <tbody id="gastos-tbl"><tr><td colspan="7" style="text-align:center;color:var(--text2);padding:24px">Sin costos cargados</td></tr></tbody>
         </table></div>
-        <div style="display:flex;justify-content:flex-end;padding:12px 0;gap:16px">
-          <span style="font-size:13px;color:var(--text2)">Total del mes: <strong id="gastos-total" style="color:var(--text)">$0</strong></span>
-          <span style="font-size:13px;color:var(--text2)">Pendiente: <strong id="gastos-pendiente" style="color:var(--red)">$0</strong></span>
+        <div class="gx-summary-bar">
+          <div class="gx-summary-item">
+            <div class="gx-summary-label">Total OPEX</div>
+            <div class="gx-summary-value" id="gastos-total">$0</div>
+          </div>
+          <div class="gx-summary-item">
+            <div class="gx-summary-label">Costos Variables</div>
+            <div class="gx-summary-value" id="gastos-variables">$0</div>
+          </div>
+          <div class="gx-summary-item">
+            <div class="gx-summary-label">Pendiente de Pago</div>
+            <div class="gx-summary-value warn" id="gastos-pendiente">$0</div>
+          </div>
         </div>
       </div>
+    </div>
     </div>
 
     <!-- ENVIOS -->
@@ -10105,22 +10172,32 @@ function filterGastos(f, el) {
 function renderGastos() {
   const list = gastosFilter === 'all' ? gastos : gastos.filter(g => g.tipo === gastosFilter);
   const tbl = document.getElementById('gastos-tbl');
-  const catColors = { operativo:'b-blue', marketing:'b-accent', proveedor:'b-teal', personal:'b-green', impuesto:'b-amber', deuda:'b-red', otro:'b-gray' };
+
   if(!list.length){ tbl.innerHTML='<tr><td colspan="7" style="text-align:center;color:var(--text2);padding:24px">Sin gastos</td></tr>'; }
   else {
     tbl.innerHTML = list.map(g=>`<tr>
       <td style="font-weight:600">${escapeHtml(g.nombre)}<br><span style="font-size:11px;color:var(--text2)">${escapeHtml(g.notas)}</span></td>
-      <td><span class="badge ${catColors[g.categoria]||'b-gray'}">${g.categoria}</span></td>
-      <td><span class="badge b-gray">${g.tipo}</span></td>
-      <td style="font-weight:700">$${fmtN(g.monto)}</td>
+      <td><span class="gx-pill gx-pill-cat" data-cat="${g.categoria}">${g.categoria}</span></td>
+      <td><span class="gx-pill gx-pill-cat">${g.tipo}</span></td>
+      <td class="gx-amount">$${fmtN(g.monto)}</td>
       <td style="font-size:13px;color:var(--text2)">${g.dia_vencimiento?'Dia '+g.dia_vencimiento:'—'}</td>
-      <td><button onclick="togglePagado('${g.id}')" style="border:none;background:none;cursor:pointer;padding:2px"><span class="badge ${g.pagado?'b-green':'b-amber'}" style="cursor:pointer" title="Click para cambiar estado">${g.pagado?' Pagado':'Pendiente'}</span></button></td>
+      <td>
+        <button onclick="togglePagado('${g.id}')" style="border:none;background:none;cursor:pointer;padding:0">
+          <span class="gx-pill clickable ${g.pagado?'gx-pill-pagado':'gx-pill-pendiente'}" title="Click para cambiar estado">
+            <span class="gx-dot"></span>${g.pagado?'Pagado':'Pendiente'}
+          </span>
+        </button>
+      </td>
       <td><button class="btn btn-sm btn-red" onclick="delGasto('${g.id}')"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-1px"><path d="M18 6 6 18M6 6l12 12"/></svg></button></td>
     </tr>`).join('');
   }
-  const total = gastos.reduce((a,g)=>a+(+g.monto||0),0);
-  const pendiente = gastos.filter(g=>!g.pagado).reduce((a,g)=>a+(+g.monto||0),0);
+
+  const total      = gastos.reduce((a,g)=>a+(+g.monto||0),0);           // Total OPEX
+  const variables   = gastos.filter(g=>g.tipo==='variable').reduce((a,g)=>a+(+g.monto||0),0);
+  const pendiente   = gastos.filter(g=>!g.pagado).reduce((a,g)=>a+(+g.monto||0),0);
+
   setT('gastos-total', '$'+fmtN(total));
+  setT('gastos-variables', '$'+fmtN(variables));
   setT('gastos-pendiente', '$'+fmtN(pendiente));
 }
 
@@ -11361,13 +11438,17 @@ document.getElementById('fc-usd-manual').value = finConfig.usd_manual||0;
 async function togglePagado(id) {
   const g = gastos.find(x => x.id === id);
   if(!g) return;
-  const nuevo = !g.pagado;
-  const { error } = await db.from('expenses').update({ pagado: nuevo }).eq('id', id);
-  if(error){ toast('Error: '+error.message); return; }
-  g.pagado = nuevo;
-  renderGastos();
-  renderFinPanel();
-  toast(nuevo ? ' Marcado como pagado' : 'Marcado como pendiente');
+  const anterior = g.pagado;
+  g.pagado = !anterior;
+  renderGastos(); renderFinPanel(); // UI instantánea
+
+  const { error } = await db.from('expenses').update({ pagado: g.pagado }).eq('id', id);
+  if(error){
+    g.pagado = anterior; renderGastos(); renderFinPanel(); // rollback si Supabase falla
+    toast('Error al actualizar: '+error.message);
+    return;
+  }
+  toast(g.pagado ? 'Marcado como pagado' : 'Marcado como pendiente');
 }
 
 function switchFinTab(tab, btn) {
