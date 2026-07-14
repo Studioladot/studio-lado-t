@@ -11750,12 +11750,21 @@ async function togglePostStatus(id, current){
     protWrap.style.display = 'block';
   } else { protWrap.style.display = 'none'; }
 
+const mediaList = (isCamp ? contentPiezas.find(x=>x.id===id) : posts.find(x=>String(x.id)===String(id)))?.media_urls;
   const mediaEl = document.getElementById('ver-item-media');
-  mediaEl.innerHTML = media_url
-    ? (media_type === 'video'
-        ? `<video src="${media_url}" controls style="width:100%;max-height:240px;border-radius:var(--r);background:#000"></video>`
-        : `<img src="${media_url}" style="width:100%;max-height:240px;object-fit:contain;border-radius:var(--r)"/>`)
-    : '';
+  if(Array.isArray(mediaList) && mediaList.length > 1){
+    mediaEl.innerHTML = `<div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:4px">${mediaList.map(m=>
+      m.type === 'video'
+        ? `<video src="${m.url}" controls style="height:180px;border-radius:var(--r);background:#000;flex-shrink:0"></video>`
+        : `<img src="${m.url}" style="height:180px;border-radius:var(--r);object-fit:cover;flex-shrink:0"/>`
+    ).join('')}</div>`;
+  } else {
+    mediaEl.innerHTML = media_url
+      ? (media_type === 'video'
+          ? `<video src="${media_url}" controls style="width:100%;max-height:240px;border-radius:var(--r);background:#000"></video>`
+          : `<img src="${media_url}" style="width:100%;max-height:240px;object-fit:contain;border-radius:var(--r)"/>`)
+      : '';
+  }
   openModal('modal-ver-item');
 }
 function openEditPost(id){
@@ -11789,12 +11798,12 @@ function openNewPost(){
 async function saveEditPost(){
   const id = document.getElementById('post-edit-id').value;
   const fileInput = document.getElementById('post-media-file');
-  const file = fileInput?.files?.[0];
-  let media_url = '', media_type = '';
-  if(file){
-    toast('Subiendo archivo...');
-    const uploaded = await uploadPiezaMedia(file);
-    if(uploaded){ media_url = uploaded.url; media_type = uploaded.type; }
+  const files = fileInput?.files?.length ? Array.from(fileInput.files) : [];
+  let media_url = '', media_type = '', mediaList = [];
+  if(files.length){
+    toast('Subiendo archivo'+(files.length>1?'s...':'...'));
+    mediaList = await uploadMultipleMedia(files);
+    if(mediaList.length){ media_url = mediaList[0].url; media_type = mediaList[0].type; }
   }
   const titleVal = document.getElementById('post-title').value.trim();
   if(!titleVal){ toast('Agregá un título a la publicación'); return; }
@@ -11808,7 +11817,7 @@ async function saveEditPost(){
     status: document.getElementById('post-status').value,
     protagonista: document.getElementById('post-protagonista').value.trim() || null,
   };
-  if(file && media_url){ rec.media_url = media_url; rec.media_type = media_type; }
+  if(mediaList.length){ rec.media_url = media_url; rec.media_type = media_type; rec.media_urls = mediaList; }
   let data, error;
   if(id){
     ({data,error} = await db.from('content_posts').update(rec).eq('id',id).select());
@@ -12152,6 +12161,14 @@ async function uploadPiezaMedia(file) {
   const { data } = db.storage.from('piezas-media').getPublicUrl(path);
   return { url: data.publicUrl, type: isVideo ? 'video' : 'image' };
 }
+async function uploadMultipleMedia(files) {
+  const results = [];
+  for(const file of files){
+    const uploaded = await uploadPiezaMedia(file);
+    if(uploaded) results.push(uploaded);
+  }
+  return results;
+}
 
 async function savePieza(){
  const btn = document.getElementById('btn-pieza-guardar');
@@ -12161,13 +12178,13 @@ async function savePieza(){
   const turno=document.getElementById('pieza-turno')?.value;
   if(!titulo){toast('Ponele titulo a la pieza');if(btn){btn.disabled=false;btn.dataset.loading='0';btn.textContent='Guardar';}return;}
   if(!turno){toast('Elegi el turno de publicacion');if(btn){btn.disabled=false;btn.dataset.loading='0';btn.textContent='Guardar';}return;}
-  const fileInput = document.getElementById('pieza-media-file');
-  const file = fileInput?.files?.[0];
-  let media_url = '', media_type = '';
-  if(file){
-    toast('Subiendo archivo...');
-    const uploaded = await uploadPiezaMedia(file);
-    if(uploaded){ media_url = uploaded.url; media_type = uploaded.type; }
+ const fileInput = document.getElementById('pieza-media-file');
+  const files = fileInput?.files?.length ? Array.from(fileInput.files) : [];
+  let media_url = '', media_type = '', mediaList = [];
+  if(files.length){
+    toast('Subiendo archivo'+(files.length>1?'s...':'...'));
+    mediaList = await uploadMultipleMedia(files);
+    if(mediaList.length){ media_url = mediaList[0].url; media_type = mediaList[0].type; }
   }
   const rec={user_id:me.id,campaign_id:campId,titulo,
     formato:document.getElementById('pieza-formato')?.value||'Reel',
@@ -12178,6 +12195,7 @@ async function savePieza(){
     notas:document.getElementById('pieza-notas')?.value.trim()||'',
     protagonista: document.getElementById('pieza-protagonista')?.value.trim() || null,
     media_url, media_type};
+  if(mediaList.length) rec.media_urls = mediaList;
  const editId = document.getElementById('pieza-edit-id')?.value;
   let data, error;
   if(editId){
@@ -13305,7 +13323,7 @@ function escRenderPgwList2() {
     <div class="form-row"><div class="fg wide"><label>Protagonista (opcional)</label><input id="pieza-protagonista" type="text" placeholder="Quien actua en el video..."/></div></div>
     <div class="form-row"><div class="fg full">
       <label>Foto o video de referencia (opcional)</label>
-      <input id="pieza-media-file" type="file" accept="image/*,video/*" style="font-size:12px"/>
+<input id="pieza-media-file" type="file" accept="image/*,video/*" multiple style="font-size:12px"/>
       <div style="font-size:11px;color:var(--text3);margin-top:3px">Util para mostrar un ejemplo de como tiene que quedar la pieza, o para que otra persona del equipo entienda la idea.</div>
     </div></div>
     <div class="modal-footer">
@@ -13446,7 +13464,7 @@ function escRenderPgwList2() {
     <div class="form-row">
       <div class="fg full">
         <label>Imagen o video de referencia</label>
-        <input id="post-media-file" type="file" accept="image/*,video/*" style="font-size:12px"/>
+        <input id="post-media-file" type="file" accept="image/*,video/*" multiple style="font-size:12px"/>
         <div style="font-size:11px;color:var(--text3);margin-top:3px">Util para mostrar un ejemplo de como tiene que quedar la pieza, o para que otra persona del equipo entienda la idea.</div>
       </div>
     </div>
