@@ -11502,6 +11502,32 @@ let contFilter2 = 'all';
 function getContMeta(){ return parseInt(localStorage.getItem('gx_cont_meta')||'5'); }
 function saveContMeta(){ localStorage.setItem('gx_cont_meta', document.getElementById('cont-meta-input')?.value||5); }
 
+let contStaleAlertShown = false;
+function checkContenidoEstancado(){
+  if(contStaleAlertShown) return;
+  const hoy = new Date(); hoy.setHours(0,0,0,0);
+  const limite = new Date(hoy); limite.setDate(limite.getDate()-7);
+  const fmtD = d => d.toISOString().split('T')[0];
+  const limiteStr = fmtD(limite);
+  const estancados = getUnifiedContentItems().filter(p => p.status==='pendiente' && p.date && p.date < limiteStr);
+  if(!estancados.length) return;
+  contStaleAlertShown = true;
+  const listEl = document.getElementById('estancado-lista');
+  listEl.innerHTML = estancados.map(p=>{
+    const dias = Math.floor((hoy - new Date(p.date+'T00:00:00')) / 86400000);
+    const editFn = p.source==='campana' ? `openViewPieza('${p.id}')` : `openEditPost('${p.id}')`;
+    return `<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 0;border-bottom:0.5px solid var(--border)">
+      <div style="min-width:0">
+        <div style="font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.titulo||p.caption||'Sin titulo'}</div>
+        <div style="font-size:11px;color:var(--red)">${p.date} · hace ${dias} dias</div>
+      </div>
+      <button class="btn btn-sm btn-outline" onclick="closeModal('modal-estancado');${editFn}">Revisar</button>
+    </div>`;
+  }).join('');
+  setT('estancado-count', estancados.length);
+  openModal('modal-estancado');
+}
+
 async function loadContenido() {
   if(!me) return;
   const [pRes, ccRes, cpRes] = await Promise.all([
@@ -11515,8 +11541,8 @@ async function loadContenido() {
   renderControlContenido();
   renderCalCont();
   renderPublicaciones();
+  checkContenidoEstancado();
 }
-
 // ── TABS CONTENIDO ────────────────────────────────────────────────────────────
 function switchContTab(tab, btn) {
   finActiveTab = tab;
@@ -11825,6 +11851,8 @@ function openNewPost(){
   openModal('modal-post');
 }
 async function saveEditPost(){
+  const btn = document.getElementById('btn-post-guardar');
+  if(btn){ if(btn.dataset.loading==='1') return; btn.dataset.loading='1'; btn.disabled=true; btn.textContent='Guardando...'; }
   const id = document.getElementById('post-edit-id').value;
   const fileInput = document.getElementById('post-media-file');
   const files = fileInput?.files?.length ? Array.from(fileInput.files) : [];
@@ -11835,7 +11863,7 @@ async function saveEditPost(){
     if(mediaList.length){ media_url = mediaList[0].url; media_type = mediaList[0].type; }
   }
   const titleVal = document.getElementById('post-title').value.trim();
-  if(!titleVal){ toast('Agregá un título a la publicación'); return; }
+  if(!titleVal){ toast('Agregá un título a la publicación'); if(btn){btn.disabled=false;btn.dataset.loading='0';btn.textContent='Guardar cambios';} return; }
   const rec = {
     title: titleVal,
     caption: document.getElementById('post-caption').value.trim(),
@@ -11850,19 +11878,19 @@ async function saveEditPost(){
   let data, error;
   if(id){
     ({data,error} = await db.from('content_posts').update(rec).eq('id',id).select());
-    if(error){toast('Error: '+error.message);return;}
+    if(error){toast('Error: '+error.message);if(btn){btn.disabled=false;btn.dataset.loading='0';btn.textContent='Guardar cambios';}return;}
     const idx = posts.findIndex(x=>String(x.id)===String(id));
     if(idx>-1) posts[idx] = data[0];
   } else {
     ({data,error} = await db.from('content_posts').insert([{...rec, user_id:me.id}]).select());
-    if(error){toast('Error: '+error.message);return;}
+    if(error){toast('Error: '+error.message);if(btn){btn.disabled=false;btn.dataset.loading='0';btn.textContent='Guardar cambios';}return;}
     posts.unshift(data[0]);
   }
   renderCont(); renderPublicaciones(); renderControlContenido(); renderCalCont();
   closeModal('modal-post');
   toast(id ? 'Publicacion actualizada' : 'Publicacion creada');
+  if(btn){ btn.disabled=false; btn.dataset.loading='0'; btn.textContent='Guardar cambios'; }
 }
-
 // ══════════════════════════════════════════════════════════════════════════════
 // NOTAS — libre y simple
 // ══════════════════════════════════════════════════════════════════════════════
@@ -13376,8 +13404,22 @@ function escRenderPgwList2() {
 </div>
 
 <!-- Modal Ver/Editar Pieza -->
+<!-- Alerta de contenido estancado -->
+<div class="modal-backdrop" id="modal-estancado">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-title">Tenes contenido pendiente</div>
+    <div style="font-size:13px;color:var(--text2);margin-bottom:12px">
+      Tenes <strong id="estancado-count">0</strong> pieza(s)/publicacion(es) en estado <strong>Pendiente</strong> con fecha programada de hace mas de 7 dias. ¿Queres cambiar la fecha, mejorarlo o eliminarlo?
+    </div>
+    <div id="estancado-lista" style="max-height:280px;overflow-y:auto"></div>
+    <div class="modal-footer">
+      <button class="btn btn-accent" onclick="closeModal('modal-estancado')">Entendido</button>
+    </div>
+  </div>
+</div>
+
 <!-- Lightbox de imagen/video de referencia -->
-<div class="modal-backdrop" id="modal-media-lightbox" onclick="if(event.target===this)closeModal('modal-media-lightbox')">
+<div class="modal-backdrop" id="modal-media-lightbox" style="z-index:300" onclick="if(event.target===this)closeModal('modal-media-lightbox')">
   <div style="max-width:90vw;max-height:90vh;display:flex;flex-direction:column;align-items:center;gap:10px">
     <div id="lightbox-media-content"></div>
     <button class="btn btn-outline" style="background:#fff" onclick="closeModal('modal-media-lightbox')">Cerrar</button>
@@ -13518,9 +13560,9 @@ function escRenderPgwList2() {
         <div style="font-size:11px;color:var(--text3);margin-top:3px">Util para mostrar un ejemplo de como tiene que quedar la pieza, o para que otra persona del equipo entienda la idea.</div>
       </div>
     </div>
-    <div class="modal-footer">
+   <div class="modal-footer">
       <button class="btn btn-outline" onclick="closeModal('modal-post')">Cancelar</button>
-      <button class="btn btn-accent" onclick="saveEditPost()">Guardar cambios</button>
+      <button class="btn btn-accent" id="btn-post-guardar" onclick="saveEditPost()">Guardar cambios</button>
     </div>
   </div>
 </div>
