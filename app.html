@@ -138,9 +138,9 @@ td{padding:9px 11px;border-bottom:1px solid rgba(26,26,24,.04);font-size:13px;co
 tr:last-child td{border-bottom:none}
 tr:hover td{background:rgba(0,232,122,.025)}
 .badge{display:inline-block;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;text-transform:uppercase;letter-spacing:.05em}
-.b-green{background:var(--green-l);color:var(--green)}
-.b-amber{background:var(--amber-l);color:var(--amber)}
-.b-red{background:var(--red-l);color:var(--red)}
+.b-green{background:#12B76A;color:#FFFFFF;border:1px solid #027A48;border-radius:999px;padding:4px 12px;font-weight:600;font-size:12px;box-shadow:0 1px 2px rgba(0,0,0,0.06);text-transform:none;letter-spacing:normal}
+.b-amber{background:#F79009;color:#FFFFFF;border:1px solid #B54708;border-radius:999px;padding:4px 12px;font-weight:600;font-size:12px;box-shadow:0 1px 2px rgba(0,0,0,0.06);text-transform:none;letter-spacing:normal}
+.b-red{background:#F04438;color:#FFFFFF;border:1px solid #B42318;border-radius:999px;padding:4px 12px;font-weight:600;font-size:12px;box-shadow:0 1px 2px rgba(0,0,0,0.06);text-transform:none;letter-spacing:normal}
 .b-blue{background:var(--blue-l);color:var(--blue)}
 .b-teal{background:var(--teal-l);color:var(--teal-d)}
 .b-accent{background:var(--accent-l);color:var(--accent)}
@@ -2495,6 +2495,11 @@ body.focus-mode #main{margin-left:0}
     <input type="date" id="camp-filter-desde" onchange="campFilterChange()" style="background:#FFFFFF;border:1px solid #E4E7EC;border-radius:6px;padding:7px 10px;font-size:12px;color:#4A4F57;outline:none"/>
     <span style="font-size:12px;color:#8A8F98">a</span>
     <input type="date" id="camp-filter-hasta" onchange="campFilterChange()" style="background:#FFFFFF;border:1px solid #E4E7EC;border-radius:6px;padding:7px 10px;font-size:12px;color:#4A4F57;outline:none"/>
+    <span style="font-size:12px;color:#8A8F98">·</span>
+    <select id="camp-sort-by" onchange="campFilterChange()" style="background:#FFFFFF;border:1px solid #E4E7EC;border-radius:6px;padding:7px 10px;font-size:12px;color:#4A4F57;outline:none">
+      <option value="fecha_inicio">Ordenar por fecha de inicio</option>
+      <option value="created_at">Ordenar por fecha de creacion</option>
+    </select>
   </div>
 
   <div id="contentCamps-list">
@@ -12068,12 +12073,13 @@ async function loadCampanas() {
 }
 
 // ── RENDER LISTA DE CAMPANAS ──────────────────────────────────────────────────
-let campFilterEstado = 'all', campFilterDesde = '', campFilterHasta = '';
+let campFilterEstado = 'all', campFilterDesde = '', campFilterHasta = '', campSortBy = 'fecha_inicio';
 
 function campFilterChange(){
   campFilterEstado = document.getElementById('camp-filter-estado')?.value || 'all';
   campFilterDesde  = document.getElementById('camp-filter-desde')?.value || '';
   campFilterHasta  = document.getElementById('camp-filter-hasta')?.value || '';
+  campSortBy       = document.getElementById('camp-sort-by')?.value || 'fecha_inicio';
   renderCampsList();
 }
 
@@ -12089,12 +12095,12 @@ function renderCampsList() {
     return true;
   });
 
-  // Orden: Activas primero (mas reciente primero), despues el resto (mas reciente primero)
+ // Orden: Activas primero (mas reciente primero), despues el resto (mas reciente primero)
   visibles = visibles.sort((a,b) => {
     const aActiva = a.status==='activa' ? 0 : 1;
     const bActiva = b.status==='activa' ? 0 : 1;
     if(aActiva !== bActiva) return aActiva - bActiva;
-    return (b.fecha_inicio||'').localeCompare(a.fecha_inicio||'');
+    return (b[campSortBy]||'').localeCompare(a[campSortBy]||'');
   });
 
   if(!contentCamps.length) {
