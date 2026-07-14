@@ -4,7 +4,7 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>GOTIX - Sistema Operativo de Negocios</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script xsrc="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -974,7 +974,11 @@ body.focus-mode #main{margin-left:0}
 .snap-icon-btn:hover{color:var(--text);background:rgba(26,26,24,.06);border-color:rgba(26,26,24,.08)}
 .snap-icon-btn:active{transform:scale(.96)}
 .snap-icon-btn[data-action="delete"]:hover{color:#f87171;background:rgba(239,68,68,.1);border-color:rgba(239,68,68,.25)}
-  /* Tabla premium — scope propio, no toca el <th> global de la app */
+.gx-row-auto{ background:#F7F9FF; }
+.gx-pill-sync{ background:#EAF2FF; color:#2454C7; }
+.gx-pill-sync .gx-dot{ background:#3B7DFF; }
+.gx-locked{ display:inline-flex; color:#8A8F98; padding:2px; }
+</style>  /* Tabla premium — scope propio, no toca el <th> global de la app */
 .gx-table thead th{
   background:#fff;
   color:#8A8F98;
@@ -10169,13 +10173,37 @@ function filterGastos(f, el) {
   renderGastos();
 }
 
-function renderGastos() {
+let gastoMetaMesActual = 0;
+
+async function fetchGastoMetaMes() {
+  if(!META_ACCOUNT) { gastoMetaMesActual = 0; return; }
+  try {
+    const data = await metaGet(`act_${META_ACCOUNT}/insights`, { date_preset: 'this_month', fields: 'spend' });
+    const spendUSD = +data?.data?.[0]?.spend || 0;
+    gastoMetaMesActual = convertirUSD(spendUSD);
+  } catch(e) {
+    console.warn('No se pudo traer gasto de Meta Ads:', e.message);
+    gastoMetaMesActual = 0;
+  }
+}
+
+async function renderGastos() {
+  await fetchGastoMetaMes();
+
   const list = gastosFilter === 'all' ? gastos : gastos.filter(g => g.tipo === gastosFilter);
   const tbl = document.getElementById('gastos-tbl');
 
-  if(!list.length){ tbl.innerHTML='<tr><td colspan="7" style="text-align:center;color:var(--text2);padding:24px">Sin gastos</td></tr>'; }
-  else {
-    tbl.innerHTML = list.map(g=>`<tr>
+  const filaMetaAds = `<tr class="gx-row-auto">
+    <td style="font-weight:600">Meta ADS<br><span style="font-size:11px;color:var(--text2)">Gasto real del mes en curso</span></td>
+    <td><span class="gx-pill gx-pill-cat" data-cat="marketing">marketing</span></td>
+    <td><span class="gx-pill gx-pill-cat">variable</span></td>
+    <td class="gx-amount">$${fmtN(gastoMetaMesActual)}</td>
+    <td style="font-size:13px;color:var(--text2)">—</td>
+    <td><span class="gx-pill gx-pill-sync"><span class="gx-dot"></span>Sincronizado</span></td>
+    <td><span class="gx-locked" title="Se actualiza automaticamente desde Meta Ads"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span></td>
+  </tr>`;
+
+  const filasManuales = !list.length ? '' : list.map(g=>`<tr>
       <td style="font-weight:600">${escapeHtml(g.nombre)}<br><span style="font-size:11px;color:var(--text2)">${escapeHtml(g.notas)}</span></td>
       <td><span class="gx-pill gx-pill-cat" data-cat="${g.categoria}">${g.categoria}</span></td>
       <td><span class="gx-pill gx-pill-cat">${g.tipo}</span></td>
@@ -10190,11 +10218,13 @@ function renderGastos() {
       </td>
       <td><button class="btn btn-sm btn-red" onclick="delGasto('${g.id}')"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-1px"><path d="M18 6 6 18M6 6l12 12"/></svg></button></td>
     </tr>`).join('');
-  }
 
-  const total      = gastos.reduce((a,g)=>a+(+g.monto||0),0);           // Total OPEX
-  const variables   = gastos.filter(g=>g.tipo==='variable').reduce((a,g)=>a+(+g.monto||0),0);
-  const pendiente   = gastos.filter(g=>!g.pagado).reduce((a,g)=>a+(+g.monto||0),0);
+  tbl.innerHTML = filaMetaAds + filasManuales;
+
+  const totalManual = gastos.reduce((a,g)=>a+(+g.monto||0),0);
+  const total        = totalManual + gastoMetaMesActual;
+  const variables     = gastos.filter(g=>g.tipo==='variable').reduce((a,g)=>a+(+g.monto||0),0) + gastoMetaMesActual;
+  const pendiente     = gastos.filter(g=>!g.pagado).reduce((a,g)=>a+(+g.monto||0),0);
 
   setT('gastos-total', '$'+fmtN(total));
   setT('gastos-variables', '$'+fmtN(variables));
