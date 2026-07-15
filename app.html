@@ -7579,12 +7579,12 @@ async function dmGenerar(){
   let campanaActiva=0, campanaPausada=0;
   let mejorCamp=null, mejorRoas=0;
 
-  if(META_ACCOUNT && metaCampaigns.length){
+ if(META_ACCOUNT && metaCampaigns.length){
     for(const c of metaCampaigns){
       const ins = c.insights||{};
       const spend    = +(ins.spend||0);
-      const revenue  = +(ins.action_values?.find?.(a=>a.action_type==='purchase')?.value||0);
-      const purchases= +(ins.actions?.find?.(a=>a.action_type==='purchase')?.value||0);
+      const revenue  = +(ins.revenue||0);
+      const purchases= +(ins.purchases||0);
       const impressions = +(ins.impressions||0);
       const roas = spend>0&&revenue>0 ? revenue/spend : 0;
       totalSpend += spend;
