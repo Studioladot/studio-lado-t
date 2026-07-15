@@ -160,10 +160,19 @@ body.dark-mode .ts-modal-xl{
 /* Tarjetas de Snapshot y Biblioteca de Anuncios */
 body.dark-mode .snap-card,
 body.dark-mode .bib-ad-card{
-  background:linear-gradient(180deg,rgba(255,255,255,.035),rgba(255,255,255,.015));
-  border-color:rgba(255,255,255,.09);
+  background:var(--surface2);
+  border-color:rgba(255,255,255,.14);
+}
+body.dark-mode .snap-card:hover,
+body.dark-mode .bib-ad-card:hover{
+  border-color:rgba(255,255,255,.24);
+}
+body.dark-mode .snap-card.is-sel{
+  border-color:var(--accent);
+  background:var(--accent-l);
 }
 body.dark-mode .snap-card-name{ color:var(--text); }
+body.dark-mode .snap-card-type{ color:var(--text3); }
 
 /* Tabla de Costos (gx-table) y su fila automatica de Meta Ads */
 body.dark-mode .gx-table thead th{
