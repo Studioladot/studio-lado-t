@@ -132,9 +132,68 @@ body.dark-mode .ms-adv-toggle{
   border-color:var(--border2);
 }
 body.dark-mode .ms-preset-list-wrap,
+body.dark-mode .bc,
+body.dark-mode #meta-insights-panel,
+body.dark-mode .inv-prod-thumb{
+  border-color:var(--border2);
+}
+
+/* Tablas — divisiones entre filas (Biblioteca, Tablas de Metricas, etc) */
+body.dark-mode td{ border-bottom-color:rgba(255,255,255,.06); }
+body.dark-mode th{ background:rgba(255,255,255,.04); }
+body.dark-mode tr:hover td{ background:rgba(255,255,255,.03); }
+
+/* Todos los inputs/selects/textarea de la app (formularios de Guiones, etc) */
+body.dark-mode .fg input,
+body.dark-mode .fg textarea,
+body.dark-mode .fg select{
+  border-color:var(--border2);
+  background:var(--surface2);
+}
+
+/* Wizard "Lanzar Testeo" de Meta Ads — tenia !important fijo en blanco */
+body.dark-mode .ts-modal-xl{
+  background:rgba(24,28,37,.92) !important;
+  border-color:rgba(255,255,255,.09) !important;
+}
+
+/* Tarjetas de Snapshot y Biblioteca de Anuncios */
+body.dark-mode .snap-card,
+body.dark-mode .bib-ad-card{
+  background:linear-gradient(180deg,rgba(255,255,255,.035),rgba(255,255,255,.015));
+  border-color:rgba(255,255,255,.09);
+}
+body.dark-mode .snap-card-name{ color:var(--text); }
+
+/* Tabla de Costos (gx-table) y su fila automatica de Meta Ads */
+body.dark-mode .gx-table thead th{
+  background:var(--surface2);
+  color:var(--text3);
+  border-bottom-color:var(--border2);
+}
+body.dark-mode .gx-table td{ border-bottom-color:var(--border); color:var(--text); }
+body.dark-mode .gx-row-auto{ background:rgba(91,143,204,.1); }
+
+/* Calendario de Contenido — lineas divisorias entre dias */
+body.dark-mode #cont-cal-days-grid{ background:rgba(255,255,255,.08) !important; }
+body.dark-mode .modal-backdrop{ background:rgba(0,0,0,.6); }
+
+/* .an-dark redefine sus propias variables --ad-* localmente — hay que pisarlas aca */
+body.dark-mode .an-dark{
+  --ad-bg:#181C25; --ad-surface:#232833; --ad-surface2:#2A3040; --ad-border:rgba(255,255,255,.09);
+  --ad-text:#F5F5F3; --ad-text2:#C0C5CE; --ad-text3:#8B93A3;
+  --ad-up:#3EBA85; --ad-down:#E5645A;
+  background:linear-gradient(180deg,rgba(255,255,255,.035),rgba(255,255,255,.012));
+  border-color:rgba(255,255,255,.09);
+}
+body.dark-mode .an-dark:hover{ border-color:rgba(255,255,255,.16); }
+body.dark-mode .an-table-dark td,
+body.dark-mode .an-table-dark th{ border-bottom-color:rgba(255,255,255,.06); }
+
+/* Business Health Score — el aro de fondo del gauge tenia el blanco fijo en el SVG */
+body.dark-mode #bhs-panel svg circle:first-of-type{ stroke:rgba(255,255,255,.1); }
 
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.55;min-height:100vh}
-#main{position:relative}
 #main::before{content:'';position:fixed;inset:0;background:var(--atmosphere);pointer-events:none;z-index:0}
 .page{position:relative;z-index:1}
 button,input,textarea,select{font-family:inherit;font-size:14px}
