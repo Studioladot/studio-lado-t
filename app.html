@@ -2929,8 +2929,11 @@ body.focus-mode #main{margin-left:0}
   </div>
   <div class="ia-layout">
     <div class="ia-context">
-      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text2);margin-bottom:8px">Contexto activo</div>
-      <div style="font-size:12px;color:var(--text2);line-height:1.7;margin-bottom:14px">La IA conoce tus metricas, guiones y objetivos del mes.</div>
+     <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text2);margin-bottom:8px">Contexto activo</div>
+      <div style="font-size:12px;color:var(--text2);line-height:1.7;margin-bottom:10px">La IA conoce tus metricas, guiones y objetivos del mes.</div>
+      <select id="ia-contact-select" onchange="selectIaContact(this.value)" style="width:100%;margin-bottom:14px">
+        <option value="">General (mi negocio)</option>
+      </select>
       <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text2);margin-bottom:8px">Preguntas rapidas</div>
       <div id="ia-chips">
         <div class="ia-chip" onclick="askIA('Cual es el estado general de mis campanas y que deberia hacer esta semana?')">Estado de campanas</div>
@@ -2941,9 +2944,19 @@ body.focus-mode #main{margin-left:0}
         <div class="ia-chip" onclick="askIA('Como esta la rentabilidad del negocio este mes?')">Rentabilidad</div>
         <div class="ia-chip" onclick="askIA('Ayudame a escribir un guion nuevo para un anuncio de video corto.')">Escribir guion</div>
       </div>
-      <div id="ia-key-warn" style="display:none;margin-top:14px;padding:10px;background:var(--amber-l);border-radius:var(--r);font-size:12px;color:var(--amber)">
+<div id="ia-key-warn" style="display:none;margin-top:14px;padding:10px;background:var(--amber-l);border-radius:var(--r);font-size:12px;color:var(--amber)">
         Sin API key configurada. <span onclick="showPage('config')" style="cursor:pointer;font-weight:700;text-decoration:underline">Ir a Configuracion</span>
       </div>
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text2);margin-top:18px;margin-bottom:8px">Playbook (reglas que le enseñaste)</div>
+      <div id="ia-knowledge-list" style="margin-bottom:10px"></div>
+      <select id="ia-know-cat" style="width:100%;margin-bottom:6px;font-size:12px">
+        <option value="general">General</option>
+        <option value="meta_ads">Meta Ads</option>
+        <option value="comunicacion">Comunicacion</option>
+        <option value="finanzas">Finanzas</option>
+      </select>
+      <textarea id="ia-know-input" rows="2" placeholder="Ej: Con esta cuenta nunca uses emojis en los guiones..." style="width:100%;font-size:12px;margin-bottom:6px"></textarea>
+      <button class="btn btn-outline btn-sm" style="width:100%" onclick="saveIaKnowledgeRule()">+ Agregar regla</button>
     </div>
     <div class="ia-chat">
       <div class="ia-messages" id="ia-msgs">
@@ -2996,7 +3009,7 @@ body.focus-mode #main{margin-left:0}
         <div class="fg" style="margin-bottom:14px"><label>Anon Key</label><input id="cfg2-key" type="password" placeholder="eyJhbGci..."/></div>
        <button class="btn btn-accent" onclick="saveSupabaseConfig()">Guardar Supabase</button>
       </div>
-      <div class="card">
+     <div class="card">
         <div class="card-title">IA Estrategica — Anthropic API Key</div>
         <div style="font-size:13px;color:var(--text2);margin-bottom:12px;line-height:1.6">
           Necesitas una API key de Anthropic para usar la IA.<br>
@@ -3005,6 +3018,30 @@ body.focus-mode #main{margin-left:0}
         <div class="fg" style="margin-bottom:14px"><label>API Key</label><input id="cfg2-api" type="password" placeholder="sk-ant-..."/></div>
         <button class="btn btn-accent" onclick="saveAPIKey()">Guardar API Key</button>
         <div id="api-status" style="margin-top:10px;font-size:12px"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Perfil de negocio (IA Estrategica)</div>
+        <div style="font-size:13px;color:var(--text2);margin-bottom:12px;line-height:1.6">Esto define como piensa y responde tu IA.</div>
+        <div class="fg" style="margin-bottom:10px"><label>Nombre de marca</label><input id="bp-brand" type="text" placeholder="Ej: KIRIZ"/></div>
+        <div class="fg" style="margin-bottom:10px"><label>Rubro</label><input id="bp-rubro" type="text" placeholder="Ej: Streetwear"/></div>
+        <div class="fg" style="margin-bottom:10px"><label>Ubicacion</label><input id="bp-ubicacion" type="text" placeholder="Ej: Laferrere, Buenos Aires"/></div>
+        <div class="fg" style="margin-bottom:10px"><label>Tono de comunicacion</label><input id="bp-tono" type="text" placeholder="Ej: directo, sin vueltas, rioplatense"/></div>
+        <div class="form-row">
+          <div class="fg"><label>Breakeven ROAS</label><input id="bp-breakeven" type="number" step="0.1" placeholder="2"/></div>
+          <div class="fg"><label>Margen bruto objetivo (%)</label><input id="bp-margen" type="number" step="0.1" placeholder="48"/></div>
+        </div>
+        <div class="divider"></div>
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text2);margin-bottom:10px">Expertos que "piensan" dentro de tu IA</div>
+        <div class="form-row">
+          <div class="fg"><label>Experto 1 — nombre</label><input id="bp-exp1-nombre" type="text" placeholder="Ej: Rodri"/></div>
+          <div class="fg"><label>Experto 1 — expertise</label><input id="bp-exp1-rol" type="text" placeholder="Ej: Meta Ads, Tienda Nube, e-commerce"/></div>
+        </div>
+        <div class="form-row">
+          <div class="fg"><label>Experto 2 — nombre</label><input id="bp-exp2-nombre" type="text" placeholder="Ej: Tizi"/></div>
+          <div class="fg"><label>Experto 2 — expertise</label><input id="bp-exp2-rol" type="text" placeholder="Ej: Comunicacion y publicidad"/></div>
+        </div>
+        <div class="fg" style="margin-bottom:14px"><label>Notas libres (opcional)</label><textarea id="bp-notas" rows="3" placeholder="Cualquier otro contexto que la IA deba saber siempre..."></textarea></div>
+        <button class="btn btn-accent" onclick="saveBusinessProfile()">Guardar perfil de negocio</button>
       </div>
       <div class="card" style="border-color:var(--red-l)">
         <div class="card-title" style="color:var(--red)">Zona de peligro</div>
@@ -4119,6 +4156,93 @@ let APIKEY = localStorage.getItem('gx_anthropic_key')||'';
 let db=null, me=null;
 let metrics=[], scripts=[], objectives=[], finances=[], posts=[], contacts=[];
 let selScript=null, bibF='all', contF='all', crmF='all', iaHistory=[];
+let businessProfile={}, iaKnowledgeCache=[], iaSelectedContact='';
+
+async function initIaPage(){
+  await loadBusinessProfile();
+  await loadIaKnowledge();
+  renderIaContactSelector();
+  renderIaKnowledgeList();
+  await loadIaHistory(iaSelectedContact||null);
+}
+async function loadBusinessProfile(){
+  if(!me) return;
+  const { data } = await db.from('business_profile').select('*').eq('user_id',me.id).maybeSingle();
+  businessProfile = data || {};
+}
+async function loadIaKnowledge(){
+  if(!me) return;
+  const { data } = await db.from('ia_knowledge').select('*').eq('user_id',me.id).order('created_at',{ascending:false});
+  iaKnowledgeCache = data||[];
+}
+function renderIaContactSelector(){
+  const sel = document.getElementById('ia-contact-select');
+  if(!sel) return;
+  sel.innerHTML = '<option value="">General (mi negocio)</option>' +
+    (contacts||[]).map(c=>`<option value="${c.id}">${c.name}${c.brand?' — '+c.brand:''}</option>`).join('');
+  sel.value = iaSelectedContact||'';
+}
+async function selectIaContact(id){
+  iaSelectedContact = id||'';
+  await loadIaHistory(iaSelectedContact||null);
+}
+async function loadIaHistory(contactId){
+  const msgsEl = document.getElementById('ia-msgs');
+  if(!me){ iaHistory=[]; return; }
+  let q = db.from('ia_conversations').select('*').eq('user_id',me.id).order('created_at',{ascending:true});
+  q = contactId ? q.eq('contact_id',contactId) : q.is('contact_id',null);
+  const { data } = await q;
+  const rows = data||[];
+  iaHistory = rows.map(r=>({role:r.role, content:r.content}));
+  if(!rows.length){
+    msgsEl.innerHTML = '<div class="msg assistant">Hola! Soy tu asistente estrategico. En que te puedo ayudar?</div>';
+  } else {
+    msgsEl.innerHTML = rows.map(r=>`<div class="msg ${r.role}">${(r.content||'').replace(/\n/g,'<br>')}</div>`).join('');
+    msgsEl.scrollTop = msgsEl.scrollHeight;
+  }
+}
+function renderIaKnowledgeList(){
+  const el = document.getElementById('ia-knowledge-list');
+  if(!el) return;
+  if(!iaKnowledgeCache.length){ el.innerHTML = '<div style="font-size:11px;color:var(--text3)">Todavia no le enseñaste reglas a tu IA.</div>'; return; }
+  el.innerHTML = iaKnowledgeCache.map(k=>`
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:6px;padding:6px 0;border-bottom:0.5px solid var(--border)">
+      <div style="font-size:12px;color:var(--text2);line-height:1.5"><strong style="color:var(--text3);text-transform:uppercase;font-size:9px">${k.categoria}</strong><br>${k.regla}</div>
+      <button class="snap-icon-btn" onclick="delIaKnowledgeRule('${k.id}')" title="Eliminar" style="flex-shrink:0"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+    </div>`).join('');
+}
+async function saveIaKnowledgeRule(){
+  const cat = document.getElementById('ia-know-cat').value;
+  const regla = document.getElementById('ia-know-input').value.trim();
+  if(!regla){ toast('Escribi la regla'); return; }
+  const { data, error } = await db.from('ia_knowledge').insert([{user_id:me.id, categoria:cat, regla}]).select();
+  if(error){ toast('Error: '+error.message); return; }
+  iaKnowledgeCache.unshift(data[0]);
+  renderIaKnowledgeList();
+  document.getElementById('ia-know-input').value='';
+  toast('Regla agregada');
+}
+async function delIaKnowledgeRule(id){
+  await db.from('ia_knowledge').delete().eq('id',id);
+  iaKnowledgeCache = iaKnowledgeCache.filter(k=>k.id!==id);
+  renderIaKnowledgeList();
+}
+async function populateBusinessProfileForm(){
+  await loadBusinessProfile();
+  const bp = businessProfile||{};
+  const map = {'bp-brand':'brand_name','bp-rubro':'rubro','bp-ubicacion':'ubicacion','bp-tono':'tono','bp-breakeven':'breakeven_roas','bp-margen':'margen_bruto_objetivo','bp-exp1-nombre':'experto1_nombre','bp-exp1-rol':'experto1_rol','bp-exp2-nombre':'experto2_nombre','bp-exp2-rol':'experto2_rol','bp-notas':'notas_libres'};
+  Object.entries(map).forEach(([id,field])=>{ const el=document.getElementById(id); if(el) el.value = bp[field]||''; });
+}
+async function saveBusinessProfile(){
+  if(!me) return;
+  const map = {'bp-brand':'brand_name','bp-rubro':'rubro','bp-ubicacion':'ubicacion','bp-tono':'tono','bp-breakeven':'breakeven_roas','bp-margen':'margen_bruto_objetivo','bp-exp1-nombre':'experto1_nombre','bp-exp1-rol':'experto1_rol','bp-exp2-nombre':'experto2_nombre','bp-exp2-rol':'experto2_rol','bp-notas':'notas_libres'};
+  const rec = {user_id:me.id, updated_at:new Date().toISOString()};
+  Object.entries(map).forEach(([id,field])=>{ const el=document.getElementById(id); if(el) rec[field]= (field.includes('roas')||field.includes('margen')) ? (+el.value||null) : (el.value.trim()||null); });
+  const { error } = await db.from('business_profile').upsert(rec,{onConflict:'user_id'});
+  if(error){ toast('Error: '+error.message); return; }
+  businessProfile = rec;
+  toast('Perfil de negocio guardado');
+}
 const ANGLES=['Necesidad Emocional','Prueba Social','Modelado','Urgencia/Escasez','Promocion','Valor/Precio','Problema/Solucion','FAQ','Detras de escena','Otro'];
 const STS=['borrador','test','activo','ganador','pausado'];
 const STS_LBL={borrador:'Idea/Borrador',test:'En test',activo:'Activo en Meta',ganador:'Ganador',pausado:'Pausado'};
@@ -4319,7 +4443,9 @@ if(p==='finanzas'){loadFinanzas();loadCotizacionUSD();loadEscAll();}
     });
   }
   if(p==='biblioteca'){ bibLoadRoas(); bibSyncScriptMetrics(); }
-  if(p==='diario'){ dmRender(); }
+ if(p==='diario'){ dmRender(); }
+  if(p==='ia'){ initIaPage(); }
+  if(p==='config'){ populateBusinessProfileForm(); }
  if(p==='autopilot'){ apRenderRules(); apRenderLog(); }
   const cm=document.getElementById('cont-cal-mes');if(cm&&!cm.value)cm.value=new Date().toISOString().substring(0,7);
   const cmp=document.getElementById('camp-mes-plan');if(cmp&&!cmp.value)cmp.value=new Date().toISOString().substring(0,7);
@@ -4999,17 +5125,46 @@ async function delContact(id){await db.from('contacts').delete().eq('id',id);con
 // ── IA ────────────────────────────────────────────────────────────────────────
 async function sendIA(){const inp=document.getElementById('ia-inp');const msg=inp.value.trim();if(!msg)return;askIA(msg);inp.value='';inp.style.height='auto';}
 
+function buildSystemPrompt(){
+  const bp = businessProfile||{};
+  const nombreMarca = bp.brand_name || 'tu marca';
+  const rubro = bp.rubro || 'e-commerce';
+  const tono = bp.tono || 'directo, sin vueltas';
+  const breakeven = bp.breakeven_roas || 2;
+  const margen = bp.margen_bruto_objetivo || 48;
+
+  let expertos = '';
+  if(bp.experto1_nombre || bp.experto2_nombre){
+    expertos = '\nTenes puesta la cabeza de estas personas — combina sus criterios segun la pregunta, y aclara desde que mirada estas respondiendo cuando sea relevante:\n';
+    if(bp.experto1_nombre) expertos += `- ${bp.experto1_nombre}: experto en ${bp.experto1_rol||'la operacion del negocio'}.\n`;
+    if(bp.experto2_nombre) expertos += `- ${bp.experto2_nombre}: experta en ${bp.experto2_rol||'comunicacion'}.\n`;
+  }
+
+  let reglas = '';
+  if(iaKnowledgeCache.length){
+    reglas = '\nREGLAS QUE TE ENSEÑO ESTE CLIENTE (tienen prioridad sobre cualquier criterio generico):\n' +
+      iaKnowledgeCache.map(k=>`- [${k.categoria}] ${k.regla}`).join('\n');
+  }
+
+  let cuentaActiva = '';
+  if(iaSelectedContact){
+    const c = (contacts||[]).find(x=>x.id===iaSelectedContact);
+    if(c){
+      cuentaActiva = `\nESTAS HABLANDO SOBRE LA CUENTA/CLIENTE: ${c.name}${c.brand?' ('+c.brand+')':''}. Servicio: ${c.service||'-'}. Notas guardadas: ${c.notes||'sin notas'}.\nToda respuesta tiene que ser especifica a esta cuenta y a lo que ya se hablo con ella (ver historial de mensajes arriba), no generica.`;
+    }
+  }
+
+  return `Sos el asistente estrategico de ${nombreMarca} (rubro: ${rubro}). Breakeven ROAS de referencia: ${breakeven}x. Margen bruto objetivo: ${margen}%. Tono de comunicacion: ${tono}.
+${expertos}${reglas}${cuentaActiva}
+Responde en espanol rioplatense, sin preambulo. Si los datos de abajo no alcanzan para responder con precision, decilo y pedi el dato exacto en vez de generalizar.
+${buildCtx()}`;
+}
+
 async function askIA(msg){
   appendMsg('user',msg); iaHistory.push({role:'user',content:msg});
+  if(me) db.from('ia_conversations').insert([{user_id:me.id, contact_id:iaSelectedContact||null, role:'user', content:msg}]).then(()=>{});
   const typing=appendMsg('typing','<span class="ld"></span><span class="ld"></span><span class="ld"></span>');
-  const ctx=buildCtx();
-  const systemPrompt=`Sos el estratega interno de GOTIX para KIRIZ (streetwear, Laferrere, Buenos Aires) y Lado T. Cuatro areas, con reglas concretas en cada una -- nunca generico, siempre con numeros y accion:
-FINANZAS: breakeven ROAS ~2x, margen bruto objetivo ~48-49%. Si te preguntan por rentabilidad, calcula con los datos reales que te paso abajo (facturacion neta, gastos, comisiones) en vez de dar formulas teoricas. Si falta un dato para calcular algo, pedilo puntual, no asumas.
-META ADS: estructura correcta es 1 ad set CBO/ADV+ con 3 anuncios adentro; nuevo ad set solo para audiencia distinta. CPA breakeven ~USD 14-18. Si el ROAS reportado por Meta no coincide con las ventas reales de Tienda Nube, senalalo explicitamente (es el bug mas comun: ROAS inflado por atribucion).
-ESCALAR/OPTIMIZAR: subidas de presupuesto incrementales (no mas de 20-30% por vez) para no resetear el aprendizaje del algoritmo. Ante fatiga de creativo (frequency alta, CTR cayendo), propone refrescar el gancho/hook antes que tocar presupuesto.
-CONTENIDO: la filosofia es contenido nativo que entretiene primero y vende encubierto -- nunca arrancar un gancho desde un lugar negativo/dolor, CTA liviano al final. Si te piden ideas de contenido, da formatos concretos, basados en lo que ya viene funcionando segun los guiones activos/ganadores de abajo.
-Responde en espanol rioplatense, directo, sin preambulo. Si los datos de abajo no alcanzan para responder con precision, decilo y pedi el dato exacto que falta en vez de generalizar.
-${ctx}`;
+  const systemPrompt = buildSystemPrompt();
   APIKEY=localStorage.getItem('gx_anthropic_key')||'';
   try{
     let reply;
@@ -5027,8 +5182,9 @@ ${ctx}`;
       if(data.error){typing.remove();appendMsg('assistant','Error de IA: '+data.error);return;}
       reply=data.reply||'Sin respuesta.';
     }
-    typing.remove();
+   typing.remove();
     iaHistory.push({role:'assistant',content:reply});
+    if(me) db.from('ia_conversations').insert([{user_id:me.id, contact_id:iaSelectedContact||null, role:'assistant', content:reply}]).then(()=>{});
     appendMsg('assistant',reply.replace(/\n/g,'<br>'));
   }catch(e){typing.remove();appendMsg('assistant','Error de conexion: '+e.message);}
 }
@@ -5059,8 +5215,15 @@ function appendMsg(role,html){
   const d=document.createElement('div'); d.className='msg '+role; d.innerHTML=html;
   el.appendChild(d); el.scrollTop=el.scrollHeight; return d;
 }
-function clearIA(){iaHistory=[];document.getElementById('ia-msgs').innerHTML='<div class="msg assistant">Chat reiniciado. En que te puedo ayudar?</div>';}
-
+async function clearIA(){
+  if(me){
+    let q = db.from('ia_conversations').delete().eq('user_id',me.id);
+    q = iaSelectedContact ? q.eq('contact_id', iaSelectedContact) : q.is('contact_id', null);
+    await q;
+  }
+  iaHistory=[];
+  document.getElementById('ia-msgs').innerHTML='<div class="msg assistant">Chat reiniciado. En que te puedo ayudar?</div>';
+}
 // ── BENCHMARKS ────────────────────────────────────────────────────────────────
 function saveBenchmarks(){
   const data={};
