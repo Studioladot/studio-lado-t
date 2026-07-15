@@ -25,7 +25,14 @@
   .faq-content { max-height: 0; overflow: hidden; transition: max-height .3s ease; }
   .faq-item.open .faq-content { max-height: 300px; }
   .faq-item.open .faq-chevron { transform: rotate(180deg); }
-  #authModal.hidden { display: none; }
+#authModal.hidden { display: none; }
+
+  /* En celular los blur grandes recargan mucho la placa de video — los bajamos solo ahi */
+  @media (max-width: 767px) {
+    header.backdrop-blur-xl { backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+    .blur-\[120px\] { filter: blur(40px); }
+    .blur-\[130px\] { filter: blur(40px); }
+  }
 </style>
 </head>
 <body class="min-h-screen bg-zinc-950 text-zinc-100 antialiased overflow-x-hidden">
