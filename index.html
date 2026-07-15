@@ -7,18 +7,32 @@
 <meta name="description" content="Conectá tu Tienda Nube y Meta Ads en 1 clic. Conocé tu rentabilidad real y dejá que la IA te diga qué escalar." />
 <link rel="preconnect" href="https://cdn.tailwindcss.com">
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="preconnect" href="https://cdn.tailwindcss.com">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <script src="https://cdn.tailwindcss.com"></script>
-  <style>
+ <style>
+  :root {
+    --gx-bg: #12151C;
+    --gx-surface: #181C25;
+    --gx-surface2: #232833;
+    --gx-border: #262B38;
+    --gx-text: #F5F5F3;
+    --gx-text2: #C0C5CE;
+    --gx-text3: #8B93A3;
+    --gx-accent: #5B8FCC;
+    --gx-accent-hover: #74A2D8;
+    --gx-accent-dim: #2A3B52;
+  }
   body { font-family: -apple-system, BlinkMacSystemFont, "Inter", system-ui, sans-serif; }
   @keyframes pulseGlow {
-    0%, 100% { box-shadow: 0 0 0 0 rgba(16,185,129,0.45), 0 10px 30px -10px rgba(16,185,129,0.4); }
-    50% { box-shadow: 0 0 0 6px rgba(16,185,129,0.08), 0 10px 30px -5px rgba(16,185,129,0.55); }
+    0%, 100% { box-shadow: 0 0 0 0 rgba(91,143,204,0.45), 0 10px 30px -10px rgba(91,143,204,0.4); }
+    50% { box-shadow: 0 0 0 6px rgba(91,143,204,0.08), 0 10px 30px -5px rgba(91,143,204,0.55); }
   }
   .glow-btn { animation: pulseGlow 2.8s ease-in-out infinite; }
   .card-glow { position: relative; }
   .card-glow::before {
     content: ""; position: absolute; inset: -1px; border-radius: 1.5rem;
-    background: linear-gradient(135deg, rgba(16,185,129,0.35), transparent 40%, transparent 60%, rgba(16,185,129,0.15));
+    background: linear-gradient(135deg, rgba(91,143,204,0.35), transparent 40%, transparent 60%, rgba(91,143,204,0.15));
     opacity: 0; transition: opacity .3s ease; pointer-events: none;
   }
   .card-glow:hover::before { opacity: 1; }
@@ -27,6 +41,35 @@
   .faq-item.open .faq-chevron { transform: rotate(180deg); }
 #authModal.hidden { display: none; }
 
+  @media (max-width: 767px) {
+    header.backdrop-blur-xl { backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+    .blur-\[120px\] { filter: blur(40px); }
+    .blur-\[130px\] { filter: blur(40px); }
+  }
+
+  /* ── Paleta real de GOTIX pisando el verde/zinc generico de Tailwind ── */
+  .bg-zinc-950 { background-color: var(--gx-bg) !important; }
+  .bg-zinc-950\/70 { background-color: rgba(18,21,28,0.75) !important; }
+  .bg-zinc-900, .bg-zinc-900\/80 { background-color: var(--gx-surface) !important; }
+  .hover\:bg-zinc-800:hover, .bg-zinc-800 { background-color: var(--gx-surface2) !important; }
+  .border-zinc-800, .border-zinc-800\/60, .border-zinc-900 { border-color: var(--gx-border) !important; }
+  .text-zinc-100 { color: var(--gx-text) !important; }
+  .text-zinc-300 { color: var(--gx-text2) !important; }
+  .text-zinc-400 { color: var(--gx-text2) !important; }
+  .text-zinc-500, .hover\:text-zinc-400:hover { color: var(--gx-text3) !important; }
+  .text-zinc-600 { color: var(--gx-text3) !important; }
+  .hover\:text-white:hover { color: var(--gx-text) !important; }
+
+  .bg-emerald-500 { background-color: var(--gx-accent) !important; }
+  .hover\:bg-emerald-400:hover { background-color: var(--gx-accent-hover) !important; }
+  .bg-emerald-500\/10 { background-color: rgba(91,143,204,0.10) !important; }
+  .text-emerald-400 { color: var(--gx-accent) !important; }
+  .text-emerald-950, .text-zinc-950 { color: #0D1117 !important; }
+  .border-emerald-500\/40 { border-color: rgba(91,143,204,0.4) !important; }
+  .ring-emerald-500\/50 { --tw-ring-color: rgba(91,143,204,0.5) !important; }
+  .from-emerald-900\/10 { --tw-gradient-from: rgba(42,59,82,0.15) !important; }
+  .shadow-\[0_0_25px_rgba\(16\,185\,129\,0\.25\)\] { box-shadow: 0 0 25px rgba(91,143,204,0.25) !important; }
+  
   /* En celular los blur grandes recargan mucho la placa de video — los bajamos solo ahi */
   @media (max-width: 767px) {
     header.backdrop-blur-xl { backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
@@ -72,9 +115,9 @@
         <svg class="w-3.5 h-3.5 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="M12 15l-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/></svg>
         Validado por más de 100 marcas
       </div>
-      <h1 class="text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight text-white leading-[1.1] mb-6">
-        El control absoluto de tu marca.
-        <span class="text-emerald-400 block">La base para escalar tu negocio.</span>
+<h1 class="text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight text-white leading-[1.1] mb-6">
+        La base para escalar
+        <span class="text-emerald-400 block">y tener el control absoluto de tu negocio.</span>
       </h1>
       <p class="max-w-2xl mx-auto text-lg text-zinc-400 leading-relaxed mb-10">
         Conectá tu Tienda Nube y Meta Ads en 1 clic. Conocé tu rentabilidad real, planificá tu contenido orgánico mensual y dejá que nuestra IA Estratégica te dé el plan de acción exacto para crecer.
