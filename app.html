@@ -10233,7 +10233,7 @@ async function submitReport(){
   const btn = document.getElementById('btn-report-send');
   if(btn){ btn.disabled = true; btn.textContent = 'Enviando...'; }
 
-  const pagina = document.querySelector('.page[style*="display: block"], .page[style*="display:block"]')?.id || 'desconocida';
+const pagina = document.querySelector('.page.active')?.id || 'desconocida';
   const rec = {
     user_id: me?.id || null,
     user_email: me?.email || null,
