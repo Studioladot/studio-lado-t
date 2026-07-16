@@ -10161,7 +10161,7 @@ async function checkUserAccess(opts) {
       return false;
     }
     userProfile = data;
-    if (data.is_admin && me.email === 'kirizproject@gmail.com') {
+    if (data.is_admin && me.email === 'gotixcontacto@gmail.com') {
       isAdmin = true;
       const nav = document.getElementById('nav-admin');
       if (nav) nav.style.display = 'flex';
@@ -14321,7 +14321,7 @@ function escRenderPgwList2() {
 (async () => {
   const { data } = await db.auth.getUser();
   const currentEmail = data?.user?.email;
-  if (currentEmail === 'kirizproject@gmail.com') {
+  if (currentEmail === 'gotixcontacto@gmail.com') {
     const nav = document.getElementById('nav-userlist');
     if (nav) nav.style.display = 'flex';
   }
@@ -14363,7 +14363,7 @@ async function ulToggleRole(uid, isCurrentlyAdmin) {
         async function verificarAccesoListaUsuarios() {
   const { data } = await db.auth.getUser();
   const email = data?.user?.email;
-  if (email === 'kirizproject@gmail.com') {
+if (email === 'gotixcontacto@gmail.com') {
     const btn = document.getElementById('btn-lista-usuarios');
     if (btn) btn.style.display = 'flex';
   }
