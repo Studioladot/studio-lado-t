@@ -3202,6 +3202,16 @@ create policy "own" on contacts for all using (auth.uid()=user_id);</div>
 </div>
  
 <!-- PANTALLA DE ESPERA (usuario pendiente de aprobacion) -->
+<div id="trial-expired-screen" style="display:none;position:fixed;inset:0;background:var(--bg);z-index:500;align-items:center;justify-content:center">
+  <div style="background:var(--surface);border-radius:var(--rl);padding:40px;max-width:420px;text-align:center;border:0.5px solid var(--border);box-shadow:0 4px 24px rgba(0,0,0,.035)">
+    <div style="font-size:24px;font-weight:800;color:var(--gotix-blue);margin-bottom:4px">GOTIX</div>
+    <div style="font-size:16px;font-weight:700;margin-bottom:8px">Tu prueba gratis de 7 dias termino</div>
+    <div style="font-size:13px;color:var(--text2);line-height:1.7;margin-bottom:20px">Para seguir usando GOTIX, activa tu suscripcion. Es un solo paso con Mercado Pago.</div>
+    <button class="btn btn-accent" style="width:100%;padding:13px;margin-bottom:10px" onclick="suscribirseGotix()">Suscribirme ahora</button>
+    <div id="trial-expired-status" style="font-size:12px;color:var(--text2);margin-bottom:14px"></div>
+    <button class="btn btn-ghost" onclick="signOut()">Cerrar sesion</button>
+  </div>
+</div>
 <div id="pending-screen" style="display:none;position:fixed;inset:0;background:var(--bg);z-index:500;align-items:center;justify-content:center">
   <div style="background:var(--surface);border-radius:var(--rl);padding:40px;max-width:420px;text-align:center;border:0.5px solid var(--border);box-shadow:0 4px 24px rgba(0,0,0,.035)">
     <div style="font-size:40px;margin-bottom:16px">&#9203;</div>
@@ -5251,7 +5261,8 @@ async function suscribirseGotix() {
   const session = sessionData?.session;
   if (!session) { alert('Error: no hay sesion activa. Volve a iniciar sesion.'); return; }
 
-  setT('fact-status', 'Generando link de pago...');
+  const statusEl = document.getElementById('trial-expired-status') ? 'trial-expired-status' : 'fact-status';
+  setT(statusEl, 'Generando link de pago...');
 
   let res, data;
   try {
@@ -5262,16 +5273,14 @@ async function suscribirseGotix() {
     data = await res.json();
   } catch (e) {
     alert('Error de red: ' + e.message);
-    setT('fact-status', '');
+    setT(statusEl, '');
     return;
   }
-
   if (!res.ok || !data || !data.init_point) {
     alert('Error: ' + (data?.error || 'No se pudo generar el link de pago.'));
-    setT('fact-status', '');
+    setT(statusEl, '');
     return;
   }
-
   window.location.href = data.init_point;
 }
 function saveSupabaseConfig(){
@@ -10125,13 +10134,17 @@ async function checkUserAccess() {
       const navCfg = document.getElementById('nav-config');
       if (navCfg) navCfg.style.display = 'flex';
     }
-    // Verificar expiración
+  // Verificar expiración (usuario aprobado/pago que vencio)
     if (!data.is_admin && data.expires_at && new Date(data.expires_at) < new Date()) {
-      showPending('Tu acceso expiró. Contacta a Lado T para renovar.');
+      showTrialExpired();
       return false;
     }
+    // Trial gratis de 7 dias — mientras dure, entra aunque is_approved sea false
     if (!data.is_admin && !data.is_approved) {
-      showPending();
+      const createdAt = new Date(data.created_at);
+      const daysPassed = Math.floor((Date.now() - createdAt.getTime()) / 86400000);
+      if (daysPassed < 7) return true; // sigue en su prueba gratis, dejalo entrar
+      showTrialExpired();
       return false;
     }
     return true;
@@ -10151,6 +10164,10 @@ function showPending(msg) {
     if (msg) ps.querySelector('div > div:nth-child(4)').textContent = msg;
     ps.style.display = 'flex';
   }
+}
+function showTrialExpired() {
+  const ts = document.getElementById('trial-expired-screen');
+  if (ts) ts.style.display = 'flex';
 }
 
 // ── ADMIN PANEL ───────────────────────────────────────────────────────────────
