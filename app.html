@@ -3181,10 +3181,17 @@ create policy "own" on contacts for all using (auth.uid()=user_id);</div>
     <div class="card" style="padding:14px 16px;margin:0;border-color:var(--amber)"><div class="fin-label">Pendientes</div><div class="fin-value" style="color:var(--amber)" id="adm-pendientes">—</div></div>
     <div class="card" style="padding:14px 16px;margin:0;border-color:var(--red)"><div class="fin-label">Expirados</div><div class="fin-value red" id="adm-expirados">—</div></div>
   </div>
-  <div class="card" style="padding:0;overflow:hidden">
+  <div class="card" style="padding:0;overflow:hidden;margin-bottom:20px">
     <div class="tbl-wrap"><table>
       <thead><tr><th>Usuario</th><th>WhatsApp</th><th>Negocio</th><th>Estado</th><th>Expira</th><th>Registro</th><th>Acciones</th></tr></thead>
       <tbody id="adm-users-tbl"><tr><td colspan="7" style="text-align:center;color:var(--text2);padding:24px">Cargando...</td></tr></tbody>
+    </table></div>
+  </div>
+  <div class="card-title" style="margin-bottom:10px">Tickets de soporte</div>
+  <div class="card" style="padding:0;overflow:hidden">
+    <div class="tbl-wrap"><table>
+      <thead><tr><th>Fecha</th><th>Usuario</th><th>Pagina</th><th>Descripcion</th><th>Ultimo error</th><th>Estado</th><th>Acciones</th></tr></thead>
+      <tbody id="adm-tickets-tbl"><tr><td colspan="7" style="text-align:center;color:var(--text2);padding:24px">Cargando...</td></tr></tbody>
     </table></div>
   </div>
 </div>
@@ -3235,6 +3242,25 @@ create policy "own" on contacts for all using (auth.uid()=user_id);</div>
       <button class="btn btn-accent" style="width:100%" onclick="location.reload()">Refrescar</button>
     </div>
     <button class="btn btn-ghost" onclick="signOut()">Cerrar sesion</button>
+  </div>
+</div>
+
+<button id="report-fab" onclick="openReportModal()" title="Reportar un problema" style="position:fixed;bottom:24px;right:24px;width:52px;height:52px;border-radius:50%;background:var(--gotix-blue);color:#fff;border:none;box-shadow:0 4px 14px rgba(0,0,0,.2);cursor:pointer;z-index:90;display:flex;align-items:center;justify-content:center">
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4M12 17h.01"/><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/></svg>
+</button>
+
+<div class="modal-backdrop" id="modal-report">
+  <div class="modal" style="max-width:440px">
+    <div class="modal-title">Reportar un problema</div>
+    <div style="font-size:12px;color:var(--text2);margin-bottom:14px">Contanos que paso — vamos a adjuntar automaticamente en que pantalla estabas y el ultimo error tecnico detectado, para resolverlo mas rapido.</div>
+    <div class="fg" style="margin-bottom:14px">
+      <label>Que estaba pasando?</label>
+      <textarea id="report-desc" rows="4" placeholder="Ej: Toque Guardar y no paso nada..."></textarea>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-report')">Cancelar</button>
+      <button class="btn btn-accent" id="btn-report-send" onclick="submitReport()">Enviar reporte</button>
+    </div>
   </div>
 </div>
 
@@ -10192,8 +10218,62 @@ async function checkUserAccessWithRetry() {
 }
 
 // ── ADMIN PANEL ───────────────────────────────────────────────────────────────
+let lastJsError = '';
+window.addEventListener('error', (e) => {
+  lastJsError = (e.message||'Error desconocido') + ' — ' + (e.filename||'').split('/').pop() + ':' + e.lineno;
+});
+
+function openReportModal(){
+  document.getElementById('report-desc').value = '';
+  openModal('modal-report');
+}
+async function submitReport(){
+  const desc = document.getElementById('report-desc').value.trim();
+  if(!desc){ toast('Contanos que paso'); return; }
+  const btn = document.getElementById('btn-report-send');
+  if(btn){ btn.disabled = true; btn.textContent = 'Enviando...'; }
+
+  const pagina = document.querySelector('.page[style*="display: block"], .page[style*="display:block"]')?.id || 'desconocida';
+  const rec = {
+    user_id: me?.id || null,
+    user_email: me?.email || null,
+    pagina,
+    descripcion: desc,
+    ultimo_error_js: lastJsError || null,
+    user_agent: navigator.userAgent,
+  };
+  const { error } = await db.from('support_tickets').insert([rec]);
+  if(btn){ btn.disabled = false; btn.textContent = 'Enviar reporte'; }
+  if(error){ toast('Error al enviar: '+error.message); return; }
+  closeModal('modal-report');
+  toast('Reporte enviado — gracias, lo vamos a revisar');
+}
+
+async function loadSupportTickets(){
+  if(!isAdmin) return;
+  const { data } = await db.from('support_tickets').select('*').order('created_at',{ascending:false});
+  const tbody = document.getElementById('adm-tickets-tbl');
+  if(!tbody) return;
+  const tickets = data||[];
+  if(!tickets.length){ tbody.innerHTML='<tr><td colspan="7" style="text-align:center;color:var(--text2);padding:24px">Sin tickets</td></tr>'; return; }
+  tbody.innerHTML = tickets.map(t=>`<tr>
+    <td style="font-size:12px;color:var(--text2)">${new Date(t.created_at).toLocaleDateString('es-AR',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}</td>
+    <td style="font-size:12px">${t.user_email||'—'}</td>
+    <td style="font-size:12px">${t.pagina||'—'}</td>
+    <td style="font-size:12px;max-width:220px">${t.descripcion}</td>
+    <td style="font-size:11px;color:var(--red)">${t.ultimo_error_js||'—'}</td>
+    <td><span class="badge ${t.status==='resuelto'?'b-green':'b-amber'}">${t.status}</span></td>
+    <td>${t.status!=='resuelto'?`<button class="btn btn-sm btn-outline" onclick="resolveTicket('${t.id}')">Marcar resuelto</button>`:''}</td>
+  </tr>`).join('');
+}
+async function resolveTicket(id){
+  await db.from('support_tickets').update({status:'resuelto'}).eq('id',id);
+  loadSupportTickets();
+}
+
 async function loadAdmin() {
   if (!isAdmin) return;
+  loadSupportTickets();
   const { data } = await db.from('user_profiles').select('*').order('created_at', {ascending: false});
   const users = data || [];
   const now = new Date();
