@@ -5,8 +5,9 @@
       "maxDuration": 10
     }
   },
-  "rewrites": [
+ "rewrites": [
     { "source": "/api/meta", "destination": "/api/meta" },
+    { "source": "/googleaa655e68170c8d27.html", "destination": "/googleaa655e68170c8d27.html" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
