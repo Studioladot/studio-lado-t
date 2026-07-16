@@ -3202,6 +3202,13 @@ create policy "own" on contacts for all using (auth.uid()=user_id);</div>
 </div>
  
 <!-- PANTALLA DE ESPERA (usuario pendiente de aprobacion) -->
+<div id="confirming-payment-screen" style="display:none;position:fixed;inset:0;background:var(--bg);z-index:500;align-items:center;justify-content:center">
+  <div style="background:var(--surface);border-radius:var(--rl);padding:40px;max-width:420px;text-align:center;border:0.5px solid var(--border);box-shadow:0 4px 24px rgba(0,0,0,.035)">
+    <div style="width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--gotix-blue);border-radius:50%;margin:0 auto 18px;animation:spin .8s linear infinite"></div>
+    <div style="font-size:16px;font-weight:700;margin-bottom:8px">Confirmando tu pago...</div>
+    <div style="font-size:13px;color:var(--text2);line-height:1.7">Mercado Pago nos avisa en unos segundos. No cierres esta pantalla.</div>
+  </div>
+</div>
 <div id="trial-expired-screen" style="display:none;position:fixed;inset:0;background:var(--bg);z-index:500;align-items:center;justify-content:center">
   <div style="background:var(--surface);border-radius:var(--rl);padding:40px;max-width:420px;text-align:center;border:0.5px solid var(--border);box-shadow:0 4px 24px rgba(0,0,0,.035)">
     <div style="font-size:24px;font-weight:800;color:var(--gotix-blue);margin-bottom:4px">GOTIX</div>
@@ -4333,7 +4340,7 @@ await syncMetaStatus();
 if (new URLSearchParams(location.search).get('meta_connected') === '1') {
   toast('Meta Ads conectado');
 }
- const hasAccess = await checkUserAccess();
+const hasAccess = await checkUserAccessWithRetry();
   if(!hasAccess) return;
  window.scrollTo(0,0);
   document.getElementById('main')?.scrollTo(0,0);
@@ -10115,7 +10122,8 @@ function initMeta() {
 let isAdmin = false;
 let userProfile = null;
 
-async function checkUserAccess() {
+async function checkUserAccess(opts) {
+  const silent = opts && opts.silent;
   try {
     const { data, error } = await db.from('user_profiles').select('*').eq('id', me.id).maybeSingle();
     if (error && error.code !== 'PGRST116') throw error;
@@ -10123,7 +10131,7 @@ async function checkUserAccess() {
       // Primera vez — crear perfil pendiente
       const profileData = { id: me.id, email: me.email, is_approved: false, is_admin: false };
       await db.from('user_profiles').insert([profileData]);
-      showPending();
+      if (!silent) showPending();
       return false;
     }
     userProfile = data;
@@ -10134,9 +10142,9 @@ async function checkUserAccess() {
       const navCfg = document.getElementById('nav-config');
       if (navCfg) navCfg.style.display = 'flex';
     }
-  // Verificar expiración (usuario aprobado/pago que vencio)
+    // Verificar expiración (usuario aprobado/pago que vencio)
     if (!data.is_admin && data.expires_at && new Date(data.expires_at) < new Date()) {
-      showTrialExpired();
+      if (!silent) showTrialExpired();
       return false;
     }
     // Trial gratis de 7 dias — mientras dure, entra aunque is_approved sea false
@@ -10144,7 +10152,7 @@ async function checkUserAccess() {
       const createdAt = new Date(data.created_at);
       const daysPassed = Math.floor((Date.now() - createdAt.getTime()) / 86400000);
       if (daysPassed < 7) return true; // sigue en su prueba gratis, dejalo entrar
-      showTrialExpired();
+      if (!silent) showTrialExpired();
       return false;
     }
     return true;
@@ -10152,9 +10160,8 @@ async function checkUserAccess() {
     // Ante cualquier error, NUNCA dar admin por defecto — fail-closed, no fail-open.
     console.error('user_profiles:', e.message);
     isAdmin = false;
-    toast('No se pudo verificar tu acceso. Reintentá o contacta al administrador.');
+    if (!silent) toast('No se pudo verificar tu acceso. Reintentá o contacta al administrador.');
     return false;
-    return true;
   }
 }
 
@@ -10168,6 +10175,20 @@ function showPending(msg) {
 function showTrialExpired() {
   const ts = document.getElementById('trial-expired-screen');
   if (ts) ts.style.display = 'flex';
+}
+async function checkUserAccessWithRetry() {
+  if (new URLSearchParams(location.search).get('mp_subscribed') !== '1') {
+    return checkUserAccess();
+  }
+  const cp = document.getElementById('confirming-payment-screen');
+  if (cp) cp.style.display = 'flex';
+  for (let i = 0; i < 5; i++) {
+    const ok = await checkUserAccess({ silent: true });
+    if (ok) { if (cp) cp.style.display = 'none'; return true; }
+    await new Promise(r => setTimeout(r, 2000));
+  }
+  if (cp) cp.style.display = 'none';
+  return checkUserAccess(); // ya no en silencio: si sigue sin aprobar, muestra la pantalla real
 }
 
 // ── ADMIN PANEL ───────────────────────────────────────────────────────────────
