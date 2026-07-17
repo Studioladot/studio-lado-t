@@ -4,7 +4,7 @@ export const config = { runtime: 'edge' };
 const GRAPH = 'https://graph.facebook.com/v19.0';
 
 function redirectWithError(msg) {
-  return Response.redirect(`https://gotixsystem.vercel.app/?meta_error=${encodeURIComponent(msg)}`, 302);
+  return Response.redirect(`https://www.gotix.com.ar/?meta_error=${encodeURIComponent(msg)}`, 302);
 }
 
 export default async function handler(req) {
