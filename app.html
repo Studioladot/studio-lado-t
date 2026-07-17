@@ -4537,18 +4537,32 @@ if (tnConnection) await loadTiendaNubeSales();
 }
 // ── DASHBOARD ────────────────────────────────────────────────────────────────
 function renderDash(){
-  const tot=metrics.reduce((a,m)=>a+(+m.spend||0),0);
-  const roasList=metrics.filter(m=>+m.roas>0);
-  const avgRoas=roasList.length?(roasList.reduce((a,m)=>a+(+m.roas),0)/roasList.length):0;
-  const totP=metrics.reduce((a,m)=>a+(+m.purchases||0),0);
-  const cpaList=metrics.filter(m=>+m.cpa>0);
-  const avgCPA=cpaList.length?(cpaList.reduce((a,m)=>a+(+m.cpa),0)/cpaList.length):0;
+  const liveCamps=metaCampaigns.filter(c=>parseFloat(c.insights?.spend)>0);
+  let tot=0, avgRoas=0, totP=0, avgCPA=0;
+  if(liveCamps.length){
+    tot=liveCamps.reduce((a,c)=>a+parseFloat(c.insights.spend||0),0);
+    const totalRev=liveCamps.reduce((a,c)=>a+parseFloat(c.insights.revenue||0),0);
+    avgRoas=tot>0&&totalRev>0?totalRev/tot:0;
+    totP=liveCamps.reduce((a,c)=>a+(+c.insights.purchases||0),0);
+    avgCPA=totP>0?tot/totP:0;
+  } else {
+    tot=metrics.reduce((a,m)=>a+(+m.spend||0),0);
+    const roasList=metrics.filter(m=>+m.roas>0);
+    avgRoas=roasList.length?(roasList.reduce((a,m)=>a+(+m.roas),0)/roasList.length):0;
+    totP=metrics.reduce((a,m)=>a+(+m.purchases||0),0);
+    const cpaList=metrics.filter(m=>+m.cpa>0);
+    avgCPA=cpaList.length?(cpaList.reduce((a,m)=>a+(+m.cpa),0)/cpaList.length):0;
+  }
   document.getElementById('ds-gasto').textContent='$'+tot.toFixed(0);
   document.getElementById('ds-roas').textContent=avgRoas?avgRoas.toFixed(1)+'x':'—';
   document.getElementById('ds-compras').textContent=totP||'—';
   document.getElementById('ds-cpa').textContent=avgCPA?'$'+fmt(avgCPA):'—';
   const dsRangeEl=document.getElementById('ds-range');
-  if(dsRangeEl&&metrics.length){const dts=metrics.map(m=>new Date(m.created_at)).filter(d=>!isNaN(d));if(dts.length){const f=d=>d.toLocaleDateString('es-AR',{day:'numeric',month:'short'});dsRangeEl.textContent=f(new Date(Math.min(...dts)))+' – '+f(new Date(Math.max(...dts)));}}
+  if(dsRangeEl){
+    const rv=document.getElementById('meta-date-range')?.value||'last_30d';
+    const rl={today:'Hoy',yesterday:'Ayer',last_7d:'Ultimos 7 dias',last_14d:'Ultimos 14 dias',last_30d:'Ultimos 30 dias',last_90d:'Ultimos 90 dias',this_month:'Este mes',last_month:'Mes pasado',custom:'Rango personalizado',maximum:'Historico'}[rv]||rv;
+    dsRangeEl.textContent=liveCamps.length?rl:rl+' (snapshots guardados)';
+  }
   // Boxes superiores (Meta Ads / Tienda Nube / Contenido / Finanzas)
   setT('dbox-roas', avgRoas?avgRoas.toFixed(1)+'x':'—');
   setT('dbox-gasto', '$'+fmtN(tot));
@@ -5664,16 +5678,35 @@ function setRankingMetric(m,btn){
   renderRanking();
 }
 
-function setRankingLevel(level, btn) {
+async function setRankingLevel(level, btn) {
   rankingLevel = level;
-  // Actualizar tabs
   ['campaign','adset','ad'].forEach(l => {
     const t = document.getElementById('rtab-'+l);
-    if(t) {
-      t.className = l===level ? 'btn btn-sm btn-accent' : 'btn btn-sm btn-outline';
-    }
+    if(t) t.className = l===level ? 'btn btn-sm btn-accent' : 'btn btn-sm btn-outline';
   });
+  if(level==='adset' && !metaAdsets.length) await loadAllAdsetsForRanking();
+  if(level==='ad' && !metaAds.length) await loadAllAdsForRanking();
   renderRanking();
+}
+async function loadAllAdsetsForRanking(){
+  if(!META_TOKEN||!META_ACCOUNT) return;
+  const el=document.getElementById('ranking-list');
+  if(el) el.innerHTML='<div style="padding:16px;text-align:center"><span class="ld"></span><span class="ld"></span><span class="ld"></span></div>';
+  try{
+    const insightsParam=buildMetaInsightsField(AD_FIELDS);
+    const data=await metaGet(`act_${META_ACCOUNT}/adsets`,{fields:`id,name,status,effective_status,${insightsParam}`,limit:100});
+    metaAdsets=(data.data||[]).map(s=>({...s,insights:parseInsights(s.insights?.data)}));
+  }catch(e){console.warn('loadAllAdsetsForRanking:',e.message);}
+}
+async function loadAllAdsForRanking(){
+  if(!META_TOKEN||!META_ACCOUNT) return;
+  const el=document.getElementById('ranking-list');
+  if(el) el.innerHTML='<div style="padding:16px;text-align:center"><span class="ld"></span><span class="ld"></span><span class="ld"></span></div>';
+  try{
+    const insightsParam=buildMetaInsightsField(AD_FIELDS);
+    const data=await metaGet(`act_${META_ACCOUNT}/ads`,{fields:`id,name,status,effective_status,${insightsParam}`,limit:100});
+    metaAds=(data.data||[]).map(a=>({...a,insights:parseInsights(a.insights?.data)}));
+  }catch(e){console.warn('loadAllAdsForRanking:',e.message);}
 }
 
 function renderRanking() {
