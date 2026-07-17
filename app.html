@@ -3645,7 +3645,7 @@ create policy "own" on contacts for all using (auth.uid()=user_id);</div>
         </div>
         <select class="ts-tz-select"><option>(GMT-03:00) Buenos Aires</option></select>
       </div>
-      <div class="ts-schedule-row">
+<div class="ts-schedule-row">
         <div class="fg ts-input-wrap">
           <span class="ts-field-label">Start Date</span>
           <div class="ts-input-box">
@@ -3660,6 +3660,7 @@ create policy "own" on contacts for all using (auth.uid()=user_id);</div>
             <input id="ts-schedule-time" type="time" oninput="tsSyncSchedule()"/>
           </div>
         </div>
+        <button type="button" class="btn btn-outline btn-sm" style="align-self:flex-end;white-space:nowrap" onclick="tsPublicarAhora()">Publicar Ahora</button>
       </div>
       <input type="hidden" id="ts-camp-schedule"/>
       <div style="margin-top:10px">
@@ -3693,7 +3694,7 @@ create policy "own" on contacts for all using (auth.uid()=user_id);</div>
           <span class="ts-field-label">Duplicados por Conjunto</span>
           <div class="ts-input-box">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="12" height="12" rx="2"/><path d="M8 16v2a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V10a2 2 0 0 0-2-2h-2"/></svg>
-            <input id="ts-dup-count" type="number" min="1" step="1" value="1"/>
+<input id="ts-dup-count" type="number" min="1" step="1" value="1" oninput="tsRenderDupPreview()"/>
           </div>
         </div>
       </div>
@@ -8033,12 +8034,32 @@ function openTestingSandbox(){
 tsEngMode.clear();
   tsEngSelected.clear();
   tsGuionLinks.clear();
-  tsEngAdsCache = null; // limpiar cache al abrir para forzar re-fetch
+tsEngAdsCache = null; // limpiar cache al abrir para forzar re-fetch
   tsResetAdvControls();
   tsAddConjunto(); // arranca con Conjunto 1 + Anuncio 1
   openModal('modal-testing-sandbox');
+  tsEngLoadAds();
 }
 
+function tsRenderDupPreview(){
+  const dupCount = Math.max(1, +document.getElementById('ts-dup-count').value || 1);
+  document.querySelectorAll('#ts-conjuntos-wrap .ts-conjunto').forEach(cEl => {
+    cEl.querySelectorAll('.ts-dup-clone').forEach(el => el.remove());
+    if(dupCount <= 1) return;
+    const baseNombre = cEl.querySelector('.ts-conjunto-nombre').value.trim() || 'Conjunto';
+    for(let i = 2; i <= dupCount; i++){
+      const clone = document.createElement('div');
+      clone.className = 'ts-conjunto ts-dup-clone';
+      clone.style.opacity = '.6';
+      clone.innerHTML = `
+        <div class="ts-conjunto-hdr ts-conjunto-hdr-slim">
+          <input class="ts-conjunto-nombre" type="text" value="${baseNombre} - ${i}" disabled>
+          <span style="font-size:10px;color:var(--text3);white-space:nowrap">Duplicado</span>
+        </div>`;
+      cEl.insertAdjacentElement('afterend', clone);
+    }
+  });
+}
 function tsAddConjunto(){
   tsConjuntoSeq++;
   const cId = 'c'+tsConjuntoSeq;
@@ -8070,7 +8091,7 @@ function tsAddConjunto(){
       </div>`).join('');
   div.innerHTML = `
     <div class="ts-conjunto-hdr ts-conjunto-hdr-slim">
-      <input class="ts-conjunto-nombre" type="text" value="Conjunto ${tsConjuntoSeq}" placeholder="Nombre del conjunto" oninput="tsRenderBudgetAlloc()">
+      <input class="ts-conjunto-nombre" type="text" value="Conjunto ${tsConjuntoSeq}" placeholder="Nombre del conjunto" oninput="tsRenderBudgetAlloc();tsRenderDupPreview()">
       <button type="button" class="ts-trash-btn" onclick="tsRemoveConjunto('${cId}')" title="Eliminar conjunto">${tsTrashIcon()}</button>
     </div>
     <div class="ts-audiencia-grid">${cardsHtml}</div>
@@ -8081,14 +8102,23 @@ function tsAddConjunto(){
       <svg width="11" height="11" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M7 1.5v11M1.5 7h11"/></svg>
       Agregar Anuncio
     </button>`;
-  wrap.appendChild(div);
+wrap.appendChild(div);
   tsAddAnuncio(cId);
   tsRenderBudgetAlloc();
+  tsRenderDupPreview();
 }
 function tsSyncSchedule(){
   const d = document.getElementById('ts-schedule-date').value;
   const t = document.getElementById('ts-schedule-time').value;
   document.getElementById('ts-camp-schedule').value = (d && t) ? `${d}T${t}` : '';
+}
+function tsPublicarAhora(){
+  const now = new Date();
+  document.getElementById('ts-schedule-date').value = '';
+  document.getElementById('ts-schedule-time').value = '';
+  document.getElementById('ts-camp-schedule').value = '';
+  document.getElementById('ts-camp-activar').checked = true;
+  toast('Se publicará inmediatamente al lanzar');
 }
 function tsBudgetHint(val){
   const n = parseFloat(val);
@@ -8215,12 +8245,10 @@ function tsSetEngMode(aId, mode, btn){
   const newPanel = document.getElementById(`new-creative-panel-${aId}`);
   const dropzone = row.querySelector('.ts-dropzone')?.closest('label');
 
-  if(mode === 'existing'){
+if(mode === 'existing'){
     if(engPanel) engPanel.style.display = 'block';
     if(newPanel) newPanel.classList.add('eng-locked');
     if(dropzone) dropzone.classList.add('eng-locked');
-    // Pre-cargar lista de ads si no está cacheada
-    if(!tsEngAdsCache) tsEngLoadAds();
   } else {
     if(engPanel) engPanel.style.display = 'none';
     if(newPanel) newPanel.classList.remove('eng-locked');
@@ -8233,20 +8261,22 @@ function tsSetEngMode(aId, mode, btn){
 async function tsEngLoadAds(){
   if(!META_ACCOUNT) return;
   try {
-   const res = await metaGet(`act_${META_ACCOUNT}/ads`, {
-      fields: 'id,name,effective_status,campaign{id,name},adset{name},creative{id,thumbnail_url,effective_object_story_id,object_story_spec}',
+    // Sin object_story_spec (campo pesado, no se usa en la lista) y con
+    // date_preset acotado para no traer todo el historico de la cuenta.
+    const res = await metaGet(`act_${META_ACCOUNT}/ads`, {
+      fields: 'id,name,effective_status,campaign{id,name},adset{name},creative{id,thumbnail_url,effective_object_story_id}',
       filtering: JSON.stringify([{ field:'effective_status', operator:'IN', value:['ACTIVE','PAUSED'] }]),
-      limit: 200
+      date_preset: 'last_90d',
+      limit: 75
     });
     tsEngAdsCache = (res.data||[]).map(ad => ({
       adId: ad.id,
       name: ad.name || ad.id,
       campaignName: ad.campaign?.name || '—',
       adsetName: ad.adset?.name || '—',
-     creativeId: ad.creative?.id || null,
+      creativeId: ad.creative?.id || null,
       objectStoryId: ad.creative?.effective_object_story_id || null,
-      thumbUrl: ad.creative?.thumbnail_url || null,
-      objectStorySpec: ad.creative?.object_story_spec || null
+      thumbUrl: ad.creative?.thumbnail_url || null
     }));
   } catch(e) {
     tsEngAdsCache = [];
@@ -8640,6 +8670,7 @@ function tsConsoleReset(){
   tsConsoleStepIdx = 0;
 }
 async function tsGenerarTesteo(){
+  // (precarga movida a tsPrecargarEngagement, ver tsAbrirTestingSandbox)
   const nombre = document.getElementById('ts-camp-nombre').value.trim();
   if(!nombre){ toast('Pone un nombre a la campana'); return; }
   if(!META_ACCOUNT){ toast('Conecta tu cuenta de Meta primero'); return; }
