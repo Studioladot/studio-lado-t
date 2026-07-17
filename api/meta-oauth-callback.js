@@ -21,7 +21,7 @@ export default async function handler(req) {
     const userId = userData?.id;
     if (!userId) return redirectWithError('Sesion invalida');
 
-    const redirectUri = 'https://gotixsystem.vercel.app/api/meta-oauth-callback';
+    const redirectUri = 'https://www.gotix.com.ar/api/meta-oauth-callback';
 
     const shortRes = await fetch(
       `${GRAPH}/oauth/access_token?client_id=${process.env.META_APP_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&client_secret=${process.env.META_APP_SECRET}&code=${code}`
@@ -72,7 +72,7 @@ export default async function handler(req) {
       }),
     });
 
-    return Response.redirect('https://gotixsystem.vercel.app/?meta_connected=1', 302);
+    return Response.redirect('https://www.gotix.com.ar/?meta_connected=1', 302);
   } catch (err) {
     return redirectWithError(err.message);
   }
