@@ -1461,6 +1461,7 @@ body.focus-mode #main{margin-left:0}
     </div>
   </div>
 
+  <div id="ds-range" style="font-size:11px;color:var(--text3);text-align:right;margin-bottom:6px"></div>
   <div class="stats-grid">
     <div class="stat-card accent"><div class="stat-label">Gasto total</div><div class="stat-value" id="ds-gasto">—</div><div class="stat-sub" id="ds-sub-gasto">USD acumulado</div></div>
     <div class="stat-card"><div class="stat-label">ROAS promedio</div><div class="stat-value" id="ds-roas">—</div><div class="stat-sub" id="ds-sub-roas">Campanas activas</div></div>
@@ -1475,10 +1476,12 @@ body.focus-mode #main{margin-left:0}
     <div class="card">
       <div class="card-title">
         Ranking por ROAS
-        <div style="display:flex;gap:4px" id="ranking-tabs">
+<div style="display:flex;gap:4px" id="ranking-tabs">
           <button class="btn btn-sm btn-accent" onclick="setRankingLevel('campaign',this)" id="rtab-campaign">Campanas</button>
           <button class="btn btn-sm btn-outline" onclick="setRankingLevel('adset',this)" id="rtab-adset">Conjuntos</button>
           <button class="btn btn-sm btn-outline" onclick="setRankingLevel('ad',this)" id="rtab-ad">Anuncios</button>
+          <button class="btn btn-sm btn-accent" onclick="setRankingMetric('roas',this)" id="rmet-roas" style="margin-left:8px">ROAS</button>
+          <button class="btn btn-sm btn-outline" onclick="setRankingMetric('cpa',this)" id="rmet-cpa">CPA</button>
         </div>
       </div>
       <div id="ranking-list"><div class="empty"><div class="empty-icon"><svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-0.15em"><path d="M22 7 13.5 15.5 8.5 10.5 2 17"/><path d="M16 7h6v6"/></svg></div><div class="empty-msg">Sin datos</div><div class="empty-sub">Conecta Meta Ads para ver datos en vivo</div></div></div>
@@ -1503,10 +1506,11 @@ body.focus-mode #main{margin-left:0}
 
   <div class="card">
     <div class="card-title">Ultimas metricas <button class="btn btn-sm btn-outline" onclick="exportCSV()" style="margin-left:auto">&#8595; CSV</button></div>
-    <div class="tbl-wrap"><table>
+   <div class="tbl-wrap"><table>
       <thead><tr><th>Campana / Anuncio</th><th>Gasto</th><th>ROAS</th><th>Compras</th><th>CPA</th><th>CTR</th><th>CPM</th><th>Frec.</th><th>Hook</th><th>Fecha</th></tr></thead>
       <tbody id="dash-tbl"><tr><td colspan="10" style="text-align:center;color:var(--text2);padding:24px">Sin registros — carga tus primeras metricas</td></tr></tbody>
     </table></div>
+    <div id="dash-tbl-pag" style="display:flex;gap:10px;align-items:center;justify-content:center;margin-top:10px"></div>
   </div>
 </div>
 
@@ -4523,8 +4527,9 @@ async function loadAll(){
     tnConnection = connRes.data || null;
     gastos = gastosRes.data || [];
     if (finRes.data) finConfig = finRes.data;
-    if (tnConnection) await loadTiendaNubeSales();
+if (tnConnection) await loadTiendaNubeSales();
     refreshDashboardTopBoxes();
+    renderBHS();
   }catch(e){
     console.error(e);
     if(e.message&&e.message.includes('relation'))toast('Tablas no encontradas — ver Configuracion → SQL');
@@ -4542,6 +4547,8 @@ function renderDash(){
   document.getElementById('ds-roas').textContent=avgRoas?avgRoas.toFixed(1)+'x':'—';
   document.getElementById('ds-compras').textContent=totP||'—';
   document.getElementById('ds-cpa').textContent=avgCPA?'$'+fmt(avgCPA):'—';
+  const dsRangeEl=document.getElementById('ds-range');
+  if(dsRangeEl&&metrics.length){const dts=metrics.map(m=>new Date(m.created_at)).filter(d=>!isNaN(d));if(dts.length){const f=d=>d.toLocaleDateString('es-AR',{day:'numeric',month:'short'});dsRangeEl.textContent=f(new Date(Math.min(...dts)))+' – '+f(new Date(Math.max(...dts)));}}
   // Boxes superiores (Meta Ads / Tienda Nube / Contenido / Finanzas)
   setT('dbox-roas', avgRoas?avgRoas.toFixed(1)+'x':'—');
   setT('dbox-gasto', '$'+fmtN(tot));
@@ -4560,20 +4567,19 @@ function renderDash(){
     setT('dbox-profit', '$'+fmtN(Math.round(profitEst)));
   }
   renderObjs();
-  // Ranking
-  const sorted=[...metrics].filter(m=>+m.roas>0).sort((a,b)=>+b.roas-+a.roas).slice(0,5);
-  const rel=document.getElementById('ranking-list');
-  if(!sorted.length){rel.innerHTML='<div class="empty" style="padding:16px"><div class="empty-icon"><svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-0.15em"><path d="M22 7 13.5 15.5 8.5 10.5 2 17"/><path d="M16 7h6v6"/></svg></div><div class="empty-msg">Sin datos</div></div>';return;}
-  rel.innerHTML=sorted.map((m,i)=>`
-    <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:0.5px solid var(--border);${i===sorted.length-1?'border:none':''}">
-      <span style="font-size:13px;font-weight:700;color:var(--text2);width:18px">${i+1}</span>
-      <span style="flex:1;font-size:13px;font-weight:600">${m.name}</span>
-      <span style="font-size:13px;font-weight:700;color:${+m.roas>=4?'var(--green)':+m.roas>=2?'var(--blue)':'var(--amber)'}">${(+m.roas).toFixed(1)}x</span>
-    </div>`).join('');
-  // Table
+  renderRanking();
+// Table
+  window.dashTblPage = window.dashTblPage||0;
+  renderDashTblPage();
+  return;
+}
+function renderDashTblPage(){
   const tbl=document.getElementById('dash-tbl');
+  if(!tbl) return;
   if(!metrics.length){tbl.innerHTML='<tr><td colspan="10" style="text-align:center;color:var(--text2);padding:24px">Sin registros</td></tr>';return;}
-  tbl.innerHTML=metrics.slice(0,15).map(m=>`<tr>
+  const pageSize=5, page=window.dashTblPage||0, start=page*pageSize;
+  const pageItems=metrics.slice(start,start+pageSize);
+  tbl.innerHTML=pageItems.map(m=>`<tr>
     <td style="font-weight:600">${m.name}</td>
     <td>$${(+m.spend||0).toFixed(0)}</td>
     <td><span style="font-weight:700;color:${+m.roas>=4?'var(--green)':+m.roas>=2?'var(--blue)':+m.roas>=1.5?'var(--amber)':'var(--red)'}">${m.roas||'—'}x</span></td>
@@ -4583,10 +4589,15 @@ function renderDash(){
     <td>${m.cpm?'$'+m.cpm:'—'}</td>
     <td>${m.frequency||'—'}</td>
     <td>${m.hook_rate?m.hook_rate+'%':'—'}</td>
-    <td style="color:var(--text2);font-size:12px">${fmtDate(m.created_at)}</td>
+<td style="color:var(--text2);font-size:12px">${fmtDate(m.created_at)}</td>
   </tr>`).join('');
-  // Health Score siempre al final (usa datos ya calculados en renderDash)
-  renderBHS();
+  const pagWrap=document.getElementById('dash-tbl-pag');
+  if(pagWrap){
+    const maxPage=Math.ceil(metrics.length/pageSize)-1;
+    pagWrap.innerHTML=`<button class="btn btn-sm btn-outline" ${page<=0?'disabled':''} onclick="window.dashTblPage--;renderDashTblPage()">&#8592;</button>
+      <span style="font-size:12px;color:var(--text2)">Pagina ${page+1} de ${maxPage+1}</span>
+      <button class="btn btn-sm btn-outline" ${page>=maxPage?'disabled':''} onclick="window.dashTblPage++;renderDashTblPage()">&#8594;</button>`;
+  }
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -5625,8 +5636,9 @@ async function initDashboardMeta(){
     });
     await loadMetaCampaigns();
   }
-  syncDashDateSelector();
+syncDashDateSelector();
   renderDash();
+  renderDashMetaWidget();
 }
 
 // Auto-refresh cada 60 min
@@ -5645,6 +5657,12 @@ async function dashAutoSnapshot(){
 
 // ── RANKING POR NIVEL ────────────────────────────────────────────────────────
 let rankingLevel = 'campaign';
+let rankingMetric = 'roas';
+function setRankingMetric(m,btn){
+  rankingMetric=m;
+  ['roas','cpa'].forEach(k=>{const t=document.getElementById('rmet-'+k);if(t)t.className=k===m?'btn btn-sm btn-accent':'btn btn-sm btn-outline';});
+  renderRanking();
+}
 
 function setRankingLevel(level, btn) {
   rankingLevel = level;
@@ -5694,7 +5712,10 @@ function renderRanking() {
       .map(m => ({ name: m.name, roas: +m.roas, spend: m.spend, purchases: m.purchases }));
   }
 
-  items = items.sort((a,b) => b.roas - a.roas).slice(0, 7);
+ items = items.map(it=>({...it, cpa: it.purchases>0 ? (+it.spend||0)/it.purchases : 0}));
+  items = rankingMetric==='cpa'
+    ? items.filter(it=>it.cpa>0).sort((a,b)=>a.cpa-b.cpa).slice(0,7)
+    : items.sort((a,b)=>b.roas-a.roas).slice(0,7);
 
   if(!items.length) {
     el.innerHTML = '<div class="empty" style="padding:16px"><div class="empty-icon"><svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-0.15em"><path d="M22 7 13.5 15.5 8.5 10.5 2 17"/><path d="M16 7h6v6"/></svg></div><div class="empty-msg">Sin datos</div><div class="empty-sub">Conecta Meta Ads o carga metricas</div></div>';
@@ -5708,7 +5729,7 @@ function renderRanking() {
         <div style="font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${item.name}">${item.name}</div>
         <div style="font-size:11px;color:var(--text2)">$${item.spend||'—'} · ${item.purchases||0} ventas</div>
       </div>
-      <span style="font-size:14px;font-weight:700;color:${roasColor(item.roas)};white-space:nowrap">${item.roas.toFixed(1)}x</span>
+     <span style="font-size:14px;font-weight:700;color:${roasColor(item.roas)};white-space:nowrap">${rankingMetric==='cpa'?'$'+item.cpa.toFixed(0):item.roas.toFixed(1)+'x'}</span>
     </div>`).join('');
 }
 
