@@ -72,7 +72,7 @@ export default async function handler(req) {
       }),
     });
 
-    return Response.redirect('https://www.gotix.com.ar/?meta_connected=1', 302);
+   return Response.redirect('https://www.gotix.com.ar/app.html?meta_connected=1', 302);
   } catch (err) {
     return redirectWithError(err.message);
   }
