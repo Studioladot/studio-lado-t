@@ -9340,7 +9340,7 @@ function fmtNum(n) { return n?Number(n).toLocaleString('es-AR'):'—'; }
 async function connectMetaOAuth() {
   const session = (await db.auth.getSession()).data.session;
   if (!session) { toast('Iniciá sesion primero'); return; }
-  const redirectUri = 'https://gotixsystem.vercel.app/api/meta-oauth-callback';
+ const redirectUri = 'https://gotixsystem.vercel.app/api/meta-oauth-callback';
   const params = new URLSearchParams({
     client_id: META_APP_ID, // App ID, NO es secreto, va en el cliente sin problema
     redirect_uri: redirectUri,
