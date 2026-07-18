@@ -393,6 +393,9 @@ tr:hover td{background:rgba(0,232,122,.025)}
 .meta-switch.on{background:var(--green-l);border-color:var(--green)}
 .meta-switch.on::after{transform:translateX(14px);background:var(--green)}
 .form-row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+.ms-section{margin-bottom:20px;padding-bottom:18px;border-bottom:1px solid var(--border)}
+.ms-section:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0}
+.ms-section-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);margin-bottom:10px}
 .fg{display:flex;flex-direction:column;gap:5px;flex:1;min-width:140px}
 .fg.wide{flex:2;min-width:260px}
 .fg.full{flex:1 0 100%}
@@ -3934,23 +3937,34 @@ create policy "own" on contacts for all using (auth.uid()=user_id);</div>
         </div>
         <div id="ms-presets-list" style="border:1px solid var(--border);border-radius:var(--r);overflow:hidden;max-height:200px;overflow-y:auto"></div>
       </div>
-    <!-- PASO 2: configuración rápida -->
+<!-- PASO 2: configuración rápida -->
     <div class="ms-step" id="ms-step-2">
-      <div class="form-row">
-        <div class="fg wide"><label>Nombre de campaña</label><input id="ms-nombre" type="text" placeholder=""/></div>
-      </div>
-      <div class="form-row">
-        <div class="fg"><label id="ms-presupuesto-label">Presupuesto diario (USD)</label><input id="ms-presupuesto" type="number" step="0.01" placeholder="30"/></div>
-        <div class="fg wide"><label>URL del producto</label><input id="ms-url" type="text" placeholder="https://kirizproject.com.ar/productos/..."/></div>
+      <div class="ms-section">
+        <div class="ms-section-title">Campaña</div>
+        <div class="form-row">
+          <div class="fg wide"><label>Nombre de campaña</label><input id="ms-nombre" type="text" placeholder="Ej: Escalar CBO | 18-07"/></div>
         </div>
-      <div class="form-row">
-        <div class="fg"><label>Programar inicio (opcional)</label><input id="ms-schedule" type="datetime-local"/></div>
-        <div class="fg" style="display:flex;align-items:center;gap:8px;margin-top:22px">
-          <input type="checkbox" id="ms-activar" style="accent-color:var(--accent)"/>
-          <label style="margin:0">Publicar activa (si no, queda en pausa)</label>
+        <div class="form-row">
+          <div class="fg"><label id="ms-presupuesto-label">Presupuesto diario (USD)</label><input id="ms-presupuesto" type="number" step="0.01" placeholder="30"/></div>
+          <div class="fg wide"><label>URL del producto</label><input id="ms-url" type="text" placeholder="https://kirizproject.com.ar/productos/..."/></div>
         </div>
       </div>
-      <div id="ms-creativos-wrap"></div>
+
+      <div class="ms-section">
+        <div class="ms-section-title">Lanzamiento</div>
+        <div class="form-row">
+          <div class="fg"><label>Programar inicio (opcional)</label><input id="ms-schedule" type="datetime-local"/></div>
+        </div>
+        <label class="ts-switch-row" for="ms-activar" style="cursor:pointer;max-width:320px">
+          <span><span class="ts-switch-row-label">Publicar activa</span><span class="ts-switch-row-sub" style="display:block">Si no, queda en pausa</span></span>
+          <span class="ts-switch"><input type="checkbox" id="ms-activar"/><span class="ts-switch-track"></span><span class="ts-switch-thumb"></span></span>
+        </label>
+      </div>
+
+      <div class="ms-section">
+        <div class="ms-section-title">Creativos</div>
+        <div id="ms-creativos-wrap"></div>
+      </div>
     </div>
 
     <!-- PASO 3: confirmar -->
