@@ -5639,6 +5639,7 @@ gtxTourEnteringManually = true;
   showPage(page);
   const steps = GTX_SECTION_TOURS[page];
   if(steps && steps.length) setTimeout(()=>{ gtxStartSectionTour(page); gtxTourEnteringManually = false; }, 350);
+}
 function gtxTourSkip(){
   if(gtxActiveTourSteps === GTX_TOUR_STEPS){
     localStorage.setItem('gtx_tour_done','1');
