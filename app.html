@@ -4545,6 +4545,7 @@ function showPage(p){
     const labelSpan=ni?.querySelector('span:last-child');
     mtbTitle.textContent = labelSpan ? labelSpan.textContent : 'GOTIX';
   }
+if(p==='dashboard' && gtxSectionTourShouldRun('dashboard')) setTimeout(()=>gtxStartSectionTour('dashboard'), 500);
   if(p==='bib-ads')loadBibAds();
   if(p==='meta-live')renderSnaps();
   if(p==='meta-campanas'){ renderMetaCampHeader(); if(META_TOKEN&&META_ACCOUNT&&!metaCampaigns.length)loadMetaCampaigns(); }
@@ -5506,6 +5507,28 @@ function confirmDelete(title, body, onConfirm){
 window.addEventListener('load',init);
 
 /* ── ONBOARDING TOUR ─────────────────────────────────────────────── */
+const GTX_SECTION_TOURS = {
+  dashboard: [
+    { selector: '#bhs-panel', title: 'Business Health Score', desc: 'Un puntaje de 0 a 100 que resume la salud de tu negocio en base a 5 dimensiones clave de los últimos 30 días.' },
+    { selector: '#dash-meta-widget', title: 'Resumen de Meta Ads', desc: 'Tus campañas activas de Meta con sus métricas principales, sin salir del Dashboard.' },
+    { selector: '#dash-tbl', title: 'Tabla de Métricas', desc: 'El detalle diario de tus números — cargá o revisá tus registros acá.' },
+  ],
+};
+function gtxSectionTourShouldRun(page){
+  return !localStorage.getItem('gtx_tour_section_'+page);
+}
+function gtxStartSectionTour(page){
+  const steps = GTX_SECTION_TOURS[page];
+  if(!steps || !steps.length) return;
+  gtxTourIdx = 0;
+  gtxActiveTourSteps = steps;
+  gtxActiveSectionPage = page;
+  const firstTarget = document.querySelector(steps[0].selector);
+  if(!firstTarget){ setTimeout(()=>gtxStartSectionTour(page), 300); return; }
+  gtxTourRenderStep();
+}
+let gtxActiveTourSteps = null;
+let gtxActiveSectionPage = null;
 const GTX_TOUR_STEPS = [
   { selector: '[data-page="dashboard"]', title: 'Tu Dashboard', desc: 'Acá ves el estado general del negocio de un vistazo: ventas, campañas activas y alertas.' },
   { selector: '[data-page="meta-campanas"]', title: 'Campañas de Meta Ads', desc: 'Desde acá creás, lanzás y monitoreás todas tus campañas de Meta.' },
@@ -5530,6 +5553,8 @@ function gtxTourShouldRun(){
 }
 function gtxStartTour(){
   gtxTourIdx = 0;
+  gtxActiveTourSteps = GTX_TOUR_STEPS;
+  gtxActiveSectionPage = null;
   const firstTarget = document.querySelector(GTX_TOUR_STEPS[0].selector);
   if(!firstTarget){
     // El sidebar todavía no está pintado — reintentar en breve en vez de abortar el tour
@@ -5543,7 +5568,11 @@ function gtxTourRestart(){
   gtxStartTour();
 }
 function gtxTourSkip(){
-  localStorage.setItem('gtx_tour_done','1');
+  if(gtxActiveTourSteps === GTX_TOUR_STEPS){
+    localStorage.setItem('gtx_tour_done','1');
+  } else if(gtxActiveSectionPage){
+    localStorage.setItem('gtx_tour_section_'+gtxActiveSectionPage,'1');
+  }
   const root = document.getElementById('gtx-tour-root');
   if(root) root.innerHTML = '';
   document.querySelectorAll('.gtx-tour-target-elevated').forEach(el=>{
@@ -5552,11 +5581,11 @@ function gtxTourSkip(){
 }
 function gtxTourNext(){
   gtxTourIdx++;
-  if(gtxTourIdx >= GTX_TOUR_STEPS.length){ gtxTourSkip(); return; }
+if(gtxTourIdx >= gtxActiveTourSteps.length){ gtxTourSkip(); return; }
   gtxTourRenderStep();
 }
 function gtxTourRenderStep(){
-  const step = GTX_TOUR_STEPS[gtxTourIdx];
+const step = gtxActiveTourSteps[gtxTourIdx];
   const root = document.getElementById('gtx-tour-root');
   if(!root || !step) return;
   const target = document.querySelector(step.selector);
@@ -5573,7 +5602,7 @@ target.scrollIntoView({block:'center', behavior:'instant'});
     return;
   }
   const pad = 8;
-  const dotsHtml = GTX_TOUR_STEPS.map((_,i)=>`<span class="gtx-tour-dot${i===gtxTourIdx?' active':''}"></span>`).join('');
+const dotsHtml = gtxActiveTourSteps.map((_,i)=>`<span class="gtx-tour-dot${i===gtxTourIdx?' active':''}"></span>`).join('');
   let cardTop = r.bottom + 14;
   let cardLeft = Math.min(r.left, window.innerWidth - 320);
   if(cardTop + 180 > window.innerHeight) cardTop = Math.max(14, r.top - 190);
@@ -5587,12 +5616,12 @@ document.querySelectorAll('.gtx-tour-target-elevated').forEach(el=>{
     <div class="gtx-tour-spotlight" style="top:${r.top-pad}px;left:${r.left-pad}px;width:${r.width+pad*2}px;height:${r.height+pad*2}px"></div>
     <div class="gtx-tour-card" style="top:${cardTop}px;left:${cardLeft}px">
       <div class="gtx-tour-dots">${dotsHtml}</div>
-      <div class="gtx-tour-step">Paso ${gtxTourIdx+1} de ${GTX_TOUR_STEPS.length}</div>
+<div class="gtx-tour-step">Paso ${gtxTourIdx+1} de ${gtxActiveTourSteps.length}</div>
       <div class="gtx-tour-title">${step.title}</div>
       <div class="gtx-tour-desc">${step.desc}</div>
       <div class="gtx-tour-footer">
         <button class="gtx-tour-skip" onclick="gtxTourSkip()">Omitir Tour</button>
-        <button class="gtx-tour-next" onclick="gtxTourNext()">${gtxTourIdx===GTX_TOUR_STEPS.length-1?'Finalizar':'Siguiente'}</button>
+        <button class="gtx-tour-next" onclick="gtxTourNext()">${gtxTourIdx===gtxActiveTourSteps.length-1?'Finalizar':'Siguiente'}</button>
       </div>
     </div>`;
 }
