@@ -646,7 +646,8 @@ body.focus-mode #main{margin-left:0}
 .ts-budget-seg{display:flex;background:#F0EFEC;border:1px solid rgba(26,26,24,.06);border-radius:var(--r);padding:3px;gap:3px}
 .ts-budget-seg .ft{flex:1;text-align:center;border-radius:6px;padding:8px 10px;font-size:11.5px;font-weight:600;color:var(--text3);cursor:pointer;transition:all .15s}
 .ts-budget-seg .ft.active{background:var(--primary-green);color:#FFFFFF}
- .ts-modal-xl{background:rgba(252,252,251,.9) !important;backdrop-filter:blur(24px) saturate(160%);-webkit-backdrop-filter:blur(24px) saturate(160%);border:1px solid rgba(26,26,24,.06) !important;border-radius:16px !important;padding:40px !important;max-width:920px !important;width:92vw;box-shadow:0 32px 80px -16px rgba(0,0,0,.11) !important}
+ .ts-modal-xl{background:rgba(252,252,251,.9) !important;backdrop-filter:blur(24px) saturate(160%);-webkit-backdrop-filter:blur(24px) saturate(160%);border:1px solid rgba(26,26,24,.06) !important;border-radius:16px !important;padding:40px !important;max-width:1180px !important;width:94vw;box-shadow:0 32px 80px -16px rgba(0,0,0,.11) !important}
+@media(max-width:720px){.ts-modal-xl{width:100vw!important;max-height:100vh!important;border-radius:0!important}}
 .ts-modal-hero{margin-bottom:32px}
 .ts-modal-hero-title{font-size:24px;font-weight:800;letter-spacing:-.02em;color:var(--text);margin-bottom:6px}
 .ts-modal-hero-sub{font-size:13px;color:var(--text3)}
@@ -661,10 +662,23 @@ body.focus-mode #main{margin-left:0}
 .ts-modal-fixed-top{flex-shrink:0;padding:40px 40px 0 40px}
 .ts-modal-body{flex:1;overflow-y:auto;padding:0 40px}
 .ts-modal-fixed-bottom{flex-shrink:0;margin-top:0!important;padding:14px 40px 24px 40px;border-top:0.5px solid var(--border);background:transparent}
-@media(max-width:720px){.ts-modal-fixed-top{padding:24px 24px 0 24px}.ts-modal-body{padding:0 24px}.ts-modal-fixed-bottom{padding:14px 24px 20px 24px}}
+@media(max-width:720px){
+.ts-modal-fixed-top{padding:20px 20px 0 20px}
+.ts-modal-body{padding:0 20px}
+.ts-modal-fixed-bottom{padding:14px 20px 18px 20px;flex-direction:column;align-items:stretch}
+.ts-stepper{overflow-x:auto;flex-wrap:nowrap}
+.ts-stepper-item{flex:0 0 auto}
+.ts-conjunto-hdr-slim{flex-direction:column;align-items:flex-start!important}
+.ts-conjunto-hdr-slim>div{width:100%}
+.ts-conjunto-hdr-slim .ts-conjunto-nombre{max-width:none;width:100%}
+.ts-footer-secondary{width:100%;justify-content:space-between}
+.ts-launch-btn{width:100%}
+.ts-conjuntos-scroll-zone{max-height:60vh}
+}
 .ts-section-label{display:flex;align-items:center;gap:8px;font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.08em;margin:32px 0 16px}
 .ts-section-label::after{content:'';flex:1;height:1px;background:rgba(26,26,24,.05)}
-.ts-add-conjunto-btn{margin-top:16px;width:100%;display:flex;align-items:center;justify-content:center;gap:8px;background:transparent;border:1px dashed rgba(26,26,24,.12);border-radius:16px;padding:14px;font-size:12.5px;font-weight:600;color:var(--text2);cursor:pointer;transition:all .2s ease}
+.ts-conjuntos-scroll-zone{max-height:46vh;overflow-y:auto;padding-right:4px;margin-bottom:4px}
+.ts-add-conjunto-btn{position:sticky;bottom:0;margin-top:16px;width:100%;display:flex;align-items:center;justify-content:center;gap:8px;background:var(--surface);border:1px dashed rgba(26,26,24,.12);border-radius:10px;padding:14px;font-size:12.5px;font-weight:600;color:var(--text2);cursor:pointer;transition:all .2s ease}
 .ts-add-conjunto-btn:hover{border-color:var(--primary-green);color:var(--primary-green);background:rgba(45,91,138,.04)}
 .ts-launch-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;background:var(--primary-green);border:none;border-radius:8px;padding:9px 24px;cursor:pointer;box-shadow:none;transition:all .15s ease}
 .ts-launch-btn:hover{background:var(--accent-d);transform:translateY(-1px)}
@@ -3734,7 +3748,7 @@ create policy "own" on contacts for all using (auth.uid()=user_id);</div>
 
     <div class="divider"></div>
     <!-- ── ADVANTAGE+ KILL SWITCH ────────────────────────────────────────────── -->
-    <div class="adv-panel">
+  <div class="adv-panel" style="margin-bottom:32px;padding-bottom:8px">
       <div class="adv-master-row" onclick="tsToggleKillSwitch()">
         <div>
           <div class="adv-master-label">
@@ -3783,7 +3797,9 @@ create policy "own" on contacts for all using (auth.uid()=user_id);</div>
         Browse Ad Set Library
       </button>
     </div>
-<div id="ts-conjuntos-wrap" style="display:flex;flex-direction:column;gap:16px;max-height:50vh;overflow-y:auto;padding-right:4px"></div>
+<div class="ts-conjuntos-scroll-zone">
+      <div id="ts-conjuntos-wrap" style="display:flex;flex-direction:column;gap:16px;padding-right:4px"></div>
+    </div>
 
     <button type="button" class="ts-add-conjunto-btn" onclick="tsAddConjunto()">
       <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M7 1.5v11M1.5 7h11"/></svg>
