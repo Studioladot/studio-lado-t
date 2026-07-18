@@ -5507,10 +5507,22 @@ window.addEventListener('load',init);
 
 /* ── ONBOARDING TOUR ─────────────────────────────────────────────── */
 const GTX_TOUR_STEPS = [
+const GTX_TOUR_STEPS = [
   { selector: '[data-page="dashboard"]', title: 'Tu Dashboard', desc: 'Acá ves el estado general del negocio de un vistazo: ventas, campañas activas y alertas.' },
   { selector: '[data-page="meta-campanas"]', title: 'Campañas de Meta Ads', desc: 'Desde acá creás, lanzás y monitoreás todas tus campañas de Meta.' },
   { selector: '[data-page="meta-live"]', title: 'Snapshots', desc: 'Reportes rápidos con las métricas clave de tu cuenta, listos para compartir.' },
+  { selector: '[data-page="bib-ads"]', title: 'Biblioteca de Ads', desc: 'Todos tus anuncios históricos, con su rendimiento a mano.' },
+  { selector: '[data-page="guiones"]', title: 'Guiones de Anuncios', desc: 'Redactá y organizá los guiones que usás para tus creativos.' },
   { selector: '[data-page="biblioteca"]', title: 'Biblioteca de Guiones', desc: 'Todos tus guiones y su rendimiento histórico, organizados y a mano.' },
+  { selector: '[data-page="benchmarks"]', title: 'Tablas de Métricas', desc: 'Comparativas y benchmarks para evaluar el rendimiento de tus campañas.' },
+  { selector: '[data-page="tiendanube-connect"]', title: 'Ventas y Operaciones', desc: 'Conectá tu tienda y seguí tus ventas y stock en un solo lugar.' },
+  { selector: '[data-page="contenido"]', title: 'Contenido', desc: 'Organizá el contenido de tu marca: fotos, videos y material para tus campañas.' },
+  { selector: '[data-page="notas"]', title: 'Notas', desc: 'Guardá ideas, pendientes y recordatorios sin salir de GOTIX.' },
+  { selector: '[data-page="campanas-contenido"]', title: 'Campaña de Contenido', desc: 'Planificá tu calendario de contenido orgánico.' },
+  { selector: '[data-page="diario"]', title: 'Diario de Marca', desc: 'El registro vivo de decisiones y aprendizajes de tu marca.' },
+  { selector: '[data-page="autopilot"]', title: 'Autopiloto', desc: 'Automatizaciones que optimizan tus campañas sin que tengas que estar encima.' },
+  { selector: '[data-page="ia"]', title: 'IA Estratégica', desc: 'Recomendaciones y análisis generados por IA sobre tu cuenta.' },
+  { selector: '[data-page="facturacion"]', title: 'Facturación y Suscripción', desc: 'Gestioná tu plan y método de pago de GOTIX.' },
 ];
 let gtxTourIdx = 0;
 
