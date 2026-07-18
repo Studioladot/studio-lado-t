@@ -1355,6 +1355,7 @@ body.focus-mode #main{margin-left:0}
     <button id="dm-switch-btn" onclick="toggleDarkMode()" class="dm-switch"><span id="dm-switch-icon">&#9728;</span> <span id="dm-switch-label">Modo dia</span></button>
     <button id="gx-currency-switch" onclick="gxToggleCurrency()" class="btn btn-outline btn-sm" style="width:100%;margin-bottom:10px">MONEDA: ARS</button>
     <div class="sb-user" id="sb-email">—</div>
+   <button class="sb-signout" style="background:transparent;border:none;color:var(--text3);font-size:11px;font-weight:600;cursor:pointer;padding:6px 0;text-align:left" onclick="gtxTourRestart()">Ver tour de nuevo</button>
     <button class="sb-signout" onclick="signOut()">Cerrar sesion</button>
   </div>
 </aside>
@@ -5513,6 +5514,10 @@ function gtxTourShouldRun(){
 function gtxStartTour(){
   gtxTourIdx = 0;
   gtxTourRenderStep();
+}
+function gtxTourRestart(){
+  localStorage.removeItem('gtx_tour_done');
+  gtxStartTour();
 }
 function gtxTourSkip(){
   localStorage.setItem('gtx_tour_done','1');
