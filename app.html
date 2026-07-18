@@ -580,7 +580,8 @@ body.focus-mode #main{margin-left:0}
 /* Ad Sets: cards mas grandes, fieles a la imagen */
 .ts-audiencia-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(128px,1fr));gap:10px;margin-bottom:18px}
 .ts-conjunto-hdr-slim{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
-.ts-conjunto-hdr-slim .ts-conjunto-nombre{flex:none;width:auto;max-width:220px;background:var(--surface2);border:1px solid var(--border2);border-radius:10px;padding:7px 12px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text)}
+.ts-conjunto-hdr-slim{flex-wrap:wrap;justify-content:space-between}
+.ts-conjunto-hdr-slim .ts-conjunto-nombre{flex:none;width:auto;min-width:160px;max-width:220px;background:var(--surface2);border:1px solid var(--border2);border-radius:8px;padding:7px 12px;font-size:12px;font-weight:700;text-transform:none;letter-spacing:0;color:var(--text)}
 .ts-conjunto-hdr-slim .ts-conjunto-nombre:hover{border-color:var(--text3)}
 .ts-conjunto-hdr-slim .ts-conjunto-nombre:focus{border-color:var(--primary-green);background:var(--surface)}
 .ts-conjunto-hdr-slim .ts-conjunto-nombre:focus{color:var(--text);border-bottom-color:var(--primary-green)}
@@ -645,11 +646,18 @@ body.focus-mode #main{margin-left:0}
 .ts-budget-seg{display:flex;background:#F0EFEC;border:1px solid rgba(26,26,24,.06);border-radius:var(--r);padding:3px;gap:3px}
 .ts-budget-seg .ft{flex:1;text-align:center;border-radius:6px;padding:8px 10px;font-size:11.5px;font-weight:600;color:var(--text3);cursor:pointer;transition:all .15s}
 .ts-budget-seg .ft.active{background:var(--primary-green);color:#FFFFFF}
-  .ts-modal-xl{background:rgba(252,252,251,.9) !important;backdrop-filter:blur(24px) saturate(160%);-webkit-backdrop-filter:blur(24px) saturate(160%);border:1px solid rgba(26,26,24,.06) !important;border-radius:26px !important;padding:40px !important;max-width:760px !important;box-shadow:0 32px 80px -16px rgba(0,0,0,.11) !important}
+ .ts-modal-xl{background:rgba(252,252,251,.9) !important;backdrop-filter:blur(24px) saturate(160%);-webkit-backdrop-filter:blur(24px) saturate(160%);border:1px solid rgba(26,26,24,.06) !important;border-radius:16px !important;padding:40px !important;max-width:920px !important;width:92vw;box-shadow:0 32px 80px -16px rgba(0,0,0,.11) !important}
 .ts-modal-hero{margin-bottom:32px}
 .ts-modal-hero-title{font-size:24px;font-weight:800;letter-spacing:-.02em;color:var(--text);margin-bottom:6px}
 .ts-modal-hero-sub{font-size:13px;color:var(--text3)}
-.ts-modal-shell{display:flex;flex-direction:column;max-height:90vh;overflow:hidden;padding:0!important}
+.ts-modal-shell{display:flex;flex-direction:column;max-height:90vh;overflow:hidden;padding:0!important;border-radius:16px}
+.ts-conjunto{border-radius:10px!important}
+.ts-step-panel{border-radius:10px!important}
+.ts-input-box{border-radius:8px!important}
+.ts-conjunto-nombre{border-radius:8px!important}
+.ts-audiencia-card{border-radius:10px!important}
+.ts-launch-btn{border-radius:8px!important}
+.btn-outline{border-radius:8px!important}
 .ts-modal-fixed-top{flex-shrink:0;padding:40px 40px 0 40px}
 .ts-modal-body{flex:1;overflow-y:auto;padding:0 40px}
 .ts-modal-fixed-bottom{flex-shrink:0;margin-top:0!important;padding:14px 40px 24px 40px;border-top:0.5px solid var(--border);background:transparent}
@@ -658,13 +666,14 @@ body.focus-mode #main{margin-left:0}
 .ts-section-label::after{content:'';flex:1;height:1px;background:rgba(26,26,24,.05)}
 .ts-add-conjunto-btn{margin-top:16px;width:100%;display:flex;align-items:center;justify-content:center;gap:8px;background:transparent;border:1px dashed rgba(26,26,24,.12);border-radius:16px;padding:14px;font-size:12.5px;font-weight:600;color:var(--text2);cursor:pointer;transition:all .2s ease}
 .ts-add-conjunto-btn:hover{border-color:var(--primary-green);color:var(--primary-green);background:rgba(45,91,138,.04)}
-.ts-launch-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;background:var(--primary-green);border:none;border-radius:14px;padding:10px 22px;cursor:pointer;box-shadow:none;transition:all .15s ease}
+.ts-launch-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;background:var(--primary-green);border:none;border-radius:8px;padding:9px 24px;cursor:pointer;box-shadow:none;transition:all .15s ease}
 .ts-launch-btn:hover{background:var(--accent-d);transform:translateY(-1px)}
 .ts-launch-btn:active{transform:translateY(0) scale(.99)}
 .ts-launch-btn-label{font-size:13px;font-weight:800;color:#fff;display:flex;align-items:center;gap:6px}
 .ts-launch-btn-sub{display:none}
-.ts-footer-secondary{display:flex;flex-direction:row;gap:10px}
-.ts-footer-secondary .btn-ghost{background:transparent;border:1px solid var(--border2);color:var(--text2);border-radius:12px;padding:9px 16px}
+.ts-footer-secondary{display:flex;flex-direction:row;gap:8px}
+.ts-footer-secondary .btn{font-size:11.5px;padding:7px 12px}
+.ts-footer-secondary .btn-ghost{background:transparent;border:1px solid var(--border2);color:var(--text2);border-radius:8px;padding:7px 12px}
 .ts-footer-secondary .btn-ghost:hover{background:var(--surface2);border-color:var(--text3);color:var(--text)}
 @media(max-width:720px){.ts-modal-xl{padding:24px !important}}
   /* Cards de audiencia — nuevo selector visual del bloque .ts-conjunto */
@@ -8127,11 +8136,16 @@ const cardsHtml = audiencias.map(a => `
       </div>`).join('');
   const selectOptionsHtml = audiencias.map(a => `<option value="${a.tipo}"${a.rec?' selected':''}>${a.label}</option>`).join('');
   div.innerHTML = `
-<div class="ts-conjunto-hdr ts-conjunto-hdr-slim" onclick="tsToggleConjunto('${cId}')" style="cursor:pointer">
-      <svg class="ts-conjunto-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;transition:transform .15s"><path d="M9 18l6-6-6-6"/></svg>
-      <input class="ts-conjunto-nombre" type="text" value="Conjunto ${tsConjuntoSeq}" placeholder="Nombre del conjunto" oninput="tsRenderBudgetAlloc();tsRenderDupPreview()" onclick="event.stopPropagation()">
-      <select class="ts-audiencia-select" onclick="event.stopPropagation()" onchange="tsSelectAudienciaFromSelect('${cId}',this)">${selectOptionsHtml}</select>
-      <button type="button" class="ts-trash-btn" onclick="event.stopPropagation();tsRemoveConjunto('${cId}')" title="Eliminar conjunto">${tsTrashIcon()}</button>
+<div class="ts-conjunto-hdr ts-conjunto-hdr-slim">
+      <div style="display:flex;align-items:center;gap:8px;cursor:pointer" onclick="tsToggleConjunto('${cId}')">
+        <svg class="ts-conjunto-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;transition:transform .15s"><path d="M9 18l6-6-6-6"/></svg>
+        <input class="ts-conjunto-nombre" type="text" value="Conjunto ${tsConjuntoSeq}" placeholder="Nombre del conjunto" oninput="tsRenderBudgetAlloc();tsRenderDupPreview()" onclick="event.stopPropagation()">
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;margin-left:auto">
+        <span style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--text3)">Público</span>
+        <select class="ts-audiencia-select" onclick="event.stopPropagation()" onchange="tsSelectAudienciaFromSelect('${cId}',this)">${selectOptionsHtml}</select>
+        <button type="button" class="ts-trash-btn" onclick="event.stopPropagation();tsRemoveConjunto('${cId}')" title="Eliminar conjunto">${tsTrashIcon()}</button>
+      </div>
     </div>
     <input type="hidden" class="ts-conjunto-audiencia" value="broad">
     <div class="ts-conjunto-body" data-body-of="${cId}">
