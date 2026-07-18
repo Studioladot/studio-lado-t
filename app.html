@@ -653,6 +653,11 @@ body.focus-mode #main{margin-left:0}
 .ts-modal-hero{margin-bottom:32px}
 .ts-modal-hero-title{font-size:24px;font-weight:800;letter-spacing:-.02em;color:var(--text);margin-bottom:6px}
 .ts-modal-hero-sub{font-size:13px;color:var(--text3)}
+.ts-modal-shell{display:flex;flex-direction:column;max-height:90vh;overflow:hidden;padding:0!important}
+.ts-modal-fixed-top{flex-shrink:0;padding:40px 40px 0 40px}
+.ts-modal-body{flex:1;overflow-y:auto;padding:0 40px}
+.ts-modal-fixed-bottom{flex-shrink:0;margin-top:0!important;padding:14px 40px 24px 40px;border-top:0.5px solid var(--border);background:var(--surface)}
+@media(max-width:720px){.ts-modal-fixed-top{padding:24px 24px 0 24px}.ts-modal-body{padding:0 24px}.ts-modal-fixed-bottom{padding:14px 24px 20px 24px}}
 .ts-section-label{display:flex;align-items:center;gap:8px;font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.08em;margin:32px 0 16px}
 .ts-section-label::after{content:'';flex:1;height:1px;background:rgba(26,26,24,.05)}
 .ts-add-conjunto-btn{margin-top:16px;width:100%;display:flex;align-items:center;justify-content:center;gap:8px;background:transparent;border:1px dashed rgba(26,26,24,.12);border-radius:16px;padding:14px;font-size:12.5px;font-weight:600;color:var(--text2);cursor:pointer;transition:all .2s ease}
@@ -3599,8 +3604,9 @@ create policy "own" on contacts for all using (auth.uid()=user_id);</div>
 
 <!-- TESTING SANDBOX -->
 <div class="modal-backdrop" id="modal-testing-sandbox">
-  <div class="modal ts-modal-xl">
-   <div class="ts-modal-hero" style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px">
+  <div class="modal ts-modal-xl ts-modal-shell">
+   <div class="ts-modal-fixed-top">
+   <div class="ts-modal-hero" style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:20px">
       <div>
         <div class="ts-modal-hero-title">Lanzar Testeo</div>
         <div class="ts-modal-hero-sub">Configurá la campaña y agregá tantos conjuntos y anuncios como necesites.</div>
@@ -3618,9 +3624,10 @@ create policy "own" on contacts for all using (auth.uid()=user_id);</div>
       <svg class="ts-stepper-arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg>
       <div class="ts-stepper-item" data-goto-page="3" onclick="tsGoToPage(3)"><span class="ts-stepper-num">3</span><span class="ts-stepper-text"><span class="ts-stepper-title">Budget</span><span class="ts-stepper-sub">Presupuesto y estrategia</span></span></div>
       <svg class="ts-stepper-arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg>
-      <div class="ts-stepper-item" data-goto-page="4" onclick="tsGoToPage(4)"><span class="ts-stepper-num">4</span><span class="ts-stepper-text"><span class="ts-stepper-title">Ad Sets</span><span class="ts-stepper-sub">Conjuntos a incluir</span></span></div>
+<div class="ts-stepper-item" data-goto-page="4" onclick="tsGoToPage(4)"><span class="ts-stepper-num">4</span><span class="ts-stepper-text"><span class="ts-stepper-title">Ad Sets</span><span class="ts-stepper-sub">Conjuntos a incluir</span></span></div>
     </div>
-
+   </div>
+   <div class="ts-modal-body">
     <div class="ts-step-panel ts-page" data-page="1">
       <div class="ts-step-hdr"><span class="ts-step-num">01</span><span class="ts-step-title">Datos de campaña</span></div>
       <div class="ts-step-sub">Nombre, producto y campaña destino.</div>
@@ -3769,7 +3776,7 @@ create policy "own" on contacts for all using (auth.uid()=user_id);</div>
         Browse Ad Set Library
       </button>
     </div>
-<div id="ts-conjuntos-wrap" style="display:flex;flex-direction:column;gap:16px;max-height:420px;overflow-y:auto;padding-right:4px"></div>
+<div id="ts-conjuntos-wrap" style="display:flex;flex-direction:column;gap:16px;max-height:50vh;overflow-y:auto;padding-right:4px"></div>
 
     <button type="button" class="ts-add-conjunto-btn" onclick="tsAddConjunto()">
       <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M7 1.5v11M1.5 7h11"/></svg>
