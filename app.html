@@ -9050,6 +9050,15 @@ function tsConsoleReset(){
   tsConsoleLineEls = [];
   tsConsoleStepIdx = 0;
 }
+async function gtxLogActivity(action, status, detail={}){
+  try{
+    const session = (await db.auth.getSession()).data.session;
+    await db.from('activity_log').insert({
+      user_id: session?.user?.id || null,
+      action, status, detail
+    });
+  }catch(e){ console.error('[gtx-log] fallo al registrar actividad', e); }
+}
 async function tsGenerarTesteo(){
   // (precarga movida a tsPrecargarEngagement, ver tsAbrirTestingSandbox)
   const nombre = document.getElementById('ts-camp-nombre').value.trim();
@@ -9117,10 +9126,15 @@ const existingCampaignId = document.getElementById('ts-camp-existing-id').value.
         campaignPayload.is_adset_budget_sharing_enabled = false;
       }
 
-      const campRes = await metaPost(`act_${META_ACCOUNT}/campaigns`, campaignPayload);
-      if(campRes.error){ tsConsoleError('al crear campaña: '+campRes.error.message); return; }
+const campRes = await metaPost(`act_${META_ACCOUNT}/campaigns`, campaignPayload);
+      if(campRes.error){
+        tsConsoleError('al crear campaña: '+campRes.error.message);
+        gtxLogActivity('lanzar_testeo', 'error_campania', { nombre: campania.nombre, error: campRes.error.message });
+        return;
+      }
       tsConsoleStep(1);
       campaignId = campRes.id;
+      gtxLogActivity('lanzar_testeo', 'campania_creada', { nombre: campania.nombre, campaign_id: campaignId, presupuesto: campania.presupuesto_diario });
     }
 
     for(const conjunto of campania.conjuntos){
@@ -9264,8 +9278,9 @@ if(isVideo){
     }
     }
 
-    tsConsoleStep(5);
+tsConsoleStep(5);
     tsConsoleDone();
+    gtxLogActivity('lanzar_testeo', 'completado', { nombre: campania.nombre, campaign_id: campaignId, conjuntos: campania.conjuntos.length });
     setTimeout(() => {
       closeModal('modal-testing-sandbox');
       tsConsoleReset();
@@ -9274,6 +9289,7 @@ if(isVideo){
   } catch(e){
     tsConsoleError(e.message);
     toast('Error inesperado: ' + e.message);
+    gtxLogActivity('lanzar_testeo', 'excepcion', { nombre: campania.nombre, error: e.message });
   }
 }
 
