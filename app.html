@@ -561,6 +561,10 @@ body.focus-mode #main{margin-left:0}
 .ts-stepper-item{display:flex;align-items:center;gap:10px;flex:1}
 .ts-stepper-num{width:28px;height:28px;border-radius:50%;border:1.5px solid var(--border2);color:var(--text3);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0}
 .ts-stepper-item.active .ts-stepper-num{border-color:var(--primary-green);color:var(--primary-green);box-shadow:0 0 0 3px rgba(45,91,138,.12)}
+.ts-stepper-item{cursor:pointer;transition:opacity .15s}
+.ts-stepper-item:not(.active){opacity:.55}
+.ts-stepper-item:not(.active):hover{opacity:.85}
+.ts-stepper-item.completed .ts-stepper-num{border-color:var(--primary-green);background:var(--primary-green);color:#fff}
 .ts-stepper-text{display:flex;flex-direction:column;line-height:1.25}
 .ts-stepper-title{font-size:12.5px;font-weight:700;color:var(--text)}
 .ts-stepper-sub{font-size:10px;color:var(--text3)}
@@ -3608,15 +3612,6 @@ create policy "own" on contacts for all using (auth.uid()=user_id);</div>
     </div>
 
     <div class="ts-stepper">
-      <div class="ts-stepper-item active"><span class="ts-stepper-num">1</span><span class="ts-stepper-text"><span class="ts-stepper-title">Cronograma</span><span class="ts-stepper-sub">Cuando arranca</span></span></div>
-      <svg class="ts-stepper-arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg>
-      <div class="ts-stepper-item active"><span class="ts-stepper-num">2</span><span class="ts-stepper-text"><span class="ts-stepper-title">Ad Sets</span><span class="ts-stepper-sub">Conjuntos a incluir</span></span></div>
-      <svg class="ts-stepper-arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg>
-      <div class="ts-stepper-item active"><span class="ts-stepper-num">3</span><span class="ts-stepper-text"><span class="ts-stepper-title">Budget</span><span class="ts-stepper-sub">Presupuesto y estrategia</span></span></div>
-    </div>
-   <div class="ts-step-panel">
-      <div class="ts-step-hdr"><span class="ts-step-num">00</span><span class="ts-step-title">Datos de campaña</span></div>
-      <div class="ts-step-sub">Nombre, producto y campaña destino.</div>
       <div class="form-row">
         <div class="fg wide ts-input-wrap">
           <span class="ts-field-label">Nombre de Campaña</span>
@@ -3641,13 +3636,13 @@ create policy "own" on contacts for all using (auth.uid()=user_id);</div>
             <input id="ts-camp-existing-id" type="text" placeholder="Dejar vacio para crear una nueva"/>
           </div>
         </div>
-      </div>
+   </div>
     </div>
 
-    <div class="ts-step-panel">
+    <div class="ts-step-panel ts-page" data-page="2" style="display:none">
       <div class="ts-panel-hdr-row">
         <div>
-          <div class="ts-step-hdr" style="margin-bottom:2px"><span class="ts-step-num">1</span><span class="ts-step-title">Cronograma</span></div>
+          <div class="ts-step-hdr" style="margin-bottom:2px"><span class="ts-step-num">02</span><span class="ts-step-title">Cronograma</span></div>
           <div class="ts-step-sub" style="margin:2px 0 0 36px">Elegí cuándo arranca tu campaña.</div>
         </div>
         <select class="ts-tz-select"><option>(GMT-03:00) Buenos Aires</option></select>
@@ -3675,12 +3670,12 @@ create policy "own" on contacts for all using (auth.uid()=user_id);</div>
           <span><span class="ts-switch-row-label">Publicar activa</span><span class="ts-switch-row-sub" style="display:block">Si no, queda en pausa</span></span>
           <span class="ts-switch"><input type="checkbox" id="ts-camp-activar"/><span class="ts-switch-track"></span><span class="ts-switch-thumb"></span></span>
         </label>
-      </div>
     </div>
-     <div class="ts-step-panel" style="padding:32px">
+    </div>
+     <div class="ts-step-panel ts-page" data-page="3" style="padding:32px;display:none">
       <div class="ts-panel-hdr-row" style="margin-bottom:16px">
         <div>
-          <div class="ts-step-hdr" style="margin-bottom:2px"><span class="ts-step-num">2</span><span class="ts-step-title">Presupuesto</span></div>
+          <div class="ts-step-hdr" style="margin-bottom:2px"><span class="ts-step-num">03</span><span class="ts-step-title">Presupuesto</span></div>
           <div class="ts-step-sub" style="margin:2px 0 0 36px">Definí cuánto gastar y cómo se optimiza.</div>
         </div>
         <div class="ts-budget-seg ts-budget-seg-compact" id="ts-budget-toggle">
@@ -3746,15 +3741,15 @@ create policy "own" on contacts for all using (auth.uid()=user_id);</div>
           Control granular
         </div>
 
-        <div id="adv-granular-list"></div>
+<div id="adv-granular-list"></div>
       </div>
     </div>
+    </div>
 
-    <div class="divider"></div>
-
-  <div class="ts-panel-hdr-row" style="margin-bottom:12px">
+    <div class="ts-step-panel ts-page" data-page="4" style="display:none">
+    <div class="ts-panel-hdr-row" style="margin-bottom:12px">
       <div>
-        <div class="ts-step-hdr" style="margin-bottom:2px"><span class="ts-step-num">3</span><span class="ts-step-title">Conjuntos de anuncios</span></div>
+        <div class="ts-step-hdr" style="margin-bottom:2px"><span class="ts-step-num">04</span><span class="ts-step-title">Ad Sets</span></div>
         <div class="ts-step-sub" style="margin:2px 0 0 36px">Elegí y configurá los conjuntos a incluir.</div>
       </div>
       <button class="btn btn-sm btn-outline" onclick="tsOpenPresetPicker()" style="display:flex;align-items:center;gap:6px;border-radius:12px;padding:9px 14px">
@@ -3774,16 +3769,19 @@ create policy "own" on contacts for all using (auth.uid()=user_id);</div>
       <div id="ts-console-lines"></div>
       <div class="ts-console-final" id="ts-console-final"></div>
     </div>
+    </div>
 
     <div class="modal-footer" style="display:flex;gap:12px;align-items:stretch;border-top:1px solid rgba(26,26,24,.05);margin-top:32px;padding-top:24px">
       <div class="ts-footer-secondary">
+        <button class="btn btn-outline" id="ts-btn-back" style="border-radius:14px;padding:10px 16px;display:none" onclick="tsGoToPage(tsCurrentPage-1)">Atrás</button>
         <button class="btn btn-outline" style="border-radius:14px;padding:10px 16px" onclick="closeModal('modal-testing-sandbox')">Cancelar</button>
         <button class="btn btn-ghost" style="border-radius:14px;padding:10px 16px" onclick="tsSaveCurrentAsPreset()" title="Guardar configuración actual como preset">
           <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M2 2h8l2 2v8a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V2z"/><path d="M9 2v4H5V2M5 8h4"/></svg>
           Guardar Preset
         </button>
       </div>
-      <button class="ts-launch-btn" onclick="tsGenerarTesteo()">
+      <button class="btn btn-outline" id="ts-btn-next" style="border-radius:14px;padding:10px 24px" onclick="tsGoToPage(tsCurrentPage+1)">Siguiente</button>
+      <button class="ts-launch-btn" id="ts-btn-launch" style="display:none" onclick="tsGenerarTesteo()">
         <span class="ts-launch-btn-label">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/></svg>
           Generar Testeo
@@ -8053,10 +8051,12 @@ tsEngMode.clear();
   tsEngSelected.clear();
   tsGuionLinks.clear();
 tsEngAdsCache = null; // limpiar cache al abrir para forzar re-fetch
+tsEngAdsCache = null; // limpiar cache al abrir para forzar re-fetch
   tsResetAdvControls();
   tsAddConjunto(); // arranca con Conjunto 1 + Anuncio 1
   openModal('modal-testing-sandbox');
   tsEngLoadAds();
+  tsGoToPage(1);
 }
 
 function tsRenderDupPreview(){
@@ -8127,6 +8127,27 @@ const cardsHtml = audiencias.map(a => `
   tsAddAnuncio(cId);
   tsRenderBudgetAlloc();
   tsRenderDupPreview();
+}
+let tsCurrentPage = 1;
+const TS_TOTAL_PAGES = 4;
+function tsGoToPage(n){
+  if(n < 1 || n > TS_TOTAL_PAGES) return;
+  tsCurrentPage = n;
+  document.querySelectorAll('#modal-testing-sandbox .ts-page').forEach(p=>{
+    p.style.display = (+p.dataset.page === n) ? '' : 'none';
+  });
+  document.querySelectorAll('#ts-stepper .ts-stepper-item').forEach(item=>{
+    const p = +item.dataset.gotoPage;
+    item.classList.toggle('active', p === n);
+    item.classList.toggle('completed', p < n);
+  });
+  const backBtn = document.getElementById('ts-btn-back');
+  const nextBtn = document.getElementById('ts-btn-next');
+  const launchBtn = document.getElementById('ts-btn-launch');
+  if(backBtn) backBtn.style.display = (n > 1) ? '' : 'none';
+  if(nextBtn) nextBtn.style.display = (n < TS_TOTAL_PAGES) ? '' : 'none';
+  if(launchBtn) launchBtn.style.display = (n === TS_TOTAL_PAGES) ? '' : 'none';
+  document.querySelector('.modal.ts-modal-xl').scrollTop = 0;
 }
 function tsToggleConjunto(cId){
   const cEl = document.querySelector(`.ts-conjunto[data-conjunto-id="${cId}"]`);
