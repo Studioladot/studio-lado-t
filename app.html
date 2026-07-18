@@ -4547,7 +4547,7 @@ function showPage(p){
     const labelSpan=ni?.querySelector('span:last-child');
     mtbTitle.textContent = labelSpan ? labelSpan.textContent : 'GOTIX';
   }
-if(p==='dashboard' && gtxSectionTourShouldRun('dashboard')) setTimeout(()=>gtxStartSectionTour('dashboard'), 500);
+if(GTX_SECTION_TOURS[p] && gtxSectionTourShouldRun(p)) setTimeout(()=>gtxStartSectionTour(p), 500);
   if(p==='bib-ads')loadBibAds();
   if(p==='meta-live')renderSnaps();
   if(p==='meta-campanas'){ renderMetaCampHeader(); if(META_TOKEN&&META_ACCOUNT&&!metaCampaigns.length)loadMetaCampaigns(); }
@@ -5517,6 +5517,57 @@ const GTX_SECTION_TOURS = {
     { selector: '#bhs-panel', title: 'Business Health Score', desc: 'Un puntaje de 0 a 100 que resume la salud de tu negocio en base a 5 dimensiones clave de los últimos 30 días.' },
     { selector: '#dash-meta-widget', title: 'Resumen de Meta Ads', desc: 'Tus campañas activas de Meta con sus métricas principales, sin salir del Dashboard.' },
     { selector: '#dash-tbl', title: 'Tabla de Métricas', desc: 'El detalle diario de tus números — cargá o revisá tus registros acá.' },
+  ],
+  'meta-campanas': [
+    { selector: '#meta-focus-cards', title: 'Cards de foco', desc: 'Las métricas más importantes de tu cuenta, de un vistazo.' },
+    { selector: '#meta-camp-table', title: 'Tabla de Campañas', desc: 'Todas tus campañas activas y pausadas, con su rendimiento detallado.' },
+    { selector: '#meta-adsets-section', title: 'Conjuntos de Anuncios', desc: 'El desglose por Ad Set de la campaña que selecciones arriba.' },
+    { selector: '#meta-ads-section', title: 'Anuncios individuales', desc: 'El detalle a nivel anuncio, para ver qué creativo está funcionando mejor.' },
+  ],
+  'meta-live': [
+    { selector: '#snaps-list', title: 'Tus Snapshots', desc: 'Reportes guardados con las métricas clave, listos para revisar o compartir.' },
+    { selector: '#snap-search', title: 'Buscador', desc: 'Encontrá rápido un snapshot puntual por nombre.' },
+  ],
+  'bib-ads': [
+    { selector: '#bibads-grid', title: 'Biblioteca de Anuncios', desc: 'Todos tus creativos históricos, con su estado y rendimiento.' },
+    { selector: '#bibads-search', title: 'Buscador y filtros', desc: 'Filtrá por estado, tipo o fecha para encontrar el anuncio que buscás.' },
+  ],
+  guiones: [
+    { selector: '#sc-list', title: 'Tus Guiones', desc: 'La lista de guiones de anuncios que fuiste creando.' },
+    { selector: '#sc-editor', title: 'Editor de Guiones', desc: 'Escribí y editá el guion de tu próximo anuncio acá.' },
+  ],
+  biblioteca: [
+    { selector: '#bib-roas-panel', title: 'ROAS por Guion', desc: 'Vinculá tus guiones a los anuncios reales y mirá qué guion generó mejor retorno.' },
+    { selector: '#bib-tbl', title: 'Tabla de Guiones', desc: 'El historial completo de guiones con sus métricas de rendimiento.' },
+  ],
+  benchmarks: [
+    { selector: '#my-benchmarks', title: 'Tus Benchmarks', desc: 'Tus propios números promedio, para comparar cada campaña nueva contra tu propio historial.' },
+  ],
+  'tiendanube-connect': [
+    { selector: '#tn-card-ventas', title: 'Ventas', desc: 'El total de ventas de tu tienda en el período seleccionado.' },
+    { selector: '#tn-card-facturacion', title: 'Facturación', desc: 'Cuánto facturaste, para cruzar contra tu inversión en ads.' },
+    { selector: '#pnl-waterfall', title: 'P&L — Waterfall', desc: 'El desglose completo de tu rentabilidad, paso a paso desde la venta bruta hasta el neto.' },
+  ],
+  contenido: [
+    { selector: '#cont-cal-card', title: 'Calendario de Contenido', desc: 'Planificá y visualizá tus publicaciones del mes.' },
+    { selector: '#cont-progress-bar', title: 'Tu racha', desc: 'Seguí tu constancia de publicación semana a semana.' },
+  ],
+  notas: [
+    { selector: '#notas-grid', title: 'Tus Notas', desc: 'Ideas, pendientes y recordatorios guardados sin salir de GOTIX.' },
+  ],
+  'campanas-contenido': [
+    { selector: '#bibads-grid', title: 'Campaña de Contenido', desc: 'El calendario y seguimiento de tu contenido orgánico.' },
+  ],
+  diario: [
+    { selector: '#dm-list', title: 'Diario de Marca', desc: 'El registro de decisiones y aprendizajes importantes de tu marca, para no perder el hilo con el tiempo.' },
+  ],
+  autopilot: [
+    { selector: '#ap-rules-list', title: 'Reglas de Autopiloto', desc: 'Automatizaciones que pausan, escalan o ajustan tus campañas solas, según las condiciones que definas.' },
+    { selector: '#ap-log-list', title: 'Historial de acciones', desc: 'Todo lo que el Autopiloto hizo por vos, con fecha y motivo.' },
+  ],
+  ia: [
+    { selector: '#ia-msgs', title: 'IA Estratégica', desc: 'Consultale a la IA sobre tu cuenta — tiene contexto de tus campañas y tu negocio.' },
+    { selector: '#ia-knowledge-list', title: 'Base de Conocimiento', desc: 'Información que le cargaste a la IA para que te dé respuestas más precisas.' },
   ],
 };
 function gtxSectionTourShouldRun(page){
