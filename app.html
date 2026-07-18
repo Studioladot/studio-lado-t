@@ -5554,6 +5554,7 @@ function gtxTourRenderStep(){
     gtxTourNext();
     return;
   }
+target.scrollIntoView({block:'center', behavior:'instant'});
   const r = target.getBoundingClientRect();
   if(r.width === 0 || r.height === 0){
     console.warn('[gtx-tour] elemento con tamaño 0 (oculto o no pintado aún), salteando paso:', step.selector);
