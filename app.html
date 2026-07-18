@@ -4547,7 +4547,7 @@ function showPage(p){
     const labelSpan=ni?.querySelector('span:last-child');
     mtbTitle.textContent = labelSpan ? labelSpan.textContent : 'GOTIX';
   }
-if(GTX_SECTION_TOURS[p] && gtxSectionTourShouldRun(p)) setTimeout(()=>gtxStartSectionTour(p), 500);
+if(GTX_SECTION_TOURS[p] && !gtxTourEnteringManually && gtxSectionTourShouldRun(p)) setTimeout(()=>gtxStartSectionTour(p), 500);
   if(p==='bib-ads')loadBibAds();
   if(p==='meta-live')renderSnaps();
   if(p==='meta-campanas'){ renderMetaCampHeader(); if(META_TOKEN&&META_ACCOUNT&&!metaCampaigns.length)loadMetaCampaigns(); }
@@ -5512,6 +5512,7 @@ window.addEventListener('load',init);
 /* ── ONBOARDING TOUR ─────────────────────────────────────────────── */
 let gtxActiveTourSteps = null;
 let gtxActiveSectionPage = null;
+let gtxTourEnteringManually = false;
 const GTX_SECTION_TOURS = {
   dashboard: [
     { selector: '#bhs-panel', title: 'Business Health Score', desc: 'Un puntaje de 0 a 100 que resume la salud de tu negocio en base a 5 dimensiones clave de los últimos 30 días.' },
@@ -5619,6 +5620,9 @@ function gtxStartTour(){
 }
 function gtxTourRestart(){
   localStorage.removeItem('gtx_tour_done');
+  Object.keys(GTX_SECTION_TOURS).forEach(page=>{
+    localStorage.removeItem('gtx_tour_section_'+page);
+  });
   gtxStartTour();
 }
 function gtxTourEnterSection(page){
@@ -5631,10 +5635,10 @@ function gtxTourEnterSection(page){
   document.querySelectorAll('.gtx-tour-target-elevated').forEach(el=>{
     el.classList.remove('gtx-tour-target-elevated');
   });
+gtxTourEnteringManually = true;
   showPage(page);
   const steps = GTX_SECTION_TOURS[page];
-  if(steps && steps.length) setTimeout(()=>gtxStartSectionTour(page), 350);
-}
+  if(steps && steps.length) setTimeout(()=>{ gtxStartSectionTour(page); gtxTourEnteringManually = false; }, 350);
 function gtxTourSkip(){
   if(gtxActiveTourSteps === GTX_TOUR_STEPS){
     localStorage.setItem('gtx_tour_done','1');
