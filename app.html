@@ -5565,7 +5565,6 @@ function gtxTourRenderStep(){
   let cardTop = r.bottom + 14;
   let cardLeft = Math.min(r.left, window.innerWidth - 320);
   if(cardTop + 180 > window.innerHeight) cardTop = Math.max(14, r.top - 190);
-  root.innerHTML = `
 document.querySelectorAll('.gtx-tour-target-elevated').forEach(el=>{
     el.classList.remove('gtx-tour-target-elevated');
   });
@@ -5585,7 +5584,6 @@ document.querySelectorAll('.gtx-tour-target-elevated').forEach(el=>{
       </div>
     </div>`;
 }
-
 
 // ══════════════════════════════════════════════════════════════════════════════
 // SAFE INSERT
