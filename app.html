@@ -1231,9 +1231,10 @@ body.focus-mode #main{margin-left:0}
 .inv-prod-name-wrap{display:flex;align-items:center;gap:10px}
 /* ── ONBOARDING TOUR ─────────────────────────────────────────────── */
 .gtx-tour-overlay{position:fixed;inset:0;z-index:99990;pointer-events:none}
-.gtx-tour-dim{position:fixed;inset:0;background:rgba(10,12,16,.55);z-index:99991;transition:opacity .25s ease}
-.gtx-tour-spotlight{position:fixed;z-index:99992;border-radius:12px;box-shadow:0 0 0 4px var(--primary-green),0 0 0 9999px rgba(10,12,16,.55);transition:all .3s cubic-bezier(.4,0,.2,1);pointer-events:none}
-.gtx-tour-card{position:fixed;z-index:99993;width:300px;background:var(--surface);border:1px solid var(--border2);border-radius:14px;padding:18px 20px;box-shadow:0 20px 50px -12px rgba(0,0,0,.35);transition:top .3s ease,left .3s ease;font-family:inherit}
+.gtx-tour-dim{position:fixed;inset:0;background:rgba(10,12,16,.6);z-index:99991;transition:opacity .25s ease}
+.gtx-tour-spotlight{position:fixed;z-index:99992;border-radius:12px;box-shadow:0 0 0 4px var(--primary-green);border:2px solid var(--primary-green);pointer-events:none;background:transparent}
+.gtx-tour-card{position:fixed;z-index:99994;width:300px;background:var(--surface);border:1px solid var(--border2);border-radius:14px;padding:18px 20px;box-shadow:0 20px 50px -12px rgba(0,0,0,.35);transition:top .3s ease,left .3s ease;font-family:inherit}
+.gtx-tour-target-elevated{position:relative!important;z-index:99993!important}
 .gtx-tour-step{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--primary-green);margin-bottom:8px}
 .gtx-tour-title{font-size:14px;font-weight:800;color:var(--text);margin-bottom:6px}
 .gtx-tour-desc{font-size:12.5px;line-height:1.5;color:var(--text2);margin-bottom:16px}
@@ -5534,6 +5535,9 @@ function gtxTourSkip(){
   localStorage.setItem('gtx_tour_done','1');
   const root = document.getElementById('gtx-tour-root');
   if(root) root.innerHTML = '';
+  document.querySelectorAll('.gtx-tour-target-elevated').forEach(el=>{
+    el.classList.remove('gtx-tour-target-elevated');
+  });
 }
 function gtxTourNext(){
   gtxTourIdx++;
@@ -5545,14 +5549,30 @@ function gtxTourRenderStep(){
   const root = document.getElementById('gtx-tour-root');
   if(!root || !step) return;
   const target = document.querySelector(step.selector);
-  if(!target){ gtxTourNext(); return; } // si el elemento no existe en esta pantalla, salta el paso
+  if(!target){
+    console.warn('[gtx-tour] selector no encontrado, salteando paso:', step.selector);
+    gtxTourNext();
+    return;
+  }
   const r = target.getBoundingClientRect();
+  if(r.width === 0 || r.height === 0){
+    console.warn('[gtx-tour] elemento con tamaño 0 (oculto o no pintado aún), salteando paso:', step.selector);
+    gtxTourNext();
+    return;
+  }
   const pad = 8;
   const dotsHtml = GTX_TOUR_STEPS.map((_,i)=>`<span class="gtx-tour-dot${i===gtxTourIdx?' active':''}"></span>`).join('');
   let cardTop = r.bottom + 14;
   let cardLeft = Math.min(r.left, window.innerWidth - 320);
   if(cardTop + 180 > window.innerHeight) cardTop = Math.max(14, r.top - 190);
   root.innerHTML = `
+document.querySelectorAll('.gtx-tour-target-elevated').forEach(el=>{
+    el.classList.remove('gtx-tour-target-elevated');
+  });
+  target.classList.add('gtx-tour-target-elevated');
+
+  root.innerHTML = `
+    <div class="gtx-tour-dim" onclick="gtxTourSkip()"></div>
     <div class="gtx-tour-spotlight" style="top:${r.top-pad}px;left:${r.left-pad}px;width:${r.width+pad*2}px;height:${r.height+pad*2}px"></div>
     <div class="gtx-tour-card" style="top:${cardTop}px;left:${cardLeft}px">
       <div class="gtx-tour-dots">${dotsHtml}</div>
@@ -5565,7 +5585,6 @@ function gtxTourRenderStep(){
       </div>
     </div>`;
 }
-
 
 
 // ══════════════════════════════════════════════════════════════════════════════
