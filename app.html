@@ -1227,9 +1227,26 @@ body.focus-mode #main{margin-left:0}
 .gx-summary-value.warn{ color:#B23A3A; }
   .inv-prod-thumb{width:40px;height:40px;border-radius:6px;object-fit:cover;border:1px solid #E4E7EC;flex-shrink:0;background:var(--surface2)}
 .inv-prod-name-wrap{display:flex;align-items:center;gap:10px}
+/* ── ONBOARDING TOUR ─────────────────────────────────────────────── */
+.gtx-tour-overlay{position:fixed;inset:0;z-index:9000;pointer-events:none}
+.gtx-tour-dim{position:fixed;inset:0;background:rgba(10,12,16,.55);z-index:9001;transition:opacity .25s ease}
+.gtx-tour-spotlight{position:fixed;z-index:9002;border-radius:12px;box-shadow:0 0 0 4px var(--primary-green),0 0 0 9999px rgba(10,12,16,.55);transition:all .3s cubic-bezier(.4,0,.2,1);pointer-events:none}
+.gtx-tour-card{position:fixed;z-index:9003;width:300px;background:var(--surface);border:1px solid var(--border2);border-radius:14px;padding:18px 20px;box-shadow:0 20px 50px -12px rgba(0,0,0,.35);transition:top .3s ease,left .3s ease;font-family:inherit}
+.gtx-tour-step{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--primary-green);margin-bottom:8px}
+.gtx-tour-title{font-size:14px;font-weight:800;color:var(--text);margin-bottom:6px}
+.gtx-tour-desc{font-size:12.5px;line-height:1.5;color:var(--text2);margin-bottom:16px}
+.gtx-tour-footer{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.gtx-tour-skip{background:transparent;border:none;color:var(--text3);font-size:11.5px;font-weight:600;cursor:pointer;padding:6px 4px}
+.gtx-tour-skip:hover{color:var(--text2)}
+.gtx-tour-next{background:var(--primary-green);border:none;color:#fff;font-size:12px;font-weight:700;padding:8px 18px;border-radius:9px;cursor:pointer;transition:background .15s}
+.gtx-tour-next:hover{background:var(--accent-d)}
+.gtx-tour-dots{display:flex;gap:5px;margin-bottom:14px}
+.gtx-tour-dot{width:5px;height:5px;border-radius:50%;background:var(--border2)}
+.gtx-tour-dot.active{background:var(--primary-green);width:14px;border-radius:3px;transition:all .2s ease}
 </style>
 </head>
 <body>
+<div id="gtx-tour-root"></div>
 <div id="mobile-topbar">
   <button onclick="document.getElementById('sidebar').classList.toggle('open')">&#9776;</button>
   <span id="mobile-topbar-title">GOTIX</span>
@@ -5480,6 +5497,58 @@ function confirmDelete(title, body, onConfirm){
 
 // ── BOOT ──────────────────────────────────────────────────────────────────────
 window.addEventListener('load',init);
+
+/* ── ONBOARDING TOUR ─────────────────────────────────────────────── */
+const GTX_TOUR_STEPS = [
+  { selector: '#nav-dashboard', title: 'Tu Dashboard', desc: 'Acá ves el estado general del negocio de un vistazo: ventas, campañas activas y alertas.' },
+  { selector: '#nav-campana-meta', title: 'Campañas de Meta Ads', desc: 'Desde acá creás, lanzás y monitoreás todas tus campañas de Meta.' },
+  { selector: '#nav-snapshots', title: 'Snapshots', desc: 'Reportes rápidos con las métricas clave de tu cuenta, listos para compartir.' },
+  { selector: '#nav-biblioteca-ads', title: 'Biblioteca de Ads', desc: 'Todos tus anuncios históricos, organizados y con su rendimiento a mano.' },
+];
+let gtxTourIdx = 0;
+
+function gtxTourShouldRun(){
+  return !localStorage.getItem('gtx_tour_done');
+}
+function gtxStartTour(){
+  gtxTourIdx = 0;
+  gtxTourRenderStep();
+}
+function gtxTourSkip(){
+  localStorage.setItem('gtx_tour_done','1');
+  const root = document.getElementById('gtx-tour-root');
+  if(root) root.innerHTML = '';
+}
+function gtxTourNext(){
+  gtxTourIdx++;
+  if(gtxTourIdx >= GTX_TOUR_STEPS.length){ gtxTourSkip(); return; }
+  gtxTourRenderStep();
+}
+function gtxTourRenderStep(){
+  const step = GTX_TOUR_STEPS[gtxTourIdx];
+  const root = document.getElementById('gtx-tour-root');
+  if(!root || !step) return;
+  const target = document.querySelector(step.selector);
+  if(!target){ gtxTourNext(); return; } // si el elemento no existe en esta pantalla, salta el paso
+  const r = target.getBoundingClientRect();
+  const pad = 8;
+  const dotsHtml = GTX_TOUR_STEPS.map((_,i)=>`<span class="gtx-tour-dot${i===gtxTourIdx?' active':''}"></span>`).join('');
+  let cardTop = r.bottom + 14;
+  let cardLeft = Math.min(r.left, window.innerWidth - 320);
+  if(cardTop + 180 > window.innerHeight) cardTop = Math.max(14, r.top - 190);
+  root.innerHTML = `
+    <div class="gtx-tour-spotlight" style="top:${r.top-pad}px;left:${r.left-pad}px;width:${r.width+pad*2}px;height:${r.height+pad*2}px"></div>
+    <div class="gtx-tour-card" style="top:${cardTop}px;left:${cardLeft}px">
+      <div class="gtx-tour-dots">${dotsHtml}</div>
+      <div class="gtx-tour-step">Paso ${gtxTourIdx+1} de ${GTX_TOUR_STEPS.length}</div>
+      <div class="gtx-tour-title">${step.title}</div>
+      <div class="gtx-tour-desc">${step.desc}</div>
+      <div class="gtx-tour-footer">
+        <button class="gtx-tour-skip" onclick="gtxTourSkip()">Omitir Tour</button>
+        <button class="gtx-tour-next" onclick="gtxTourNext()">${gtxTourIdx===GTX_TOUR_STEPS.length-1?'Finalizar':'Siguiente'}</button>
+      </div>
+    </div>`;
+}
 
 
 
@@ -10361,14 +10430,19 @@ async function checkUserAccess(opts) {
       if (!silent) showTrialExpired();
       return false;
     }
-    // Trial gratis de 7 dias — mientras dure, entra aunque is_approved sea false
+  // Trial gratis de 7 dias — mientras dure, entra aunque is_approved sea false
     if (!data.is_admin && !data.is_approved) {
       const createdAt = new Date(data.created_at);
       const daysPassed = Math.floor((Date.now() - createdAt.getTime()) / 86400000);
-      if (daysPassed < 7) return true; // sigue en su prueba gratis, dejalo entrar
+      if (daysPassed < 7) {
+        if (gtxTourShouldRun()) setTimeout(gtxStartTour, 600);
+        return true; // sigue en su prueba gratis, dejalo entrar
+      }
       if (!silent) showTrialExpired();
       return false;
     }
+    if (gtxTourShouldRun()) setTimeout(gtxStartTour, 600);
+    return true;
     return true;
  } catch(e) {
     // Ante cualquier error, NUNCA dar admin por defecto — fail-closed, no fail-open.
