@@ -3611,7 +3611,19 @@ create policy "own" on contacts for all using (auth.uid()=user_id);</div>
       </button>
     </div>
 
-    <div class="ts-stepper">
+<div class="ts-stepper" id="ts-stepper">
+      <div class="ts-stepper-item active" data-goto-page="1" onclick="tsGoToPage(1)"><span class="ts-stepper-num">1</span><span class="ts-stepper-text"><span class="ts-stepper-title">Datos</span><span class="ts-stepper-sub">Datos de campaña</span></span></div>
+      <svg class="ts-stepper-arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg>
+      <div class="ts-stepper-item" data-goto-page="2" onclick="tsGoToPage(2)"><span class="ts-stepper-num">2</span><span class="ts-stepper-text"><span class="ts-stepper-title">Cronograma</span><span class="ts-stepper-sub">Cuando arranca</span></span></div>
+      <svg class="ts-stepper-arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg>
+      <div class="ts-stepper-item" data-goto-page="3" onclick="tsGoToPage(3)"><span class="ts-stepper-num">3</span><span class="ts-stepper-text"><span class="ts-stepper-title">Budget</span><span class="ts-stepper-sub">Presupuesto y estrategia</span></span></div>
+      <svg class="ts-stepper-arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg>
+      <div class="ts-stepper-item" data-goto-page="4" onclick="tsGoToPage(4)"><span class="ts-stepper-num">4</span><span class="ts-stepper-text"><span class="ts-stepper-title">Ad Sets</span><span class="ts-stepper-sub">Conjuntos a incluir</span></span></div>
+    </div>
+
+    <div class="ts-step-panel ts-page" data-page="1">
+      <div class="ts-step-hdr"><span class="ts-step-num">01</span><span class="ts-step-title">Datos de campaña</span></div>
+      <div class="ts-step-sub">Nombre, producto y campaña destino.</div>
       <div class="form-row">
         <div class="fg wide ts-input-wrap">
           <span class="ts-field-label">Nombre de Campaña</span>
@@ -3636,9 +3648,8 @@ create policy "own" on contacts for all using (auth.uid()=user_id);</div>
             <input id="ts-camp-existing-id" type="text" placeholder="Dejar vacio para crear una nueva"/>
           </div>
         </div>
-   </div>
+      </div>
     </div>
-
     <div class="ts-step-panel ts-page" data-page="2" style="display:none">
       <div class="ts-panel-hdr-row">
         <div>
@@ -3745,6 +3756,7 @@ create policy "own" on contacts for all using (auth.uid()=user_id);</div>
       </div>
     </div>
     </div>
+    <!-- fin data-page="3": Presupuesto + Advantage+ -->
 
     <div class="ts-step-panel ts-page" data-page="4" style="display:none">
     <div class="ts-panel-hdr-row" style="margin-bottom:12px">
@@ -3757,7 +3769,7 @@ create policy "own" on contacts for all using (auth.uid()=user_id);</div>
         Browse Ad Set Library
       </button>
     </div>
-    <div id="ts-conjuntos-wrap" style="display:flex;flex-direction:column;gap:16px"></div>
+<div id="ts-conjuntos-wrap" style="display:flex;flex-direction:column;gap:16px;max-height:420px;overflow-y:auto;padding-right:4px"></div>
 
     <button type="button" class="ts-add-conjunto-btn" onclick="tsAddConjunto()">
       <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M7 1.5v11M1.5 7h11"/></svg>
@@ -3780,7 +3792,7 @@ create policy "own" on contacts for all using (auth.uid()=user_id);</div>
           Guardar Preset
         </button>
       </div>
-      <button class="btn btn-outline" id="ts-btn-next" style="border-radius:14px;padding:10px 24px" onclick="tsGoToPage(tsCurrentPage+1)">Siguiente</button>
+<button class="btn btn-accent" id="ts-btn-next" style="border-radius:14px;padding:10px 24px" onclick="tsGoToPage(tsCurrentPage+1)">Siguiente</button>
       <button class="ts-launch-btn" id="ts-btn-launch" style="display:none" onclick="tsGenerarTesteo()">
         <span class="ts-launch-btn-label">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/></svg>
