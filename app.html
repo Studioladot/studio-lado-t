@@ -1,6 +1,9 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>GOTIX - Sistema Operativo de Negocios</title>
@@ -207,8 +210,8 @@ body.dark-mode .snap-card-type{ color:rgba(255,255,255,.4); }
 body.dark-mode .snap-card-roas-lbl{ color:rgba(255,255,255,.45); }
 body.dark-mode .snap-icon-btn{ color:rgba(255,255,255,.4); }
 body.dark-mode .snap-icon-btn:hover{ color:var(--text); background:rgba(255,255,255,.08); border-color:rgba(255,255,255,.12); }
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.55;min-height:100vh}
-#main::before{content:'';position:fixed;inset:0;background:var(--atmosphere);pointer-events:none;z-index:0}
+body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.55;min-height:100vh;letter-spacing:-0.01em}
+  #main::before{content:'';position:fixed;inset:0;background:var(--atmosphere);pointer-events:none;z-index:0}
 .page{position:relative;z-index:1}
 button,input,textarea,select{font-family:inherit;font-size:14px}
   select{background-color:#FCFCFB;color:#1A1A18}
@@ -5508,6 +5511,29 @@ function confirmDelete(title, body, onConfirm){
 // ── BOOT ──────────────────────────────────────────────────────────────────────
 window.addEventListener('load',init);
 
+window.addEventListener('error', function(e){
+  console.error('[gtx-error]', e.message, e.filename, e.lineno);
+  try{
+    db?.from('error_logs').insert({
+      message: e.message,
+      source: e.filename+':'+e.lineno,
+      page: (typeof currentPage!=='undefined'?currentPage:null),
+      user_id: (typeof currentUser!=='undefined'?currentUser?.id:null)
+    });
+  }catch(_){}
+});
+window.addEventListener('unhandledrejection', function(e){
+  console.error('[gtx-error] promise rejection:', e.reason);
+  try{
+    db?.from('error_logs').insert({
+      message: String(e.reason?.message || e.reason),
+      source: 'unhandledrejection',
+      page: (typeof currentPage!=='undefined'?currentPage:null),
+      user_id: (typeof currentUser!=='undefined'?currentUser?.id:null)
+    });
+  }catch(_){}
+});
+
 /* ── ONBOARDING TOUR ─────────────────────────────────────────────── */
 /* ── ONBOARDING TOUR ─────────────────────────────────────────────── */
 let gtxActiveTourSteps = null;
@@ -9566,7 +9592,9 @@ async function metaGet(path, params={}) {
   const session = (await db.auth.getSession()).data.session;
   const p = new URLSearchParams({...params, path});
   const r = await fetch(`/api/meta-proxy?${p}`, { headers: { Authorization: `Bearer ${session.access_token}` } });
-  return r.json();
+  const raw = await r.text();
+  if(!r.ok) console.error('[metaGet] ✗', r.status, path, raw.substring(0,600));
+  try { return JSON.parse(raw); } catch(e) { return { error: { message: 'Respuesta no-JSON: ' + raw } }; }
 }
 // POST a Graph API (cambiar status, etc.) — requiere que /api/meta-proxy acepte metodo POST
 async function metaPost(path, body={}) {
