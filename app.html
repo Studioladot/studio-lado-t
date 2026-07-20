@@ -3066,17 +3066,6 @@ body.focus-mode #main{margin-left:0}
 
 <!-- CONFIGURACION -->
 <div id="page-config" class="page">
-  <div class="card" style="margin-bottom:14px">
-    <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px">Alertas de Consumo</div>
-    <div style="font-size:11.5px;color:var(--text3);margin-bottom:12px">Te avisamos si una campaña gasta más de este monto sin ninguna compra en el día.</div>
-    <div style="display:flex;align-items:center;gap:8px">
-      <div class="ts-input-box" style="width:140px">
-        <span style="color:var(--text3);font-size:13px">$</span>
-        <input id="cfg-spend-threshold" type="number" min="1" placeholder="50" style="border:none;background:transparent;outline:none;font-size:13px;color:var(--text);width:100%">
-      </div>
-      <button class="btn btn-accent" onclick="saveSpendThreshold()">Guardar</button>
-    </div>
-  </div>
   <div class="page-hdr">
     <div><div class="page-title">Configuracion</div><div class="page-sub">Credenciales, API keys y setup del sistema</div></div>
   </div>
@@ -3254,6 +3243,17 @@ create policy "own" on contacts for all using (auth.uid()=user_id);</div>
 <!-- ADMIN -->
 <div id="page-activity" class="page">
   <h1 class="page-title">Historial de Actividad</h1>
+  <div class="card" style="margin-bottom:14px">
+    <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px">Alertas de Consumo</div>
+    <div style="font-size:11.5px;color:var(--text3);margin-bottom:12px">Te avisamos si una campaña gasta más de este monto sin ninguna compra en el día.</div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <div class="ts-input-box" style="width:140px">
+        <span style="color:var(--text3);font-size:13px">$</span>
+        <input id="cfg-spend-threshold" type="number" min="1" placeholder="50" style="border:none;background:transparent;outline:none;font-size:13px;color:var(--text);width:100%">
+      </div>
+      <button class="btn btn-accent" onclick="saveSpendThreshold()">Guardar</button>
+    </div>
+  </div>
   <div style="display:flex;gap:8px;margin:14px 0">
     <select id="act-filter-action" class="ft" onchange="renderActivityLog()" style="cursor:pointer">
       <option value="">Todas las acciones</option>
@@ -4578,7 +4578,7 @@ function showPage(p){
     mtbTitle.textContent = labelSpan ? labelSpan.textContent : 'GOTIX';
   }
 if(GTX_SECTION_TOURS[p] && !gtxTourEnteringManually && gtxSectionTourShouldRun(p)) setTimeout(()=>gtxStartSectionTour(p), 500);
-  if(p==='activity') renderActivityLog();
+if(p==='activity'){ renderActivityLog(); loadSpendThreshold(); }
   if(p==='bib-ads')loadBibAds();
   if(p==='meta-live')renderSnaps();
   if(p==='meta-campanas'){ renderMetaCampHeader(); if(META_TOKEN&&META_ACCOUNT&&!metaCampaigns.length)loadMetaCampaigns(); }
@@ -4602,7 +4602,7 @@ if(p==='finanzas'){loadFinanzas();loadCotizacionUSD();loadEscAll();}
  if(p==='contenido')loadContenido();
   if(p==='campanas-contenido')loadCampanas();
   if(p==='userlist')cargarUsuarios();
-if(p==='config'){ loadConfigPage(); loadSpendThreshold(); }
+if(p==='config'){ loadConfigPage(); }
  if(p==='dashboard'&&META_TOKEN&&META_ACCOUNT){syncDashDateSelector();if(!metaCampaigns.length)initDashboardMeta();checkSpendAlerts();}
   if(p==='meta-campanas'){
     apRefreshLogCache();
