@@ -2864,10 +2864,14 @@ body.focus-mode #main{margin-left:0}
           <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px">CTA</div>
           <div id="ad-detail-cta" style="font-size:13px;color:var(--text);font-weight:600">—</div>
         </div>
-        <div>
+       <div>
           <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px">URL de destino</div>
           <div id="ad-detail-link" style="font-size:12px;color:var(--text2);word-break:break-all">—</div>
         </div>
+        <button class="btn btn-accent" style="width:100%;justify-content:center" onclick="generarVarianteDesdeAd()">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+          Generar Variante
+        </button>
       </div>
     </div>
   </div>
@@ -4950,8 +4954,10 @@ function renderBHS() {
     }
   }
 }
+let adDetailCurrentId = null;
 function openAdDetail(id){
   const ad = bibAdsData.find(a=>a.id===id); if(!ad) return;
+  adDetailCurrentId = id;
   document.getElementById('ad-detail-name').textContent = ad.name;
   document.getElementById('ad-detail-copy').textContent = ad.copy || 'Sin copy registrado';
   document.getElementById('ad-detail-cta').textContent = ad.cta || '—';
@@ -4960,6 +4966,14 @@ function openAdDetail(id){
   document.getElementById('ad-detail-overlay').style.display='flex';
 }
 function closeAdDetail(){ document.getElementById('ad-detail-overlay').style.display='none'; }
+function generarVarianteDesdeAd(){
+  const ad = bibAdsData.find(a=>a.id===adDetailCurrentId);
+  if(!ad){ toast('No se encontró el anuncio'); return; }
+  closeAdDetail();
+  openModal('modal-snap');
+  const nameEl = document.getElementById('snap-name') || document.querySelector('#modal-snap input[type="text"]');
+  if(nameEl) nameEl.value = `${ad.name} - Variante`;
+}
 
 // ── OBJECTIVES ────────────────────────────────────────────────────────────────
 function renderObjs(){
