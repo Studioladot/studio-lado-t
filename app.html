@@ -5554,7 +5554,13 @@ function exportCSV(){
 // ── MODALS ────────────────────────────────────────────────────────────────────
 function openModal(id){document.getElementById(id).classList.add('open');}
 function closeModal(id){document.getElementById(id).classList.remove('open');}
-
+document.addEventListener('keydown', function(e){
+  if(e.key !== 'Escape') return;
+  const openModals = document.querySelectorAll('.modal-backdrop.open');
+  if(!openModals.length) return;
+  const last = openModals[openModals.length - 1];
+  closeModal(last.id);
+});
 function applyDarkModePref(){
   const saved = localStorage.getItem('gx_dark_mode');
   const isDark = saved === '1';
@@ -5587,6 +5593,9 @@ const GTX_TOAST_ICONS = {
 };
 function gtxClassifyError(msg){
   const m = (msg||'').toLowerCase();
+  if(m.includes('#4') || m.includes('#17') || m.includes('#32') || m.includes('request limit') || m.includes('too many calls')){
+    return { icon:GTX_TOAST_ICONS.bug, prefix:'Meta está limitando las solicitudes — ', tip:'Esperá un minuto y volvé a intentar.' };
+  }
   if(m.includes('failed to fetch') || m.includes('networkerror') || m.includes('load failed')){
     return { icon:GTX_TOAST_ICONS.offline, prefix:'Sin conexión — ', tip:'Revisá tu internet e intentá de nuevo.' };
   }
@@ -6396,7 +6405,7 @@ async function tsToggleDupGuionDropdown(bloqueIdx){
   dd.innerHTML = `<div class="ts-guion-empty">Cargando...</div>`;
   dd.classList.add('open');
 
-  const { data, error } = await db.from('scripts').select('title,hook,body,copy_feed').order('updated_at',{ascending:false});
+const { data, error } = await db.from('scripts').select('title,hook,body,copy_feed').eq('user_id', me.id).order('updated_at',{ascending:false});
   const guiones = (!error && data) ? data.map(s => ({
     titulo_headline: s.title || 'Sin titulo',
     texto_completo: s.copy_feed || s.body || s.hook || ''
@@ -8912,7 +8921,7 @@ async function tsOfferEngagementOnScale(campaignId, onConfirm){
 // Trae los guiones disponibles. Tabla real en Supabase: "scripts"
 // (columnas: title, hook, body, copy_feed) — mapeados aca a titulo/texto_completo.
 async function fetchGuiones(){
- const { data, error } = await db.from('scripts').select('id,title,hook,body,copy_feed').order('updated_at',{ascending:false});
+const { data, error } = await db.from('scripts').select('id,title,hook,body,copy_feed').eq('user_id', me.id).order('updated_at',{ascending:false});
   if(error || !data) return [];
   return data.map(s => ({
     id: s.id,
@@ -9766,19 +9775,24 @@ const ADSET_FIELDS = 'id,name,status,effective_status,daily_budget,targeting';
 const AD_INFO_FIELDS = 'id,name,status,effective_status,creative{id,name,thumbnail_url}';
 
 // ── HELPERS ──────────────────────────────────────────────────────────────────
-async function metaGet(path, params={}) {
+async function metaGet(path, params={}, _isRetry=false) {
   const session = (await db.auth.getSession()).data.session;
+  if(!session){ toast('Tu sesión expiró — recargá la página para continuar'); return { error:{ message:'Sesión expirada' } }; }
   const p = new URLSearchParams({...params, path});
   const r = await fetch(`/api/meta-proxy?${p}`, { headers: { Authorization: `Bearer ${session.access_token}` } });
   const raw = await r.text();
   if(!r.ok) console.error('[metaGet] ✗', r.status, path, raw.substring(0,600));
+  if((raw.includes('"code":4') || raw.includes('"code":17') || raw.includes('"code":32')) && !_isRetry){
+    await new Promise(res => setTimeout(res, 2000));
+    return metaGet(path, params, true);
+  }
   try { return JSON.parse(raw); } catch(e) { return { error: { message: 'Respuesta no-JSON: ' + raw } }; }
 }
 // POST a Graph API (cambiar status, etc.) — requiere que /api/meta-proxy acepte metodo POST
 async function metaPost(path, body={}) {
   const session = (await db.auth.getSession()).data.session;
+  if(!session){ toast('Tu sesión expiró — recargá la página para continuar'); return { error:{ message:'Sesión expirada' } }; }
   const payload = { path, ...body };
-  console.log('[metaPost] →', path, JSON.stringify(payload).substring(0, 400));
   const r = await fetch(`/api/meta-proxy`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
