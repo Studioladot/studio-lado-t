@@ -11794,7 +11794,13 @@ async function loadAnalisis() {
   const hasMeta = !!(META_TOKEN && META_ACCOUNT);
   const hasTN   = !!tnConnection;
   document.getElementById('an-not-connected').style.display = (hasMeta||hasTN) ? 'none' : 'block';
-  document.getElementById('an-content').style.display = (hasMeta||hasTN) ? 'block' : 'none';
+document.getElementById('an-content').style.display = (hasMeta||hasTN) ? 'block' : 'none';
+  if(!document.getElementById('an-reconciliation-gap')){
+    const gap = document.createElement('div');
+    gap.id = 'an-reconciliation-gap';
+    gap.style.cssText = 'display:none;align-items:center;gap:8px;background:rgba(240,68,56,.08);border:1px solid rgba(240,68,56,.25);color:#F04438;font-size:12px;font-weight:600;padding:10px 14px;border-radius:var(--r);margin-bottom:14px';
+    document.getElementById('an-content').prepend(gap);
+  }
   if(!hasMeta && !hasTN) return;
   anShowSkeletons();
 
