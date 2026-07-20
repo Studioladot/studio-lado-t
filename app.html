@@ -3066,6 +3066,17 @@ body.focus-mode #main{margin-left:0}
 
 <!-- CONFIGURACION -->
 <div id="page-config" class="page">
+  <div class="card" style="margin-bottom:14px">
+    <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px">Alertas de Consumo</div>
+    <div style="font-size:11.5px;color:var(--text3);margin-bottom:12px">Te avisamos si una campaña gasta más de este monto sin ninguna compra en el día.</div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <div class="ts-input-box" style="width:140px">
+        <span style="color:var(--text3);font-size:13px">$</span>
+        <input id="cfg-spend-threshold" type="number" min="1" placeholder="50" style="border:none;background:transparent;outline:none;font-size:13px;color:var(--text);width:100%">
+      </div>
+      <button class="btn btn-accent" onclick="saveSpendThreshold()">Guardar</button>
+    </div>
+  </div>
   <div class="page-hdr">
     <div><div class="page-title">Configuracion</div><div class="page-sub">Credenciales, API keys y setup del sistema</div></div>
   </div>
@@ -4591,8 +4602,8 @@ if(p==='finanzas'){loadFinanzas();loadCotizacionUSD();loadEscAll();}
  if(p==='contenido')loadContenido();
   if(p==='campanas-contenido')loadCampanas();
   if(p==='userlist')cargarUsuarios();
-  if(p==='config')loadConfigPage();
-  if(p==='dashboard'&&META_TOKEN&&META_ACCOUNT){syncDashDateSelector();if(!metaCampaigns.length)initDashboardMeta();}
+if(p==='config'){ loadConfigPage(); loadSpendThreshold(); }
+ if(p==='dashboard'&&META_TOKEN&&META_ACCOUNT){syncDashDateSelector();if(!metaCampaigns.length)initDashboardMeta();checkSpendAlerts();}
   if(p==='meta-campanas'){
     apRefreshLogCache();
     cvInitAutoPauseSwitch();
@@ -9110,6 +9121,31 @@ async function gtxLogActivity(action, status, detail={}){
       action, status, detail
     });
   }catch(e){ console.error('[gtx-log] fallo al registrar actividad', e); }
+}
+async function saveSpendThreshold(){
+  const val = +document.getElementById('cfg-spend-threshold').value || 50;
+  const session = (await db.auth.getSession()).data.session;
+  if(!session) return;
+  await db.from('user_alert_settings').upsert({ user_id: session.user.id, spend_threshold: val });
+  toast('Umbral de alerta guardado');
+}
+async function loadSpendThreshold(){
+  const session = (await db.auth.getSession()).data.session;
+  if(!session) return;
+  const { data } = await db.from('user_alert_settings').select('spend_threshold').eq('user_id', session.user.id).single();
+  const el = document.getElementById('cfg-spend-threshold');
+  if(el) el.value = data?.spend_threshold || 50;
+}
+async function checkSpendAlerts(){
+  const session = (await db.auth.getSession()).data.session;
+  if(!session) return;
+  const { data } = await db.from('spend_alerts').select('*').eq('user_id', session.user.id).eq('seen', false).order('created_at', {ascending:false});
+  if(!data || !data.length) return;
+  data.forEach(a => {
+    toast(`"${a.campaign_name}" gastó $${a.spend} sin compras hoy`, 5000);
+  });
+  const ids = data.map(a => a.id);
+  await db.from('spend_alerts').update({ seen: true }).in('id', ids);
 }
 async function renderActivityLog(){
   const list = document.getElementById('activity-log-list');
