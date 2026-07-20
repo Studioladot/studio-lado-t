@@ -11844,9 +11844,23 @@ async function loadAnalisis() {
     return { ordenes,facturacion,facturacionNeta,inversion,costoProductos,costoEnvioTotal,ganancia,margen,roas,trueRoas,trueCpa,aov,aovNeto,metaCpa,metaRevenue:metaData.revenue,metaPurchases:metaData.purchases };
   }
 
-  const cur  = computeMetrics(tn, meta);
+const cur  = computeMetrics(tn, meta);
   const prv  = computeMetrics(tnPrev, metaPrev);
   const delta = (a,b) => b>0 ? ((a-b)/b*100) : (a>0?100:0);
+
+  // Conciliación Meta↔TiendaNube: brecha entre lo que Meta reporta vendido y lo que TN confirmó cobrado
+  if(cur.metaRevenue > 0 && cur.facturacionNeta >= 0){
+    const brechaPct = cur.metaRevenue > 0 ? ((cur.metaRevenue - cur.facturacionNeta) / cur.metaRevenue * 100) : 0;
+    const gapEl = document.getElementById('an-reconciliation-gap');
+    if(gapEl){
+      if(brechaPct > 15){
+        gapEl.style.display = 'flex';
+        gapEl.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><path d="M12 9v4M12 17h.01"/></svg> Meta reporta ${brechaPct.toFixed(0)}% más ventas de las que TiendaNube confirmó cobradas — revisá tu checkout.`;
+      } else {
+        gapEl.style.display = 'none';
+      }
+    }
+  }
 
   // Series para sparklines: TN trae serie_diaria con bruto/neto/ordenes; Meta no se desagrega por dia aqui (queda plano)
   const serie = tn.serie_diaria || [];
