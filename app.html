@@ -6392,7 +6392,7 @@ async function tsToggleDupGuionDropdown(bloqueIdx){
   dd.innerHTML = `<div class="ts-guion-empty">Cargando...</div>`;
   dd.classList.add('open');
 
-const { data, error } = await db.from('scripts').select('title,hook,body,copy_feed').eq('user_id', me.id).order('updated_at',{ascending:false});
+const { data, error } = await db.from('scripts').select('title,hook,body,copy_feed').eq('user_id', me.id).order('updated_at',{ascending:false}).limit(100);
   const guiones = (!error && data) ? data.map(s => ({
     titulo_headline: s.title || 'Sin titulo',
     texto_completo: s.copy_feed || s.body || s.hook || ''
@@ -8908,7 +8908,7 @@ async function tsOfferEngagementOnScale(campaignId, onConfirm){
 // Trae los guiones disponibles. Tabla real en Supabase: "scripts"
 // (columnas: title, hook, body, copy_feed) — mapeados aca a titulo/texto_completo.
 async function fetchGuiones(){
-const { data, error } = await db.from('scripts').select('id,title,hook,body,copy_feed').eq('user_id', me.id).order('updated_at',{ascending:false});
+const { data, error } = await db.from('scripts').select('id,title,hook,body,copy_feed').eq('user_id', me.id).order('updated_at',{ascending:false}).limit(100);
   if(error || !data) return [];
   return data.map(s => ({
     id: s.id,
