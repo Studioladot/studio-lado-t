@@ -1667,10 +1667,15 @@ body.focus-mode #main{margin-left:0}
         <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 1.5v11M1.5 7h11"/></svg>
         Lanzar Testeo
       </button>
-      <!-- Duplicar (aparece solo cuando hay checkboxes seleccionados) -->
+<!-- Duplicar (aparece solo cuando hay checkboxes seleccionados) -->
       <button class="btn btn-accent" id="ts-dup-selected-btn" onclick="tsOpenDupModal()" style="display:none;opacity:0;transition:opacity .2s">
         <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="8" height="8" rx="1.3"/><path d="M5 4V2.8a1 1 0 0 1 1-1h5a1 1 0 0 1 1 1V9a1 1 0 0 1-1 1h-1.5"/></svg>
         Duplicar (<span id="ts-dup-count-badge">0</span>)
+      </button>
+      <!-- Comparar (aparece solo con exactamente 2 campañas seleccionadas) -->
+      <button class="btn btn-outline" id="ts-compare-btn" onclick="tsOpenCompareModal()" style="display:none;opacity:0;transition:opacity .2s">
+        <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2v10M10 2v10"/><path d="M1 5h2M1 9h2M11 5h2M11 9h2"/></svg>
+        Comparar
       </button>
 
       <!-- Menú Opciones (3 puntos) -->
@@ -3355,6 +3360,15 @@ create policy "own" on contacts for all using (auth.uid()=user_id);</div>
     <div class="modal-footer">
       <button class="btn btn-outline" onclick="closeModal('modal-scale-variant')">Cancelar</button>
       <button class="btn btn-accent" onclick="createVariant()">Crear Variante</button>
+    </div>
+  </div>
+</div>
+<div class="modal-backdrop" id="modal-compare">
+  <div class="modal" style="max-width:640px">
+    <div class="modal-title">Comparar Campañas</div>
+    <div id="compare-body" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:14px 0"></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-compare')">Cerrar</button>
     </div>
   </div>
 </div>
@@ -6334,6 +6348,18 @@ function tsToggleSelect(type, id, name, checkbox){
     btn.style.opacity = '0';
     setTimeout(() => { if(tsSelectedItems.size===0) btn.style.display='none'; }, 200);
   }
+
+  const compareBtn = document.getElementById('ts-compare-btn');
+  if(compareBtn){
+    const campaignCount = Array.from(tsSelectedItems.values()).filter(i => i.type === 'campaign').length;
+    if(campaignCount === 2){
+      compareBtn.style.display = 'inline-flex';
+      requestAnimationFrame(() => compareBtn.style.opacity = '1');
+    } else {
+      compareBtn.style.opacity = '0';
+      setTimeout(() => { compareBtn.style.display='none'; }, 200);
+    }
+  }
 }
 
 const tsDupFiles = new Map(); // bloqueIdx -> File
@@ -6379,6 +6405,41 @@ function tsRenderDupBlocks(){
   }
 }
 
+function tsOpenCompareModal(){
+  const selected = Array.from(tsSelectedItems.values()).filter(i => i.type === 'campaign');
+  if(selected.length !== 2){ toast('Seleccioná exactamente 2 campañas para comparar'); return; }
+  const [campA, campB] = selected.map(sel => metaCampaigns.find(c => c.id === sel.id)).filter(Boolean);
+  if(!campA || !campB){ toast('No se encontraron los datos de las campañas seleccionadas'); return; }
+
+  const metricRows = metaActiveColumns.map(id => ({
+    label: META_METRIC_DEFS[id].label || id,
+    a: META_METRIC_DEFS[id].render(campA.insights||{}),
+    b: META_METRIC_DEFS[id].render(campB.insights||{}),
+  }));
+
+  const colHtml = (camp) => `
+    <div>
+      <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${camp.name}">${camp.name}</div>
+      <div style="font-size:11px;color:var(--text3);margin-bottom:12px">${camp.objective||''}</div>
+    </div>`;
+
+  const body = document.getElementById('compare-body');
+  body.innerHTML = `
+    ${colHtml(campA)}
+    ${colHtml(campB)}
+    ${metricRows.map(r => `
+      <div style="padding:8px 0;border-top:1px solid var(--border)">
+        <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px">${r.label}</div>
+        <div style="font-size:15px;font-weight:700;color:var(--text)">${r.a}</div>
+      </div>
+      <div style="padding:8px 0;border-top:1px solid var(--border)">
+        <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px">&nbsp;</div>
+        <div style="font-size:15px;font-weight:700;color:var(--text)">${r.b}</div>
+      </div>
+    `).join('')}
+  `;
+  openModal('modal-compare');
+}
 function tsOpenDupModal(){
   const selectedAdsets = Array.from(tsSelectedItems.values()).filter(i => i.type === 'adset');
   if(!selectedAdsets.length){ toast('Selecciona al menos un Conjunto para duplicar'); return; }
@@ -9226,7 +9287,7 @@ async function renderActivityLog(loadMore=false){
   const { data, error } = await q;
   if(error){ list.innerHTML = `<div class="empty"><div class="empty-msg">Error al cargar</div></div>`; if(moreBtn) moreBtn.style.display='none'; return; }
   if(!loadMore && (!data || !data.length)){ list.innerHTML = `<div class="empty" style="padding:20px 0"><div class="empty-msg">Sin actividad</div><div class="empty-sub">Acá vas a ver el historial de tus lanzamientos</div></div>`; if(moreBtn) moreBtn.style.display='none'; return; }
-  const statusColor = { completado:'var(--primary-green)', campania_creada:'var(--primary-green)', error_campania:'#F04438', excepcion:'#F04444' };
+const statusColor = { completado:'var(--primary-green)', campania_creada:'var(--primary-green)', completado_con_errores:'#F5A623', error_campania:'#F04438', excepcion:'#F04444' };
   const rowsHtml = (data||[]).map(r => `
     <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px solid var(--border)">
       <div>
@@ -9272,8 +9333,13 @@ async function tsGenerarTesteo(){
     campania.conjuntos.push(conjunto);
   });
 
-  if(!valido){ toast('Completa el nombre de cada conjunto y anuncio'); return; }
+if(!valido){ toast('Completa el nombre de cada conjunto y anuncio'); return; }
   if(!campania.presupuesto_diario){ toast('Falta el presupuesto diario'); return; }
+  if(campania.presupuesto_diario > 200){
+    const confirmar = confirm(`Vas a lanzar esta campaña con un presupuesto diario de USD ${campania.presupuesto_diario}. ¿Confirmás que el monto es correcto?`);
+    if(!confirmar) return;
+  }
+  let tsErroresParciales = [];
 
  try {
     tsConsoleStep(0);
@@ -9340,8 +9406,8 @@ const campRes = await metaPost(`act_${META_ACCOUNT}/campaigns`, campaignPayload)
         adsetPayload.catalog_based_optimization = 'NONE';
       }
 
-     const adsetRes = await metaPost(`act_${META_ACCOUNT}/adsets`, adsetPayload);
-      if(adsetRes.error){ tsConsoleError(`conjunto "${conjuntoNombre}": ${adsetRes.error.message}`); continue; }
+const adsetRes = await metaPost(`act_${META_ACCOUNT}/adsets`, adsetPayload);
+      if(adsetRes.error){ tsConsoleError(`conjunto "${conjuntoNombre}": ${adsetRes.error.message}`); tsErroresParciales.push(`Conjunto "${conjuntoNombre}": ${adsetRes.error.message}`); continue; }
       tsConsoleStep(2);
       const adsetId = adsetRes.id;
 
@@ -9372,12 +9438,11 @@ const campRes = await metaPost(`act_${META_ACCOUNT}/campaigns`, campaignPayload)
             status: statusFinal
           };
           console.log('[ENG] adPayload final:', JSON.stringify(adPayload));
-          const adRes = await metaPost(`act_${META_ACCOUNT}/ads`, adPayload);
-          if(adRes.error){ toast(`Anuncio "${anuncio.nombre}" fallo: ${adRes.error.message}`); continue; }
+const adRes = await metaPost(`act_${META_ACCOUNT}/ads`, adPayload);
+          if(adRes.error){ toast(`Anuncio "${anuncio.nombre}" fallo: ${adRes.error.message}`); tsErroresParciales.push(`Anuncio "${anuncio.nombre}": ${adRes.error.message}`); continue; }
           console.log('[ENG] Ad creado con engagement:', adRes.id);
           continue;
         }
-
         const isVideo = anuncio.archivo && anuncio.archivo.type.startsWith('video');
         let objectStorySpec;
 
@@ -9439,8 +9504,8 @@ if(isVideo){
           status: statusFinal
         };
       tsConsoleStep(4);
-        const adRes = await metaPost(`act_${META_ACCOUNT}/ads`, adPayload);
-       if(adRes.error){ toast(`Anuncio "${anuncio.nombre}" fallo: ${adRes.error.message}`); continue; }
+const adRes = await metaPost(`act_${META_ACCOUNT}/ads`, adPayload);
+       if(adRes.error){ toast(`Anuncio "${anuncio.nombre}" fallo: ${adRes.error.message}`); tsErroresParciales.push(`Anuncio "${anuncio.nombre}": ${adRes.error.message}`); continue; }
 
         const guionLink = tsGuionLinks.get(anuncio.aId);
         if(guionLink && me){
@@ -9460,7 +9525,12 @@ if(isVideo){
 
 tsConsoleStep(5);
     tsConsoleDone();
-    gtxLogActivity('lanzar_testeo', 'completado', { nombre: campania.nombre, campaign_id: campaignId, conjuntos: campania.conjuntos.length });
+    if(tsErroresParciales.length > 0){
+      gtxLogActivity('lanzar_testeo', 'completado_con_errores', { nombre: campania.nombre, campaign_id: campaignId, conjuntos: campania.conjuntos.length, errores: tsErroresParciales });
+      toast(`Testeo creado, pero ${tsErroresParciales.length} elemento(s) fallaron — revisá el Historial de Actividad para el detalle.`, 6000);
+    } else {
+      gtxLogActivity('lanzar_testeo', 'completado', { nombre: campania.nombre, campaign_id: campaignId, conjuntos: campania.conjuntos.length });
+    }
     setTimeout(() => {
       closeModal('modal-testing-sandbox');
       tsConsoleReset();
