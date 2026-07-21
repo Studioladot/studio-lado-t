@@ -3969,16 +3969,17 @@ create policy "own" on contacts for all using (auth.uid()=user_id);</div>
       <div class="adv-master-row" onclick="tsToggleAudiencePanel()">
         <div>
           <div class="adv-master-label">
-            <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="8" cy="5.5" r="2.5"/><path d="M3 14c0-2.8 2.2-5 5-5s5 2.2 5 5"/></svg>
-            Audiencia y Ubicaciones
+<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M2 9h20"/></svg>
+            Ubicaciones de Publicación
           </div>
-          <div class="adv-master-sub" id="ts-audience-summary">Argentina · 18-65 · Todos los géneros · Ubicaciones automáticas</div>
+          <div class="adv-master-sub" id="ts-audience-summary">Automáticas — Meta elige dónde mostrar tus anuncios</div>
         </div>
         <svg id="ts-audience-arrow" width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="var(--text3)" stroke-width="1.5" stroke-linecap="round" style="transition:transform .25s"><path d="M3 5l4 4 4-4"/></svg>
       </div>
       <div class="adv-detail-wrap" id="ts-audience-detail-wrap">
         <div class="adv-detail-divider"></div>
 
+<div style="display:none">
 <!-- Tipo de público -->
         <span class="ts-field-label" style="display:block;margin-bottom:8px">Tipo de público</span>
         <div id="ts-audience-type-toggle" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px">
@@ -4028,7 +4029,7 @@ create policy "own" on contacts for all using (auth.uid()=user_id);</div>
         </div>
 
         <!-- Modo Público Guardado / Lookalike: selector de públicos reales de la cuenta -->
-        <div id="ts-audience-custom-wrap" style="display:none">
+<div id="ts-audience-custom-wrap" style="display:none">
           <div class="fg ts-input-wrap">
             <span class="ts-field-label">Público</span>
             <select id="ts-aud-custom-select" class="ts-input-box" style="padding:9px 12px">
@@ -4036,8 +4037,7 @@ create policy "own" on contacts for all using (auth.uid()=user_id);</div>
             </select>
           </div>
         </div>
-
-        <div class="adv-detail-divider"></div>
+</div>
 
         <!-- Ubicaciones de publicación -->
         <span class="ts-field-label" style="display:block;margin-bottom:8px">Ubicaciones de publicación</span>
@@ -6925,45 +6925,23 @@ function tsSetPlacementMode(mode, el){
 function tsUpdateAudienceSummary(){
   const summaryEl = document.getElementById('ts-audience-summary');
   if(!summaryEl) return;
-  let audTxt;
-  if(tsAudienceType === 'broad'){
-    const min = document.getElementById('ts-aud-age-min')?.value || 18;
-    const max = document.getElementById('ts-aud-age-max')?.value || 65;
-    const loc = document.getElementById('ts-aud-location')?.value || 'Argentina';
-    audTxt = `${loc} · ${min}-${max}`;
+  if(tsPlacementMode === 'auto'){
+    summaryEl.textContent = 'Automáticas — Meta elige dónde mostrar tus anuncios';
   } else {
-    audTxt = tsAudienceType === 'lookalike' ? 'Lookalike seleccionado' : 'Público guardado seleccionado';
+    const activas = [];
+    if(document.getElementById('ts-place-fb-feed')?.checked) activas.push('Facebook');
+    if(document.getElementById('ts-place-ig-feed')?.checked) activas.push('Instagram');
+    if(document.getElementById('ts-place-stories')?.checked) activas.push('Stories');
+    if(document.getElementById('ts-place-reels')?.checked) activas.push('Reels');
+    summaryEl.textContent = activas.length ? activas.join(' · ') : 'Ninguna ubicación seleccionada';
   }
-  const placeTxt = tsPlacementMode === 'auto' ? 'Ubicaciones automáticas' : 'Ubicaciones manuales';
-  summaryEl.textContent = `${audTxt} · ${placeTxt}`;
 }
 
-function tsBuildTargeting(){
+function tsBuildTargeting(conjuntoAudienciaTipo){
   const targeting = { geo_locations: { countries: ['AR'] } };
-
-  if(tsAudienceType === 'broad'){
-    const ageMin = +document.getElementById('ts-aud-age-min')?.value || 18;
-    const ageMax = +document.getElementById('ts-aud-age-max')?.value || 65;
-    const gender = +document.getElementById('ts-aud-gender')?.value || 0;
-    targeting.age_min = ageMin;
-    targeting.age_max = ageMax;
-    if(gender > 0) targeting.genders = [gender];
-    const interestsRaw = document.getElementById('ts-aud-interests')?.value.trim();
-    if(interestsRaw){
-      // Nota: esto envía el texto como nombre de interés vía flexible_spec no es soportado
-      // directamente por Graph sin IDs reales — por ahora queda documentado para mejora futura
-      // con buscador real de intereses de Meta (targetingsearch endpoint).
-    }
-  } else {
-    const audienceId = document.getElementById('ts-aud-custom-select')?.value;
-    if(audienceId){
-      if(tsAudienceType === 'lookalike'){
-        targeting.custom_audiences = [{ id: audienceId }];
-      } else {
-        targeting.custom_audiences = [{ id: audienceId }];
-      }
-    }
-  }
+  // El tipo de público (broad/lookalike/retargeting/atc7/custom) ya viene resuelto
+  // por conjunto desde el selector de abajo (tsSelectAudiencia) — acá solo se
+  // completan las ubicaciones, que son a nivel campaña.
 
   if(tsPlacementMode === 'manual'){
     const platforms = [];
@@ -9649,8 +9627,8 @@ async function tsGenerarTesteo(){
   };
 
   let valido = true;
-  conjuntoEls.forEach(cEl => {
-    const conjunto = { nombre: cEl.querySelector('.ts-conjunto-nombre').value.trim(), anuncios: [] };
+conjuntoEls.forEach(cEl => {
+    const conjunto = { nombre: cEl.querySelector('.ts-conjunto-nombre').value.trim(), audiencia: cEl.dataset.audiencia || 'broad', anuncios: [] };
     if(!conjunto.nombre) valido = false;
     cEl.querySelectorAll('.ts-anuncio-row').forEach(aEl => {
       const aId = aEl.dataset.anuncioId;
@@ -9728,7 +9706,7 @@ const adsetPayload = {
         billing_event: 'IMPRESSIONS',
         optimization_goal: 'OFFSITE_CONVERSIONS',
         promoted_object: JSON.stringify({ pixel_id: META_PIXEL_ID, custom_event_type: 'PURCHASE' }),
-        targeting: JSON.stringify(tsBuildTargeting()),
+        targeting: JSON.stringify(tsBuildTargeting(conjunto.audiencia)),
         status: statusFinal
       };
       if(tsBudgetType === 'ABO'){
