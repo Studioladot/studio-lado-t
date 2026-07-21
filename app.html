@@ -4484,10 +4484,16 @@ async function showApp(){
   const createdAt = new Date(me.created_at);
   const daysPassed = Math.floor((Date.now() - createdAt.getTime()) / 86400000);
   const daysLeft = Math.max(0, 7 - daysPassed);
-  const banner = document.getElementById('trial-banner');
+const banner = document.getElementById('trial-banner');
   if (banner) {
-    document.getElementById('trialDaysLeft').textContent = daysLeft;
-    banner.style.display = daysLeft > 0 ? 'block' : 'block'; // siempre visible por ahora
+    const daysLeftEl = document.getElementById('trialDaysLeft');
+    if (daysLeft > 0) {
+      if (daysLeftEl) daysLeftEl.textContent = daysLeft;
+      banner.innerHTML = `Estás en tu prueba gratis. Te quedan <b id="trialDaysLeft">${daysLeft}</b> días. <a href="#" onclick="showPage('facturacion');return false" style="text-decoration:underline;cursor:pointer">Pasar a plan Pro</a>`;
+    } else {
+      banner.innerHTML = `Tu prueba gratis terminó. <a href="#" onclick="showPage('facturacion');return false" style="text-decoration:underline;cursor:pointer;font-weight:700">Pasá a plan Pro para seguir usando GOTIX</a>`;
+    }
+    banner.style.display = 'block';
   }
   document.getElementById('auth-screen').style.display='none';
   document.getElementById('setup-screen').style.display='none';
@@ -4516,8 +4522,12 @@ async function showApp(){
   }
 }
 await syncMetaStatus();
-if (new URLSearchParams(location.search).get('meta_connected') === '1') {
+const urlParams = new URLSearchParams(location.search);
+if (urlParams.get('meta_connected') === '1') {
   toast('Meta Ads conectado');
+}
+if (urlParams.get('meta_error')) {
+  toast('No se pudo conectar Meta Ads: ' + decodeURIComponent(urlParams.get('meta_error')));
 }
 const hasAccess = await checkUserAccessWithRetry();
   if(!hasAccess) return;
