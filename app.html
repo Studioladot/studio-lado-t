@@ -561,7 +561,8 @@ body.focus-mode #main{margin-left:0}
 .ts-conjunto.collapsed .ts-conjunto-body{max-height:0}
 .ts-conjunto.collapsed .ts-conjunto-chevron{transform:rotate(-90deg)}
 .ts-audiencia-select{flex:0 0 190px;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--r);padding:8px 10px;font-size:12px;font-weight:600;color:var(--text);outline:none;cursor:pointer}
-.ts-step-panel{background:transparent;border:none;border-radius:0;padding:0;margin-bottom:16px;box-shadow:none}
+.ts-step-panel{background:transparent;border:none;border-radius:0;padding:0 48px;margin-bottom:16px;box-shadow:none}
+@media(max-width:720px){.ts-step-panel{padding:0 20px}}
   .ts-step-panel:hover{border-color:var(--border2)}
   /* Stepper decorativo superior */
 .ts-stepper{display:flex;align-items:center;margin-bottom:28px;padding:16px 20px;background:var(--surface2);border:1px solid var(--border);border-radius:16px}
@@ -751,11 +752,11 @@ body.focus-mode #main{margin-left:0}
 .ts-launch-btn{border-radius:8px!important}
 .btn-outline{border-radius:8px!important}
 .ts-modal-fixed-top{flex-shrink:0;padding:32px 48px 0 48px;width:100%;min-width:0}
-.ts-modal-body{flex:1;overflow-y:auto;overflow-x:hidden;padding:0 48px;width:100%;min-width:0}
+.ts-modal-body{flex:1;overflow-y:auto;overflow-x:hidden;padding:0;width:100%;min-width:0}
 .ts-modal-fixed-bottom{flex-shrink:0;margin-top:0!important;padding:14px 28px;border-top:0.5px solid var(--border);background:transparent;display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%}
   @media(max-width:720px){
 .ts-modal-fixed-top{padding:20px 20px 0 20px}
-.ts-modal-body{padding:0 20px}
+.ts-modal-body{padding:0}
 .ts-modal-fixed-bottom{flex-shrink:0;margin-top:0!important;padding:14px 28px;border-top:0.5px solid var(--border);background:transparent;display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%}
     .ts-stepper{overflow-x:auto;flex-wrap:nowrap}
 .ts-stepper-item{flex:0 0 auto}
@@ -3978,7 +3979,7 @@ create policy "own" on contacts for all using (auth.uid()=user_id);</div>
         </label>
     </div>
     </div>
-     <div class="ts-step-panel ts-page" data-page="3" style="padding:32px;display:none">
+     <div class="ts-step-panel ts-page" data-page="3" style="display:none">
       <div class="ts-panel-hdr-row" style="margin-bottom:16px">
         <div>
           <div class="ts-step-hdr" style="margin-bottom:2px"><span class="ts-step-num">03</span><span class="ts-step-title">Presupuesto</span></div>
