@@ -3877,11 +3877,33 @@ create policy "own" on contacts for all using (auth.uid()=user_id);</div>
           </div>
         </div>
       </div>
-      <div class="ts-alloc-row-hdr">
+<div class="ts-alloc-row-hdr">
         <span class="ts-alloc-label">Distribución de Presupuesto <b id="ts-budget-alloc-total">Total: —</b></span>
         <button type="button" class="ts-rebalance-btn" onclick="tsRenderBudgetAlloc()">Rebalancear</button>
       </div>
       <div id="ts-budget-alloc-wrap"></div>
+
+      <div class="divider" style="margin:20px 0"></div>
+      <div class="ts-panel-hdr-row" style="margin-bottom:12px">
+        <div>
+          <span class="ts-field-label" style="display:block">Estrategia de Puja</span>
+          <div class="ts-step-sub" style="margin:2px 0 0 0">Costo mínimo es lo recomendado para testear. Usá un tope cuando ya sepas cuánto te conviene pagar por resultado.</div>
+        </div>
+      </div>
+      <div class="ts-budget-seg" id="ts-bidstrategy-toggle">
+        <div class="ft active" data-bid-strategy="LOWEST_COST_WITHOUT_CAP" onclick="tsSetBidStrategy('LOWEST_COST_WITHOUT_CAP',this)">Costo Mínimo</div>
+        <div class="ft" data-bid-strategy="LOWEST_COST_WITH_BID_CAP" onclick="tsSetBidStrategy('LOWEST_COST_WITH_BID_CAP',this)">Tope de Puja</div>
+        <div class="ft" data-bid-strategy="COST_CAP" onclick="tsSetBidStrategy('COST_CAP',this)">Tope de Costo</div>
+      </div>
+      <div id="ts-bidcap-wrap" style="display:none;margin-top:12px">
+        <div class="fg ts-input-wrap">
+          <span class="ts-field-label" id="ts-bidcap-label">Tope de puja por resultado (USD)</span>
+          <div class="ts-input-box">
+            <span class="ts-dollar">$</span>
+            <input id="ts-bidcap-value" type="number" step="0.01" placeholder="15.00"/>
+          </div>
+        </div>
+      </div>
     </div>
 
     <div class="divider"></div>
@@ -3925,7 +3947,7 @@ create policy "own" on contacts for all using (auth.uid()=user_id);</div>
     <!-- fin data-page="3": Presupuesto + Advantage+ -->
 
     <div class="ts-step-panel ts-page" data-page="4" style="display:none">
-    <div class="ts-panel-hdr-row" style="margin-bottom:12px">
+<div class="ts-panel-hdr-row" style="margin-bottom:12px">
       <div>
         <div class="ts-step-hdr" style="margin-bottom:2px"><span class="ts-step-num">04</span><span class="ts-step-title">Ad Sets</span></div>
         <div class="ts-step-sub" style="margin:2px 0 0 36px">Elegí y configurá los conjuntos a incluir.</div>
@@ -3935,6 +3957,86 @@ create policy "own" on contacts for all using (auth.uid()=user_id);</div>
         Browse Ad Set Library
       </button>
     </div>
+
+    <div class="adv-panel" style="margin-bottom:20px">
+      <div class="adv-master-row" onclick="tsToggleAudiencePanel()">
+        <div>
+          <div class="adv-master-label">
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="8" cy="5.5" r="2.5"/><path d="M3 14c0-2.8 2.2-5 5-5s5 2.2 5 5"/></svg>
+            Audiencia y Ubicaciones
+          </div>
+          <div class="adv-master-sub" id="ts-audience-summary">Argentina · 18-65 · Todos los géneros · Ubicaciones automáticas</div>
+        </div>
+        <svg id="ts-audience-arrow" width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="var(--text3)" stroke-width="1.5" stroke-linecap="round" style="transition:transform .25s"><path d="M3 5l4 4 4-4"/></svg>
+      </div>
+      <div class="adv-detail-wrap" id="ts-audience-detail-wrap">
+        <div class="adv-detail-divider"></div>
+
+        <!-- Tipo de público -->
+        <div class="ts-budget-seg" id="ts-audience-type-toggle" style="margin-bottom:14px">
+          <div class="ft active" data-audience-type="broad" onclick="tsSetAudienceType('broad',this)">Amplio</div>
+          <div class="ft" data-audience-type="saved" onclick="tsSetAudienceType('saved',this)">Público Guardado</div>
+          <div class="ft" data-audience-type="lookalike" onclick="tsSetAudienceType('lookalike',this)">Lookalike</div>
+        </div>
+
+        <!-- Modo Amplio: edad, género, ubicación, intereses -->
+        <div id="ts-audience-broad-wrap">
+          <div class="form-row">
+            <div class="fg ts-input-wrap">
+              <span class="ts-field-label">Edad mínima</span>
+<div class="ts-input-box"><input id="ts-aud-age-min" type="number" min="18" max="65" value="18" onchange="tsUpdateAudienceSummary()"></div>
+            </div>
+            <div class="fg ts-input-wrap">
+              <span class="ts-field-label">Edad máxima</span>
+            <div class="ts-input-box"><input id="ts-aud-age-max" type="number" min="18" max="65" value="65" onchange="tsUpdateAudienceSummary()"></div>
+            </div>
+          </div>
+          <div class="fg ts-input-wrap" style="margin-bottom:12px">
+            <span class="ts-field-label">Género</span>
+            <select id="ts-aud-gender" class="ts-input-box" style="padding:9px 12px">
+              <option value="0">Todos</option>
+              <option value="1">Solo hombres</option>
+              <option value="2">Solo mujeres</option>
+            </select>
+          </div>
+          <div class="fg ts-input-wrap" style="margin-bottom:12px">
+            <span class="ts-field-label">País / Ciudad</span>
+            <div class="ts-input-box"><input id="ts-aud-location" type="text" placeholder="Argentina (dejalo así si no sabés)" value="Argentina"></div>
+          </div>
+          <div class="fg ts-input-wrap">
+            <span class="ts-field-label">Intereses (opcional)</span>
+            <div class="ts-input-box"><input id="ts-aud-interests" type="text" placeholder="Ej: Moda, Ecommerce, Fitness — separados por coma"></div>
+            <div class="ts-budget-hint">Dejalo vacío para audiencia amplia sin restricción de intereses — suele funcionar mejor en testeo inicial.</div>
+          </div>
+        </div>
+
+        <!-- Modo Público Guardado / Lookalike: selector de públicos reales de la cuenta -->
+        <div id="ts-audience-custom-wrap" style="display:none">
+          <div class="fg ts-input-wrap">
+            <span class="ts-field-label">Público</span>
+            <select id="ts-aud-custom-select" class="ts-input-box" style="padding:9px 12px">
+              <option value="">Cargando públicos de tu cuenta...</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="adv-detail-divider"></div>
+
+        <!-- Ubicaciones de publicación -->
+        <span class="ts-field-label" style="display:block;margin-bottom:8px">Ubicaciones de publicación</span>
+        <div class="ts-budget-seg" id="ts-placement-toggle" style="margin-bottom:10px">
+          <div class="ft active" data-placement="auto" onclick="tsSetPlacementMode('auto',this)">Automáticas (Advantage+)</div>
+          <div class="ft" data-placement="manual" onclick="tsSetPlacementMode('manual',this)">Manual</div>
+        </div>
+        <div id="ts-placement-manual-wrap" style="display:none;flex-wrap:wrap;gap:14px">
+          <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2);cursor:pointer"><input type="checkbox" id="ts-place-fb-feed" checked> Facebook Feed</label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2);cursor:pointer"><input type="checkbox" id="ts-place-ig-feed" checked> Instagram Feed</label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2);cursor:pointer"><input type="checkbox" id="ts-place-stories" checked> Stories</label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2);cursor:pointer"><input type="checkbox" id="ts-place-reels" checked> Reels</label>
+        </div>
+      </div>
+    </div>
+
 <div class="ts-conjuntos-scroll-zone">
       <div id="ts-conjuntos-wrap" style="display:flex;flex-direction:column;gap:16px;padding-right:4px"></div>
     </div>
@@ -6757,6 +6859,121 @@ function tsToggleKillSwitch(){
   if(advDetailOpen) tsRenderAdvGranular();
 }
 
+// ── AUDIENCIA Y UBICACIONES ────────────────────────────────────────────────
+let tsAudienceOpen = false;
+let tsAudienceType = 'broad';
+let tsPlacementMode = 'auto';
+
+function tsToggleAudiencePanel(){
+  tsAudienceOpen = !tsAudienceOpen;
+  const wrap = document.getElementById('ts-audience-detail-wrap');
+  const arrow = document.getElementById('ts-audience-arrow');
+  if(!wrap) return;
+  wrap.classList.toggle('open', tsAudienceOpen);
+  if(arrow) arrow.style.transform = tsAudienceOpen ? 'rotate(180deg)' : 'rotate(0deg)';
+  if(tsAudienceOpen && tsAudienceType !== 'broad') tsLoadCustomAudiences();
+}
+
+function tsSetAudienceType(type, el){
+  tsAudienceType = type;
+  document.querySelectorAll('#ts-audience-type-toggle .ft').forEach(f => f.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('ts-audience-broad-wrap').style.display = type === 'broad' ? 'block' : 'none';
+  document.getElementById('ts-audience-custom-wrap').style.display = type === 'broad' ? 'none' : 'block';
+  if(type !== 'broad') tsLoadCustomAudiences();
+  tsUpdateAudienceSummary();
+}
+
+async function tsLoadCustomAudiences(){
+  const sel = document.getElementById('ts-aud-custom-select');
+  if(!sel || !META_ACCOUNT) return;
+  sel.innerHTML = '<option value="">Cargando...</option>';
+  try{
+    const isLookalike = tsAudienceType === 'lookalike';
+    const data = await metaGet(`act_${META_ACCOUNT}/customaudiences`, { fields: 'id,name,subtype', limit: 200 });
+    if(data.error) throw new Error(data.error.message);
+    const filtered = (data.data||[]).filter(a => isLookalike ? a.subtype === 'LOOKALIKE' : a.subtype !== 'LOOKALIKE');
+    if(!filtered.length){ sel.innerHTML = `<option value="">Sin ${isLookalike?'lookalikes':'públicos guardados'} en esta cuenta</option>`; return; }
+    sel.innerHTML = filtered.map(a => `<option value="${a.id}">${a.name}</option>`).join('');
+  }catch(e){ sel.innerHTML = `<option value="">Error al cargar públicos</option>`; console.error('[audiencias]', e.message); }
+}
+
+function tsSetPlacementMode(mode, el){
+  tsPlacementMode = mode;
+  document.querySelectorAll('#ts-placement-toggle .ft').forEach(f => f.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('ts-placement-manual-wrap').style.display = mode === 'manual' ? 'flex' : 'none';
+  tsUpdateAudienceSummary();
+}
+
+function tsUpdateAudienceSummary(){
+  const summaryEl = document.getElementById('ts-audience-summary');
+  if(!summaryEl) return;
+  let audTxt;
+  if(tsAudienceType === 'broad'){
+    const min = document.getElementById('ts-aud-age-min')?.value || 18;
+    const max = document.getElementById('ts-aud-age-max')?.value || 65;
+    const loc = document.getElementById('ts-aud-location')?.value || 'Argentina';
+    audTxt = `${loc} · ${min}-${max}`;
+  } else {
+    audTxt = tsAudienceType === 'lookalike' ? 'Lookalike seleccionado' : 'Público guardado seleccionado';
+  }
+  const placeTxt = tsPlacementMode === 'auto' ? 'Ubicaciones automáticas' : 'Ubicaciones manuales';
+  summaryEl.textContent = `${audTxt} · ${placeTxt}`;
+}
+
+function tsBuildTargeting(){
+  const targeting = { geo_locations: { countries: ['AR'] } };
+
+  if(tsAudienceType === 'broad'){
+    const ageMin = +document.getElementById('ts-aud-age-min')?.value || 18;
+    const ageMax = +document.getElementById('ts-aud-age-max')?.value || 65;
+    const gender = +document.getElementById('ts-aud-gender')?.value || 0;
+    targeting.age_min = ageMin;
+    targeting.age_max = ageMax;
+    if(gender > 0) targeting.genders = [gender];
+    const interestsRaw = document.getElementById('ts-aud-interests')?.value.trim();
+    if(interestsRaw){
+      // Nota: esto envía el texto como nombre de interés vía flexible_spec no es soportado
+      // directamente por Graph sin IDs reales — por ahora queda documentado para mejora futura
+      // con buscador real de intereses de Meta (targetingsearch endpoint).
+    }
+  } else {
+    const audienceId = document.getElementById('ts-aud-custom-select')?.value;
+    if(audienceId){
+      if(tsAudienceType === 'lookalike'){
+        targeting.custom_audiences = [{ id: audienceId }];
+      } else {
+        targeting.custom_audiences = [{ id: audienceId }];
+      }
+    }
+  }
+
+  if(tsPlacementMode === 'manual'){
+    const platforms = [];
+    const positions = { facebook_positions: [], instagram_positions: [] };
+    if(document.getElementById('ts-place-fb-feed')?.checked){ platforms.push('facebook'); positions.facebook_positions.push('feed'); }
+    if(document.getElementById('ts-place-ig-feed')?.checked){ if(!platforms.includes('instagram')) platforms.push('instagram'); positions.instagram_positions.push('stream'); }
+    if(document.getElementById('ts-place-stories')?.checked){
+      if(!platforms.includes('facebook')) platforms.push('facebook');
+      if(!platforms.includes('instagram')) platforms.push('instagram');
+      positions.facebook_positions.push('story');
+      positions.instagram_positions.push('story');
+    }
+    if(document.getElementById('ts-place-reels')?.checked){
+      if(!platforms.includes('instagram')) platforms.push('instagram');
+      positions.instagram_positions.push('reels');
+    }
+    targeting.publisher_platforms = platforms;
+    if(positions.facebook_positions.length) targeting.facebook_positions = positions.facebook_positions;
+    if(positions.instagram_positions.length) targeting.instagram_positions = positions.instagram_positions;
+  }
+  // Modo automático (Advantage+ Placements): no se envía publisher_platforms,
+  // Meta decide solo — es lo recomendado por Meta para la mayoría de los casos.
+
+  return targeting;
+}
+
 function tsAdvMasterKill(){
   advMasterKillActive = !advMasterKillActive;
   Object.keys(ADV_CONTROLS).forEach(k => ADV_CONTROLS[k].value = !advMasterKillActive);
@@ -8622,6 +8839,21 @@ function tsSetBudgetType(type, el){
     type === 'CBO' ? 'Presupuesto Diario (USD) — Campaña' : 'Presupuesto Diario (USD) — por Conjunto';
 }
 
+let tsBidStrategy = 'LOWEST_COST_WITHOUT_CAP';
+function tsSetBidStrategy(strategy, el){
+  tsBidStrategy = strategy;
+  document.querySelectorAll('#ts-bidstrategy-toggle .ft').forEach(f => f.classList.remove('active'));
+  el.classList.add('active');
+  const wrap = document.getElementById('ts-bidcap-wrap');
+  const label = document.getElementById('ts-bidcap-label');
+  if(strategy === 'LOWEST_COST_WITHOUT_CAP'){
+    wrap.style.display = 'none';
+  } else {
+    wrap.style.display = 'block';
+    label.textContent = strategy === 'COST_CAP' ? 'Tope de costo por resultado (USD)' : 'Tope de puja máxima (USD)';
+  }
+}
+
 function openTestingSandbox(){
   document.getElementById('ts-camp-nombre').value = '';
   document.getElementById('ts-camp-presupuesto').value = '';
@@ -9440,10 +9672,14 @@ const existingCampaignId = document.getElementById('ts-camp-existing-id').value.
        status: statusFinal,
         special_ad_categories: JSON.stringify([])
       };
-      if(startTimeISO) campaignPayload.start_time = startTimeISO;
+if(startTimeISO) campaignPayload.start_time = startTimeISO;
+      const bidCapValue = +document.getElementById('ts-bidcap-value')?.value || 0;
       if(tsBudgetType === 'CBO'){
         campaignPayload.daily_budget = Math.round(campania.presupuesto_diario * 100);
-        campaignPayload.bid_strategy = 'LOWEST_COST_WITHOUT_CAP';
+        campaignPayload.bid_strategy = tsBidStrategy;
+        if(tsBidStrategy !== 'LOWEST_COST_WITHOUT_CAP' && bidCapValue > 0){
+          campaignPayload.bid_amount = Math.round(bidCapValue * 100);
+        }
         campaignPayload.is_adset_budget_sharing_enabled = false;
       }
 
@@ -9462,18 +9698,21 @@ const campRes = await metaPost(`act_${META_ACCOUNT}/campaigns`, campaignPayload)
     for(let dupIdx = 1; dupIdx <= dupCount; dupIdx++){
       const conjuntoNombre = dupCount > 1 ? `${conjunto.nombre} - ${dupIdx}` : conjunto.nombre;
 
-      const adsetPayload = {
+const adsetPayload = {
         name: conjuntoNombre,
         campaign_id: campaignId,
         billing_event: 'IMPRESSIONS',
         optimization_goal: 'OFFSITE_CONVERSIONS',
         promoted_object: JSON.stringify({ pixel_id: META_PIXEL_ID, custom_event_type: 'PURCHASE' }),
-        targeting: JSON.stringify({ geo_locations: { countries: ['AR'] } }),
+        targeting: JSON.stringify(tsBuildTargeting()),
         status: statusFinal
       };
       if(tsBudgetType === 'ABO'){
         adsetPayload.daily_budget = Math.round(campania.presupuesto_diario * 100);
-        adsetPayload.bid_strategy = 'LOWEST_COST_WITHOUT_CAP';
+        adsetPayload.bid_strategy = tsBidStrategy;
+        if(tsBidStrategy !== 'LOWEST_COST_WITHOUT_CAP' && bidCapValue > 0){
+          adsetPayload.bid_amount = Math.round(bidCapValue * 100);
+        }
       }
       // Advantage+ Catalog: se desactiva a nivel adset
       const advPayload = tsGetAdvPayload();
