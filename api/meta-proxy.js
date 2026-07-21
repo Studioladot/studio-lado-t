@@ -13,9 +13,37 @@ export default async function handler(req) {
     const userRes = await fetch(`${process.env.SUPABASE_URL}/auth/v1/user`, {
       headers: { apikey: process.env.SUPABASE_SERVICE_ROLE_KEY, Authorization: `Bearer ${jwt}` },
     });
-    const userData = await userRes.json();
+const userData = await userRes.json();
     const userId = userData?.id;
     if (!userId) return json({ error: 'Sesion invalida' }, 401);
+
+    // ── RATE LIMITING: max 60 requests por usuario cada 60 segundos ──
+    const RATE_LIMIT_MAX = 60;
+    const RATE_LIMIT_WINDOW_SEC = 60;
+    const windowStart = new Date(Math.floor(Date.now() / (RATE_LIMIT_WINDOW_SEC * 1000)) * RATE_LIMIT_WINDOW_SEC * 1000).toISOString();
+
+    const rlRes = await fetch(
+      `${process.env.SUPABASE_URL}/rest/v1/rate_limits?user_id=eq.${userId}&window_start=eq.${encodeURIComponent(windowStart)}&select=request_count`,
+      { headers: { apikey: process.env.SUPABASE_SERVICE_ROLE_KEY, Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}` } }
+    );
+    const rlData = await rlRes.json();
+    const currentCount = rlData?.[0]?.request_count || 0;
+
+    if (currentCount >= RATE_LIMIT_MAX) {
+      return json({ error: 'Demasiadas solicitudes — esperá un momento antes de volver a intentar.' }, 429);
+    }
+
+    // Incrementar contador (upsert: crea la fila si no existe, suma si ya existe)
+    await fetch(`${process.env.SUPABASE_URL}/rest/v1/rate_limits`, {
+      method: 'POST',
+      headers: {
+        apikey: process.env.SUPABASE_SERVICE_ROLE_KEY,
+        Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
+        'Content-Type': 'application/json',
+        'Prefer': 'resolution=merge-duplicates',
+      },
+      body: JSON.stringify({ user_id: userId, window_start: windowStart, request_count: currentCount + 1 }),
+    });
 
     const connRes = await fetch(
       `${process.env.SUPABASE_URL}/rest/v1/meta_connections?user_id=eq.${userId}&select=token,account_id&order=created_at.desc&limit=1`,
