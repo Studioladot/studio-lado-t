@@ -654,6 +654,17 @@ body.focus-mode #main{margin-left:0}
 .ts-switch input:checked ~ .ts-switch-thumb{transform:translateX(16px)}
 .ts-budget-seg{display:flex;background:#F0EFEC;border:1px solid rgba(26,26,24,.06);border-radius:var(--r);padding:3px;gap:3px}
 .ts-audtype-card{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:14px 8px;border:1px solid var(--border2);border-radius:var(--r);background:var(--surface);color:var(--text3);cursor:pointer;transition:all .15s ease;font-size:11.5px;font-weight:600}
+.ts-bidstrategy-card{display:flex;align-items:center;gap:12px;padding:14px 16px;border:1px solid var(--border2);border-radius:var(--r);background:var(--surface);cursor:pointer;transition:all .15s ease;margin-bottom:8px}
+.ts-bidstrategy-card:hover{border-color:var(--text3)}
+.ts-bidstrategy-card.active{border-color:var(--primary-green);background:var(--primary-green-l)}
+.ts-bidstrategy-radio{flex-shrink:0;width:20px;height:20px;border-radius:50%;border:2px solid var(--border2);display:flex;align-items:center;justify-content:center;transition:all .15s ease}
+.ts-bidstrategy-card.active .ts-bidstrategy-radio{border-color:var(--primary-green)}
+.ts-bidstrategy-radio-dot{width:10px;height:10px;border-radius:50%;background:var(--primary-green);opacity:0;transform:scale(0.5);transition:all .15s ease}
+.ts-bidstrategy-card.active .ts-bidstrategy-radio-dot{opacity:1;transform:scale(1)}
+.ts-bidstrategy-icon{flex-shrink:0;width:34px;height:34px;border-radius:var(--r);background:var(--surface2);display:flex;align-items:center;justify-content:center;color:var(--text3)}
+.ts-bidstrategy-card.active .ts-bidstrategy-icon{color:var(--primary-green)}
+.ts-bidstrategy-title{font-size:13px;font-weight:700;color:var(--text)}
+.ts-bidstrategy-sub{font-size:11.5px;color:var(--text3);margin-top:1px}
 .ts-audtype-card:hover{border-color:var(--text3);color:var(--text2)}
 .ts-audtype-card.active{border-color:var(--primary-green);background:var(--primary-green-l);color:var(--primary-green)}
 .ts-budget-seg .ft{flex:1;text-align:center;border-radius:6px;padding:8px 10px;font-size:11.5px;font-weight:600;color:var(--text3);cursor:pointer;transition:all .15s}
@@ -3936,10 +3947,22 @@ create policy "own" on contacts for all using (auth.uid()=user_id);</div>
           <div class="ts-step-sub" style="margin:2px 0 0 0">Costo mínimo es lo recomendado para testear. Usá un tope cuando ya sepas cuánto te conviene pagar por resultado.</div>
         </div>
       </div>
-      <div class="ts-budget-seg" id="ts-bidstrategy-toggle">
-        <div class="ft active" data-bid-strategy="LOWEST_COST_WITHOUT_CAP" onclick="tsSetBidStrategy('LOWEST_COST_WITHOUT_CAP',this)">Costo Mínimo</div>
-        <div class="ft" data-bid-strategy="LOWEST_COST_WITH_BID_CAP" onclick="tsSetBidStrategy('LOWEST_COST_WITH_BID_CAP',this)">Tope de Puja</div>
-        <div class="ft" data-bid-strategy="COST_CAP" onclick="tsSetBidStrategy('COST_CAP',this)">Tope de Costo</div>
+<div id="ts-bidstrategy-toggle">
+        <div class="ts-bidstrategy-card active" data-bid-strategy="LOWEST_COST_WITHOUT_CAP" onclick="tsSetBidStrategy('LOWEST_COST_WITHOUT_CAP',this)">
+          <span class="ts-bidstrategy-radio"><span class="ts-bidstrategy-radio-dot"></span></span>
+          <span class="ts-bidstrategy-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></span>
+          <div><div class="ts-bidstrategy-title">Costo Mínimo</div><div class="ts-bidstrategy-sub">Meta maximiza resultados con tu presupuesto — recomendado para testear</div></div>
+        </div>
+        <div class="ts-bidstrategy-card" data-bid-strategy="LOWEST_COST_WITH_BID_CAP" onclick="tsSetBidStrategy('LOWEST_COST_WITH_BID_CAP',this)">
+          <span class="ts-bidstrategy-radio"><span class="ts-bidstrategy-radio-dot"></span></span>
+          <span class="ts-bidstrategy-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/><circle cx="12" cy="12" r="4"/></svg></span>
+          <div><div class="ts-bidstrategy-title">Tope de Puja</div><div class="ts-bidstrategy-sub">Fijás el máximo que pagás por cada puja individual</div></div>
+        </div>
+        <div class="ts-bidstrategy-card" data-bid-strategy="COST_CAP" onclick="tsSetBidStrategy('COST_CAP',this)">
+          <span class="ts-bidstrategy-radio"><span class="ts-bidstrategy-radio-dot"></span></span>
+          <span class="ts-bidstrategy-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5M2 12l10 5 10-5"/></svg></span>
+          <div><div class="ts-bidstrategy-title">Tope de Costo</div><div class="ts-bidstrategy-sub">Fijás el costo objetivo promedio por resultado</div></div>
+        </div>
       </div>
       <div id="ts-bidcap-wrap" style="display:none;margin-top:12px">
         <div class="fg ts-input-wrap">
@@ -8888,7 +8911,7 @@ function tsSetBudgetType(type, el){
 let tsBidStrategy = 'LOWEST_COST_WITHOUT_CAP';
 function tsSetBidStrategy(strategy, el){
   tsBidStrategy = strategy;
-  document.querySelectorAll('#ts-bidstrategy-toggle .ft').forEach(f => f.classList.remove('active'));
+  document.querySelectorAll('#ts-bidstrategy-toggle .ts-bidstrategy-card').forEach(f => f.classList.remove('active'));
   el.classList.add('active');
   const wrap = document.getElementById('ts-bidcap-wrap');
   const label = document.getElementById('ts-bidcap-label');
