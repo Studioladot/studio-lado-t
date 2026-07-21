@@ -2639,7 +2639,7 @@ body.focus-mode #main{margin-left:0}
   <div class="page-hdr">
     <div><div class="page-title">Contenido</div><div class="page-sub">Planificacion, control y ranking de tu estrategia de contenido</div></div>
     <div style="display:flex;gap:8px">
-    <button class="btn btn-accent" onclick="openNewPost()">+ Publicacion</button>
+<button class="btn btn-accent" id="btn-cont-new-post">+ Publicacion</button>
     </div>
   </div>
 
@@ -13715,7 +13715,8 @@ function renderCalCont(){
     const esHoy=d===hoy.getDate()&&month===hoy.getMonth()+1&&year===hoy.getFullYear();
 
    const cell=document.createElement('div');
-    cell.onclick=()=>openDiaPiezas(fd);
+    cell.dataset.action='open-day';
+    cell.dataset.date=fd;
 
    const campActiva = (contentCamps||[]).find(c => c.fecha_inicio && c.fecha_fin && fd >= c.fecha_inicio && fd <= c.fecha_fin);
     const campBorder = campActiva ? `border-top:3px solid ${campActiva.color||'var(--accent)'};` : '';
@@ -13735,7 +13736,9 @@ function renderCalCont(){
       const fc=document.createElement('div');
       fc.style.cssText='display:flex;align-items:center;gap:3px;background:#fef3d8;border:1px solid #e8b923;border-radius:5px;padding:2px 4px;margin-bottom:3px;cursor:pointer;overflow:hidden';
       fc.title='Crear campana para '+fechaEspecial;
-      fc.onclick=e=>{e.stopPropagation();crearCampanaDesdeFecha(fd,fechaEspecial);};
+      fc.dataset.action='crear-campana-fecha';
+      fc.dataset.date=fd;
+      fc.dataset.nombre=fechaEspecial;
       fc.innerHTML=`<span style="font-size:9px;font-weight:700;color:#8a6d1d;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0">${fechaEspecial}</span>`;
       cell.appendChild(fc);
     }
@@ -13745,12 +13748,17 @@ function renderCalCont(){
       const isRealizado=p.status==='publicado';
       const isCampChip = p.source==='campana';
       const chip=document.createElement('div');
-      chip.onclick=e=>{e.stopPropagation();openVerItem(p.id, isCampChip);};
+      chip.dataset.action='open-item';
+      chip.dataset.id=p.id;
+      chip.dataset.iscamp=isCampChip?'true':'false';
       chip.title=`${p.titulo||p.caption||''}${p.turno?' · '+p.turno:''} — clic para ver el detalle`;
       chip.style.cssText=`display:flex;align-items:center;gap:3px;padding:2px 5px;border-radius:5px;background:${isRealizado?'var(--green-l)':'var(--surface2)'};border:1px solid ${isRealizado?'var(--green)':'rgba(26,26,24,.08)'};margin-top:3px;cursor:pointer;overflow:hidden`;
       const dot=document.createElement('span');
       dot.title='Clic para cambiar el estado';
-      dot.onclick=e=>{e.stopPropagation();if(isCampChip)cyclePiezaStatus(p.id);else togglePostStatus(p.id,p.status);};
+      dot.dataset.action='toggle-status';
+      dot.dataset.id=p.id;
+      dot.dataset.iscamp=isCampChip?'true':'false';
+      dot.dataset.status=p.status;
       dot.style.cssText=`width:5px;height:5px;border-radius:50%;background:${PZ_COLOR[p.status]||'var(--text3)'};flex-shrink:0;cursor:pointer`;
       chip.appendChild(dot);
       if(p.turno && TURNO_ICON[p.turno]){
@@ -13789,6 +13797,42 @@ function renderCalCont(){
   });
 }
 
+document.addEventListener('DOMContentLoaded', function(){ initContenidoEventos(); });
+if(document.readyState==='complete'||document.readyState==='interactive'){ initContenidoEventos(); }
+function initContenidoEventos(){
+  if(window.__contenidoEventosInit) return;
+  window.__contenidoEventosInit = true;
+  document.addEventListener('click', function(e){
+    const btnPub = e.target.closest('#btn-cont-new-post');
+    if(btnPub){ e.preventDefault(); openNewPost(); return; }
+
+    const tabBtn = e.target.closest('#ctab-control, #ctab-calendario, #ctab-publicaciones');
+    if(tabBtn){ e.preventDefault(); switchContTab(tabBtn.id.replace('ctab-',''), tabBtn); return; }
+
+    const fc = e.target.closest('[data-action="crear-campana-fecha"]');
+    if(fc){ e.preventDefault(); e.stopPropagation(); crearCampanaDesdeFecha(fc.dataset.date, fc.dataset.nombre); return; }
+
+    const dot = e.target.closest('[data-action="toggle-status"]');
+    if(dot){ e.preventDefault(); e.stopPropagation(); if(dot.dataset.iscamp==='true') cyclePiezaStatus(dot.dataset.id); else togglePostStatus(dot.dataset.id, dot.dataset.status); return; }
+
+    const item = e.target.closest('[data-action="open-item"]');
+    if(item){ e.preventDefault(); e.stopPropagation(); openVerItem(item.dataset.id, item.dataset.iscamp==='true'); return; }
+
+    const day = e.target.closest('[data-action="open-day"]');
+    if(day){ e.preventDefault(); openDiaPiezas(day.dataset.date); return; }
+
+    const addBtn = e.target.closest('#dia-piezas-add-btn');
+    if(addBtn){
+      e.preventDefault();
+      const dateSel = document.getElementById('dia-piezas-titulo')?.dataset?.date;
+      closeModal('modal-dia-piezas');
+      openNewPost();
+      const df = document.getElementById('post-date');
+      if(df && dateSel) df.value = dateSel;
+      return;
+    }
+  });
+}
 
 // ── PUBLICACIONES ─────────────────────────────────────────────────────────────
 function filterCont2(f,el){
@@ -14634,6 +14678,7 @@ function renderPublicaciones(){
 function openDiaPiezas(date){
   const items = getUnifiedContentItems().filter(p=>p.date===date);
   document.getElementById('dia-piezas-titulo').textContent = new Date(date+'T00:00:00').toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long'});
+  document.getElementById('dia-piezas-titulo').dataset.date = date;
   const list = document.getElementById('dia-piezas-list');
   if(!items.length){
     list.innerHTML = '<div style="text-align:center;color:var(--text2);font-size:13px;padding:20px">Sin publicaciones este dia</div>';
