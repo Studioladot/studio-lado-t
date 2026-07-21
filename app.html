@@ -3258,8 +3258,9 @@ create policy "own" on contacts for all using (auth.uid()=user_id);</div>
       <option value="excepcion">Excepción</option>
     </select>
   </div>
-  <div class="card">
+ <div class="card">
     <div id="activity-log-list"><div class="empty" style="padding:20px 0"><div class="empty-msg">Cargando...</div></div></div>
+    <button id="activity-load-more" class="btn btn-outline btn-sm" style="width:100%;margin-top:10px;display:none" onclick="renderActivityLog(true)">Cargar más</button>
   </div>
 </div>
 <div id="page-admin" class="page">
@@ -9198,19 +9199,25 @@ async function checkSpendAlerts(){
   const ids = data.map(a => a.id);
   await db.from('spend_alerts').update({ seen: true }).in('id', ids);
 }
-async function renderActivityLog(){
+let activityLogPage = 0;
+const ACTIVITY_PAGE_SIZE = 50;
+async function renderActivityLog(loadMore=false){
   const list = document.getElementById('activity-log-list');
+  const moreBtn = document.getElementById('activity-load-more');
   if(!list) return;
+  if(!loadMore) activityLogPage = 0;
   const actionF = document.getElementById('act-filter-action')?.value;
   const statusF = document.getElementById('act-filter-status')?.value;
-  let q = db.from('activity_log').select('*').order('created_at', {ascending:false}).limit(100);
+  const from = activityLogPage * ACTIVITY_PAGE_SIZE;
+  const to = from + ACTIVITY_PAGE_SIZE - 1;
+  let q = db.from('activity_log').select('*').order('created_at', {ascending:false}).range(from, to);
   if(actionF) q = q.eq('action', actionF);
   if(statusF) q = q.eq('status', statusF);
   const { data, error } = await q;
-  if(error){ list.innerHTML = `<div class="empty"><div class="empty-msg">Error al cargar</div></div>`; return; }
-  if(!data || !data.length){ list.innerHTML = `<div class="empty" style="padding:20px 0"><div class="empty-msg">Sin actividad</div><div class="empty-sub">Acá vas a ver el historial de tus lanzamientos</div></div>`; return; }
-  const statusColor = { completado:'var(--primary-green)', campania_creada:'var(--primary-green)', error_campania:'#F04438', excepcion:'#F04438' };
-  list.innerHTML = data.map(r => `
+  if(error){ list.innerHTML = `<div class="empty"><div class="empty-msg">Error al cargar</div></div>`; if(moreBtn) moreBtn.style.display='none'; return; }
+  if(!loadMore && (!data || !data.length)){ list.innerHTML = `<div class="empty" style="padding:20px 0"><div class="empty-msg">Sin actividad</div><div class="empty-sub">Acá vas a ver el historial de tus lanzamientos</div></div>`; if(moreBtn) moreBtn.style.display='none'; return; }
+  const statusColor = { completado:'var(--primary-green)', campania_creada:'var(--primary-green)', error_campania:'#F04438', excepcion:'#F04444' };
+  const rowsHtml = (data||[]).map(r => `
     <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px solid var(--border)">
       <div>
         <div style="font-size:13px;font-weight:600;color:var(--text)">${r.detail?.nombre || r.action}</div>
@@ -9218,6 +9225,9 @@ async function renderActivityLog(){
       </div>
       <span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;padding:3px 9px;border-radius:999px;color:${statusColor[r.status]||'var(--text3)'};background:${(statusColor[r.status]||'var(--text3)')}1a">${r.status.replace('_',' ')}</span>
     </div>`).join('');
+  if(loadMore){ list.insertAdjacentHTML('beforeend', rowsHtml); } else { list.innerHTML = rowsHtml; }
+  if(moreBtn) moreBtn.style.display = (data && data.length === ACTIVITY_PAGE_SIZE) ? '' : 'none';
+  activityLogPage++;
 }
 async function tsGenerarTesteo(){
   // (precarga movida a tsPrecargarEngagement, ver tsAbrirTestingSandbox)
