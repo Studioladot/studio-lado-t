@@ -13502,6 +13502,7 @@ posts  = pRes.data || [];
 }
 // ── TABS CONTENIDO ────────────────────────────────────────────────────────────
 function switchContTab(tab, btn) {
+ try{
   finActiveTab = tab;
   ['control','calendario','publicaciones'].forEach(t => {
     const el=document.getElementById('cont-tab-'+t);
@@ -13514,14 +13515,16 @@ function switchContTab(tab, btn) {
     }
   });
 // Renderizar el tab recién visible
-  try{
-    if(tab==='calendario') renderCalCont();
-    if(tab==='publicaciones') renderPublicaciones();
-    if(tab==='control') renderControlContenido();
-  }catch(e){
-    console.error('[Contenido] error al renderizar tab', tab, e);
-    toast('Hubo un error al mostrar ese contenido. Mirá la consola.');
-  }
+  if(tab==='calendario') renderCalCont();
+  if(tab==='publicaciones') renderPublicaciones();
+  if(tab==='control') renderControlContenido();
+ }catch(err){
+    console.error('[Contenido] error en switchContTab', tab, err);
+    const box=document.createElement('div');
+    box.style.cssText='position:fixed;bottom:16px;right:16px;max-width:420px;background:#3a0d0d;color:#fff;border:1px solid #ff5c5c;border-radius:8px;padding:12px 14px;font-size:12px;font-family:monospace;z-index:999999;white-space:pre-wrap;box-shadow:0 8px 24px rgba(0,0,0,.5)';
+    box.textContent='⚠️ ERROR en tab "'+tab+'" (mandá captura de esto):\n'+(err && err.stack || err);
+    document.body.appendChild(box);
+ }
 }
 
 // ── CONTROL ───────────────────────────────────────────────────────────────────
@@ -13838,6 +13841,29 @@ function renderCalCont(){
   });
 }
 
+// ── DIAGNÓSTICO VISUAL DE ERRORES (temporal) ──────────────────────────────
+// Muestra en pantalla cualquier error de JS, sin necesitar F12/consola.
+(function(){
+  if(window.__gtxErrCatcherInit) return;
+  window.__gtxErrCatcherInit = true;
+  function showErrBanner(msg){
+    let box = document.getElementById('gtx-err-banner');
+    if(!box){
+      box = document.createElement('div');
+      box.id = 'gtx-err-banner';
+      box.style.cssText = 'position:fixed;bottom:16px;right:16px;max-width:420px;background:#3a0d0d;color:#fff;border:1px solid #ff5c5c;border-radius:8px;padding:12px 14px;font-size:12px;font-family:monospace;z-index:999999;white-space:pre-wrap;box-shadow:0 8px 24px rgba(0,0,0,.5)';
+      document.body.appendChild(box);
+    }
+    box.textContent = '⚠️ ERROR JS (mandá captura de esto):\n' + msg;
+  }
+  window.addEventListener('error', function(e){
+    showErrBanner((e.error && e.error.stack) || e.message);
+  });
+  window.addEventListener('unhandledrejection', function(e){
+    showErrBanner('Promise rejection: ' + ((e.reason && e.reason.stack) || e.reason));
+  });
+})();
+
 document.addEventListener('DOMContentLoaded', function(){ initContenidoEventos(); });
 window.addEventListener('load', function(){ initContenidoEventos(); });
 setTimeout(function(){ initContenidoEventos(); }, 0);
@@ -13847,7 +13873,17 @@ function initContenidoEventos(){
   window.__contenidoEventosInit = true;
   document.addEventListener('click', function(e){
     const btnPub = e.target.closest('#btn-cont-new-post');
-    if(btnPub){ e.preventDefault(); openNewPost(); return; }
+    if(btnPub){
+      e.preventDefault();
+      try{ openNewPost(); }catch(err){
+        console.error('[Contenido] error en openNewPost', err);
+        const box=document.createElement('div');
+        box.style.cssText='position:fixed;bottom:16px;right:16px;max-width:420px;background:#3a0d0d;color:#fff;border:1px solid #ff5c5c;border-radius:8px;padding:12px 14px;font-size:12px;font-family:monospace;z-index:999999;white-space:pre-wrap;box-shadow:0 8px 24px rgba(0,0,0,.5)';
+        box.textContent='⚠️ ERROR al abrir +Publicacion (mandá captura de esto):\n'+(err && err.stack || err);
+        document.body.appendChild(box);
+      }
+      return;
+    }
 
     // Los tabs (#ctab-control/calendario/publicaciones) ya tienen onclick inline
     // que llama a switchContTab() directamente — no se procesan acá de nuevo para
