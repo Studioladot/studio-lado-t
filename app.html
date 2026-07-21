@@ -4882,6 +4882,20 @@ async function signOut(){ await db.auth.signOut(); }
 
 // ── NAV ──────────────────────────────────────────────────────────────────────
 function showPage(p){
+  // FIX: si quedó un overlay de tour residual (p.ej. por un click fuera de flujo),
+  // nunca debe sobrevivir a una navegación de página — así ninguna sección puede
+  // quedar con los clics "muertos" por un tour trabado.
+  const gtxRoot = document.getElementById('gtx-tour-root');
+  if(gtxRoot && gtxRoot.innerHTML){
+    gtxRoot.innerHTML = '';
+    if(gtxTourReposHandler){
+      window.removeEventListener('scroll', gtxTourReposHandler, true);
+      window.removeEventListener('resize', gtxTourReposHandler);
+    }
+    document.querySelectorAll('.gtx-tour-target-elevated').forEach(el=>{
+      el.classList.remove('gtx-tour-target-elevated');
+    });
+  }
   window.scrollTo(0,0);
   document.getElementById('main')?.scrollTo(0,0);
   // ADMIN-ONLY: Configuracion y Admin son exclusivos del administrador,
@@ -6171,7 +6185,7 @@ function gtxTourRenderStep(){
     : '';
 
   root.innerHTML = `
-    <div class="gtx-tour-dim" onclick="gtxTourSkip()"></div>
+    <div class="gtx-tour-dim" id="gtx-tour-dim"></div>
     <div class="gtx-tour-spotlight" style="top:${r.top-pad}px;left:${r.left-pad}px;width:${r.width+pad*2}px;height:${r.height+pad*2}px"></div>
     <div class="gtx-tour-card" style="top:${cardTop}px;left:${cardLeft}px">
       <div class="gtx-tour-dots">${dotsHtml}</div>
@@ -6184,6 +6198,26 @@ function gtxTourRenderStep(){
         <button class="gtx-tour-next" onclick="gtxTourNext()">${gtxTourIdx===gtxActiveTourSteps.length-1?'Finalizar':'Siguiente'}</button>
       </div>
     </div>`;
+
+  // FIX: el elemento resaltado (.gtx-tour-target-elevated) puede quedar atrapado
+  // dentro del stacking context de un ancestro (#sidebar tiene position:fixed;z-index:60,
+  // .page tiene position:relative;z-index:1), por lo que su z-index:99993 NO logra
+  // superar al dim (z-index:99991) — el clic sobre el elemento "iluminado" quedaba
+  // muerto o cerraba el tour por accidente. Solución: el dim detecta si el clic cayó
+  // dentro del área del spotlight y, en ese caso, reenvía el clic al elemento real
+  // en vez de depender de z-index.
+  const dimEl = document.getElementById('gtx-tour-dim');
+  if(dimEl){
+    dimEl.addEventListener('click', function(e){
+      const rr = target.getBoundingClientRect();
+      const dentroDelSpotlight = e.clientX >= rr.left-pad && e.clientX <= rr.right+pad && e.clientY >= rr.top-pad && e.clientY <= rr.bottom+pad;
+      if(dentroDelSpotlight){
+        target.click();
+      } else {
+        gtxTourSkip();
+      }
+    });
+  }
 
   if(gtxTourReposHandler){
     window.removeEventListener('scroll', gtxTourReposHandler, true);
@@ -13806,8 +13840,9 @@ function initContenidoEventos(){
     const btnPub = e.target.closest('#btn-cont-new-post');
     if(btnPub){ e.preventDefault(); openNewPost(); return; }
 
-    const tabBtn = e.target.closest('#ctab-control, #ctab-calendario, #ctab-publicaciones');
-    if(tabBtn){ e.preventDefault(); switchContTab(tabBtn.id.replace('ctab-',''), tabBtn); return; }
+    // Los tabs (#ctab-control/calendario/publicaciones) ya tienen onclick inline
+    // que llama a switchContTab() directamente — no se procesan acá de nuevo para
+    // no disparar el render duplicado en cada clic.
 
     const fc = e.target.closest('[data-action="crear-campana-fecha"]');
     if(fc){ e.preventDefault(); e.stopPropagation(); crearCampanaDesdeFecha(fc.dataset.date, fc.dataset.nombre); return; }
