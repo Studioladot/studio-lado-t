@@ -4925,7 +4925,7 @@ function showPage(p){
     const labelSpan=ni?.querySelector('span:last-child');
     mtbTitle.textContent = labelSpan ? labelSpan.textContent : 'GOTIX';
   }
-if(GTX_SECTION_TOURS[p] && !gtxTourEnteringManually && gtxSectionTourShouldRun(p)) setTimeout(()=>gtxStartSectionTour(p), 500);
+if(false && GTX_SECTION_TOURS[p] && !gtxTourEnteringManually && gtxSectionTourShouldRun(p)) setTimeout(()=>gtxStartSectionTour(p), 500);
 if(p==='activity'){ renderActivityLog(); loadSpendThreshold(); }
   if(p==='bib-ads')loadBibAds();
   if(p==='meta-live')renderSnaps();
