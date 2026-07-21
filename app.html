@@ -1672,10 +1672,19 @@ body.focus-mode #main{margin-left:0}
         <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="8" height="8" rx="1.3"/><path d="M5 4V2.8a1 1 0 0 1 1-1h5a1 1 0 0 1 1 1V9a1 1 0 0 1-1 1h-1.5"/></svg>
         Duplicar (<span id="ts-dup-count-badge">0</span>)
       </button>
-      <!-- Comparar (aparece solo con exactamente 2 campañas seleccionadas) -->
+<!-- Comparar (aparece solo con exactamente 2 campañas seleccionadas) -->
       <button class="btn btn-outline" id="ts-compare-btn" onclick="tsOpenCompareModal()" style="display:none;opacity:0;transition:opacity .2s">
         <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2v10M10 2v10"/><path d="M1 5h2M1 9h2M11 5h2M11 9h2"/></svg>
         Comparar
+      </button>
+      <!-- Pausar/Activar en batch (aparecen con 1+ campañas seleccionadas) -->
+      <button class="btn btn-outline" id="ts-pause-selected-btn" onclick="tsBatchToggleStatus('PAUSED')" style="display:none;opacity:0;transition:opacity .2s">
+        <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="2" width="3" height="10" rx="0.5"/><rect x="8" y="2" width="3" height="10" rx="0.5"/></svg>
+        Pausar
+      </button>
+      <button class="btn btn-outline" id="ts-activate-selected-btn" onclick="tsBatchToggleStatus('ACTIVE')" style="display:none;opacity:0;transition:opacity .2s">
+        <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2l9 5-9 5V2z"/></svg>
+        Activar
       </button>
 
       <!-- Menú Opciones (3 puntos) -->
@@ -6349,7 +6358,7 @@ function tsToggleSelect(type, id, name, checkbox){
     setTimeout(() => { if(tsSelectedItems.size===0) btn.style.display='none'; }, 200);
   }
 
-  const compareBtn = document.getElementById('ts-compare-btn');
+const compareBtn = document.getElementById('ts-compare-btn');
   if(compareBtn){
     const campaignCount = Array.from(tsSelectedItems.values()).filter(i => i.type === 'campaign').length;
     if(campaignCount === 2){
@@ -6360,6 +6369,19 @@ function tsToggleSelect(type, id, name, checkbox){
       setTimeout(() => { compareBtn.style.display='none'; }, 200);
     }
   }
+
+  const pauseBtn = document.getElementById('ts-pause-selected-btn');
+  const activateBtn = document.getElementById('ts-activate-selected-btn');
+  [pauseBtn, activateBtn].forEach(b => {
+    if(!b) return;
+    if(count > 0){
+      b.style.display = 'inline-flex';
+      requestAnimationFrame(() => b.style.opacity = '1');
+    } else {
+      b.style.opacity = '0';
+      setTimeout(() => { b.style.display='none'; }, 200);
+    }
+  });
 }
 
 const tsDupFiles = new Map(); // bloqueIdx -> File
@@ -6405,6 +6427,36 @@ function tsRenderDupBlocks(){
   }
 }
 
+async function tsBatchToggleStatus(newStatus){
+  const items = Array.from(tsSelectedItems.values());
+  if(!items.length) return;
+  const accion = newStatus === 'ACTIVE' ? 'activar' : 'pausar';
+  const ok = confirm(`¿Confirmás ${accion} ${items.length} elemento(s) seleccionado(s)?`);
+  if(!ok) return;
+
+  let okCount = 0, errCount = 0;
+  for(const item of items){
+    const list = item.type === 'campaign' ? metaCampaigns : item.type === 'adset' ? metaAdsets : metaAds;
+    const obj = list.find(x => x.id === item.id);
+    const currentStatus = obj?.effective_status || obj?.status || 'PAUSED';
+    if(currentStatus === newStatus){ okCount++; continue; }
+    try{
+      const res = await metaPost(item.id, { status: newStatus });
+      if(res.error) throw new Error(res.error.message);
+      [metaCampaigns, metaAdsets, metaAds].forEach(l => {
+        const it = l.find(x => x.id === item.id);
+        if(it){ it.status = newStatus; it.effective_status = newStatus; }
+      });
+      okCount++;
+    }catch(e){ errCount++; console.error('[batch status]', item.name, e.message); }
+  }
+
+  renderCampaigns();
+  if(document.getElementById('meta-adsets-section')?.style.display !== 'none') renderAdsets(currentCampaignName);
+  if(document.getElementById('meta-ads-section')?.style.display !== 'none') renderAds(currentAdsetName);
+
+  toast(errCount > 0 ? `${okCount} actualizados, ${errCount} con error` : `${okCount} elemento(s) actualizados`);
+}
 function tsOpenCompareModal(){
   const selected = Array.from(tsSelectedItems.values()).filter(i => i.type === 'campaign');
   if(selected.length !== 2){ toast('Seleccioná exactamente 2 campañas para comparar'); return; }
