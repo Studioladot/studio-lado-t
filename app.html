@@ -2639,7 +2639,7 @@ body.focus-mode #main{margin-left:0}
   <div class="page-hdr">
     <div><div class="page-title">Contenido</div><div class="page-sub">Planificacion, control y ranking de tu estrategia de contenido</div></div>
     <div style="display:flex;gap:8px">
-<button class="btn btn-accent" id="btn-cont-new-post">+ Publicacion</button>
+<button class="btn btn-accent" id="btn-cont-new-post" onclick="openNewPost()">+ Publicacion</button>
     </div>
   </div>
 
@@ -13758,9 +13758,8 @@ function renderCalCont(){
     const fd=`${year}-${String(month).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
     const esHoy=d===hoy.getDate()&&month===hoy.getMonth()+1&&year===hoy.getFullYear();
 
-   const cell=document.createElement('div');
-    cell.dataset.action='open-day';
-    cell.dataset.date=fd;
+ const cell=document.createElement('div');
+    cell.onclick=()=>openDiaPiezas(fd);
 
    const campActiva = (contentCamps||[]).find(c => c.fecha_inicio && c.fecha_fin && fd >= c.fecha_inicio && fd <= c.fecha_fin);
     const campBorder = campActiva ? `border-top:3px solid ${campActiva.color||'var(--accent)'};` : '';
@@ -13779,10 +13778,8 @@ function renderCalCont(){
     if(fechaEspecial){
       const fc=document.createElement('div');
       fc.style.cssText='display:flex;align-items:center;gap:3px;background:#fef3d8;border:1px solid #e8b923;border-radius:5px;padding:2px 4px;margin-bottom:3px;cursor:pointer;overflow:hidden';
-      fc.title='Crear campana para '+fechaEspecial;
-      fc.dataset.action='crear-campana-fecha';
-      fc.dataset.date=fd;
-      fc.dataset.nombre=fechaEspecial;
+  fc.title='Crear campana para '+fechaEspecial;
+      fc.onclick=e=>{e.stopPropagation();crearCampanaDesdeFecha(fd,fechaEspecial);};
       fc.innerHTML=`<span style="font-size:9px;font-weight:700;color:#8a6d1d;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0">${fechaEspecial}</span>`;
       cell.appendChild(fc);
     }
@@ -13792,18 +13789,13 @@ function renderCalCont(){
       const isRealizado=p.status==='publicado';
       const isCampChip = p.source==='campana';
       const chip=document.createElement('div');
-      chip.dataset.action='open-item';
-      chip.dataset.id=p.id;
-      chip.dataset.iscamp=isCampChip?'true':'false';
+    chip.onclick=e=>{e.stopPropagation();openVerItem(p.id, isCampChip);};
       chip.title=`${p.titulo||p.caption||''}${p.turno?' · '+p.turno:''} — clic para ver el detalle`;
+javascript
       chip.style.cssText=`display:flex;align-items:center;gap:3px;padding:2px 5px;border-radius:5px;background:${isRealizado?'var(--green-l)':'var(--surface2)'};border:1px solid ${isRealizado?'var(--green)':'rgba(26,26,24,.08)'};margin-top:3px;cursor:pointer;overflow:hidden`;
       const dot=document.createElement('span');
-      dot.title='Clic para cambiar el estado';
-      dot.dataset.action='toggle-status';
-      dot.dataset.id=p.id;
-      dot.dataset.iscamp=isCampChip?'true':'false';
-      dot.dataset.status=p.status;
-      dot.style.cssText=`width:5px;height:5px;border-radius:50%;background:${PZ_COLOR[p.status]||'var(--text3)'};flex-shrink:0;cursor:pointer`;
+  dot.title='Clic para cambiar el estado';
+      dot.onclick=e=>{e.stopPropagation();if(isCampChip)cyclePiezaStatus(p.id);else togglePostStatus(p.id,p.status);};
       chip.appendChild(dot);
       if(p.turno && TURNO_ICON[p.turno]){
         const ti=document.createElement('span');
