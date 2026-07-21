@@ -6937,11 +6937,14 @@ function tsUpdateAudienceSummary(){
   }
 }
 
-function tsBuildTargeting(conjuntoAudienciaTipo){
+function tsBuildTargeting(conjuntoAudienciaValue){
   const targeting = { geo_locations: { countries: ['AR'] } };
-  // El tipo de público (broad/lookalike/retargeting/atc7/custom) ya viene resuelto
-  // por conjunto desde el selector de abajo (tsSelectAudiencia) — acá solo se
-  // completan las ubicaciones, que son a nivel campaña.
+  if(conjuntoAudienciaValue && conjuntoAudienciaValue.startsWith('custom:')){
+    const audienceId = conjuntoAudienciaValue.replace('custom:', '');
+    targeting.custom_audiences = [{ id: audienceId }];
+  }
+  // Si es 'broad' o no viene valor, no se agrega custom_audiences —
+  // queda como público amplio (Advantage+), que es el comportamiento de Meta por default.
 
   if(tsPlacementMode === 'manual'){
     const platforms = [];
@@ -8863,14 +8866,14 @@ tsEngMode.clear();
   tsEngSelected.clear();
   tsGuionLinks.clear();
 tsEngAdsCache = null; // limpiar cache al abrir para forzar re-fetch
-tsEngAdsCache = null; // limpiar cache al abrir para forzar re-fetch
   tsResetAdvControls();
+  tsRealAudiencesCache = null;
   tsAddConjunto(); // arranca con Conjunto 1 + Anuncio 1
   openModal('modal-testing-sandbox');
   tsEngLoadAds();
+  tsLoadRealAudiences();
   tsGoToPage(1);
 }
-
 function tsRenderDupPreview(){
   const dupCount = Math.max(1, +document.getElementById('ts-dup-count').value || 1);
   document.querySelectorAll('#ts-conjuntos-wrap .ts-conjunto').forEach(cEl => {
@@ -8890,8 +8893,48 @@ function tsRenderDupPreview(){
     badge.innerHTML = `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="12" height="12" rx="2"/><path d="M8 16v2a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V10a2 2 0 0 0-2-2h-2"/></svg> Se van a crear ${dupCount} copias: ${nombres.join(', ')}`;
   });
 }
+let tsRealAudiencesCache = null;
+async function tsLoadRealAudiences(){
+  if(!META_ACCOUNT) { tsRealAudiencesCache = []; return; }
+  try{
+    const data = await metaGet(`act_${META_ACCOUNT}/customaudiences`, { fields: 'id,name,subtype,approximate_count_lower_bound', limit: 200 });
+    if(data.error) throw new Error(data.error.message);
+    tsRealAudiencesCache = (data.data || []).map(a => ({
+      id: a.id,
+      name: a.name,
+      isLookalike: a.subtype === 'LOOKALIKE',
+      reach: a.approximate_count_lower_bound ? `~${(a.approximate_count_lower_bound/1000).toFixed(0)}K` : ''
+    }));
+  }catch(e){
+    console.error('[tsLoadRealAudiences]', e.message);
+    tsRealAudiencesCache = [];
+  }
+  // Re-renderizar el selector de audiencia de todos los conjuntos ya creados,
+  // por si el usuario ya había abierto uno antes de que termine de cargar.
+  document.querySelectorAll('.ts-conjunto').forEach(cEl => {
+    const cId = cEl.dataset.conjuntoId;
+    const sel = cEl.querySelector('.ts-audiencia-select');
+    if(sel) tsRenderAudienceOptions(cId, sel);
+  });
+}
+function tsRenderAudienceOptions(cId, selectEl){
+  const cached = tsRealAudiencesCache || [];
+  const lookalikes = cached.filter(a => a.isLookalike);
+  const guardados = cached.filter(a => !a.isLookalike);
+  let html = `<option value="broad">Broad – Advantage+ (recomendado)</option>`;
+  if(guardados.length){
+    html += `<optgroup label="Públicos guardados">` + guardados.map(a => `<option value="custom:${a.id}">${a.name}${a.reach?' · '+a.reach:''}</option>`).join('') + `</optgroup>`;
+  }
+  if(lookalikes.length){
+    html += `<optgroup label="Lookalikes">` + lookalikes.map(a => `<option value="custom:${a.id}">${a.name}${a.reach?' · '+a.reach:''}</option>`).join('') + `</optgroup>`;
+  }
+  if(!cached.length){
+    html += `<option value="" disabled>Cargando públicos de tu cuenta...</option>`;
+  }
+  selectEl.innerHTML = html;
+}
 function tsAddConjunto(){
-  tsConjuntoSeq++;
+tsConjuntoSeq++;
   const cId = 'c'+tsConjuntoSeq;
   const wrap = document.getElementById('ts-conjuntos-wrap');
   const div = document.createElement('div');
@@ -8899,27 +8942,6 @@ function tsAddConjunto(){
   div.dataset.conjuntoId = cId;
   div.dataset.anuncioSeq = '0';
   div.dataset.audiencia = 'broad';
-  const audiencias = [
-    { tipo:'broad', label:'Broad – Advantage+', sub:'Maximiza alcance y encontrá clientes nuevos a escala.', reach:'Alcance amplio', rec:true,
-      icon:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>' },
-    { tipo:'lookalike', label:'Lookalike 1% – Compradores', sub:'Alcanzá personas similares a tus mejores clientes.', reach:'~1.2M', rec:false,
-      icon:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2"/></svg>' },
-    { tipo:'retargeting', label:'Retargeting – Vio Contenido', sub:'Reenganchá audiencias tibias que mostraron interés.', reach:'~320K', rec:false,
-      icon:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>' },
-    { tipo:'atc7', label:'Retargeting – ATC 7 días', sub:'Impactá a quienes agregaron al carrito en los últimos 7 días.', reach:'~85K', rec:false,
-      icon:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>' },
-    { tipo:'custom', label:'Audiencia Personalizada', sub:'Usá tu propia audiencia o lista de clientes.', reach:'Personalizada', rec:false,
-      icon:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>' },
-  ];
-const cardsHtml = audiencias.map(a => `
-      <div class="ts-audiencia-card${a.rec?' selected':''}" data-tipo="${a.tipo}" onclick="tsSelectAudiencia('${cId}','${a.tipo}','${a.label.replace(/'/g,"\\'")}',this)">
-        <span class="ts-audiencia-check"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
-        <div class="ts-audiencia-icon">${a.icon}</div>
-        <div class="ts-audiencia-title">${a.label}</div>
-        <div class="ts-audiencia-sub">${a.sub}</div>
-        ${a.rec?'<span class="ts-audiencia-tag">Recomendado</span>':`<div class="ts-audiencia-reach"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg> ${a.reach}</div>`}
-      </div>`).join('');
-  const selectOptionsHtml = audiencias.map(a => `<option value="${a.tipo}"${a.rec?' selected':''}>${a.label}</option>`).join('');
   div.innerHTML = `
 <div class="ts-conjunto-hdr ts-conjunto-hdr-slim">
       <div style="display:flex;align-items:center;gap:8px;cursor:pointer;flex:1;min-width:0" onclick="tsToggleConjunto('${cId}')">
@@ -8931,8 +8953,8 @@ const cardsHtml = audiencias.map(a => `
       </div>
       <div style="display:flex;align-items:flex-end;gap:8px;margin-left:auto">
         <div>
-          <span style="display:block;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--text3);margin-bottom:3px">Público</span>
-          <select class="ts-audiencia-select" onclick="event.stopPropagation()" onchange="tsSelectAudienciaFromSelect('${cId}',this)">${selectOptionsHtml}</select>
+<span style="display:block;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--text3);margin-bottom:3px">Público</span>
+          <select class="ts-audiencia-select" onclick="event.stopPropagation()" onchange="tsSelectAudienciaFromSelect('${cId}',this)"></select>
         </div>
         <button type="button" class="ts-trash-btn" onclick="event.stopPropagation();tsRemoveConjunto('${cId}')" title="Eliminar conjunto">${tsTrashIcon()}</button>
       </div>
@@ -8946,6 +8968,7 @@ const cardsHtml = audiencias.map(a => `
       </button>
     </div>`;
   wrap.appendChild(div);
+  tsRenderAudienceOptions(cId, div.querySelector('.ts-audiencia-select'));
   tsAddAnuncio(cId);
   tsRenderBudgetAlloc();
   tsRenderDupPreview();
@@ -8977,8 +9000,9 @@ function tsToggleConjunto(cId){
   cEl.classList.toggle('collapsed');
 }
 function tsSelectAudienciaFromSelect(cId, selectEl){
-  const opt = selectEl.selectedOptions[0];
-  tsSelectAudiencia(cId, selectEl.value, opt.textContent, null);
+  const conjunto = document.querySelector(`.ts-conjunto[data-conjunto-id="${cId}"]`);
+  if(!conjunto) return;
+  conjunto.dataset.audiencia = selectEl.value; // 'broad' o 'custom:{id_real_de_meta}'
 }
 function tsSyncSchedule(){
   const d = document.getElementById('ts-schedule-date').value;
