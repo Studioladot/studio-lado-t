@@ -4813,7 +4813,8 @@ const banner = document.getElementById('trial-banner');
   // IA key warning
  // La IA ya funciona sin API key propia (agente gratuito server-side) -- se quita el cartel de advertencia.
   // Verificar acceso del usuario
- async function syncMetaStatus() {
+async function syncMetaStatus() {
+  try{
   const session = (await db.auth.getSession()).data.session;
   if (!session) return;
   const r = await fetch('/api/meta-status', { headers: { Authorization: `Bearer ${session.access_token}` } });
@@ -4827,6 +4828,7 @@ const banner = document.getElementById('trial-banner');
     META_ACCOUNT = '';
     localStorage.removeItem('lt_meta_account');
   }
+  }catch(e){ console.error('syncMetaStatus fallo (no bloqueante):', e); }
 }
 await syncMetaStatus();
 const urlParams = new URLSearchParams(location.search);
