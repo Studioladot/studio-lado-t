@@ -669,12 +669,30 @@ body.focus-mode #main{margin-left:0}
 .ts-audtype-card.active{border-color:var(--primary-green);background:var(--primary-green-l);color:var(--primary-green)}
 .ts-budget-seg .ft{flex:1;text-align:center;border-radius:6px;padding:8px 10px;font-size:11.5px;font-weight:600;color:var(--text3);cursor:pointer;transition:all .15s}
 .ts-budget-seg .ft.active{background:var(--primary-green);color:#FFFFFF}
-.ts-modal-xl{background:rgba(228,228,224,.97) !important;backdrop-filter:blur(24px) saturate(160%);-webkit-backdrop-filter:blur(24px) saturate(160%);border:1px solid rgba(26,26,24,.09) !important;border-radius:16px !important;padding:0 !important;max-width:calc(100vw - 260px) !important;width:calc(100vw - 260px) !important;margin-left:auto !important;box-shadow:0 32px 80px -16px rgba(0,0,0,.11) !important}
+.ts-modal-xl{background:rgba(228,228,224,.97) !important;backdrop-filter:blur(24px) saturate(160%);-webkit-backdrop-filter:blur(24px) saturate(160%);border:1px solid rgba(26,26,24,.09) !important;border-radius:16px !important;padding:0 !important;max-width:1040px !important;width:92vw !important;margin:0 auto !important;box-shadow:0 32px 80px -16px rgba(0,0,0,.11) !important}
 @media(max-width:720px){.ts-modal-xl{width:100vw!important;max-width:100vw!important;max-height:100vh!important;border-radius:0!important}}
 .ts-modal-hero{margin-bottom:32px}
 .ts-modal-hero-title{font-size:24px;font-weight:800;letter-spacing:-.02em;color:var(--text);margin-bottom:6px}
 .ts-modal-hero-sub{font-size:13px;color:var(--text3)}
 .ts-modal-shell{display:flex;flex-direction:row;max-height:90vh;overflow:hidden;padding:0!important;border-radius:16px}
+
+/* ── Sidebar vertical de pasos ── */
+.ts-sidebar{flex-shrink:0;width:240px;display:flex;flex-direction:column;justify-content:space-between;gap:20px;padding:22px 16px;border-right:1px solid var(--border);background:var(--surface2)}
+.ts-sidebar-steps{display:flex;flex-direction:column;gap:2px}
+.ts-sidebar-step{display:flex;align-items:center;gap:11px;padding:10px 11px;border-radius:var(--r);cursor:pointer;transition:background .15s ease}
+.ts-sidebar-step:hover{background:var(--border)}
+.ts-sidebar-step.active{background:var(--surface)}
+.ts-sidebar-step-num{flex-shrink:0;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10.5px;font-weight:700;background:var(--border2);color:var(--text3);transition:all .15s ease}
+.ts-sidebar-step.active .ts-sidebar-step-num{background:var(--primary-green);color:#fff}
+.ts-sidebar-step.done .ts-sidebar-step-num{background:var(--primary-green-l);color:var(--primary-green)}
+.ts-sidebar-step-title{font-size:12.5px;font-weight:700;color:var(--text3)}
+.ts-sidebar-step.active .ts-sidebar-step-title{color:var(--text)}
+.ts-sidebar-step-sub{font-size:10.5px;color:var(--text3);margin-top:1px}
+.ts-sidebar-summary{border:1px solid var(--border2);border-radius:var(--r);padding:12px;background:var(--surface)}
+.ts-sidebar-summary-label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);margin-bottom:6px}
+.ts-sidebar-summary-name{font-size:12.5px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ts-sidebar-summary-sub{font-size:10.5px;color:var(--text3);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@media(max-width:900px){.ts-sidebar{display:none}}
 
 /* ── Sidebar vertical de pasos (reemplaza el stepper horizontal) ── */
 .ts-sidebar{flex-shrink:0;width:260px;display:flex;flex-direction:column;justify-content:space-between;gap:20px;padding:24px 18px;border-right:1px solid var(--border);background:var(--surface2)}
@@ -704,11 +722,11 @@ body.focus-mode #main{margin-left:0}
 .btn-outline{border-radius:8px!important}
 .ts-modal-fixed-top{flex-shrink:0;padding:32px 48px 0 48px}
 .ts-modal-body{flex:1;overflow-y:auto;padding:0 48px}
-.ts-modal-fixed-bottom{flex-shrink:0;margin-top:0!important;padding:14px 40px 24px 40px;border-top:0.5px solid var(--border);background:transparent}
+.ts-modal-fixed-bottom{flex-shrink:0;margin-top:0!important;padding:14px 28px;border-top:0.5px solid var(--border);background:transparent}
 @media(max-width:720px){
 .ts-modal-fixed-top{padding:20px 20px 0 20px}
 .ts-modal-body{padding:0 20px}
-.ts-modal-fixed-bottom{padding:14px 20px 18px 20px;flex-direction:column;align-items:stretch}
+.ts-modal-fixed-bottom{flex-shrink:0;margin-top:0!important;padding:14px 28px;border-top:0.5px solid var(--border);background:transparent}
 .ts-stepper{overflow-x:auto;flex-wrap:nowrap}
 .ts-stepper-item{flex:0 0 auto}
 .ts-conjunto-hdr-slim{flex-direction:column;align-items:flex-start!important}
@@ -9070,9 +9088,7 @@ function tsGoToPage(n){
   if(stepCounter) stepCounter.textContent = `Paso ${n} de ${TS_TOTAL_PAGES}`;
   const nombreEl = document.getElementById('ts-camp-nombre');
   const sumName = document.getElementById('ts-sidebar-summary-name');
-  const sumSub = document.getElementById('ts-sidebar-summary-sub');
   if(sumName) sumName.textContent = (nombreEl?.value?.trim()) || 'Campaña sin nombre';
-  if(sumSub) sumSub.textContent = 'Nueva campaña';
   document.querySelector('.modal.ts-modal-xl').scrollTop = 0;
 }
 function tsToggleConjunto(cId){
