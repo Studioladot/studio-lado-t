@@ -4788,20 +4788,6 @@ function showAuth(){
   me=null;
 }
 async function showApp(){
-  const createdAt = new Date(me.created_at);
-  const daysPassed = Math.floor((Date.now() - createdAt.getTime()) / 86400000);
-  const daysLeft = Math.max(0, 7 - daysPassed);
-const banner = document.getElementById('trial-banner');
-  if (banner) {
-    const daysLeftEl = document.getElementById('trialDaysLeft');
-    if (daysLeft > 0) {
-      if (daysLeftEl) daysLeftEl.textContent = daysLeft;
-      banner.innerHTML = `Estás en tu prueba gratis. Te quedan <b id="trialDaysLeft">${daysLeft}</b> días. <a href="#" onclick="showPage('facturacion');return false" style="text-decoration:underline;cursor:pointer">Pasar a plan Pro</a>`;
-    } else {
-      banner.innerHTML = `Tu prueba gratis terminó. <a href="#" onclick="showPage('facturacion');return false" style="text-decoration:underline;cursor:pointer;font-weight:700">Pasá a plan Pro para seguir usando GOTIX</a>`;
-    }
-    banner.style.display = 'block';
-  }
   document.getElementById('auth-screen').style.display='none';
   document.getElementById('setup-screen').style.display='none';
   document.getElementById('app').style.display='block';
@@ -4840,6 +4826,22 @@ if (urlParams.get('meta_error')) {
 }
 const hasAccess = await checkUserAccessWithRetry();
   if(!hasAccess) return;
+  const banner = document.getElementById('trial-banner');
+  if (banner) {
+    if (isAdmin || (userProfile && userProfile.is_approved)) {
+      banner.style.display = 'none';
+    } else {
+      const createdAt = new Date(userProfile?.created_at || me.created_at);
+      const daysPassed = Math.floor((Date.now() - createdAt.getTime()) / 86400000);
+      const daysLeft = Math.max(0, 7 - daysPassed);
+      if (daysLeft > 0) {
+        banner.innerHTML = `Estás en tu prueba gratis. Te quedan <b id="trialDaysLeft">${daysLeft}</b> días. <a href="#" onclick="showPage('facturacion');return false" style="text-decoration:underline;cursor:pointer">Pasar a plan Pro</a>`;
+      } else {
+        banner.innerHTML = `Tu prueba gratis terminó. <a href="#" onclick="showPage('facturacion');return false" style="text-decoration:underline;cursor:pointer;font-weight:700">Pasá a plan Pro para seguir usando GOTIX</a>`;
+      }
+      banner.style.display = 'block';
+    }
+  }
  window.scrollTo(0,0);
   document.getElementById('main')?.scrollTo(0,0);
   if (location.hash.includes('access_token')) {
@@ -13490,13 +13492,13 @@ async function loadContenido() {
     db.from('content_campaigns').select('*').eq('user_id',me.id).order('created_at',{ascending:false}),
     db.from('content_piezas').select('*').eq('user_id',me.id).order('fecha_planificada',{ascending:true}),
   ]);
-  posts  = pRes.data || [];
+posts  = pRes.data || [];
   contentCamps  = ccRes.data || [];
   contentPiezas = cpRes.data || [];
-  renderControlContenido();
-  renderCalCont();
-  renderPublicaciones();
-  checkContenidoEstancado();
+  try{ renderControlContenido(); }catch(e){ console.error('[Contenido] error renderControlContenido', e); }
+  try{ renderCalCont(); }catch(e){ console.error('[Contenido] error renderCalCont', e); }
+  try{ renderPublicaciones(); }catch(e){ console.error('[Contenido] error renderPublicaciones', e); }
+  try{ checkContenidoEstancado(); }catch(e){ console.error('[Contenido] error checkContenidoEstancado', e); }
 }
 // ── TABS CONTENIDO ────────────────────────────────────────────────────────────
 function switchContTab(tab, btn) {
@@ -13511,10 +13513,15 @@ function switchContTab(tab, btn) {
       bt.style.fontWeight=t===tab?'600':'500';
     }
   });
-  // Renderizar el tab recién visible
-  if(tab==='calendario') renderCalCont();
-  if(tab==='publicaciones') renderPublicaciones();
-  if(tab==='control') renderControlContenido();
+// Renderizar el tab recién visible
+  try{
+    if(tab==='calendario') renderCalCont();
+    if(tab==='publicaciones') renderPublicaciones();
+    if(tab==='control') renderControlContenido();
+  }catch(e){
+    console.error('[Contenido] error al renderizar tab', tab, e);
+    toast('Hubo un error al mostrar ese contenido. Mirá la consola.');
+  }
 }
 
 // ── CONTROL ───────────────────────────────────────────────────────────────────
@@ -13832,6 +13839,8 @@ function renderCalCont(){
 }
 
 document.addEventListener('DOMContentLoaded', function(){ initContenidoEventos(); });
+window.addEventListener('load', function(){ initContenidoEventos(); });
+setTimeout(function(){ initContenidoEventos(); }, 0);
 if(document.readyState==='complete'||document.readyState==='interactive'){ initContenidoEventos(); }
 function initContenidoEventos(){
   if(window.__contenidoEventosInit) return;
