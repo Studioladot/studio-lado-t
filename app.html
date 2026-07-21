@@ -579,7 +579,7 @@ body.focus-mode #main{margin-left:0}
 
 /* Header de panel con control a la derecha (Timezone / Browse Library) */
 .ts-panel-hdr-row{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:20px}
-.ts-tz-select{background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:9px 14px;font-size:12px;color:var(--text);outline:none}
+.ts-tz-select{background:var(--surface2);border:1px solid var(--border2);border-radius:var(--r);padding:9px 14px;font-size:12px;font-weight:600;color:var(--text);outline:none;cursor:pointer;color-scheme:light dark}
 /* Schedule: fecha + hora + recurrente en fila */
 .ts-schedule-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:stretch}
 .ts-recurring-box{display:flex;align-items:center;gap:10px;background:#F0EFEC;border:1px solid rgba(26,26,24,.05);border-radius:16px;padding:14px 18px;min-width:230px}
@@ -631,7 +631,9 @@ body.focus-mode #main{margin-left:0}
 .ts-step-title{font-size:14px;font-weight:700;color:var(--text)}
 .ts-step-sub{font-size:11px;color:var(--text3);margin:2px 0 16px 36px}
 .ts-input-wrap{position:relative}
-.ts-input-box{display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--border2);border-radius:var(--r);padding:0 14px;transition:border-color .2s ease,box-shadow .2s ease}
+.ts-input-box{display:flex;align-items:center;gap:8px;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--r);padding:0 14px;transition:border-color .2s ease,box-shadow .2s ease}
+.ts-input-box input[type="date"],.ts-input-box input[type="time"],.ts-input-box input[type="number"],.ts-input-box input[type="text"]{color-scheme:light dark;background:transparent;border:none;outline:none;width:100%;padding:11px 0;font-size:13px;font-weight:600;color:var(--text)}
+.ts-input-box:focus-within{border-color:var(--primary-green);box-shadow:0 0 0 3px var(--primary-green-l)}
   .ts-input-box:hover{border-color:var(--border2)}
 .ts-input-box:focus-within{border-color:var(--primary-green);box-shadow:0 0 0 3px rgba(45,91,138,.12)}
 .ts-input-box svg{color:var(--text3);flex-shrink:0;pointer-events:none}
