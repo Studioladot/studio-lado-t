@@ -4658,11 +4658,11 @@ async function loadAll(){
   const gxBtn = document.getElementById('gx-currency-switch');
   if(gxBtn) gxBtn.textContent = gxCurrency==='ARS' ? 'MONEDA: ARS' : 'MONEDA: USD';
   try{
-    const[a,b,e,f]=await Promise.all([
+const[a,b,e,f]=await Promise.all([
       db.from('metrics').select('*').eq('user_id',uid).order('created_at',{ascending:false}).limit(100),
-      db.from('scripts').select('*').eq('user_id',uid).order('updated_at',{ascending:false}),
-      db.from('content_posts').select('*').eq('user_id',uid).order('date',{ascending:false}),
-      db.from('contacts').select('*').eq('user_id',uid).order('created_at',{ascending:false}),
+      db.from('scripts').select('*').eq('user_id',uid).order('updated_at',{ascending:false}).limit(200),
+      db.from('content_posts').select('*').eq('user_id',uid).order('date',{ascending:false}).limit(200),
+      db.from('contacts').select('*').eq('user_id',uid).order('created_at',{ascending:false}).limit(200),
     ]);
    metrics=a.data||[]; scripts=b.data||[];
     posts=e.data||[]; contacts=f.data||[];
