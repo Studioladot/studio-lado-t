@@ -650,6 +650,9 @@ body.focus-mode #main{margin-left:0}
 .ts-switch-thumb{position:absolute;top:2px;left:2px;width:18px;height:18px;background:#fff;border-radius:50%;transition:transform .18s;pointer-events:none}
 .ts-switch input:checked ~ .ts-switch-thumb{transform:translateX(16px)}
 .ts-budget-seg{display:flex;background:#F0EFEC;border:1px solid rgba(26,26,24,.06);border-radius:var(--r);padding:3px;gap:3px}
+.ts-audtype-card{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:14px 8px;border:1px solid var(--border2);border-radius:var(--r);background:var(--surface);color:var(--text3);cursor:pointer;transition:all .15s ease;font-size:11.5px;font-weight:600}
+.ts-audtype-card:hover{border-color:var(--text3);color:var(--text2)}
+.ts-audtype-card.active{border-color:var(--primary-green);background:var(--primary-green-l);color:var(--primary-green)}
 .ts-budget-seg .ft{flex:1;text-align:center;border-radius:6px;padding:8px 10px;font-size:11.5px;font-weight:600;color:var(--text3);cursor:pointer;transition:all .15s}
 .ts-budget-seg .ft.active{background:var(--primary-green);color:#FFFFFF}
 .ts-modal-xl{background:rgba(242,242,240,.96) !important;backdrop-filter:blur(24px) saturate(160%);-webkit-backdrop-filter:blur(24px) saturate(160%);border:1px solid rgba(26,26,24,.09) !important;border-radius:16px !important;padding:0 !important;max-width:calc(100vw - 260px) !important;width:calc(100vw - 260px) !important;margin-left:auto !important;box-shadow:0 32px 80px -16px rgba(0,0,0,.11) !important}
@@ -3958,6 +3961,7 @@ create policy "own" on contacts for all using (auth.uid()=user_id);</div>
       </button>
     </div>
 
+<div class="ts-conjuntos-scroll-zone">
     <div class="adv-panel" style="margin-bottom:20px">
       <div class="adv-master-row" onclick="tsToggleAudiencePanel()">
         <div>
@@ -3972,23 +3976,33 @@ create policy "own" on contacts for all using (auth.uid()=user_id);</div>
       <div class="adv-detail-wrap" id="ts-audience-detail-wrap">
         <div class="adv-detail-divider"></div>
 
-        <!-- Tipo de público -->
-        <div class="ts-budget-seg" id="ts-audience-type-toggle" style="margin-bottom:14px">
-          <div class="ft active" data-audience-type="broad" onclick="tsSetAudienceType('broad',this)">Amplio</div>
-          <div class="ft" data-audience-type="saved" onclick="tsSetAudienceType('saved',this)">Público Guardado</div>
-          <div class="ft" data-audience-type="lookalike" onclick="tsSetAudienceType('lookalike',this)">Lookalike</div>
+<!-- Tipo de público -->
+        <span class="ts-field-label" style="display:block;margin-bottom:8px">Tipo de público</span>
+        <div id="ts-audience-type-toggle" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px">
+          <div class="ts-audtype-card active" data-audience-type="broad" onclick="tsSetAudienceType('broad',this)">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>
+            <span>Amplio</span>
+          </div>
+          <div class="ts-audtype-card" data-audience-type="saved" onclick="tsSetAudienceType('saved',this)">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/><path d="M17 3.13a4 4 0 0 1 0 7.75"/></svg>
+            <span>Guardado</span>
+          </div>
+          <div class="ts-audtype-card" data-audience-type="lookalike" onclick="tsSetAudienceType('lookalike',this)">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="7" r="4"/><path d="M2 21v-2a4 4 0 0 1 4-4h6a4 4 0 0 1 4 4v2"/><circle cx="19" cy="9" r="3" stroke-dasharray="3 2"/></svg>
+            <span>Lookalike</span>
+          </div>
         </div>
 
         <!-- Modo Amplio: edad, género, ubicación, intereses -->
         <div id="ts-audience-broad-wrap">
           <div class="form-row">
-            <div class="fg ts-input-wrap">
+<div class="fg ts-input-wrap">
               <span class="ts-field-label">Edad mínima</span>
-<div class="ts-input-box"><input id="ts-aud-age-min" type="number" min="18" max="65" value="18" onchange="tsUpdateAudienceSummary()"></div>
+<div class="ts-input-box" style="padding:0"><input id="ts-aud-age-min" type="number" min="18" max="65" value="18" onchange="tsUpdateAudienceSummary()" style="width:100%;padding:11px 14px;border:none;background:transparent;outline:none;font-size:14px;font-weight:600;color:var(--text)"></div>
             </div>
             <div class="fg ts-input-wrap">
               <span class="ts-field-label">Edad máxima</span>
-            <div class="ts-input-box"><input id="ts-aud-age-max" type="number" min="18" max="65" value="65" onchange="tsUpdateAudienceSummary()"></div>
+            <div class="ts-input-box" style="padding:0"><input id="ts-aud-age-max" type="number" min="18" max="65" value="65" onchange="tsUpdateAudienceSummary()" style="width:100%;padding:11px 14px;border:none;background:transparent;outline:none;font-size:14px;font-weight:600;color:var(--text)"></div>
             </div>
           </div>
           <div class="fg ts-input-wrap" style="margin-bottom:12px">
@@ -4033,11 +4047,10 @@ create policy "own" on contacts for all using (auth.uid()=user_id);</div>
           <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2);cursor:pointer"><input type="checkbox" id="ts-place-ig-feed" checked> Instagram Feed</label>
           <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2);cursor:pointer"><input type="checkbox" id="ts-place-stories" checked> Stories</label>
           <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2);cursor:pointer"><input type="checkbox" id="ts-place-reels" checked> Reels</label>
-        </div>
+     </div>
       </div>
     </div>
 
-<div class="ts-conjuntos-scroll-zone">
       <div id="ts-conjuntos-wrap" style="display:flex;flex-direction:column;gap:16px;padding-right:4px"></div>
     </div>
 
