@@ -1641,7 +1641,16 @@ body.focus-mode #main{margin-left:0}
 <!-- META CAMPANAS -->
 <div id="page-meta-campanas" class="page">
   <div class="page-hdr">
-    <div><div class="page-title">Campanas</div><div class="page-sub" id="meta-sub">Ultimos 30 dias — datos en tiempo real</div></div>
+<div><div class="page-title">Campanas</div><div class="page-sub" id="meta-sub">Ultimos 30 dias — datos en tiempo real</div></div>
+    <div id="meta-monthly-budget-wrap" style="display:none;min-width:180px;cursor:pointer" onclick="openMetaBudgetModal()" title="Click para editar tu presupuesto mensual">
+      <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text3);margin-bottom:3px">
+        <span id="meta-monthly-budget-label">$0 de $0</span>
+        <span id="meta-monthly-budget-pct">0%</span>
+      </div>
+      <div style="height:5px;background:var(--surface2);border-radius:3px;overflow:hidden">
+        <div id="meta-monthly-budget-bar" style="height:100%;width:0%;background:var(--primary-green);transition:width .3s ease"></div>
+      </div>
+    </div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
       <!-- Selector de período -->
       <select id="meta-date-range" class="meta-filter-select" onchange="onDateRangeChange()">
@@ -3372,6 +3381,20 @@ create policy "own" on contacts for all using (auth.uid()=user_id);</div>
     </div>
   </div>
 </div>
+<div class="modal-backdrop" id="modal-meta-budget">
+  <div class="modal" style="max-width:380px">
+    <div class="modal-title">Presupuesto Mensual de Ads</div>
+    <div style="font-size:12px;color:var(--text2);margin-bottom:14px">El monto total que planeás invertir en Meta Ads este mes, para ver de un vistazo cuánto llevás gastado.</div>
+    <div class="fg" style="margin-bottom:14px">
+      <label>Presupuesto mensual (USD)</label>
+      <input id="meta-budget-input" type="number" min="0" placeholder="1000">
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-meta-budget')">Cancelar</button>
+      <button class="btn btn-accent" onclick="saveMetaMonthlyBudget()">Guardar</button>
+    </div>
+  </div>
+</div>
 <div class="modal-backdrop" id="modal-compare">
   <div class="modal" style="max-width:640px">
     <div class="modal-title">Comparar Campañas</div>
@@ -4643,7 +4666,7 @@ if(GTX_SECTION_TOURS[p] && !gtxTourEnteringManually && gtxSectionTourShouldRun(p
 if(p==='activity'){ renderActivityLog(); loadSpendThreshold(); }
   if(p==='bib-ads')loadBibAds();
   if(p==='meta-live')renderSnaps();
-  if(p==='meta-campanas'){ renderMetaCampHeader(); if(META_TOKEN&&META_ACCOUNT&&!metaCampaigns.length)loadMetaCampaigns(); }
+  if(p==='meta-campanas'){ renderMetaCampHeader(); if(META_TOKEN&&META_ACCOUNT&&!metaCampaigns.length)loadMetaCampaigns(); if(META_TOKEN&&META_ACCOUNT) loadMetaMonthlyBudget(); }
   if(p==='meta-connect'){
     const ti=document.getElementById('meta-token-input');
     const ai=document.getElementById('meta-account-input');
@@ -10070,6 +10093,43 @@ function renderMetaFocusCards() {
 
   document.getElementById('meta-focus-sub').textContent =
     `${count} campana${count===1?'':'s'} activa${count===1?'':'s'} — ${rangeLabel} · supuestos: margen producto ${margenCfg}% + envio $${envioCfg}/orden`;
+}
+async function loadMetaMonthlyBudget(){
+  if(!me) return;
+  const { data } = await db.from('fin_config').select('presupuesto_ads_mensual').eq('user_id', me.id).maybeSingle();
+  const presupuesto = +(data?.presupuesto_ads_mensual || 0);
+  const wrap = document.getElementById('meta-monthly-budget-wrap');
+  if(!wrap) return;
+  if(!presupuesto){ wrap.style.display = 'none'; return; }
+  wrap.style.display = 'block';
+
+  // Gasto real del mes en curso — suma de todas las campañas activas y pausadas con datos
+  const now = new Date();
+  const primerDia = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+  const hoy = now.toISOString().split('T')[0];
+  try{
+    const data = await metaGet(`act_${META_ACCOUNT}/insights`, { fields: 'spend', time_range: JSON.stringify({since:primerDia, until:hoy}), level:'account' });
+    const gastado = +(data?.data?.[0]?.spend || 0);
+    const pct = Math.min(100, Math.round((gastado/presupuesto)*100));
+    document.getElementById('meta-monthly-budget-label').textContent = `$${gastado.toFixed(0)} de $${presupuesto.toFixed(0)}`;
+    document.getElementById('meta-monthly-budget-pct').textContent = `${pct}%`;
+    const bar = document.getElementById('meta-monthly-budget-bar');
+    bar.style.width = pct+'%';
+    bar.style.background = pct >= 100 ? '#F04438' : pct >= 80 ? '#F5A623' : 'var(--primary-green)';
+  }catch(e){ console.error('[meta-budget] error al calcular gasto del mes', e); }
+}
+function openMetaBudgetModal(){
+  db.from('fin_config').select('presupuesto_ads_mensual').eq('user_id', me.id).maybeSingle().then(({data})=>{
+    document.getElementById('meta-budget-input').value = data?.presupuesto_ads_mensual || '';
+  });
+  openModal('modal-meta-budget');
+}
+async function saveMetaMonthlyBudget(){
+  const val = +document.getElementById('meta-budget-input').value || 0;
+  await db.from('fin_config').upsert({ user_id: me.id, presupuesto_ads_mensual: val }, {onConflict:'user_id'});
+  closeModal('modal-meta-budget');
+  toast('Presupuesto mensual guardado');
+  loadMetaMonthlyBudget();
 }
 function toggleMetaFocusMode() {
   metaFocusMode = !metaFocusMode;
