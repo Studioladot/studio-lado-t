@@ -14004,20 +14004,37 @@ function openEditPost(id){
   openModal('modal-post');
 }
 window.openNewPost = openNewPost;
-function openNewPost(){
-  document.getElementById('post-edit-id').value = '';
-  document.getElementById('post-title').value = '';
-  document.getElementById('post-caption').value = '';
-  document.getElementById('post-protagonista').value = '';
+function openNewPost() {
+  const setValorSeguro = (id, valor) => {
+    const elemento = document.getElementById(id);
+    if (elemento) elemento.value = valor;
+  };
+
+  setValorSeguro('post-edit-id', '');
+  setValorSeguro('post-title', '');
+  setValorSeguro('post-caption', '');
+  setValorSeguro('post-protagonista', '');
+  
   postEditMediaList = [];
-  renderMediaGallery('post-media-existing', postEditMediaList, 'removePostMediaItem');
-  const pmf = document.getElementById('post-media-file'); if(pmf) pmf.value = '';
-  document.getElementById('post-platform').value = 'Instagram';
-  document.getElementById('post-format').value = 'Reel';
-  document.getElementById('post-date').value = new Date().toISOString().split('T')[0];
-  document.getElementById('post-turno').value = 'Temprano';
-  document.getElementById('post-status').value = 'pendiente';
-  document.getElementById('modal-post-titulo').textContent = 'Nueva publicacion';
+  
+  try { 
+    renderMediaGallery('post-media-existing', postEditMediaList, 'removePostMediaItem'); 
+  } catch(e) {
+    console.log("Aviso: No se pudo cargar la galería", e);
+  }
+
+  const pmf = document.getElementById('post-media-file'); 
+  if (pmf) pmf.value = '';
+
+  setValorSeguro('post-platform', 'Instagram');
+  setValorSeguro('post-format', 'Reel');
+  setValorSeguro('post-date', new Date().toISOString().split('T')[0]);
+  setValorSeguro('post-turno', 'Temprano');
+  setValorSeguro('post-status', 'pendiente');
+
+  const tituloModal = document.getElementById('modal-post-titulo');
+  if (tituloModal) tituloModal.textContent = 'Nueva publicacion';
+
   openModal('modal-post');
 }
 async function saveEditPost(){
