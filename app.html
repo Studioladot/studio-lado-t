@@ -14486,162 +14486,52 @@ function crearCampanaDesdeFecha(fecha, nombre){
   if(finInput) finInput.value = fecha;
   openModal('modal-campana');
 }
-
-function renderCalCont(){
-  const mesEl=document.getElementById('cont-cal-mes');if(!mesEl)return;
-  const mesVal=mesEl.value||new Date().toISOString().substring(0,7);
-  const [year,month]=mesVal.split('-').map(Number);
-  const hoy=new Date();
-  const diasEnMes=new Date(year,month,0).getDate();
-  const primerDia=new Date(year,month-1,1).getDay();
-  const primerLunes=primerDia===0?6:primerDia-1;
-  const grid=document.getElementById('cont-cal-grid');if(!grid)return;
-
-  // LIMPIAR antes de renderizar — evita duplicación en cada llamada
-  grid.innerHTML='';
-
- // Fechas comerciales argentinas del año en curso
-  const fechasComercialesMap={};
-  getFechasComercialesAR(year).forEach(f=>{ fechasComercialesMap[f.date]=f.nombre; });
-
-  // Construir mapa por día — una sola pasada, sin duplicar fuentes
-  const porDia={};
-  const addToDia=(items)=>{
-    items.forEach(p=>{
-      if(!(p.date||'').startsWith(mesVal))return;
-      const d=parseInt(p.date.split('-')[2]);
-      if(!porDia[d])porDia[d]=[];
-      porDia[d].push(p);
-    });
-  };
-  // Una sola llamada — se reutiliza el resultado en ambos usos
-  const unifiedItems = getUnifiedContentItems();
-  addToDia(unifiedItems);
-  // posts sueltos que NO están ya en unifiedItems (evitar duplicado)
-  const unifiedIds = new Set(unifiedItems.map(p=>String(p.id)));
-  addToDia(posts.filter(p=>!unifiedIds.has(String(p.id))).map(p=>({
-    ...p,
-    date:p.date,
-    titulo:p.caption||p.platform||'Publicacion',
-    status:p.status==='publicado'?'publicado':'pendiente',
-    campColor:'var(--blue)',campName:'Sin campana',source:'post',
-  })));
-
- const dias=['Lu','Ma','Mi','Ju','Vi','Sa','Do'];
-
-  // Encabezado de mes
-  const header=document.createElement('div');
-  header.style.cssText='font-size:15px;font-weight:800;letter-spacing:-.01em;margin-bottom:12px;color:var(--text)';
-  header.textContent=new Date(year,month-1,1).toLocaleDateString('es-AR',{month:'long',year:'numeric'});
-  grid.appendChild(header);
-
-  // Contenedor con borde tenue tipo Google Calendar
-  const calWrap=document.createElement('div');
-  calWrap.style.cssText='border:1px solid rgba(26,26,24,.1);border-radius:10px;overflow:hidden';
-
-  // Cabecera de dias de la semana — resaltada
-  const daysHead=document.createElement('div');
-  daysHead.style.cssText='display:grid;grid-template-columns:repeat(7,minmax(0,1fr));background:var(--surface2);border-bottom:1px solid rgba(26,26,24,.1)';
-  dias.forEach(d=>{
-    const h=document.createElement('div');
-    h.style.cssText='font-size:10px;font-weight:800;text-align:center;color:var(--text);padding:8px 0;letter-spacing:.08em;text-transform:uppercase';
-    h.textContent=d;
-    daysHead.appendChild(h);
-  });
-  calWrap.appendChild(daysHead);
-
-  // Grid días — lineas tenues tipo Google Calendar (gap de 1px = linea divisoria)
-  const daysGrid=document.createElement('div');
-  daysGrid.id='cont-cal-days-grid';
-  daysGrid.style.cssText='display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:1px;width:100%;box-sizing:border-box;background:rgba(26,26,24,.08)';
-
-  // Celdas vacías iniciales
-  for(let i=0;i<primerLunes;i++){
-    const empty=document.createElement('div');
-    empty.style.cssText='background:var(--surface);min-height:82px';
-    daysGrid.appendChild(empty);
-  }
-
-  // Celdas de días
-  for(let d=1;d<=diasEnMes;d++){
-    const pd=porDia[d]||[];
-    const fd=`${year}-${String(month).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-    const esHoy=d===hoy.getDate()&&month===hoy.getMonth()+1&&year===hoy.getFullYear();
-
-   const cell=document.createElement('div');
-    cell.onclick=()=>openDiaPiezas(fd);
-
-   // Campana activa en este dia (borde superior sutil, no pisa el resto de la celda)
-    const campActiva = (contentCamps||[]).find(c => c.fecha_inicio && c.fecha_fin && fd >= c.fecha_inicio && fd <= c.fecha_fin);
-    const campBorder = campActiva ? `border-top:3px solid ${campActiva.color||'var(--accent)'};` : '';
-    const fechaEspecial = fechasComercialesMap[fd];
-
-    cell.title = campActiva ? `${campActiva.nombre} · Ver publicaciones del ${d}/${month}` : (fechaEspecial ? `${fechaEspecial} · Ver publicaciones del ${d}/${month}` : `Ver publicaciones del ${d}/${month}`);
-    cell.style.cssText=`background:var(--surface);padding:5px;min-height:82px;cursor:pointer;transition:background .12s;overflow:hidden;box-sizing:border-box;${campBorder}`;
-    cell.onmouseover=()=>cell.style.background='var(--surface2)';
-    cell.onmouseout=()=>cell.style.background='var(--surface)';
-
-    // Número del día — circulo resaltado para "hoy", estilo Google Calendar
-    const num=document.createElement('div');
-    num.style.cssText=`display:flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;font-size:11px;font-weight:${esHoy?'800':'600'};color:${esHoy?'#fff':'var(--text)'};background:${esHoy?'var(--primary-green)':'transparent'};margin-bottom:4px`;
-    num.textContent=d;
-    cell.appendChild(num);
-
-    // Fecha comercial argentina — pastilla con boton para crear campana vinculada
-    if(fechaEspecial){
-      const fc=document.createElement('div');
-      fc.style.cssText='display:flex;align-items:center;gap:3px;background:#fef3d8;border:1px solid #e8b923;border-radius:5px;padding:2px 4px;margin-bottom:3px;cursor:pointer;overflow:hidden';
-      fc.title='Crear campana para '+fechaEspecial;
-      fc.onclick=e=>{e.stopPropagation();crearCampanaDesdeFecha(fd,fechaEspecial);};
-      fc.innerHTML=`<span style="font-size:9px;font-weight:700;color:#8a6d1d;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0">${fechaEspecial}</span>`;
-      cell.appendChild(fc);
-    }
-
-    // Pastillas de contenido (máx 3) — status + turno, sin emojis
-    pd.slice(0,3).forEach(p=>{
-      const isRealizado=p.status==='publicado';
-      const chip=document.createElement('div');
-      chip.onclick=e=>{e.stopPropagation();if(p.source==='campana')cyclePiezaStatus(p.id);else togglePostStatus(p.id,p.status);};
-      chip.title=`${p.titulo||p.caption||''}${p.turno?' · '+p.turno:''}`;
-      chip.style.cssText=`display:flex;align-items:center;gap:3px;padding:2px 5px;border-radius:5px;background:${isRealizado?'var(--green-l)':'var(--surface2)'};border:1px solid ${isRealizado?'var(--green)':'rgba(26,26,24,.08)'};margin-top:3px;cursor:pointer;overflow:hidden`;
-      const dot=document.createElement('span');
-      dot.style.cssText=`width:5px;height:5px;border-radius:50%;background:${PZ_COLOR[p.status]||'var(--text3)'};flex-shrink:0`;
-      chip.appendChild(dot);
-      if(p.turno && TURNO_ICON[p.turno]){
-        const ti=document.createElement('span');
-        ti.style.cssText=`color:${TURNO_COLOR[p.turno]||'var(--text2)'};display:flex;flex-shrink:0`;
-        ti.innerHTML=TURNO_ICON[p.turno];
-        chip.appendChild(ti);
-      }
-      const label=document.createElement('span');
-      label.style.cssText=`font-size:9px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:${isRealizado?'var(--green)':'var(--text)'};min-width:0`;
-      label.textContent=p.titulo||p.caption||'';
-      chip.appendChild(label);
-      cell.appendChild(chip);
-    });
-
-    // "+N más"
-    if(pd.length>3){
-      const more=document.createElement('div');
-      more.style.cssText='font-size:9px;font-weight:600;color:var(--text2);margin-top:2px;text-align:center';
-      more.textContent=`+${pd.length-3} más`;
-      cell.appendChild(more);
-    }
-
-    daysGrid.appendChild(cell);
-  }
-
-  calWrap.appendChild(daysGrid);
- grid.appendChild(calWrap);
-  // Leyenda y chips se inyectan de forma diferida para no bloquear el primer paint
-  requestAnimationFrame(() => {
-    // Leyenda de campañas del mes
-  const campsConPiezas=[...new Set(contentPiezas.filter(p=>(p.fecha_planificada||'').startsWith(mesVal)).map(p=>p.campaign_id))].map(id=>contentCamps.find(cc=>cc.id===id)).filter(Boolean);
-  if(campsConPiezas.length){
-    const leyenda=document.createElement('div');
-   leyenda.style.cssText='margin-top:10px;padding-top:8px;border-top:1px solid rgba(26,26,24,.08);display:flex;gap:10px;flex-wrap:wrap;font-size:11px;color:var(--text2)'
-    leyenda.innerHTML=campsConPiezas.map(cc=>`<span style="display:flex;align-items:center;gap:4px"><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${cc.color||'var(--accent)'}"></span>${cc.nombre}</span>`).join('');
-    grid.appendChild(leyenda);
+function renderPublicaciones(){
+  const all = getUnifiedContentItems();
+  const list = contFilter2==='all' ? all
+    : all.filter(p=>p.status===contFilter2||p.platform===contFilter2||p.format===contFilter2);
+  const grid=document.getElementById('cont-pub-grid');
+  if(!grid) return;
+  if(!list.length){ grid.innerHTML='<div class="empty" style="grid-column:1/-1"><div class="empty-icon"><svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-0.15em"><rect x="2" y="6" width="20" height="14" rx="2"/><circle cx="12" cy="13" r="4"/><path d="M7 6l1.5-2h7L17 6"/></svg></div><div class="empty-msg">Sin publicaciones</div></div>'; return; }
+  const sBadge={publicado:'b-green',pendiente:'b-amber',borrador:'b-gray'};
+  const pColors={Instagram:'var(--accent)',TikTok:'var(--red)',Ambas:'var(--blue)'};
+  grid.innerHTML=list.map(p=>{
+    const isCamp = p.source === 'campana';
+    const statusLabel = isCamp ? (PZ_LABEL[p.pzStatus]||p.pzStatus) : p.status;
+    const statusColor = isCamp ? (PZ_COLOR[p.pzStatus]||'var(--text2)') : '';
+    const verFn = `openVerItem('${p.id}', ${isCamp})`;
+    const toggleFn = isCamp ? `cyclePiezaStatus('${p.id}')` : `togglePostStatus('${p.id}','${p.status}')`;
+    const delFn    = isCamp ? `delPieza('${p.id}')` : `delPost('${p.id}')`;
+    const editFn   = isCamp ? `openViewPieza('${p.id}')` : `openEditPost('${p.id}')`;
+    return `
+    <div style="background:var(--surface);border:0.5px solid var(--border);border-radius:var(--rl);overflow:hidden;transition:border-color .15s;cursor:pointer" onclick="${verFn}" onmouseover="this.style.borderColor='var(--border2)'" onmouseout="this.style.borderColor='var(--border)'">
+    ${p.media_url?(p.media_type==='video'
+        ? `<video src="${p.media_url}" onclick="event.stopPropagation();openMediaLightbox('${p.media_url}','video')" style="width:100%;height:140px;object-fit:cover;background:#000;cursor:pointer" muted title="Tocar para ampliar"></video>`
+        : `<img src="${p.media_url}" onclick="event.stopPropagation();openMediaLightbox('${p.media_url}','image')" style="width:100%;height:140px;object-fit:cover;cursor:pointer" alt="" title="Tocar para ampliar"/>`):''}
+      <div style="padding:14px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <div style="display:flex;gap:5px;flex-wrap:wrap">
+          <span class="badge" style="background:${pColors[p.platform]||'var(--surface2)'};color:#fff;font-size:9px">${p.platform}</span>
+          <span class="badge b-gray" style="font-size:9px">${p.format}</span>
+          ${isCamp?`<span class="badge" style="background:${p.campaignColor}22;color:${p.campaignColor};font-size:9px;border:0.5px solid ${p.campaignColor}"><svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-0.15em"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> ${p.campaignName}</span>`:''}
+        </div>
+        <span style="font-size:11px;color:var(--text3)">${p.date||''}</span>
+      </div>
+<div style="font-size:13px;line-height:1.55;margin-bottom:10px;color:var(--text);white-space:pre-wrap">${p.caption||'Sin caption'}</div>
+<div style="display:flex;align-items:center;justify-content:space-between">
+        <span class="badge ${isCamp?'':(sBadge[p.status]||'b-gray')}" ${isCamp?`style="background:${statusColor}22;color:${statusColor};border:0.5px solid ${statusColor}"`:''}>${statusLabel}</span>
+        <div style="display:flex;gap:5px">
+          <button class="btn btn-sm btn-outline" onclick="event.stopPropagation();${verFn}">Ver</button>
+          <button class="btn btn-sm btn-outline" onclick="event.stopPropagation();${editFn}">Editar</button>
+          <button class="btn btn-sm btn-ghost" onclick="event.stopPropagation();${toggleFn}" title="Cambiar estado"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-1px"><path d="M20 6 9 17l-5-5"/></svg></button>
+          <button class="btn btn-sm btn-red" onclick="event.stopPropagation();${delFn}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-1px"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+        </div>
+      </div>
+      ${p.notes?`<div style="font-size:11px;color:var(--text2);margin-top:8px;padding-top:8px;border-top:0.5px solid var(--border)">${p.notes}</div>`:''}
+      </div>
+    </div>`;
+  }).join('');
+}
   }
   }); // cierre requestAnimationFrame
 }
