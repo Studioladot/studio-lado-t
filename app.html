@@ -671,7 +671,7 @@ body.focus-mode #main{margin-left:0}
 .ts-budget-seg .ft.active{background:var(--primary-green);color:#FFFFFF}
 .ts-modal-xl{background:rgba(228,228,224,.97) !important;backdrop-filter:blur(24px) saturate(160%);-webkit-backdrop-filter:blur(24px) saturate(160%);border:1px solid rgba(26,26,24,.09) !important;border-radius:16px !important;padding:0 !important;width:1040px !important;max-width:95vw !important;margin:0 auto !important;box-shadow:0 32px 80px -16px rgba(0,0,0,.11) !important}
 @media(max-width:720px){.ts-modal-xl{width:100vw!important;max-width:100vw!important;max-height:100vh!important;border-radius:0!important}}
-.ts-modal-hero{margin-bottom:32px}
+.ts-modal-hero{margin-bottom:32px;display:flex;align-items:flex-start;justify-content:space-between;gap:16px;width:100%}
 .ts-modal-hero-title{font-size:24px;font-weight:800;letter-spacing:-.02em;color:var(--text);margin-bottom:6px}
 .ts-modal-hero-sub{font-size:13px;color:var(--text3)}
 .ts-modal-shell{display:flex;flex-direction:row;max-height:90vh;overflow:hidden;padding:0!important;border-radius:16px}
@@ -718,13 +718,13 @@ body.focus-mode #main{margin-left:0}
 .ts-audiencia-card{border-radius:10px!important}
 .ts-launch-btn{border-radius:8px!important}
 .btn-outline{border-radius:8px!important}
-.ts-modal-fixed-top{flex-shrink:0;padding:32px 48px 0 48px}
-.ts-modal-body{flex:1;overflow-y:auto;overflow-x:hidden;padding:0 48px;min-width:0}
-.ts-modal-fixed-bottom{flex-shrink:0;margin-top:0!important;padding:14px 28px;border-top:0.5px solid var(--border);background:transparent}
+.ts-modal-fixed-top{flex-shrink:0;padding:32px 48px 0 48px;width:100%;min-width:0}
+.ts-modal-body{flex:1;overflow-y:auto;overflow-x:hidden;padding:0 48px;width:100%;min-width:0}
+.ts-modal-fixed-bottom{flex-shrink:0;margin-top:0!important;padding:14px 28px;border-top:0.5px solid var(--border);background:transparent;display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%}
 @media(max-width:720px){
 .ts-modal-fixed-top{padding:20px 20px 0 20px}
 .ts-modal-body{padding:0 20px}
-.ts-modal-fixed-bottom{flex-shrink:0;margin-top:0!important;padding:14px 28px;border-top:0.5px solid var(--border);background:transparent}
+.ts-modal-fixed-bottom{flex-shrink:0;margin-top:0!important;padding:14px 28px;border-top:0.5px solid var(--border);background:transparent;display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%}
 .ts-stepper{overflow-x:auto;flex-wrap:nowrap}
 .ts-stepper-item{flex:0 0 auto}
 .ts-conjunto-hdr-slim{flex-direction:column;align-items:flex-start!important}
