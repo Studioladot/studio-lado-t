@@ -13789,13 +13789,13 @@ function renderCalCont(){
       const isRealizado=p.status==='publicado';
       const isCampChip = p.source==='campana';
       const chip=document.createElement('div');
-    chip.onclick=e=>{e.stopPropagation();openVerItem(p.id, isCampChip);};
+  chip.onclick=e=>{e.stopPropagation();openVerItem(p.id, isCampChip);};
       chip.title=`${p.titulo||p.caption||''}${p.turno?' · '+p.turno:''} — clic para ver el detalle`;
-javascript
       chip.style.cssText=`display:flex;align-items:center;gap:3px;padding:2px 5px;border-radius:5px;background:${isRealizado?'var(--green-l)':'var(--surface2)'};border:1px solid ${isRealizado?'var(--green)':'rgba(26,26,24,.08)'};margin-top:3px;cursor:pointer;overflow:hidden`;
       const dot=document.createElement('span');
-  dot.title='Clic para cambiar el estado';
+      dot.title='Clic para cambiar el estado';
       dot.onclick=e=>{e.stopPropagation();if(isCampChip)cyclePiezaStatus(p.id);else togglePostStatus(p.id,p.status);};
+      dot.style.cssText=`width:5px;height:5px;border-radius:50%;background:${PZ_COLOR[p.status]||'var(--text3)'};flex-shrink:0;cursor:pointer`;
       chip.appendChild(dot);
       if(p.turno && TURNO_ICON[p.turno]){
         const ti=document.createElement('span');
