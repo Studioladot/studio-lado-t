@@ -14529,11 +14529,8 @@ function renderPublicaciones(){
       </div>
       ${p.notes?`<div style="font-size:11px;color:var(--text2);margin-top:8px;padding-top:8px;border-top:0.5px solid var(--border)">${p.notes}</div>`:''}
       </div>
-    </div>`;
+  </div>`;
   }).join('');
-}
-  }
-  }); // cierre requestAnimationFrame
 }
 function openDiaPiezas(date){
   const items = getUnifiedContentItems().filter(p=>p.date===date);
