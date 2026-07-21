@@ -664,6 +664,24 @@ body.focus-mode #main{margin-left:0}
 .ts-modal-hero-title{font-size:24px;font-weight:800;letter-spacing:-.02em;color:var(--text);margin-bottom:6px}
 .ts-modal-hero-sub{font-size:13px;color:var(--text3)}
 .ts-modal-shell{display:flex;flex-direction:row;max-height:90vh;overflow:hidden;padding:0!important;border-radius:16px}
+
+/* ── Sidebar vertical de pasos (reemplaza el stepper horizontal) ── */
+.ts-sidebar{flex-shrink:0;width:260px;display:flex;flex-direction:column;justify-content:space-between;gap:20px;padding:24px 18px;border-right:1px solid var(--border);background:var(--surface2)}
+.ts-sidebar-steps{display:flex;flex-direction:column;gap:2px}
+.ts-sidebar-step{display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:var(--r);cursor:pointer;transition:background .15s ease}
+.ts-sidebar-step:hover{background:var(--border)}
+.ts-sidebar-step.active{background:var(--surface)}
+.ts-sidebar-step-num{flex-shrink:0;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;background:var(--border2);color:var(--text3);transition:all .15s ease}
+.ts-sidebar-step.active .ts-sidebar-step-num{background:var(--primary-green);color:#fff}
+.ts-sidebar-step.done .ts-sidebar-step-num{background:var(--primary-green-l);color:var(--primary-green)}
+.ts-sidebar-step-title{font-size:13px;font-weight:700;color:var(--text3)}
+.ts-sidebar-step.active .ts-sidebar-step-title{color:var(--text)}
+.ts-sidebar-step-sub{font-size:11px;color:var(--text3);margin-top:1px}
+.ts-sidebar-summary{border:1px solid var(--border2);border-radius:var(--r);padding:14px;background:var(--surface)}
+.ts-sidebar-summary-label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);margin-bottom:6px}
+.ts-sidebar-summary-name{font-size:13px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ts-sidebar-summary-sub{font-size:11px;color:var(--text3);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@media(max-width:900px){.ts-sidebar{display:none}}
 .ts-modal-main-col{display:flex;flex-direction:column;flex:1;min-width:0;overflow:hidden}
 .ts-modal-actions-col{flex-shrink:0;width:220px;display:flex;flex-direction:column;gap:10px;padding:32px 24px;border-left:1px solid var(--border);background:transparent;box-shadow:none}
 .ts-modal-actions-col .btn{width:100%;justify-content:center}
@@ -3771,27 +3789,47 @@ create policy "own" on contacts for all using (auth.uid()=user_id);</div>
 <!-- TESTING SANDBOX -->
 <div class="modal-backdrop" id="modal-testing-sandbox">
   <div class="modal ts-modal-xl ts-modal-shell">
+   <div class="ts-sidebar">
+     <div class="ts-sidebar-steps" id="ts-stepper">
+      <div class="ts-sidebar-step active" data-goto-page="1" onclick="tsGoToPage(1)">
+        <span class="ts-sidebar-step-num">1</span>
+        <div><div class="ts-sidebar-step-title">Datos</div><div class="ts-sidebar-step-sub">Nombre, producto y destino</div></div>
+      </div>
+      <div class="ts-sidebar-step" data-goto-page="2" onclick="tsGoToPage(2)">
+        <span class="ts-sidebar-step-num">2</span>
+        <div><div class="ts-sidebar-step-title">Cronograma</div><div class="ts-sidebar-step-sub">Cuándo arranca y termina</div></div>
+      </div>
+      <div class="ts-sidebar-step" data-goto-page="3" onclick="tsGoToPage(3)">
+        <span class="ts-sidebar-step-num">3</span>
+        <div><div class="ts-sidebar-step-title">Budget</div><div class="ts-sidebar-step-sub">Presupuesto y estrategia</div></div>
+      </div>
+      <div class="ts-sidebar-step" data-goto-page="4" onclick="tsGoToPage(4)">
+        <span class="ts-sidebar-step-num">4</span>
+        <div><div class="ts-sidebar-step-title">Ad Sets</div><div class="ts-sidebar-step-sub">Conjuntos a incluir</div></div>
+      </div>
+     </div>
+     <div class="ts-sidebar-summary">
+       <div class="ts-sidebar-summary-label">Resumen</div>
+       <div class="ts-sidebar-summary-name" id="ts-sidebar-summary-name">Campaña sin nombre</div>
+       <div class="ts-sidebar-summary-sub" id="ts-sidebar-summary-sub">Nueva campaña</div>
+     </div>
+   </div>
    <div class="ts-modal-main-col">
    <div class="ts-modal-fixed-top">
-   <div class="ts-modal-hero" style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:20px">
+   <div class="ts-modal-hero" style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:0">
       <div>
         <div class="ts-modal-hero-title">Lanzar Testeo</div>
         <div class="ts-modal-hero-sub">Configurá la campaña y agregá tantos conjuntos y anuncios como necesites.</div>
       </div>
-      <button class="btn btn-sm btn-outline" onclick="tsOpenPresetPicker()" style="display:flex;align-items:center;gap:6px;flex-shrink:0;border-radius:12px;padding:9px 14px">
-        <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><rect x="1" y="2" width="12" height="10" rx="1.3"/><path d="M4 6h6M4 8.5h4"/></svg>
-        Usar Preset
-      </button>
-    </div>
-
-<div class="ts-stepper" id="ts-stepper">
-      <div class="ts-stepper-item active" data-goto-page="1" onclick="tsGoToPage(1)"><span class="ts-stepper-num">1</span><span class="ts-stepper-text"><span class="ts-stepper-title">Datos</span><span class="ts-stepper-sub">Datos de campaña</span></span></div>
-      <svg class="ts-stepper-arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg>
-      <div class="ts-stepper-item" data-goto-page="2" onclick="tsGoToPage(2)"><span class="ts-stepper-num">2</span><span class="ts-stepper-text"><span class="ts-stepper-title">Cronograma</span><span class="ts-stepper-sub">Cuando arranca</span></span></div>
-      <svg class="ts-stepper-arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg>
-      <div class="ts-stepper-item" data-goto-page="3" onclick="tsGoToPage(3)"><span class="ts-stepper-num">3</span><span class="ts-stepper-text"><span class="ts-stepper-title">Budget</span><span class="ts-stepper-sub">Presupuesto y estrategia</span></span></div>
-      <svg class="ts-stepper-arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg>
-<div class="ts-stepper-item" data-goto-page="4" onclick="tsGoToPage(4)"><span class="ts-stepper-num">4</span><span class="ts-stepper-text"><span class="ts-stepper-title">Ad Sets</span><span class="ts-stepper-sub">Conjuntos a incluir</span></span></div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <button class="btn btn-sm btn-outline" onclick="tsOpenPresetPicker()" style="display:flex;align-items:center;gap:6px;flex-shrink:0;border-radius:12px;padding:9px 14px">
+          <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><rect x="1" y="2" width="12" height="10" rx="1.3"/><path d="M4 6h6M4 8.5h4"/></svg>
+          Usar Preset
+        </button>
+        <button class="ts-trash-btn" onclick="closeModal('modal-testing-sandbox')" title="Cerrar" style="width:36px;height:36px;display:flex;align-items:center;justify-content:center">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
     </div>
    </div>
    <div class="ts-modal-body">
@@ -4073,24 +4111,33 @@ create policy "own" on contacts for all using (auth.uid()=user_id);</div>
 
    </div>
 </div>
-   <div class="ts-modal-actions-col">
-        <button class="btn btn-outline" id="ts-btn-back" style="border-radius:10px;padding:10px 16px;display:none" onclick="tsGoToPage(tsCurrentPage-1)">Atrás</button>
-        <button class="btn btn-accent" id="ts-btn-next" style="border-radius:10px;padding:10px 16px" onclick="tsGoToPage(tsCurrentPage+1)">Siguiente</button>
-        <button class="btn btn-outline" style="border-radius:10px;padding:10px 16px" onclick="tsSaveCurrentAsPreset()" title="Guardar configuración actual como preset">
+<div class="ts-modal-fixed-bottom" style="display:flex;align-items:center;justify-content:space-between;gap:12px;border-top:1px solid var(--border);padding:16px 32px">
+      <div style="display:flex;align-items:center;gap:6px">
+        <button class="btn btn-outline" id="ts-btn-back" style="border-radius:10px;padding:9px 14px;display:none" onclick="tsGoToPage(tsCurrentPage-1)">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+          Atrás
+        </button>
+        <button class="btn btn-outline" id="ts-btn-cancel-first" style="border-radius:10px;padding:9px 14px" onclick="closeModal('modal-testing-sandbox')">Cancelar</button>
+        <span style="font-size:11px;color:var(--text3);margin-left:6px" id="ts-step-counter">Paso 1 de 4</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <button class="btn btn-outline" style="border-radius:10px;padding:9px 14px" onclick="tsSaveCurrentAsPreset()" title="Guardar configuración actual como preset">
           <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M2 2h8l2 2v8a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V2z"/><path d="M9 2v4H5V2M5 8h4"/></svg>
           Guardar Preset
         </button>
-        <button class="btn btn-outline" style="border-radius:10px;padding:10px 16px" onclick="closeModal('modal-testing-sandbox')">Cancelar</button>
-      <button class="ts-launch-btn" id="ts-btn-launch" style="display:none" onclick="tsGenerarTesteo()">
-        <span class="ts-launch-btn-label">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/></svg>
-          Generar Testeo
-        </span>
-        <span class="ts-launch-btn-sub">Revisá la configuración y lanzá</span>
-   </button>
+        <button class="btn btn-accent" id="ts-btn-next" style="border-radius:10px;padding:9px 18px" onclick="tsGoToPage(tsCurrentPage+1)">
+          Siguiente
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </button>
+        <button class="ts-launch-btn" id="ts-btn-launch" style="display:none" onclick="tsGenerarTesteo()">
+          <span class="ts-launch-btn-label">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/></svg>
+            Generar Testeo
+          </span>
+        </button>
+      </div>
     </div>
   </div>
-
 <!-- MODAL: SELECTOR DE PRESETS -->
 <div class="modal-backdrop" id="modal-preset-picker">
   <div class="modal" style="max-width:500px">
@@ -8983,17 +9030,26 @@ function tsGoToPage(n){
   document.querySelectorAll('#modal-testing-sandbox .ts-page').forEach(p=>{
     p.style.display = (+p.dataset.page === n) ? '' : 'none';
   });
-  document.querySelectorAll('#ts-stepper .ts-stepper-item').forEach(item=>{
+  document.querySelectorAll('#ts-stepper .ts-sidebar-step').forEach(item=>{
     const p = +item.dataset.gotoPage;
     item.classList.toggle('active', p === n);
-    item.classList.toggle('completed', p < n);
+    item.classList.toggle('done', p < n);
   });
   const backBtn = document.getElementById('ts-btn-back');
   const nextBtn = document.getElementById('ts-btn-next');
   const launchBtn = document.getElementById('ts-btn-launch');
+  const cancelFirstBtn = document.getElementById('ts-btn-cancel-first');
+  const stepCounter = document.getElementById('ts-step-counter');
   if(backBtn) backBtn.style.display = (n > 1) ? '' : 'none';
+  if(cancelFirstBtn) cancelFirstBtn.style.display = (n === 1) ? '' : 'none';
   if(nextBtn) nextBtn.style.display = (n < TS_TOTAL_PAGES) ? '' : 'none';
   if(launchBtn) launchBtn.style.display = (n === TS_TOTAL_PAGES) ? '' : 'none';
+  if(stepCounter) stepCounter.textContent = `Paso ${n} de ${TS_TOTAL_PAGES}`;
+  const nombreEl = document.getElementById('ts-camp-nombre');
+  const sumName = document.getElementById('ts-sidebar-summary-name');
+  const sumSub = document.getElementById('ts-sidebar-summary-sub');
+  if(sumName) sumName.textContent = (nombreEl?.value?.trim()) || 'Campaña sin nombre';
+  if(sumSub) sumSub.textContent = 'Nueva campaña';
   document.querySelector('.modal.ts-modal-xl').scrollTop = 0;
 }
 function tsToggleConjunto(cId){
