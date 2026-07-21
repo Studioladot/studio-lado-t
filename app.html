@@ -13758,8 +13758,8 @@ function renderCalCont(){
     const fd=`${year}-${String(month).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
     const esHoy=d===hoy.getDate()&&month===hoy.getMonth()+1&&year===hoy.getFullYear();
 
- const cell=document.createElement('div');
-    cell.onclick=()=>openDiaPiezas(fd);
+const cell=document.createElement('div');
+    cell.setAttribute('onclick', `window.openDiaPiezas('${fd}')`);
 
    const campActiva = (contentCamps||[]).find(c => c.fecha_inicio && c.fecha_fin && fd >= c.fecha_inicio && fd <= c.fecha_fin);
     const campBorder = campActiva ? `border-top:3px solid ${campActiva.color||'var(--accent)'};` : '';
@@ -13788,8 +13788,8 @@ function renderCalCont(){
     pd.slice(0,3).forEach(p=>{
       const isRealizado=p.status==='publicado';
       const isCampChip = p.source==='campana';
-      const chip=document.createElement('div');
-  chip.onclick=e=>{e.stopPropagation();openVerItem(p.id, isCampChip);};
+ const chip=document.createElement('div');
+      chip.setAttribute('onclick', `event.stopPropagation();window.openVerItem('${p.id}', ${isCampChip})`);
       chip.title=`${p.titulo||p.caption||''}${p.turno?' · '+p.turno:''} — clic para ver el detalle`;
       chip.style.cssText=`display:flex;align-items:center;gap:3px;padding:2px 5px;border-radius:5px;background:${isRealizado?'var(--green-l)':'var(--surface2)'};border:1px solid ${isRealizado?'var(--green)':'rgba(26,26,24,.08)'};margin-top:3px;cursor:pointer;overflow:hidden`;
       const dot=document.createElement('span');
@@ -13920,7 +13920,8 @@ async function togglePostStatus(id, current){
   const p=posts.find(x=>x.id===id); if(p) p.status=next;
   renderPublicaciones(); renderControlContenido(); renderCalCont(); toast('Estado → '+next);
 }
- function openVerItem(id, isCamp) {
+window.openVerItem = openVerItem;
+function openVerItem(id, isCamp) {
   let titulo, notas, media_url, media_type, turno, fecha, protagonista;
   if (isCamp) {
     const p = contentPiezas.find(x => x.id === id);
@@ -13984,6 +13985,7 @@ function removePostMediaItem(i){
   renderMediaGallery('post-media-existing', postEditMediaList, 'removePostMediaItem');
 }
 
+window.openEditPost = openEditPost;
 function openEditPost(id){
   const p = posts.find(x=>String(x.id)===String(id));
   if(!p){toast('Publicacion no encontrada');return;}
@@ -14001,6 +14003,7 @@ function openEditPost(id){
   const pmf1 = document.getElementById('post-media-file'); if(pmf1) pmf1.value = '';
   openModal('modal-post');
 }
+window.openNewPost = openNewPost;
 function openNewPost(){
   document.getElementById('post-edit-id').value = '';
   document.getElementById('post-title').value = '';
@@ -14382,6 +14385,7 @@ ${p.media_url?(p.media_type==='video'?`<div onclick="event.stopPropagation();ope
 }
 
 // ── CRUD CAMPANAS ─────────────────────────────────────────────────────────────
+window.saveCampana = saveCampana;
 async function saveCampana() {
   const nombre=document.getElementById('camp-nombre')?.value.trim();
   if(!nombre){toast('Ponele un nombre');return;}
@@ -14747,6 +14751,7 @@ function renderPublicaciones(){
   </div>`;
   }).join('');
 }
+window.openDiaPiezas = openDiaPiezas;
 function openDiaPiezas(date){
   const items = getUnifiedContentItems().filter(p=>p.date===date);
   document.getElementById('dia-piezas-titulo').textContent = new Date(date+'T00:00:00').toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long'});
