@@ -9710,21 +9710,28 @@ function getMetaTargetsFor(campaignId) {
 
 function metaStrategicStatus(ins, campaignId) {
   const spend = +ins.spend || 0;
-  if(spend <= 0) return { label:'SIN DATOS', cls:'b-gray' };
+  if(spend <= 0) return { label:'SIN DATOS', cls:'b-gray', reason:'Todavía no hay gasto registrado en el período seleccionado.' };
 
   const { targetCpa, breakEvenRoas } = getMetaTargetsFor(campaignId);
   const roas = +ins.roas || 0;
   const purchases = +ins.purchases || 0;
   const cpa = purchases > 0 ? (+ins.cpa || 0) : null;
 
-  if(roas >= breakEvenRoas) return { label:'ESCALAR', cls:'b-green' };
-  if(cpa !== null && cpa > targetCpa) return { label:'KILL', cls:'b-red' };
-  return { label:'OPTIMIZAR', cls:'b-amber' };
+  if(roas >= breakEvenRoas){
+    return { label:'ESCALAR', cls:'b-green', reason:`ROAS de ${roas.toFixed(2)}x supera tu breakeven de ${breakEvenRoas.toFixed(2)}x — está siendo rentable.` };
+  }
+  if(cpa !== null && cpa > targetCpa){
+    return { label:'KILL', cls:'b-red', reason:`CPA de $${cpa.toFixed(2)} está por encima de tu objetivo de $${targetCpa.toFixed(2)} — está costando más de lo que rinde.` };
+  }
+  if(cpa === null){
+    return { label:'OPTIMIZAR', cls:'b-amber', reason:`Todavía sin compras registradas — necesita más datos antes de decidir escalar o pausar.` };
+  }
+  return { label:'OPTIMIZAR', cls:'b-amber', reason:`ROAS de ${roas.toFixed(2)}x no llega al breakeven de ${breakEvenRoas.toFixed(2)}x, pero el CPA de $${cpa.toFixed(2)} sigue dentro del objetivo — margen para ajustar antes de decidir.` };
 }
 
 function metaStatusBadgeHtml(ins, campaignId, campaignName) {
-  const { label, cls } = metaStrategicStatus(ins, campaignId);
-  return `<span class="badge ${cls}" style="cursor:pointer" onclick="event.stopPropagation();openMetaRuleOverride('${campaignId}','${(campaignName||'').replace(/'/g,"\\'")}')" title="Click para ajustar el objetivo de esta campana">${label}</span>`;
+  const { label, cls, reason } = metaStrategicStatus(ins, campaignId);
+  return `<span class="badge ${cls}" style="cursor:pointer" onclick="event.stopPropagation();openMetaRuleOverride('${campaignId}','${(campaignName||'').replace(/'/g,"\\'")}')" title="${reason} — Click para ajustar el objetivo de esta campana">${label}</span>`;
 }
   function openScaleModal(scriptId){
   const s = scripts.find(x=>x.id===scriptId); if(!s) return;
