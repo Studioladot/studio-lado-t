@@ -1,0 +1,52 @@
+// api/meta-save.js
+export const config = { runtime: 'edge' };
+
+function json(data, status = 200) {
+  return new Response(JSON.stringify(data), { status, headers: { 'content-type': 'application/json' } });
+}
+
+export default async function handler(req) {
+  if (req.method !== 'POST') return json({ error: 'Metodo no permitido' }, 405);
+  const jwt = (req.headers.get('authorization') || '').replace('Bearer ', '');
+  if (!jwt) return json({ error: 'Falta autenticacion' }, 401);
+
+  try {
+    const userRes = await fetch(`${process.env.SUPABASE_URL}/auth/v1/user`, {
+      headers: { apikey: process.env.SUPABASE_SERVICE_ROLE_KEY, Authorization: `Bearer ${jwt}` },
+    });
+    const userData = await userRes.json();
+    const userId = userData?.id;
+    if (!userId) return json({ error: 'Sesion invalida' }, 401);
+
+    const { access_token, account_id } = await req.json();
+    if (!access_token || !account_id) return json({ error: 'Faltan datos' }, 400);
+
+    const check = await fetch(`https://graph.facebook.com/v19.0/act_${account_id}?fields=id&access_token=${access_token}`);
+    const checkData = await check.json();
+    if (checkData.error) return json({ error: 'Token o cuenta invalida: ' + checkData.error.message }, 400);
+
+    await fetch(`${process.env.SUPABASE_URL}/rest/v1/meta_connections?user_id=eq.${userId}`, {
+      method: 'DELETE',
+      headers: { apikey: process.env.SUPABASE_SERVICE_ROLE_KEY, Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}` },
+    });
+
+    await fetch(`${process.env.SUPABASE_URL}/rest/v1/meta_connections`, {
+      method: 'POST',
+      headers: {
+        apikey: process.env.SUPABASE_SERVICE_ROLE_KEY,
+        Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        user_id: userId,
+        token: access_token,
+        account_id,
+        expires_at: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString(),
+      }),
+    });
+
+    return json({ ok: true });
+  } catch (err) {
+    return json({ error: err.message }, 500);
+  }
+}

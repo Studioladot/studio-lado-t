@@ -1,0 +1,16 @@
+# Dependencies
+node_modules/
+
+# Environment variables (raíz y web-app/, cualquier nivel)
+.env
+.env.local
+.env*.local
+
+# Next.js build output (web-app/)
+.next/
+
+# Vercel
+.vercel/
+
+# macOS
+.DS_Store
