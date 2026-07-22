@@ -1,26 +1,74 @@
 @import "tailwindcss";
 
+/*
+ * Paleta real de Gotix, extraída de app.html (raíz del repo). Ver
+ * frontend-taste.md para la tabla completa y el porqué de cada valor —
+ * no agregar/editar colores acá sin actualizar ese documento primero.
+ *
+ * --radius-control (8px) y --radius-card (14px) son el --r/--rl legacy,
+ * renombrados para no chocar con las utilidades direccionales nativas de
+ * Tailwind (rounded-r, rounded-l, etc.).
+ */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --bg: #f5f5f3;
+  --surface: #fcfcfb;
+  --surface-2: #ebebe8;
+  --border: rgba(26, 26, 24, 0.08);
+  --border-2: rgba(26, 26, 24, 0.14);
+  --text: #101828;
+  --text-2: #344054;
+  --text-3: #667085;
+  --primary: #2d5b8a;
+  --primary-hover: #234a70;
+  --accent: #2d5b8a;
+  --red: #ad342b;
+  --green: #297353;
+  --amber: #a3690f;
+  --radius-control: 8px;
+  --radius-card: 14px;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-border: var(--border);
+  --color-border-2: var(--border-2);
+  --color-text: var(--text);
+  --color-text-2: var(--text-2);
+  --color-text-3: var(--text-3);
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-accent: var(--accent);
+  --color-red: var(--red);
+  --color-green: var(--green);
+  --color-amber: var(--amber);
+  --radius-control: var(--radius-control);
+  --radius-card: var(--radius-card);
+  --font-sans: var(--font-inter);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --bg: #12151c;
+    --surface: #181c25;
+    --surface-2: #232833;
+    --border: rgba(255, 255, 255, 0.08);
+    --border-2: rgba(255, 255, 255, 0.16);
+    --text: #f5f5f3;
+    --text-2: #c0c5ce;
+    --text-3: #8b93a3;
+    --primary: #5b8fcc;
+    --primary-hover: #8fb4e0;
+    --accent: #5b8fcc;
+    --red: #e5645a;
+    --green: #3eba85;
+    --amber: #e0a030;
   }
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  letter-spacing: -0.01em;
 }
