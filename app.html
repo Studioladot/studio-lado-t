@@ -13525,12 +13525,8 @@ function switchContTab(tab, btn) {
   if(tab==='calendario') renderCalCont();
   if(tab==='publicaciones') renderPublicaciones();
   if(tab==='control') renderControlContenido();
- }catch(err){
+}catch(err){
     console.error('[Contenido] error en switchContTab', tab, err);
-    const box=document.createElement('div');
-    box.style.cssText='position:fixed;bottom:16px;right:16px;max-width:420px;background:#3a0d0d;color:#fff;border:1px solid #ff5c5c;border-radius:8px;padding:12px 14px;font-size:12px;font-family:monospace;z-index:999999;white-space:pre-wrap;box-shadow:0 8px 24px rgba(0,0,0,.5)';
-    box.textContent='⚠️ ERROR en tab "'+tab+'" (mandá captura de esto):\n'+(err && err.stack || err);
-    document.body.appendChild(box);
  }
 }
 
@@ -13840,29 +13836,6 @@ const cell=document.createElement('div');
   });
 }
 
-// ── DIAGNÓSTICO VISUAL DE ERRORES (temporal) ──────────────────────────────
-// Muestra en pantalla cualquier error de JS, sin necesitar F12/consola.
-(function(){
-  if(window.__gtxErrCatcherInit) return;
-  window.__gtxErrCatcherInit = true;
-  function showErrBanner(msg){
-    let box = document.getElementById('gtx-err-banner');
-    if(!box){
-      box = document.createElement('div');
-      box.id = 'gtx-err-banner';
-      box.style.cssText = 'position:fixed;bottom:16px;right:16px;max-width:420px;background:#3a0d0d;color:#fff;border:1px solid #ff5c5c;border-radius:8px;padding:12px 14px;font-size:12px;font-family:monospace;z-index:999999;white-space:pre-wrap;box-shadow:0 8px 24px rgba(0,0,0,.5)';
-      document.body.appendChild(box);
-    }
-    box.textContent = '⚠️ ERROR JS (mandá captura de esto):\n' + msg;
-  }
-  window.addEventListener('error', function(e){
-    showErrBanner((e.error && e.error.stack) || e.message);
-  });
-  window.addEventListener('unhandledrejection', function(e){
-    showErrBanner('Promise rejection: ' + ((e.reason && e.reason.stack) || e.reason));
-  });
-})();
-
 document.addEventListener('DOMContentLoaded', function(){ initContenidoEventos(); });
 window.addEventListener('load', function(){ initContenidoEventos(); });
 setTimeout(function(){ initContenidoEventos(); }, 0);
@@ -13874,12 +13847,8 @@ function initContenidoEventos(){
     const btnPub = e.target.closest('#btn-cont-new-post');
     if(btnPub){
       e.preventDefault();
-      try{ openNewPost(); }catch(err){
+  try{ openNewPost(); }catch(err){
         console.error('[Contenido] error en openNewPost', err);
-        const box=document.createElement('div');
-        box.style.cssText='position:fixed;bottom:16px;right:16px;max-width:420px;background:#3a0d0d;color:#fff;border:1px solid #ff5c5c;border-radius:8px;padding:12px 14px;font-size:12px;font-family:monospace;z-index:999999;white-space:pre-wrap;box-shadow:0 8px 24px rgba(0,0,0,.5)';
-        box.textContent='⚠️ ERROR al abrir +Publicacion (mandá captura de esto):\n'+(err && err.stack || err);
-        document.body.appendChild(box);
       }
       return;
     }
@@ -15627,21 +15596,22 @@ function escRenderPgwList2() {
           <option value="#c45c00">Naranja</option>
         </select>
       </div>
+<div class="form-row" style="margin-top:14px">
       <div class="fg"><label>Estado</label>
-        <select id="camp-edit-status">
+        <select id="camp-status">
           <option value="planificacion">En planificacion</option>
           <option value="activa">Activa</option>
           <option value="terminada">Terminada</option>
         </select>
       </div>
+      <div class="fg"><label>Fecha inicio</label><input id="camp-inicio" type="date"/></div>
     </div>
-    <div class="form-row">
-      <div class="fg"><label>Fecha inicio</label><input id="camp-edit-inicio" type="date"/></div>
-      <div class="fg"><label>Fecha fin</label><input id="camp-edit-fin" type="date"/></div>
-      <div class="fg"><label>Periodo</label><input id="camp-edit-periodo" type="text"/></div>
+    <div class="form-row" style="margin-top:10px">
+      <div class="fg"><label>Fecha fin</label><input id="camp-fin" type="date"/></div>
+      <div class="fg"><label>Periodo</label><input id="camp-periodo" type="text" placeholder="Ej: Julio 2026..."/></div>
     </div>
-    <div class="divider"></div>
-    <div class="fg" style="margin-bottom:10px"><label>Objetivo</label><textarea id="camp-edit-objetivo" rows="2"></textarea></div>
+    <div class="divider" style="margin:18px 0"></div>
+    <div class="fg" style="margin-bottom:14px"><label>Objetivo de la campana</label><textarea id="camp-objetivo" rows="2" placeholder="Que queres lograr con esta campana? Ej: Posicionar el producto antes del invierno, generar 50 ventas en 2 semanas..."></textarea></div>
     <div class="fg" style="margin-bottom:10px"><label>Concepto estrategico</label><textarea id="camp-edit-estrategico" rows="2"></textarea></div>
     <div class="fg" style="margin-bottom:10px"><label>Concepto creativo</label><textarea id="camp-edit-creativo" rows="2"></textarea></div>
     <div class="fg" style="margin-bottom:10px"><label>Desarrollo y fases</label><textarea id="camp-edit-desarrollo" rows="5"></textarea></div>
