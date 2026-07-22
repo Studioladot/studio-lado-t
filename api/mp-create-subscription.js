@@ -16,9 +16,37 @@ export default async function handler(req) {
     const userRes = await fetch(`${process.env.SUPABASE_URL}/auth/v1/user`, {
       headers: { apikey: process.env.SUPABASE_SERVICE_ROLE_KEY, Authorization: `Bearer ${jwt}` },
     });
-    const userData = await userRes.json();
+const userData = await userRes.json();
     const userId = userData?.id;
     if (!userId) return json({ error: 'Sesion invalida' }, 401);
+
+    // ── RATE LIMITING: max 5 solicitudes de checkout por usuario cada 60 segundos ──
+    const RATE_LIMIT_MAX = 5;
+    const RATE_LIMIT_WINDOW_SEC = 60;
+    const RATE_LIMIT_ROUTE = 'mp-create-subscription';
+    const windowStart = new Date(Math.floor(Date.now() / (RATE_LIMIT_WINDOW_SEC * 1000)) * RATE_LIMIT_WINDOW_SEC * 1000).toISOString();
+
+    const rlRes = await fetch(
+      `${process.env.SUPABASE_URL}/rest/v1/rate_limits?user_id=eq.${userId}&route=eq.${RATE_LIMIT_ROUTE}&window_start=eq.${encodeURIComponent(windowStart)}&select=request_count`,
+      { headers: { apikey: process.env.SUPABASE_SERVICE_ROLE_KEY, Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}` } }
+    );
+    const rlData = await rlRes.json();
+    const currentCount = rlData?.[0]?.request_count || 0;
+
+    if (currentCount >= RATE_LIMIT_MAX) {
+      return json({ error: 'Demasiadas solicitudes — esperá un momento antes de volver a intentar.' }, 429);
+    }
+
+    await fetch(`${process.env.SUPABASE_URL}/rest/v1/rate_limits`, {
+      method: 'POST',
+      headers: {
+        apikey: process.env.SUPABASE_SERVICE_ROLE_KEY,
+        Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
+        'Content-Type': 'application/json',
+        'Prefer': 'resolution=merge-duplicates',
+      },
+      body: JSON.stringify({ user_id: userId, route: RATE_LIMIT_ROUTE, window_start: windowStart, request_count: currentCount + 1 }),
+    });
 
     if (!process.env.MP_PLAN_ID) {
       return json({ error: 'Falta la variable de entorno MP_PLAN_ID en Vercel.' }, 500);
