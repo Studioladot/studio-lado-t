@@ -28,29 +28,20 @@ export async function createOrganizationAction(
     redirect('/login')
   }
 
-  const { data: organization, error: orgError } = await supabase
-    .from('organizations')
-    .insert({ name })
-    .select('id')
-    .single()
+  // create_organization_with_owner es una función SECURITY DEFINER en
+  // Postgres: crea la organización y la membresía (role='owner') en una
+  // sola transacción atómica, sin necesitar el service role acá — la
+  // elevación de privilegios queda contenida del lado de la base de datos,
+  // nunca en el frontend. Ver frontend-taste.md / commit para el SQL.
+  const { data: organizationId, error } = await supabase.rpc('create_organization_with_owner', {
+    org_name: name,
+  })
 
-  if (orgError || !organization) {
+  if (error || !organizationId) {
     return { error: 'No pudimos crear tu organización. Probá de nuevo.' }
   }
 
-  const { error: memberError } = await supabase
-    .from('organization_members')
-    .insert({ organization_id: organization.id, user_id: user.id, role: 'owner' })
-
-  if (memberError) {
-    // Evita dejar una organización huérfana sin miembros si el segundo
-    // insert falla — sin esta limpieza, nadie podría volver a acceder a
-    // esa fila (RLS la deja inalcanzable sin una membresía).
-    await supabase.from('organizations').delete().eq('id', organization.id)
-    return { error: 'No pudimos asignarte a la organización. Probá de nuevo.' }
-  }
-
-  await setActiveOrganizationCookie(organization.id)
+  await setActiveOrganizationCookie(organizationId)
 
   redirect('/dashboard')
 }
