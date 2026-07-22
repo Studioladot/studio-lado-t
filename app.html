@@ -15752,6 +15752,7 @@ async function cambiarRol(uid, esAdminActual) {
   await db.from('user_profiles').update({ is_admin: !esAdminActual }).eq('id', uid);
   toast('Rol actualizado'); cargarUsuarios();
 }
+</script>
     <!-- Modal Nueva Campana -->
 <div class="modal-backdrop" id="modal-campana">
   <div class="modal" style="max-width:600px">
@@ -15952,9 +15953,7 @@ async function cambiarRol(uid, esAdminActual) {
       <button class="btn btn-outline" onclick="closeModal('modal-pieza-view')">Cancelar</button>
       <button class="btn btn-red" onclick="delPiezaFromView()">Eliminar</button>
       <button class="btn btn-accent" onclick="updatePieza()">Guardar cambios</button>
-    </div>
-  </div>
+   </div>
 </div>
-</script>
 </body>
 </html>
