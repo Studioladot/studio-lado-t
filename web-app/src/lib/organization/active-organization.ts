@@ -32,3 +32,20 @@ export async function getActiveOrganizationId(
 
   return userOrganizationIds[0] ?? null
 }
+
+/**
+ * Escribe la cookie de organización activa. El caller es responsable de
+ * haber validado que el usuario efectivamente pertenece a `organizationId`
+ * antes de llamar esto (ver setActiveOrganizationAction y
+ * onboarding/actions.ts) — esta función no vuelve a verificar membresía.
+ */
+export async function setActiveOrganizationCookie(organizationId: string) {
+  const cookieStore = await cookies()
+  cookieStore.set(ACTIVE_ORGANIZATION_COOKIE, organizationId, {
+    httpOnly: true,
+    sameSite: 'lax',
+    secure: process.env.NODE_ENV === 'production',
+    path: '/',
+    maxAge: 60 * 60 * 24 * 365,
+  })
+}

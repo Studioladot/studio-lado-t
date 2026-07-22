@@ -1,3 +1,4 @@
+import { redirect } from 'next/navigation'
 import { OrganizationProvider } from '@/lib/context/organization-context'
 import { getDashboardContext } from '@/lib/organization/dashboard-context'
 import { OrganizationSwitcher } from '@/components/features/organization-switcher'
@@ -9,6 +10,10 @@ export default async function DashboardLayout({
   children: React.ReactNode
 }) {
   const { organizations, activeOrganizationId } = await getDashboardContext()
+
+  if (organizations.length === 0) {
+    redirect('/onboarding')
+  }
 
   return (
     <OrganizationProvider
