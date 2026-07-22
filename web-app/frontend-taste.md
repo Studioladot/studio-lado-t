@@ -127,6 +127,8 @@ Este proyecto usa **Tailwind v4**, que ya no usa `tailwind.config.ts` por defect
 | `.field input` | `border:1px solid #D0D5DD`, `border-radius:var(--r)` → `8px`, `padding:10px 12px`, `background:#F9FAFB`, `color:var(--text)` |
 | `.field input:focus` | `border-color:var(--accent)`, `box-shadow:0 0 0 3px rgba(45,91,138,.12)` |
 
+**⚠️ Trampa de modo oscuro con este componente en particular:** en `app.html`, el modo oscuro es un toggle manual dentro de la app ya logueada — la pantalla de login/auth nunca lo recibe, así que `.field input{color:var(--text)}` nunca se rompe ahí en el legado. En `web-app/`, el modo oscuro se activa solo vía `prefers-color-scheme`, en **toda** la app, incluidos login y onboarding. Como el fondo de este input es un literal fijo (`#F9FAFB`, nunca cambia) pero `--text` sí cambia (pasa a casi blanco en oscuro), usar `text-text` ahí produce texto invisible en modo oscuro. Por eso en la implementación real el texto de estos inputs va fijo en `text-[#101828]` (el valor de `--text` en claro, congelado), no en el token `text-text`. Cualquier componente nuevo que reutilice este patrón de input (fondo `#F9FAFB` fijo) debe fijar el color de texto de la misma forma — nunca usar un token que cambie de valor sobre un fondo que no cambia.
+
 ### Botón (`.btn-primary`)
 
 | Propiedad | Valor exacto |
