@@ -5876,20 +5876,12 @@ function exportCSV(){
 // ── MODALS ────────────────────────────────────────────────────────────────────
 function openModal(id){
   const el = document.getElementById(id);
-  if(el) {
-    el.classList.add('open');
-    // EL MARTILLAZO: Aplicamos la fuerza bruta visual (como el fondo rojo, pero prolijo)
-    el.style.cssText = "display: flex !important; opacity: 1 !important; visibility: visible !important; z-index: 999999 !important; position: fixed !important; top: 0 !important; left: 0 !important; width: 100% !important; height: 100% !important; background: rgba(0,0,0,0.6) !important; align-items: center !important; justify-content: center !important;";
-  }
+  if(el) el.classList.add('open');
 }
 
 function closeModal(id){
   const el = document.getElementById(id);
-  if(el) {
-    el.classList.remove('open');
-    // Lo ocultamos a la fuerza
-    el.style.cssText = "display: none !important; opacity: 0 !important; visibility: hidden !important;";
-  }
+  if(el) el.classList.remove('open');
 }
 document.addEventListener('keydown', function(e){
   if(e.key !== 'Escape') return;
@@ -15768,6 +15760,8 @@ async function cambiarRol(uid, esAdminActual) {
   toast('Rol actualizado'); cargarUsuarios();
 }
 </script>
+    </div>
+    </div>
     <!-- Modal Nueva Campana -->
 <div class="modal-backdrop" id="modal-campana">
   <div class="modal" style="max-width:600px">
