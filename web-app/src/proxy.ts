@@ -1,7 +1,10 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
-const PUBLIC_PATHS = ['/login']
+// /auth/callback recibe el redirect de Supabase durante el login con Google,
+// antes de que exista sesión — tiene que quedar público o el proxy lo
+// mandaría a /login antes de poder intercambiar el code por la sesión.
+const PUBLIC_PATHS = ['/login', '/auth']
 
 function isPublicPath(pathname: string) {
   return PUBLIC_PATHS.some((path) => pathname === path || pathname.startsWith(`${path}/`))

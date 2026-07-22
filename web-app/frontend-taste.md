@@ -148,6 +148,30 @@ Este proyecto usa **Tailwind v4**, que ya no usa `tailwind.config.ts` por defect
 | `margin-top` | `10px` |
 | `min-height` | `16px` (reserva espacio para que no salte el layout cuando aparece el error) |
 
+### Pestañas (`.auth-tabs` / `.auth-tab`)
+
+| Propiedad | Valor exacto |
+|---|---|
+| `.auth-tabs` contenedor | `display:flex`, `border:0.5px solid var(--border)`, `border-radius:var(--r)` → `8px`, `overflow:hidden`, `margin-bottom:24px` |
+| `.auth-tab` | `flex:1`, `padding:9px`, `font-size:13px`, `font-weight:500`, `color:var(--text2)`, `letter-spacing:.08em`, `transition:all .15s` (portado como `duration-200 ease-out`) |
+| `.auth-tab.active` | `background:var(--gotix-blue)`, `color:#fff` |
+
+Comportamiento real (`app.html:4862-4863`): un solo par de campos email/contraseña compartido entre "Ingresar" y "Registrarse" — la pestaña activa solo cambia qué llamada de Supabase dispara el submit (`signInWithPassword` vs `signUp`), no el formulario.
+
+### Botón "Continuar con Google"
+
+Precedente real en `app.html:1388-1396` y `app.html:4877-4882` (`supabase.auth.signInWithOAuth({ provider: 'google' })`).
+
+| Propiedad | Valor exacto |
+|---|---|
+| `background` | `#fff` (blanco explícito, no `var(--surface)` — es una excepción documentada, así está en el legado) |
+| `color` | `#3C4043` (gris oficial de Google, no un token de la paleta) |
+| `border` | `1px solid #D0D5DD` (mismo gris que el borde de `.field input`) |
+| `border-radius` | `10px` (otro valor propio — ni `--r` ni `--rl` ni el `20px` del botón primario) |
+| `padding` | `12px 18px` |
+| ícono | SVG oficial de Google de 4 colores (`#4285F4`/`#34A853`/`#FBBC05`/`#EA4335`), 18×18px |
+| separador "o" | dos líneas de `1px` en `var(--border)` con `var(--text3)` centrado, `font-size:11px` |
+
 ## Principios de interacción
 
 Inspirados en los principios de micro-interacción de Emil Kowalski / Vercel (sin copiar componentes ajenos):
