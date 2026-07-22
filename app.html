@@ -14725,11 +14725,11 @@ function renderPublicaciones(){
         <div style="display:flex;gap:5px;flex-wrap:wrap">
           <span class="badge" style="background:${pColors[p.platform]||'var(--surface2)'};color:#fff;font-size:9px">${p.platform}</span>
           <span class="badge b-gray" style="font-size:9px">${p.format}</span>
-          ${isCamp?`<span class="badge" style="background:${p.campaignColor}22;color:${p.campaignColor};font-size:9px;border:0.5px solid ${p.campaignColor}"><svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-0.15em"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> ${p.campaignName}</span>`:''}
+${isCamp?`<span class="badge" style="background:${p.campaignColor}22;color:${p.campaignColor};font-size:9px;border:0.5px solid ${p.campaignColor}"><svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-0.15em"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> ${escapeHtml(p.campaignName)}</span>`:''}
         </div>
         <span style="font-size:11px;color:var(--text3)">${p.date||''}</span>
       </div>
-<div style="font-size:13px;line-height:1.55;margin-bottom:10px;color:var(--text);white-space:pre-wrap">${p.caption||'Sin caption'}</div>
+<div style="font-size:13px;line-height:1.55;margin-bottom:10px;color:var(--text);white-space:pre-wrap">${escapeHtml(p.caption)||'Sin caption'}</div>
 <div style="display:flex;align-items:center;justify-content:space-between">
         <span class="badge ${isCamp?'':(sBadge[p.status]||'b-gray')}" ${isCamp?`style="background:${statusColor}22;color:${statusColor};border:0.5px solid ${statusColor}"`:''}>${statusLabel}</span>
         <div style="display:flex;gap:5px">
@@ -14739,7 +14739,7 @@ function renderPublicaciones(){
           <button class="btn btn-sm btn-red" onclick="event.stopPropagation();${delFn}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-1px"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
         </div>
       </div>
-      ${p.notes?`<div style="font-size:11px;color:var(--text2);margin-top:8px;padding-top:8px;border-top:0.5px solid var(--border)">${p.notes}</div>`:''}
+${p.notes?`<div style="font-size:11px;color:var(--text2);margin-top:8px;padding-top:8px;border-top:0.5px solid var(--border)">${escapeHtml(p.notes)}</div>`:''}
       </div>
   </div>`;
   }).join('');
@@ -15660,10 +15660,10 @@ async function loadUserList() {
   if (error) { tbl.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--red);padding:24px">Error: '+error.message+'</td></tr>'; return; }
   const users = data || [];
   if (!users.length) { tbl.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text2);padding:24px">Sin usuarios</td></tr>'; return; }
-  tbl.innerHTML = users.map(u => `
+tbl.innerHTML = users.map(u => `
     <tr>
-      <td>${u.nombre || '—'}</td>
-      <td>${u.email || '—'}</td>
+      <td>${escapeHtml(u.nombre) || '—'}</td>
+      <td>${escapeHtml(u.email) || '—'}</td>
       <td>${u.is_admin ? '<span class="badge b-accent">Admin</span>' : u.is_approved ? '<span class="badge b-green">Aprobado</span>' : '<span class="badge b-amber">Pendiente</span>'}</td>
       <td>${u.is_admin ? 'Admin' : 'Usuario'}</td>
       <td style="display:flex;gap:5px">
@@ -15706,9 +15706,9 @@ verificarAccesoListaUsuarios();
   for (const u of usuarios) {
     const estado = u.is_admin ? '<span class="badge b-accent">Admin</span>' : u.is_approved ? '<span class="badge b-green">Aprobado</span>' : '<span class="badge b-amber">Pendiente</span>';
     const rol = u.is_admin ? 'Admin' : 'Usuario';
-    filas += `<tr>
-      <td>${u.nombre || '—'}</td>
-      <td>${u.email || '—'}</td>
+filas += `<tr>
+      <td>${escapeHtml(u.nombre) || '—'}</td>
+      <td>${escapeHtml(u.email) || '—'}</td>
       <td>${estado}</td>
       <td>${rol}</td>
       <td style="display:flex;gap:5px">
