@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import { headers } from 'next/headers'
 import { createClient } from '@/lib/supabase/server'
 import { OrganizationProvider, type Organization } from '@/lib/context/organization-context'
+import { getActiveOrganizationId } from '@/lib/organization/active-organization'
 import { OrganizationSwitcher } from '@/components/features/organization-switcher'
 import { SignOutButton } from '@/components/features/sign-out-button'
 
@@ -50,8 +51,13 @@ export default async function DashboardLayout({
     role: roleByOrgId.get(org.id) ?? 'member',
   }))
 
+  const activeOrganizationId = await getActiveOrganizationId(organizations.map((org) => org.id))
+
   return (
-    <OrganizationProvider initialOrganizations={organizations}>
+    <OrganizationProvider
+      initialOrganizations={organizations}
+      initialActiveOrganizationId={activeOrganizationId}
+    >
       <div className="min-h-screen bg-bg">
         <header className="flex items-center justify-between border-b border-border bg-surface px-6 py-4">
           <span className="text-[15px] font-extrabold tracking-[-0.04em] text-primary">Gotix</span>
