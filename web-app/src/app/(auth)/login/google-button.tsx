@@ -3,13 +3,12 @@
 import { useFormStatus } from 'react-dom'
 import { signInWithGoogleAction } from './actions'
 
-export function GoogleButton() {
+function GoogleSubmitButton() {
   const { pending } = useFormStatus()
 
   return (
     <button
       type="submit"
-      formAction={signInWithGoogleAction}
       disabled={pending}
       className="flex w-full items-center justify-center gap-2.5 rounded-[10px] border border-[#D0D5DD] bg-white px-4 py-3 text-sm font-semibold text-[#3C4043] transition-all duration-200 ease-out hover:border-border-2 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-70"
     >
@@ -33,5 +32,19 @@ export function GoogleButton() {
       </svg>
       {pending ? 'Conectando…' : 'Continuar con Google'}
     </button>
+  )
+}
+
+// Formulario propio, separado del de email/contraseña: así el submit no
+// queda sujeto a la validación HTML5 (`required`) de esos campos. Un botón
+// con `formAction` distinto pero dentro del MISMO <form> igual es bloqueado
+// por el navegador si hay otros campos requeridos vacíos — por eso este
+// botón necesita su propio <form> independiente, no alcanza con overridear
+// la action.
+export function GoogleButton() {
+  return (
+    <form action={signInWithGoogleAction}>
+      <GoogleSubmitButton />
+    </form>
   )
 }

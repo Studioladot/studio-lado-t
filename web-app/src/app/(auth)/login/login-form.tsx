@@ -91,15 +91,15 @@ export function LoginForm() {
         )}
 
         <SubmitButton mode={mode} />
-
-        <div className="my-1 flex items-center gap-2.5">
-          <div className="h-px flex-1 bg-border" />
-          <span className="text-[11px] text-text-3">o</span>
-          <div className="h-px flex-1 bg-border" />
-        </div>
-
-        <GoogleButton />
       </form>
+
+      <div className="my-4 flex items-center gap-2.5">
+        <div className="h-px flex-1 bg-border" />
+        <span className="text-[11px] text-text-3">o</span>
+        <div className="h-px flex-1 bg-border" />
+      </div>
+
+      <GoogleButton />
     </div>
   )
 }
