@@ -20,6 +20,7 @@
   --text-3: #667085;
   --primary: #2d5b8a;
   --primary-hover: #234a70;
+  --primary-glow: rgba(45, 91, 138, 0.3);
   --accent: #2d5b8a;
   --red: #ad342b;
   --green: #297353;
@@ -39,6 +40,7 @@
   --color-text-3: var(--text-3);
   --color-primary: var(--primary);
   --color-primary-hover: var(--primary-hover);
+  --color-primary-glow: var(--primary-glow);
   --color-accent: var(--accent);
   --color-red: var(--red);
   --color-green: var(--green);
@@ -60,6 +62,7 @@
     --text-3: #8b93a3;
     --primary: #5b8fcc;
     --primary-hover: #8fb4e0;
+    --primary-glow: rgba(91, 143, 204, 0.35);
     --accent: #5b8fcc;
     --red: #e5645a;
     --green: #3eba85;
@@ -71,4 +74,45 @@ body {
   background: var(--bg);
   color: var(--text);
   letter-spacing: -0.01em;
+}
+
+/*
+ * Banner de bienvenida del Dashboard — ver frontend-taste.md, sección
+ * "Precedente: banner de bienvenida del dashboard". Gradiente multicapa +
+ * glow radial vía pseudo-elemento: no es práctico como utilidad de
+ * Tailwind, se porta como CSS plano igual que en app.html.
+ */
+.dash-hero {
+  position: relative;
+  overflow: hidden;
+  background:
+    linear-gradient(135deg, rgba(45, 91, 138, 0.07) 0%, rgba(0, 0, 0, 0) 55%),
+    rgba(26, 26, 24, 0.025);
+  border: 1px solid rgba(26, 26, 24, 0.07);
+  box-shadow: 0 4px 40px rgba(0, 0, 0, 0.08);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+.dash-hero::before {
+  content: "";
+  position: absolute;
+  top: -60px;
+  left: -60px;
+  width: 340px;
+  height: 340px;
+  background: radial-gradient(circle, rgba(45, 91, 138, 0.13) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+.dash-hero > * {
+  position: relative;
+  z-index: 1;
+}
+@media (prefers-color-scheme: dark) {
+  .dash-hero {
+    background:
+      linear-gradient(135deg, rgba(91, 143, 204, 0.09) 0%, rgba(0, 0, 0, 0) 55%),
+      rgba(255, 255, 255, 0.02);
+    border-color: rgba(255, 255, 255, 0.09);
+  }
 }

@@ -172,6 +172,48 @@ Precedente real en `app.html:1388-1396` y `app.html:4877-4882` (`supabase.auth.s
 | ícono | SVG oficial de Google de 4 colores (`#4285F4`/`#34A853`/`#FBBC05`/`#EA4335`), 18×18px |
 | separador "o" | dos líneas de `1px` en `var(--border)` con `var(--text3)` centrado, `font-size:11px` |
 
+## Precedente: banner de bienvenida del dashboard (`app.html:1479-1529`, CSS en `app.html:262-390`)
+
+### Header de página (`.page-hdr` / `.page-title` / `.page-sub`)
+
+| Propiedad | Valor exacto |
+|---|---|
+| `.page-hdr` | `display:flex`, `align-items:flex-start`, `justify-content:space-between`, `flex-wrap:wrap`, `gap:12px`, `margin-bottom:22px` |
+| `.page-title` | `font-size:22px`, `font-weight:700`, `letter-spacing:-.03em` |
+| `.page-sub` | `font-size:13px`, `color:var(--text2)`, `margin-top:2px` |
+
+### Botón "+ Cargar métricas" (`.btn-accent`)
+
+| Propiedad | Valor exacto |
+|---|---|
+| `padding` | `10px 18px` |
+| `border-radius` | `var(--r)` → `8px` |
+| `background` | `var(--primary-green)` |
+| `box-shadow` | `0 0 16px var(--primary-green-glow)` — **el glow cambia entre temas** (`rgba(45,91,138,.3)` claro / `rgba(91,143,204,.35)` oscuro), a diferencia de otras sombras del legado que quedan fijas |
+| `:hover` | `background:var(--accent-d)`, `box-shadow:0 0 28px var(--primary-green-glow), 0 0 8px rgba(45,91,138,.2)` |
+
+### Banner "LA BASE DE TU NEGOCIO" (`.dash-hero`)
+
+Gradiente multicapa + glow radial vía pseudo-elemento — implementado como clase CSS plana en `globals.css` (no como utilidad de Tailwind), documentado ahí mismo.
+
+| Propiedad | Valor exacto (claro) | Valor exacto (oscuro) |
+|---|---|---|
+| `background` | `linear-gradient(135deg, rgba(45,91,138,.07) 0%, transparent 55%), rgba(26,26,24,.025)` | `linear-gradient(135deg, rgba(91,143,204,.09) 0%, transparent 55%), rgba(255,255,255,.02)` |
+| `border` | `1px solid rgba(26,26,24,.07)` | `1px solid rgba(255,255,255,.09)` |
+| `box-shadow` | `0 4px 40px rgba(0,0,0,.08)` (fijo, sin variante oscura documentada en el legado) | (igual) |
+| `border-radius` | `var(--rl)` → `radius-card` (14px) | |
+| `::before` (glow) | `radial-gradient(circle, rgba(45,91,138,.13) 0%, transparent 70%)`, 340×340px, `top:-60px;left:-60px` | (igual, no tiene variante oscura en el legado) |
+
+| Sub-elemento | Valor exacto |
+|---|---|
+| `.dash-hero-title` | `font-size:22px`, `font-weight:800`, `letter-spacing:-.03em` |
+| `.dash-hero-sub` | `font-size:13px`, `color:#5E5E5A` (gris literal, no tokenizado), `max-width:380px`, `line-height:1.6` |
+| `.dash-hero-cta` | `border:1px solid var(--primary-green-border)` (= 25% opacidad), `color:var(--primary-green)`, `padding:9px 16px`, `border-radius:var(--r)`, `box-shadow:0 0 12px rgba(45,91,138,.1)` |
+| `.dash-hero-cta:hover` | `background:var(--primary-green-l)` (6% opacidad), `box-shadow:0 0 24px rgba(45,91,138,.2)` |
+| `.dash-hero-video` | `aspect-ratio:16/10`, `border-radius:var(--r)`, `background:#EBEBE8`, `box-shadow:0 8px 32px rgba(0,0,0,.09)` |
+| `.dash-hero-play-btn` | círculo `52px`, `border:1px solid rgba(255,255,255,.4)`, `background:rgba(26,26,24,.55)`, `backdrop-filter:blur(8px)` |
+| `.dash-hero-badge` | `font-size:10px`, `background:rgba(26,26,24,.65)`, `border:1px solid rgba(255,255,255,.15)`, `border-radius:6px`, posición `bottom:10px;left:10px` |
+
 ## Principios de interacción
 
 Inspirados en los principios de micro-interacción de Emil Kowalski / Vercel (sin copiar componentes ajenos):
