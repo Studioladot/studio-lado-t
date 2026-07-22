@@ -22,8 +22,9 @@ const userData = await userRes.json();
     const RATE_LIMIT_WINDOW_SEC = 60;
     const windowStart = new Date(Math.floor(Date.now() / (RATE_LIMIT_WINDOW_SEC * 1000)) * RATE_LIMIT_WINDOW_SEC * 1000).toISOString();
 
+const RATE_LIMIT_ROUTE = 'meta-proxy';
     const rlRes = await fetch(
-      `${process.env.SUPABASE_URL}/rest/v1/rate_limits?user_id=eq.${userId}&window_start=eq.${encodeURIComponent(windowStart)}&select=request_count`,
+      `${process.env.SUPABASE_URL}/rest/v1/rate_limits?user_id=eq.${userId}&route=eq.${RATE_LIMIT_ROUTE}&window_start=eq.${encodeURIComponent(windowStart)}&select=request_count`,
       { headers: { apikey: process.env.SUPABASE_SERVICE_ROLE_KEY, Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}` } }
     );
     const rlData = await rlRes.json();
@@ -42,9 +43,8 @@ const userData = await userRes.json();
         'Content-Type': 'application/json',
         'Prefer': 'resolution=merge-duplicates',
       },
-      body: JSON.stringify({ user_id: userId, window_start: windowStart, request_count: currentCount + 1 }),
+      body: JSON.stringify({ user_id: userId, route: RATE_LIMIT_ROUTE, window_start: windowStart, request_count: currentCount + 1 }),
     });
-
     const connRes = await fetch(
       `${process.env.SUPABASE_URL}/rest/v1/meta_connections?user_id=eq.${userId}&select=token,account_id&order=created_at.desc&limit=1`,
       { headers: { apikey: process.env.SUPABASE_SERVICE_ROLE_KEY, Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}` } }
