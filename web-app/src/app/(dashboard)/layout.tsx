@@ -3,6 +3,7 @@ import { headers } from 'next/headers'
 import { createClient } from '@/lib/supabase/server'
 import { OrganizationProvider, type Organization } from '@/lib/context/organization-context'
 import { OrganizationSwitcher } from '@/components/features/organization-switcher'
+import { SignOutButton } from '@/components/features/sign-out-button'
 
 export default async function DashboardLayout({
   children,
@@ -51,10 +52,13 @@ export default async function DashboardLayout({
 
   return (
     <OrganizationProvider initialOrganizations={organizations}>
-      <div className="min-h-screen">
-        <header className="flex items-center justify-between border-b border-zinc-200 px-6 py-4 dark:border-zinc-800">
-          <span className="font-semibold text-zinc-900 dark:text-zinc-100">Gotix</span>
-          <OrganizationSwitcher />
+      <div className="min-h-screen bg-bg">
+        <header className="flex items-center justify-between border-b border-border bg-surface px-6 py-4">
+          <span className="text-[15px] font-extrabold tracking-[-0.04em] text-primary">Gotix</span>
+          <div className="flex items-center gap-3">
+            <OrganizationSwitcher />
+            <SignOutButton />
+          </div>
         </header>
         <main className="p-6">{children}</main>
       </div>
