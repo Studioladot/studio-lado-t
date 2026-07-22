@@ -1,4 +1,59 @@
-export default function DashboardPage() {
+import { createClient } from '@/lib/supabase/server'
+import { getDashboardContext } from '@/lib/organization/dashboard-context'
+
+export default async function DashboardPage() {
+  const { activeOrganizationId } = await getDashboardContext()
+
+  if (!activeOrganizationId) {
+    return (
+      <div className="flex min-h-[50vh] flex-col items-center justify-center gap-2 text-center">
+        <h1 className="text-lg font-semibold text-text">Todavía no pertenecés a ninguna organización</h1>
+        <p className="max-w-sm text-sm text-text-2">
+          Pedile a un administrador que te invite, o creá una organización nueva para empezar.
+        </p>
+      </div>
+    )
+  }
+
+  const supabase = await createClient()
+
+  const now = new Date()
+  const startOfMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`
+
+  const [
+    { count: activeCampaigns },
+    { count: totalCampaigns },
+    { count: publishedThisMonth },
+    { count: pendingPosts },
+    { data: metaConnection },
+  ] = await Promise.all([
+    supabase
+      .from('content_campaigns')
+      .select('*', { count: 'exact', head: true })
+      .eq('organization_id', activeOrganizationId)
+      .eq('status', 'activa'),
+    supabase
+      .from('content_campaigns')
+      .select('*', { count: 'exact', head: true })
+      .eq('organization_id', activeOrganizationId),
+    supabase
+      .from('content_posts')
+      .select('*', { count: 'exact', head: true })
+      .eq('organization_id', activeOrganizationId)
+      .in('status', ['publicado', 'publicada'])
+      .gte('date', startOfMonth),
+    supabase
+      .from('content_posts')
+      .select('*', { count: 'exact', head: true })
+      .eq('organization_id', activeOrganizationId)
+      .eq('status', 'pendiente'),
+    supabase
+      .from('meta_connections')
+      .select('account_name, expires_at')
+      .eq('organization_id', activeOrganizationId)
+      .maybeSingle(),
+  ])
+
   return (
     <div>
       <div className="mb-[22px] flex flex-wrap items-start justify-between gap-3">
@@ -60,7 +115,58 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      <p className="text-sm text-text-2">Placeholder — próximo módulo migrado va acá.</p>
+      <div className="grid grid-cols-2 gap-px overflow-hidden rounded-card border border-border bg-border sm:grid-cols-4">
+        <div className="flex flex-col justify-between gap-4 bg-surface p-5">
+          <span className="text-[11px] font-bold uppercase tracking-[.08em] text-text-3">
+            Campañas activas
+          </span>
+          <div>
+            <span className="text-[34px] font-extrabold leading-none tracking-[-0.04em] text-text">
+              {activeCampaigns ?? 0}
+            </span>
+            <p className="mt-1 text-xs text-text-2">de {totalCampaigns ?? 0} totales</p>
+          </div>
+        </div>
+
+        <div className="flex flex-col justify-between gap-4 bg-surface p-5">
+          <span className="text-[11px] font-bold uppercase tracking-[.08em] text-text-3">
+            Publicado este mes
+          </span>
+          <div>
+            <span className="text-2xl font-extrabold leading-none tracking-[-0.03em] text-text">
+              {publishedThisMonth ?? 0}
+            </span>
+            <p className="mt-1 text-xs text-text-2">posts</p>
+          </div>
+        </div>
+
+        <div className="flex flex-col justify-between gap-4 bg-surface p-5">
+          <span className="text-[11px] font-bold uppercase tracking-[.08em] text-text-3">
+            Por publicar
+          </span>
+          <div>
+            <span className="text-2xl font-extrabold leading-none tracking-[-0.03em] text-text">
+              {pendingPosts ?? 0}
+            </span>
+            <p className="mt-1 text-xs text-text-2">pendientes</p>
+          </div>
+        </div>
+
+        <div className="flex flex-col justify-between gap-4 bg-surface p-5">
+          <span className="text-[11px] font-bold uppercase tracking-[.08em] text-text-3">
+            Meta Ads
+          </span>
+          <div className="flex items-center gap-2">
+            <span
+              className={`h-2 w-2 rounded-full ${metaConnection ? 'bg-green' : 'bg-text-3'}`}
+              aria-hidden="true"
+            />
+            <span className="text-sm font-semibold text-text">
+              {metaConnection ? (metaConnection.account_name ?? 'Conectado') : 'Sin conectar'}
+            </span>
+          </div>
+        </div>
+      </div>
     </div>
   )
 }
