@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { getDashboardContext } from '@/lib/organization/dashboard-context'
 import { connectMetaAction, connectTiendaNubeAction } from '../actions'
+import { getMetaAdsInsights } from '@/lib/meta/insights'
 
 export default async function DashboardPage({
   searchParams,
@@ -66,7 +67,7 @@ export default async function DashboardPage({
       .eq('status', 'pendiente'),
     supabase
       .from('meta_connections')
-      .select('account_name, expires_at')
+      .select('account_name, expires_at, token, account_id')
       .eq('organization_id', activeOrganizationId)
       .maybeSingle(),
     supabase
@@ -75,6 +76,15 @@ export default async function DashboardPage({
       .eq('organization_id', activeOrganizationId)
       .maybeSingle(),
   ])
+
+  const tokenExpired = metaConnection?.expires_at
+    ? new Date(metaConnection.expires_at) < new Date()
+    : false
+
+  const metaInsights =
+    metaConnection && !tokenExpired
+      ? await getMetaAdsInsights(metaConnection.token, metaConnection.account_id)
+      : null
 
   const banner = metaConnected
     ? { tone: 'ok' as const, message: 'Meta Ads conectado correctamente.' }
@@ -247,6 +257,59 @@ export default async function DashboardPage({
           </div>
         </div>
       </div>
+
+      {metaConnection && (
+        <div className="mt-3.5">
+          <p className="mb-2 text-[11px] font-bold uppercase tracking-[.08em] text-text-3">
+            Meta Ads — anuncios activos (7 días)
+          </p>
+
+          {tokenExpired ? (
+            <div className="rounded-card border border-amber/30 bg-amber/[8%] px-4 py-3 text-sm text-amber">
+              Tu conexión con Meta Ads venció — reconectá para ver métricas actualizadas.
+            </div>
+          ) : metaInsights && !metaInsights.ok ? (
+            <div className="rounded-card border border-red/30 bg-red/[8%] px-4 py-3 text-sm text-red">
+              {metaInsights.error}
+            </div>
+          ) : metaInsights && metaInsights.ok && metaInsights.ads.length === 0 ? (
+            <div className="rounded-card border border-border bg-surface px-6 py-8 text-center text-sm text-text-2">
+              No hay anuncios activos en este momento.
+            </div>
+          ) : metaInsights && metaInsights.ok ? (
+            <div className="overflow-x-auto rounded-card border border-border bg-surface">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border text-left text-[10px] font-bold uppercase tracking-wide text-text-3">
+                    <th className="px-4 py-2.5">Anuncio</th>
+                    <th className="px-4 py-2.5">Campaña</th>
+                    <th className="px-4 py-2.5 text-right">Gasto</th>
+                    <th className="px-4 py-2.5 text-right">ROAS</th>
+                    <th className="px-4 py-2.5 text-right">Compras</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {metaInsights.ads.map((ad) => (
+                    <tr key={ad.adId} className="border-b border-border last:border-0">
+                      <td className="px-4 py-2.5 font-medium text-text">{ad.name}</td>
+                      <td className="px-4 py-2.5 text-text-2">{ad.campaignName}</td>
+                      <td className="px-4 py-2.5 text-right text-text">USD {ad.spend.toFixed(0)}</td>
+                      <td
+                        className={`px-4 py-2.5 text-right font-semibold ${
+                          ad.roas >= 2 ? 'text-green' : 'text-red'
+                        }`}
+                      >
+                        {ad.roas.toFixed(2)}x
+                      </td>
+                      <td className="px-4 py-2.5 text-right text-text-2">{ad.purchases}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : null}
+        </div>
+      )}
     </div>
   )
 }
