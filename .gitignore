@@ -14,3 +14,14 @@ node_modules/
 
 # macOS
 .DS_Store
+
+# Skills tooling: contenido descargado y reproducible vía
+# `npx skills add ...` / `npx impeccable install ...` — equivalente a
+# node_modules. skills-lock.json (fuente + hash por skill) sí se trackea.
+.agents/
+.claude/skills/
+
+# Config local de Claude Code (permisos, hooks) — por convención, "local"
+# no se versiona. .claude/settings.json (sin ".local") si existiera,
+# sí se trackearía.
+.claude/settings.local.json
