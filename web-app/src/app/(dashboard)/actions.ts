@@ -5,6 +5,7 @@ import { cookies } from 'next/headers'
 import { randomBytes } from 'node:crypto'
 import { createClient } from '@/lib/supabase/server'
 import { getRequestOrigin } from '@/lib/http/request-origin'
+import { getDashboardContext } from '@/lib/organization/dashboard-context'
 import { META_OAUTH_STATE_COOKIE, META_OAUTH_SCOPE } from '@/lib/meta/oauth'
 import { TIENDANUBE_OAUTH_STATE_COOKIE } from '@/lib/tiendanube/oauth'
 
@@ -68,4 +69,30 @@ export async function connectTiendaNubeAction() {
   })
 
   redirect(`https://www.tiendanube.com/apps/${clientId}/authorize?state=${state}`)
+}
+
+export async function disconnectMetaAction() {
+  const { activeOrganizationId } = await getDashboardContext()
+
+  if (!activeOrganizationId) {
+    return
+  }
+
+  const supabase = await createClient()
+  await supabase.from('meta_connections').delete().eq('organization_id', activeOrganizationId)
+
+  redirect('/dashboard')
+}
+
+export async function disconnectTiendaNubeAction() {
+  const { activeOrganizationId } = await getDashboardContext()
+
+  if (!activeOrganizationId) {
+    return
+  }
+
+  const supabase = await createClient()
+  await supabase.from('tiendanube_connections').delete().eq('organization_id', activeOrganizationId)
+
+  redirect('/dashboard')
 }

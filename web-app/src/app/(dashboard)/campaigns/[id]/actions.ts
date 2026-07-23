@@ -53,9 +53,14 @@ export async function updateCampaignDetailsAction(
   formData: FormData
 ): Promise<SaveState> {
   const campaignId = String(formData.get('campaign_id') ?? '')
+  const nombre = String(formData.get('nombre') ?? '').trim()
 
   if (!campaignId) {
     return { error: 'Falta el id de la campaña.', success: false }
+  }
+
+  if (!nombre) {
+    return { error: 'La campaña necesita un nombre.', success: false }
   }
 
   const { activeOrganizationId } = await getDashboardContext()
@@ -69,6 +74,11 @@ export async function updateCampaignDetailsAction(
   const { error } = await supabase
     .from('content_campaigns')
     .update({
+      nombre,
+      periodo: emptyToNull(formData.get('periodo')),
+      fecha_inicio: emptyToNull(formData.get('fecha_inicio')),
+      fecha_fin: emptyToNull(formData.get('fecha_fin')),
+      status: String(formData.get('status') ?? 'planificacion'),
       objetivo: emptyToNull(formData.get('objetivo')),
       concepto_estrategico: emptyToNull(formData.get('concepto_estrategico')),
       concepto_creativo: emptyToNull(formData.get('concepto_creativo')),

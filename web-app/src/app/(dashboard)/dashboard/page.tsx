@@ -1,8 +1,14 @@
 import { createClient } from '@/lib/supabase/server'
 import { getDashboardContext } from '@/lib/organization/dashboard-context'
-import { connectMetaAction, connectTiendaNubeAction } from '../actions'
+import {
+  connectMetaAction,
+  connectTiendaNubeAction,
+  disconnectMetaAction,
+  disconnectTiendaNubeAction,
+} from '../actions'
 import { getMetaAdsInsights } from '@/lib/meta/insights'
 import { getTiendaNubeSalesSummary } from '@/lib/tiendanube/orders'
+import { ConfirmSubmitButton } from '@/components/features/confirm-submit-button'
 
 export default async function DashboardPage({
   searchParams,
@@ -222,9 +228,19 @@ export default async function DashboardPage({
             />
             <span className="text-[11px] font-bold uppercase tracking-wide text-text-3">Meta Ads</span>
             {metaConnection ? (
-              <span className="text-sm font-medium text-text">
-                {metaConnection.account_name ?? 'Conectado'}
-              </span>
+              <>
+                <span className="text-sm font-medium text-text">
+                  {metaConnection.account_name ?? 'Conectado'}
+                </span>
+                <form action={disconnectMetaAction}>
+                  <ConfirmSubmitButton
+                    confirmMessage="¿Desconectar Meta Ads? Vas a tener que volver a autorizar para reconectar."
+                    className="text-xs font-medium text-text-3 transition-colors duration-200 ease-out hover:text-red"
+                  >
+                    Desconectar
+                  </ConfirmSubmitButton>
+                </form>
+              </>
             ) : (
               <form action={connectMetaAction}>
                 <button
@@ -246,9 +262,19 @@ export default async function DashboardPage({
               Tienda Nube
             </span>
             {tiendaNubeConnection ? (
-              <span className="text-sm font-medium text-text">
-                {tiendaNubeConnection.store_name ?? 'Conectado'}
-              </span>
+              <>
+                <span className="text-sm font-medium text-text">
+                  {tiendaNubeConnection.store_name ?? 'Conectado'}
+                </span>
+                <form action={disconnectTiendaNubeAction}>
+                  <ConfirmSubmitButton
+                    confirmMessage="¿Desconectar Tienda Nube? Vas a tener que volver a autorizar para reconectar."
+                    className="text-xs font-medium text-text-3 transition-colors duration-200 ease-out hover:text-red"
+                  >
+                    Desconectar
+                  </ConfirmSubmitButton>
+                </form>
+              </>
             ) : (
               <form action={connectTiendaNubeAction}>
                 <button

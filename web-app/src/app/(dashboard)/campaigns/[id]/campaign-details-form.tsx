@@ -8,6 +8,11 @@ import type { Database } from '@/lib/types/database.types'
 type Campaign = Database['public']['Tables']['content_campaigns']['Row']
 
 const FORMATO_OPTIONS = ['Reel', 'TikTok', 'Carrusel', 'Historia', 'Post', 'Live']
+const STATUS_OPTIONS = [
+  { value: 'planificacion', label: 'En planificación' },
+  { value: 'activa', label: 'Activa' },
+  { value: 'terminada', label: 'Terminada' },
+]
 
 const initialState: SaveState = { error: null, success: false }
 
@@ -24,6 +29,65 @@ export function CampaignDetailsForm({ campaign }: { campaign: Campaign }) {
   return (
     <form action={formAction} className="flex flex-col gap-4">
       <input type="hidden" name="campaign_id" value={campaign.id} />
+
+      <label className={labelClass}>
+        Nombre
+        <input
+          type="text"
+          name="nombre"
+          required
+          defaultValue={campaign.nombre}
+          className={`normal-case tracking-normal ${fieldClass}`}
+        />
+      </label>
+
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <label className={labelClass}>
+          Período
+          <input
+            type="text"
+            name="periodo"
+            defaultValue={campaign.periodo ?? ''}
+            placeholder="Ej: Noviembre 2026"
+            className={`normal-case tracking-normal ${fieldClass}`}
+          />
+        </label>
+        <label className={labelClass}>
+          Estado
+          <select
+            name="status"
+            defaultValue={campaign.status ?? 'planificacion'}
+            className={`normal-case tracking-normal ${fieldClass}`}
+          >
+            {STATUS_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <label className={labelClass}>
+          Inicio
+          <input
+            type="date"
+            name="fecha_inicio"
+            defaultValue={campaign.fecha_inicio ?? ''}
+            className={`normal-case tracking-normal ${fieldClass}`}
+          />
+        </label>
+        <label className={labelClass}>
+          Fin
+          <input
+            type="date"
+            name="fecha_fin"
+            defaultValue={campaign.fecha_fin ?? ''}
+            className={`normal-case tracking-normal ${fieldClass}`}
+          />
+        </label>
+      </div>
 
       <label className={labelClass}>
         Objetivo de la campaña
