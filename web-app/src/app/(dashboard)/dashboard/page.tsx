@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { getDashboardContext } from '@/lib/organization/dashboard-context'
 import { connectMetaAction, connectTiendaNubeAction } from '../actions'
 import { getMetaAdsInsights } from '@/lib/meta/insights'
+import { getTiendaNubeSalesSummary } from '@/lib/tiendanube/orders'
 
 export default async function DashboardPage({
   searchParams,
@@ -72,7 +73,7 @@ export default async function DashboardPage({
       .maybeSingle(),
     supabase
       .from('tiendanube_connections')
-      .select('store_name, store_url')
+      .select('store_name, store_url, access_token, store_id')
       .eq('organization_id', activeOrganizationId)
       .maybeSingle(),
   ])
@@ -81,10 +82,14 @@ export default async function DashboardPage({
     ? new Date(metaConnection.expires_at) < new Date()
     : false
 
-  const metaInsights =
+  const [metaInsights, tiendaNubeOrders] = await Promise.all([
     metaConnection && !tokenExpired
-      ? await getMetaAdsInsights(metaConnection.token, metaConnection.account_id)
-      : null
+      ? getMetaAdsInsights(metaConnection.token, metaConnection.account_id)
+      : Promise.resolve(null),
+    tiendaNubeConnection
+      ? getTiendaNubeSalesSummary(tiendaNubeConnection.access_token, tiendaNubeConnection.store_id)
+      : Promise.resolve(null),
+  ])
 
   const banner = metaConnected
     ? { tone: 'ok' as const, message: 'Meta Ads conectado correctamente.' }
@@ -306,6 +311,49 @@ export default async function DashboardPage({
                   ))}
                 </tbody>
               </table>
+            </div>
+          ) : null}
+        </div>
+      )}
+
+      {tiendaNubeConnection && (
+        <div className="mt-3.5">
+          <p className="mb-2 text-[11px] font-bold uppercase tracking-[.08em] text-text-3">
+            Tienda Nube — ventas (30 días)
+          </p>
+
+          {tiendaNubeOrders && !tiendaNubeOrders.ok ? (
+            <div className="rounded-card border border-red/30 bg-red/[8%] px-4 py-3 text-sm text-red">
+              {tiendaNubeOrders.error}
+            </div>
+          ) : tiendaNubeOrders && tiendaNubeOrders.ok ? (
+            <div className="grid grid-cols-2 gap-px overflow-hidden rounded-card border border-border bg-border sm:grid-cols-4">
+              <div className="flex flex-col justify-between gap-3 bg-surface p-4">
+                <span className="text-[10px] font-bold uppercase tracking-wide text-text-3">Bruto</span>
+                <span className="text-xl font-extrabold tracking-[-0.03em] text-text">
+                  USD {tiendaNubeOrders.summary.bruto.toLocaleString('es-AR')}
+                </span>
+              </div>
+              <div className="flex flex-col justify-between gap-3 bg-surface p-4">
+                <span className="text-[10px] font-bold uppercase tracking-wide text-text-3">Envío</span>
+                <span className="text-xl font-extrabold tracking-[-0.03em] text-text">
+                  USD {tiendaNubeOrders.summary.envio.toLocaleString('es-AR')}
+                </span>
+              </div>
+              <div className="flex flex-col justify-between gap-3 bg-surface p-4">
+                <span className="text-[10px] font-bold uppercase tracking-wide text-text-3">Neto</span>
+                <span className="text-xl font-extrabold tracking-[-0.03em] text-text">
+                  USD {tiendaNubeOrders.summary.neto.toLocaleString('es-AR')}
+                </span>
+              </div>
+              <div className="flex flex-col justify-between gap-3 bg-surface p-4">
+                <span className="text-[10px] font-bold uppercase tracking-wide text-text-3">
+                  Órdenes
+                </span>
+                <span className="text-xl font-extrabold tracking-[-0.03em] text-text">
+                  {tiendaNubeOrders.summary.ordenes}
+                </span>
+              </div>
             </div>
           ) : null}
         </div>
