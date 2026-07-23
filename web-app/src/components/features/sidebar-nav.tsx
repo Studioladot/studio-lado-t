@@ -84,6 +84,16 @@ const GROUPS: NavGroup[] = [
           </svg>
         ),
       },
+      {
+        href: '/settings',
+        label: 'Perfil de negocio',
+        icon: (
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="9" cy="9" r="2.5" />
+            <path d="M9 1v2M9 15v2M3 4.5l1.4 1.4M14 12.1l-1.4-1.4M3 13.5l1.4-1.4M14 5.9l-1.4 1.4" />
+          </svg>
+        ),
+      },
     ],
   },
   // Grupo "Integraciones" (Meta Ads, Tienda Nube) se agrega acá el día que
