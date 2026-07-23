@@ -107,7 +107,11 @@ export default async function CampaignsPage({
             const pct = stats && stats.total > 0 ? Math.round((stats.done / stats.total) * 100) : null
 
             return (
-              <div key={camp.id} className="overflow-hidden rounded-card border border-border bg-surface">
+              <Link
+                key={camp.id}
+                href={`/campaigns/${camp.id}`}
+                className="block overflow-hidden rounded-card border border-border bg-surface transition-all duration-200 ease-out hover:border-border-2"
+              >
                 <div className="flex flex-wrap items-start justify-between gap-3 border-b border-border px-5 py-4">
                   <div>
                     {camp.periodo && <p className="mb-0.5 text-xs text-text-2">{camp.periodo}</p>}
@@ -140,7 +144,7 @@ export default async function CampaignsPage({
                     <p className="text-[13px] leading-relaxed text-text">{camp.objetivo}</p>
                   </div>
                 )}
-              </div>
+              </Link>
             )
           })}
         </div>

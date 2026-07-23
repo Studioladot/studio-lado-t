@@ -249,3 +249,7 @@ Minimalista, en la línea de Cult UI / marcas urbanas premium (ej. Nude Project)
 - No usar sombras duras (`shadow-lg` de Tailwind por defecto sin ajustar).
 - No usar colores fuera de la paleta documentada en este archivo.
 - No usar animaciones mayores a `300ms` para micro-interacciones.
+
+### Excepción documentada: color de "turno" en piezas de contenido
+
+`app.html:14250` define `TURNO_COLOR = {Temprano:'var(--amber)', Tarde:'var(--blue)', Noche:'#8b5cf6'}` para distinguir el turno de publicación de una pieza. `Noche` usa un violeta (`#8b5cf6`) que **no** está en la paleta tokenizada — es un literal real del legado, no una invención nueva, así que se portó tal cual (`text-[#8b5cf6]`) en vez de forzarlo a un token existente. No usar este violeta para nada que no sea específicamente el indicador de turno "Noche".
