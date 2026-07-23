@@ -1965,7 +1965,23 @@ export type Database = {
         Args: { org_name: string }
         Returns: string
       }
+      get_organization_members: {
+        Args: { org_id: string }
+        Returns: {
+          email: string
+          role: string
+          user_id: string
+        }[]
+      }
+      invite_member_by_email: {
+        Args: { member_email: string; member_role?: string; org_id: string }
+        Returns: Json
+      }
       is_admin: { Args: never; Returns: boolean }
+      remove_member: {
+        Args: { org_id: string; target_user_id: string }
+        Returns: Json
+      }
     }
     Enums: {
       [_ in never]: never

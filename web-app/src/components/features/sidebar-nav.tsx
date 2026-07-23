@@ -46,6 +46,23 @@ const GROUPS: NavGroup[] = [
       },
     ],
   },
+  {
+    label: 'Organización',
+    items: [
+      {
+        href: '/team',
+        label: 'Equipo',
+        icon: (
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="6.5" cy="5" r="2.5" />
+            <path d="M1.5 15.5c0-2.5 2-4.5 5-4.5s5 2 5 4.5" />
+            <circle cx="13" cy="6" r="2" />
+            <path d="M11 11.2c1.8.3 3.2 1.7 3.5 3.8" />
+          </svg>
+        ),
+      },
+    ],
+  },
   // Grupo "Integraciones" (Meta Ads, Tienda Nube) se agrega acá el día que
   // tengan una página propia — hoy solo viven como widgets en /dashboard.
 ]
