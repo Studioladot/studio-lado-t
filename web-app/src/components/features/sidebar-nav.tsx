@@ -31,6 +31,18 @@ const GROUPS: NavGroup[] = [
     label: 'Contenido',
     items: [
       {
+        href: '/content',
+        label: 'Contenido',
+        icon: (
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+            <rect x="1" y="1" width="7" height="4" rx="1" />
+            <rect x="10" y="1" width="7" height="4" rx="1" />
+            <rect x="1" y="7" width="7" height="10" rx="1" />
+            <rect x="10" y="7" width="7" height="10" rx="1" />
+          </svg>
+        ),
+      },
+      {
         href: '/campaigns',
         label: 'Campañas',
         icon: (
