@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { getDashboardContext } from '@/lib/organization/dashboard-context'
 import { CampaignDetailsForm } from './campaign-details-form'
 import { AddPieceForm } from './add-piece-form'
+import { AddPieceMediaForm } from './add-piece-media-form'
 import { togglePieceStatusAction } from './actions'
 
 const STATUS_LABEL: Record<string, string> = {
@@ -144,6 +145,11 @@ export default async function CampaignDetailPage({
                           )}
                         </a>
                       ))}
+                      {media.length > 3 && (
+                        <div className="flex h-14 w-14 items-center justify-center rounded-control border border-border bg-surface-2 text-xs font-semibold text-text-2">
+                          +{media.length - 3}
+                        </div>
+                      )}
                     </div>
                   )}
                   <div className="min-w-0 flex-1">
@@ -174,6 +180,7 @@ export default async function CampaignDetailPage({
                     {piece.fecha_planificada && (
                       <p className="mt-1 text-[11px] text-text-3">{piece.fecha_planificada}</p>
                     )}
+                    <AddPieceMediaForm pieceId={piece.id} campaignId={campaign.id} />
                   </div>
 
                   <form
