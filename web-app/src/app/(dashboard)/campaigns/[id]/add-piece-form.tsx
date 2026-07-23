@@ -108,6 +108,20 @@ export function AddPieceForm({ campaignId }: { campaignId: string }) {
         />
       </label>
 
+      <label className={labelClass}>
+        Foto o video de referencia (opcional)
+        <input
+          name="media_files"
+          type="file"
+          accept="image/*,video/*"
+          multiple
+          className="text-[13px] font-normal normal-case tracking-normal text-text-2 file:mr-3 file:rounded-control file:border-0 file:bg-surface-2 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-text-2 file:transition-all file:duration-200 file:ease-out hover:file:bg-border-2"
+        />
+        <span className="text-[11px] font-normal normal-case tracking-normal text-text-3">
+          Para mostrar cómo tiene que quedar la pieza, o que el equipo entienda la idea.
+        </span>
+      </label>
+
       <p
         role="alert"
         className={`min-h-[16px] text-xs transition-opacity duration-200 ease-out ${

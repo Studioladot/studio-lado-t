@@ -18,6 +18,19 @@ const TURNO_COLOR: Record<string, string> = {
   Noche: 'text-[#8b5cf6]',
 }
 
+type MediaItem = { url: string; type: 'image' | 'video' }
+
+function parseMediaUrls(value: unknown): MediaItem[] {
+  if (!Array.isArray(value)) return []
+  return value.filter(
+    (item): item is MediaItem =>
+      typeof item === 'object' &&
+      item !== null &&
+      typeof (item as MediaItem).url === 'string' &&
+      ((item as MediaItem).type === 'image' || (item as MediaItem).type === 'video')
+  )
+}
+
 export default async function CampaignDetailPage({
   params,
 }: {
@@ -102,13 +115,38 @@ export default async function CampaignDetailPage({
             {pieces.map((piece) => {
               const isPublished = piece.status === 'publicado' || piece.status === 'publicada'
               const nextStatus = isPublished ? 'pendiente' : 'publicado'
+              const media = parseMediaUrls(piece.media_urls)
 
               return (
                 <div
                   key={piece.id}
                   className="flex flex-wrap items-start justify-between gap-3 rounded-card border border-border bg-surface p-4"
                 >
-                  <div className="min-w-0">
+                  {media.length > 0 && (
+                    <div className="flex shrink-0 gap-1.5">
+                      {media.slice(0, 3).map((item, i) => (
+                        <a
+                          key={i}
+                          href={item.url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="block h-14 w-14 overflow-hidden rounded-control border border-border bg-surface-2 transition-opacity duration-200 ease-out hover:opacity-80"
+                        >
+                          {item.type === 'video' ? (
+                            <video src={item.url} className="h-full w-full object-cover" muted />
+                          ) : (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={item.url}
+                              alt=""
+                              className="h-full w-full object-cover"
+                            />
+                          )}
+                        </a>
+                      ))}
+                    </div>
+                  )}
+                  <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
                       <span
                         className={`text-sm font-semibold text-text ${isPublished ? 'text-text-2 line-through' : ''}`}

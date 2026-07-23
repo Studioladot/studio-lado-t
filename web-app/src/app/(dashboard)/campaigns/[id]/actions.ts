@@ -88,6 +88,33 @@ export async function createPieceAction(
     return { error: 'No encontramos tu organización activa.' }
   }
 
+  // Bucket "piezas-media" (público) — mismo path que app.html:
+  // {user_id}/{timestamp}.{ext}. Se sube antes del insert porque
+  // content_piezas.media_url/media_urls necesitan la URL final.
+  const files = formData
+    .getAll('media_files')
+    .filter((entry): entry is File => entry instanceof File && entry.size > 0)
+
+  const mediaUrls: { url: string; type: 'image' | 'video' }[] = []
+
+  for (const file of files) {
+    const isVideo = file.type.startsWith('video/')
+    const ext = file.name.split('.').pop() || 'bin'
+    const path = `${user.id}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`
+
+    const { error: uploadError } = await supabase.storage.from('piezas-media').upload(path, file)
+
+    if (uploadError) {
+      return { error: `No pudimos subir "${file.name}". Probá de nuevo.` }
+    }
+
+    const {
+      data: { publicUrl },
+    } = supabase.storage.from('piezas-media').getPublicUrl(path)
+
+    mediaUrls.push({ url: publicUrl, type: isVideo ? 'video' : 'image' })
+  }
+
   const { error } = await supabase.from('content_piezas').insert({
     campaign_id: campaignId,
     titulo,
@@ -100,6 +127,9 @@ export async function createPieceAction(
     status: 'pendiente',
     user_id: user.id,
     organization_id: activeOrganizationId,
+    media_urls: mediaUrls.length > 0 ? mediaUrls : null,
+    media_url: mediaUrls[0]?.url ?? null,
+    media_type: mediaUrls[0]?.type ?? null,
   })
 
   if (error) {
