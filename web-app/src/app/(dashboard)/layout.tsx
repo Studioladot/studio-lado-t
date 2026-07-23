@@ -3,7 +3,7 @@ import { OrganizationProvider } from '@/lib/context/organization-context'
 import { getDashboardContext } from '@/lib/organization/dashboard-context'
 import { OrganizationSwitcher } from '@/components/features/organization-switcher'
 import { SignOutButton } from '@/components/features/sign-out-button'
-import { DashboardNav } from '@/components/features/dashboard-nav'
+import { DashboardShell } from '@/components/features/dashboard-shell'
 
 export default async function DashboardLayout({
   children,
@@ -21,19 +21,13 @@ export default async function DashboardLayout({
       initialOrganizations={organizations}
       initialActiveOrganizationId={activeOrganizationId}
     >
-      <div className="min-h-screen bg-bg">
-        <header className="flex items-center justify-between border-b border-border bg-surface px-6 py-4">
-          <div className="flex items-center gap-6">
-            <span className="text-[15px] font-extrabold tracking-[-0.04em] text-primary">Gotix</span>
-            <DashboardNav />
-          </div>
-          <div className="flex items-center gap-3">
-            <OrganizationSwitcher />
-            <SignOutButton />
-          </div>
+      <DashboardShell>
+        <header className="flex items-center justify-end gap-3 border-b border-border bg-surface px-6 py-4">
+          <OrganizationSwitcher />
+          <SignOutButton />
         </header>
         <main className="p-6">{children}</main>
-      </div>
+      </DashboardShell>
     </OrganizationProvider>
   )
 }

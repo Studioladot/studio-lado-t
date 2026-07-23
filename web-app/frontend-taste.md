@@ -253,3 +253,9 @@ Minimalista, en la línea de Cult UI / marcas urbanas premium (ej. Nude Project)
 ### Excepción documentada: color de "turno" en piezas de contenido
 
 `app.html:14250` define `TURNO_COLOR = {Temprano:'var(--amber)', Tarde:'var(--blue)', Noche:'#8b5cf6'}` para distinguir el turno de publicación de una pieza. `Noche` usa un violeta (`#8b5cf6`) que **no** está en la paleta tokenizada — es un literal real del legado, no una invención nueva, así que se portó tal cual (`text-[#8b5cf6]`) en vez de forzarlo a un token existente. No usar este violeta para nada que no sea específicamente el indicador de turno "Noche".
+
+### Sidebar de navegación (`app.html:238-257`)
+
+El `#sidebar` real del legado es **permanentemente oscuro** (`background:#14161D`), sin importar si el resto de la app está en modo claro u oscuro — una decisión de marca real, no un accidente (nunca cambia con `body.dark-mode`). Se portó igual: `bg-[#14161D]` fijo en `sidebar-nav.tsx`, no un token que varíe con el tema. Es la misma excepción de "fondo fijo" que ya aplicamos en el botón de Google.
+
+**Desviación deliberada:** el legado usa un azul separado (`#4C7EFF`) para el borde/resaltado del ítem activo del sidebar, distinto del `--accent` (`#2D5B8A`/`#5B8FCC`) que ya usamos en todo el resto de la app (botones, foco, tabs). Portarlo tal cual habría fragmentado la identidad visual en dos azules distintos conviviendo en la misma pantalla. En la versión nueva, el estado activo del sidebar usa `--accent`, no `#4C7EFF` — un solo azul de marca en toda la app, no dos.
