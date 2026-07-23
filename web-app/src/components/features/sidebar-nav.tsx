@@ -67,6 +67,16 @@ const GROUPS: NavGroup[] = [
           </svg>
         ),
       },
+      {
+        href: '/scripts',
+        label: 'Guiones',
+        icon: (
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+            <rect x="3" y="1" width="12" height="16" rx="2" />
+            <path d="M6 6h6M6 9h6M6 12h4" />
+          </svg>
+        ),
+      },
     ],
   },
   {

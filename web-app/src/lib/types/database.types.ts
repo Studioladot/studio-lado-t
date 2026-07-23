@@ -1596,6 +1596,7 @@ export type Database = {
           hook_rate: number | null
           id: string
           notes: string | null
+          organization_id: string | null
           p100: number | null
           p25: number | null
           p75: number | null
@@ -1619,6 +1620,7 @@ export type Database = {
           hook_rate?: number | null
           id?: string
           notes?: string | null
+          organization_id?: string | null
           p100?: number | null
           p25?: number | null
           p75?: number | null
@@ -1642,6 +1644,7 @@ export type Database = {
           hook_rate?: number | null
           id?: string
           notes?: string | null
+          organization_id?: string | null
           p100?: number | null
           p25?: number | null
           p75?: number | null
@@ -1655,6 +1658,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "scripts_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "scripts_parent_guion_id_fkey"
             columns: ["parent_guion_id"]
