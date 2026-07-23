@@ -44,6 +44,17 @@ const GROUPS: NavGroup[] = [
           </svg>
         ),
       },
+      {
+        href: '/notes',
+        label: 'Notas',
+        icon: (
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M4 14l2-5.5L14.5 1l3 3L9 12.5z" />
+            <path d="M4 14h4" />
+            <path d="M10.5 3.5l3 3" />
+          </svg>
+        ),
+      },
     ],
   },
   {
