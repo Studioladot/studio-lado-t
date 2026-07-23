@@ -268,3 +268,94 @@ export async function togglePieceStatusAction(
 
   revalidatePath(`/campaigns/${campaignId}`)
 }
+
+export type UpdatePieceState = {
+  error: string | null
+  success: boolean
+}
+
+export async function updatePieceAction(
+  pieceId: string,
+  campaignId: string,
+  _prevState: UpdatePieceState,
+  formData: FormData
+): Promise<UpdatePieceState> {
+  const titulo = String(formData.get('titulo') ?? '').trim()
+
+  if (!titulo) {
+    return { error: 'La pieza necesita un título.', success: false }
+  }
+
+  const { activeOrganizationId } = await getDashboardContext()
+
+  if (!activeOrganizationId) {
+    return { error: 'No encontramos tu organización activa.', success: false }
+  }
+
+  const supabase = await createClient()
+
+  const { error } = await supabase
+    .from('content_piezas')
+    .update({
+      titulo,
+      formato: emptyToNull(formData.get('formato')),
+      plataforma: emptyToNull(formData.get('plataforma')),
+      fecha_planificada: emptyToNull(formData.get('fecha_planificada')),
+      turno: emptyToNull(formData.get('turno')),
+      protagonista: emptyToNull(formData.get('protagonista')),
+      notas: emptyToNull(formData.get('notas')),
+    })
+    .eq('id', pieceId)
+    .eq('organization_id', activeOrganizationId)
+
+  if (error) {
+    return { error: 'No pudimos guardar los cambios. Probá de nuevo.', success: false }
+  }
+
+  revalidatePath(`/campaigns/${campaignId}`)
+  return { error: null, success: true }
+}
+
+export async function deletePieceAction(pieceId: string, campaignId: string) {
+  const { activeOrganizationId } = await getDashboardContext()
+
+  if (!activeOrganizationId) {
+    return
+  }
+
+  const supabase = await createClient()
+
+  await supabase
+    .from('content_piezas')
+    .delete()
+    .eq('id', pieceId)
+    .eq('organization_id', activeOrganizationId)
+
+  revalidatePath(`/campaigns/${campaignId}`)
+}
+
+export async function deleteCampaignAction(campaignId: string) {
+  const { activeOrganizationId } = await getDashboardContext()
+
+  if (!activeOrganizationId) {
+    return
+  }
+
+  const supabase = await createClient()
+
+  // Primero las piezas: no asumir ON DELETE CASCADE en la FK. Borrar filas
+  // que ya no existen es un no-op, así que esto es seguro de todos modos.
+  await supabase
+    .from('content_piezas')
+    .delete()
+    .eq('campaign_id', campaignId)
+    .eq('organization_id', activeOrganizationId)
+
+  await supabase
+    .from('content_campaigns')
+    .delete()
+    .eq('id', campaignId)
+    .eq('organization_id', activeOrganizationId)
+
+  redirect('/campaigns')
+}

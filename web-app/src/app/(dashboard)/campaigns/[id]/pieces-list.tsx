@@ -1,8 +1,10 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { togglePieceStatusAction } from './actions'
+import { togglePieceStatusAction, deletePieceAction } from './actions'
 import { AddPieceMediaForm } from './add-piece-media-form'
+import { PieceEditForm } from './piece-edit-form'
+import { ConfirmSubmitButton } from '@/components/features/confirm-submit-button'
 import type { Database } from '@/lib/types/database.types'
 
 type Piece = Database['public']['Tables']['content_piezas']['Row']
@@ -28,6 +30,7 @@ function parseMediaUrls(value: unknown): MediaItem[] {
 
 export function PiecesList({ pieces, campaignId }: { pieces: Piece[]; campaignId: string }) {
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
+  const [editingId, setEditingId] = useState<string | null>(null)
 
   const piecesWithMedia = useMemo(() => {
     const mediaLists = pieces.map((piece) => parseMediaUrls(piece.media_urls))
@@ -87,6 +90,21 @@ export function PiecesList({ pieces, campaignId }: { pieces: Piece[]; campaignId
         {piecesWithMedia.map(({ piece, media, startIndex }) => {
           const isPublished = piece.status === 'publicado' || piece.status === 'publicada'
           const nextStatus = isPublished ? 'pendiente' : 'publicado'
+
+          if (editingId === piece.id) {
+            return (
+              <div
+                key={piece.id}
+                className="rounded-card border border-border bg-surface p-4"
+              >
+                <PieceEditForm
+                  piece={piece}
+                  campaignId={campaignId}
+                  onSaved={() => setEditingId(null)}
+                />
+              </div>
+            )
+          }
 
           return (
             <div
@@ -153,18 +171,37 @@ export function PiecesList({ pieces, campaignId }: { pieces: Piece[]; campaignId
                 <AddPieceMediaForm pieceId={piece.id} campaignId={campaignId} />
               </div>
 
-              <form action={togglePieceStatusAction.bind(null, piece.id, campaignId, nextStatus)}>
-                <button
-                  type="submit"
-                  className={`rounded-control border px-3 py-1.5 text-xs font-medium transition-all duration-200 ease-out active:scale-[0.98] ${
-                    isPublished
-                      ? 'border-border text-text-2 hover:bg-surface-2'
-                      : 'border-green/40 bg-green/[8%] text-green hover:bg-green/[14%]'
-                  }`}
-                >
-                  {isPublished ? 'Marcar pendiente' : 'Marcar publicado'}
-                </button>
-              </form>
+              <div className="flex shrink-0 flex-col items-end gap-2">
+                <form action={togglePieceStatusAction.bind(null, piece.id, campaignId, nextStatus)}>
+                  <button
+                    type="submit"
+                    className={`rounded-control border px-3 py-1.5 text-xs font-medium transition-all duration-200 ease-out active:scale-[0.98] ${
+                      isPublished
+                        ? 'border-border text-text-2 hover:bg-surface-2'
+                        : 'border-green/40 bg-green/[8%] text-green hover:bg-green/[14%]'
+                    }`}
+                  >
+                    {isPublished ? 'Marcar pendiente' : 'Marcar publicado'}
+                  </button>
+                </form>
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setEditingId(piece.id)}
+                    className="text-xs font-medium text-text-2 transition-colors duration-200 ease-out hover:text-text"
+                  >
+                    Editar
+                  </button>
+                  <form action={deletePieceAction.bind(null, piece.id, campaignId)}>
+                    <ConfirmSubmitButton
+                      confirmMessage={`¿Borrar la pieza "${piece.titulo}"?`}
+                      className="text-xs font-medium text-text-3 transition-colors duration-200 ease-out hover:text-red"
+                    >
+                      Borrar
+                    </ConfirmSubmitButton>
+                  </form>
+                </div>
+              </div>
             </div>
           )
         })}

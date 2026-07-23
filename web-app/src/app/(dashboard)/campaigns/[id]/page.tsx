@@ -5,6 +5,8 @@ import { getDashboardContext } from '@/lib/organization/dashboard-context'
 import { CampaignDetailsForm } from './campaign-details-form'
 import { AddPieceForm } from './add-piece-form'
 import { PiecesList } from './pieces-list'
+import { deleteCampaignAction } from './actions'
+import { ConfirmSubmitButton } from '@/components/features/confirm-submit-button'
 
 const STATUS_LABEL: Record<string, string> = {
   planificacion: 'En planificación',
@@ -63,9 +65,19 @@ export default async function CampaignDetailPage({
             </p>
           )}
         </div>
-        <span className="rounded-full border border-border bg-surface-2 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-accent">
-          {STATUS_LABEL[campaign.status ?? ''] ?? campaign.status}
-        </span>
+        <div className="flex items-center gap-3">
+          <span className="rounded-full border border-border bg-surface-2 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-accent">
+            {STATUS_LABEL[campaign.status ?? ''] ?? campaign.status}
+          </span>
+          <form action={deleteCampaignAction.bind(null, campaign.id)}>
+            <ConfirmSubmitButton
+              confirmMessage={`¿Borrar la campaña "${campaign.nombre}" y todas sus piezas? Esta acción no se puede deshacer.`}
+              className="text-xs font-medium text-text-3 transition-colors duration-200 ease-out hover:text-red"
+            >
+              Borrar campaña
+            </ConfirmSubmitButton>
+          </form>
+        </div>
       </div>
 
       <section className="mb-8 rounded-card border border-border bg-surface p-6">
