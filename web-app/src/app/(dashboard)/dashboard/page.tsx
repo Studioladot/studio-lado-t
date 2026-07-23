@@ -1,13 +1,23 @@
 import { createClient } from '@/lib/supabase/server'
 import { getDashboardContext } from '@/lib/organization/dashboard-context'
-import { connectMetaAction } from '../actions'
+import { connectMetaAction, connectTiendaNubeAction } from '../actions'
 
 export default async function DashboardPage({
   searchParams,
 }: {
-  searchParams: Promise<{ meta_connected?: string; meta_error?: string }>
+  searchParams: Promise<{
+    meta_connected?: string
+    meta_error?: string
+    tn_connected?: string
+    tn_error?: string
+  }>
 }) {
-  const { meta_connected: metaConnected, meta_error: metaError } = await searchParams
+  const {
+    meta_connected: metaConnected,
+    meta_error: metaError,
+    tn_connected: tnConnected,
+    tn_error: tnError,
+  } = await searchParams
   const { activeOrganizationId } = await getDashboardContext()
 
   if (!activeOrganizationId) {
@@ -32,6 +42,7 @@ export default async function DashboardPage({
     { count: publishedThisMonth },
     { count: pendingPosts },
     { data: metaConnection },
+    { data: tiendaNubeConnection },
   ] = await Promise.all([
     supabase
       .from('content_campaigns')
@@ -58,18 +69,32 @@ export default async function DashboardPage({
       .select('account_name, expires_at')
       .eq('organization_id', activeOrganizationId)
       .maybeSingle(),
+    supabase
+      .from('tiendanube_connections')
+      .select('store_name, store_url')
+      .eq('organization_id', activeOrganizationId)
+      .maybeSingle(),
   ])
+
+  const banner = metaConnected
+    ? { tone: 'ok' as const, message: 'Meta Ads conectado correctamente.' }
+    : metaError
+      ? { tone: 'error' as const, message: metaError }
+      : tnConnected
+        ? { tone: 'ok' as const, message: 'Tienda Nube conectado correctamente.' }
+        : tnError
+          ? { tone: 'error' as const, message: tnError }
+          : null
 
   return (
     <div>
-      {metaConnected && (
-        <div className="mb-4 rounded-control border border-green/30 bg-green/[8%] px-4 py-2.5 text-sm text-green">
-          Meta Ads conectado correctamente.
-        </div>
-      )}
-      {metaError && (
-        <div className="mb-4 rounded-control border border-red/30 bg-red/[8%] px-4 py-2.5 text-sm text-red">
-          {metaError}
+      {banner && (
+        <div
+          className={`mb-4 rounded-control border px-4 py-2.5 text-sm ${
+            banner.tone === 'ok' ? 'border-green/30 bg-green/[8%] text-green' : 'border-red/30 bg-red/[8%] text-red'
+          }`}
+        >
+          {banner.message}
         </div>
       )}
 
@@ -132,7 +157,7 @@ export default async function DashboardPage({
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-px overflow-hidden rounded-card border border-border bg-border sm:grid-cols-4">
+      <div className="mb-3.5 grid grid-cols-1 gap-px overflow-hidden rounded-card border border-border bg-border sm:grid-cols-3">
         <div className="flex flex-col justify-between gap-4 bg-surface p-5">
           <span className="text-[11px] font-bold uppercase tracking-[.08em] text-text-3">
             Campañas activas
@@ -168,27 +193,54 @@ export default async function DashboardPage({
             <p className="mt-1 text-xs text-text-2">pendientes</p>
           </div>
         </div>
+      </div>
 
-        <div className="flex flex-col justify-between gap-4 bg-surface p-5">
-          <span className="text-[11px] font-bold uppercase tracking-[.08em] text-text-3">
-            Meta Ads
-          </span>
-          <div className="flex items-center gap-2">
+      <div>
+        <p className="mb-2 text-[11px] font-bold uppercase tracking-[.08em] text-text-3">
+          Integraciones
+        </p>
+        <div className="flex flex-wrap gap-3">
+          <div className="flex items-center gap-2.5 rounded-card border border-border bg-surface px-4 py-3">
             <span
               className={`h-2 w-2 rounded-full ${metaConnection ? 'bg-green' : 'bg-text-3'}`}
               aria-hidden="true"
             />
+            <span className="text-[11px] font-bold uppercase tracking-wide text-text-3">Meta Ads</span>
             {metaConnection ? (
-              <span className="text-sm font-semibold text-text">
+              <span className="text-sm font-medium text-text">
                 {metaConnection.account_name ?? 'Conectado'}
               </span>
             ) : (
               <form action={connectMetaAction}>
                 <button
                   type="submit"
-                  className="text-sm font-semibold text-primary transition-colors duration-200 ease-out hover:text-primary-hover"
+                  className="text-sm font-medium text-primary transition-colors duration-200 ease-out hover:text-primary-hover"
                 >
-                  Conectar con Meta
+                  Conectar
+                </button>
+              </form>
+            )}
+          </div>
+
+          <div className="flex items-center gap-2.5 rounded-card border border-border bg-surface px-4 py-3">
+            <span
+              className={`h-2 w-2 rounded-full ${tiendaNubeConnection ? 'bg-green' : 'bg-text-3'}`}
+              aria-hidden="true"
+            />
+            <span className="text-[11px] font-bold uppercase tracking-wide text-text-3">
+              Tienda Nube
+            </span>
+            {tiendaNubeConnection ? (
+              <span className="text-sm font-medium text-text">
+                {tiendaNubeConnection.store_name ?? 'Conectado'}
+              </span>
+            ) : (
+              <form action={connectTiendaNubeAction}>
+                <button
+                  type="submit"
+                  className="text-sm font-medium text-primary transition-colors duration-200 ease-out hover:text-primary-hover"
+                >
+                  Conectar
                 </button>
               </form>
             )}
