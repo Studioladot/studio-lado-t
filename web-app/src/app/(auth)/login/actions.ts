@@ -1,8 +1,8 @@
 'use server'
 
 import { redirect } from 'next/navigation'
-import { headers } from 'next/headers'
 import { createClient } from '@/lib/supabase/server'
+import { getRequestOrigin } from '@/lib/http/request-origin'
 
 export type AuthState = {
   error: string | null
@@ -43,15 +43,8 @@ export async function authAction(_prevState: AuthState, formData: FormData): Pro
   redirect('/dashboard')
 }
 
-async function getOrigin() {
-  const headerList = await headers()
-  const host = headerList.get('x-forwarded-host') ?? headerList.get('host')
-  const protocol = headerList.get('x-forwarded-proto') ?? 'http'
-  return `${protocol}://${host}`
-}
-
 export async function signInWithGoogleAction() {
-  const origin = await getOrigin()
+  const origin = await getRequestOrigin()
   const supabase = await createClient()
 
   const { data, error } = await supabase.auth.signInWithOAuth({

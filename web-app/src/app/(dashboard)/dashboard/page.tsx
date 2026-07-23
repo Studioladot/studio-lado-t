@@ -1,7 +1,13 @@
 import { createClient } from '@/lib/supabase/server'
 import { getDashboardContext } from '@/lib/organization/dashboard-context'
+import { connectMetaAction } from '../actions'
 
-export default async function DashboardPage() {
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ meta_connected?: string; meta_error?: string }>
+}) {
+  const { meta_connected: metaConnected, meta_error: metaError } = await searchParams
   const { activeOrganizationId } = await getDashboardContext()
 
   if (!activeOrganizationId) {
@@ -56,6 +62,17 @@ export default async function DashboardPage() {
 
   return (
     <div>
+      {metaConnected && (
+        <div className="mb-4 rounded-control border border-green/30 bg-green/[8%] px-4 py-2.5 text-sm text-green">
+          Meta Ads conectado correctamente.
+        </div>
+      )}
+      {metaError && (
+        <div className="mb-4 rounded-control border border-red/30 bg-red/[8%] px-4 py-2.5 text-sm text-red">
+          {metaError}
+        </div>
+      )}
+
       <div className="mb-[22px] flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="text-[22px] font-bold tracking-[-0.03em] text-text">Dashboard</h1>
@@ -161,9 +178,20 @@ export default async function DashboardPage() {
               className={`h-2 w-2 rounded-full ${metaConnection ? 'bg-green' : 'bg-text-3'}`}
               aria-hidden="true"
             />
-            <span className="text-sm font-semibold text-text">
-              {metaConnection ? (metaConnection.account_name ?? 'Conectado') : 'Sin conectar'}
-            </span>
+            {metaConnection ? (
+              <span className="text-sm font-semibold text-text">
+                {metaConnection.account_name ?? 'Conectado'}
+              </span>
+            ) : (
+              <form action={connectMetaAction}>
+                <button
+                  type="submit"
+                  className="text-sm font-semibold text-primary transition-colors duration-200 ease-out hover:text-primary-hover"
+                >
+                  Conectar con Meta
+                </button>
+              </form>
+            )}
           </div>
         </div>
       </div>
