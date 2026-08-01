@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { TiktokIcon } from '@/components/features/nav-icons'
 import type { TiktokVideoRow } from '@/lib/tiktok/winners'
 
@@ -45,7 +46,7 @@ export function TiktokVideoDetailModal({
   onClose,
   onEscalate,
   escalating,
-  escalateMessage,
+  escalateResult,
 }: {
   video: TiktokVideoRow
   maxViews: number
@@ -55,7 +56,7 @@ export function TiktokVideoDetailModal({
   onClose: () => void
   onEscalate: () => void
   escalating: boolean
-  escalateMessage: string | null
+  escalateResult: { ok: boolean; message: string } | null
 }) {
   const engagementRate = video.view_count > 0 ? ((video.like_count + video.comment_count + video.share_count) / video.view_count) * 100 : 0
 
@@ -113,6 +114,24 @@ export function TiktokVideoDetailModal({
             con su propia revisión, para poder mostrarlos acá.
           </div>
 
+          {/* Banner con color, no un texto gris chico — antes era fácil no
+              notar que la acción sí había terminado (reporte real: "hace
+              la animación de cargar pero no hace nada más"). */}
+          {escalateResult && (
+            <div
+              className={`rounded-control border px-3 py-2.5 text-xs ${
+                escalateResult.ok ? 'border-green/30 bg-green/[8%] text-green' : 'border-red/30 bg-red/[8%] text-red'
+              }`}
+            >
+              {escalateResult.message}
+              {escalateResult.ok && (
+                <Link href="/content" className="ml-1.5 font-semibold underline">
+                  Ver en Publicaciones →
+                </Link>
+              )}
+            </div>
+          )}
+
           <div className="flex items-center gap-3">
             {video.share_url && (
               <a href={video.share_url} target="_blank" rel="noreferrer" className="text-xs font-semibold text-accent transition-colors duration-200 ease-out hover:text-accent/80">
@@ -122,13 +141,12 @@ export function TiktokVideoDetailModal({
             <button
               type="button"
               onClick={onEscalate}
-              disabled={escalating}
+              disabled={escalating || escalateResult?.ok}
               className="ml-auto rounded-control bg-primary px-3.5 py-2 text-xs font-bold text-white transition-all duration-200 ease-out hover:bg-primary-hover active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {escalating ? 'Escalando…' : 'Escalar a Instagram'}
+              {escalating ? 'Escalando…' : escalateResult?.ok ? 'Ya escalado ✓' : 'Escalar a Instagram'}
             </button>
           </div>
-          {escalateMessage && <p className="text-[11px] text-text-2">{escalateMessage}</p>}
         </div>
       </div>
     </div>

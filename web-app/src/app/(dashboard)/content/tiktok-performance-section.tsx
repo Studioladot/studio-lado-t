@@ -195,7 +195,7 @@ export function TiktokPerformanceSection({ videos }: { videos: TiktokVideoRow[] 
           maxComments={maxComments}
           maxShares={maxShares}
           escalating={escalatingId === selectedVideo.id}
-          escalateMessage={escalateResults[selectedVideo.id]?.message ?? null}
+          escalateResult={escalateResults[selectedVideo.id] ?? null}
           onClose={() => setSelectedVideoId(null)}
           onEscalate={() => handleEscalate(selectedVideo.id)}
         />
