@@ -21,6 +21,16 @@ node_modules/
 .agents/
 .claude/skills/
 
+# Plugin de Claude Code (superpowers) — se había colado como submódulo
+# git "fantasma" (gitlink sin .gitmodules, ver commit "Fix: eliminar
+# submódulo fantasma de superpowers") y probablemente rompía el clone que
+# hace Vercel para el build (build de ~200ms, 404 en el dominio — el
+# checkout fallaba antes de llegar a encontrar package.json). Se sacó del
+# tracking, pero la carpeta sigue en disco (6 MB) — sin esta regla, un
+# `git add -A` futuro la volvería a commitear entera como archivos
+# normales en vez de como submódulo.
+**/.claude/superpowers/
+
 # Config local de Claude Code (permisos, hooks) — por convención, "local"
 # no se versiona. .claude/settings.json (sin ".local") si existiera,
 # sí se trackearía.
