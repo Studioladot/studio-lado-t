@@ -25,9 +25,14 @@ export default async function MetaAdsLibraryPage() {
 
   const tokenExpired = connection?.expires_at ? new Date(connection.expires_at) < new Date() : false
 
-  const [creatives, targetsBulk] = await Promise.all([
+  // getMetaAccountAds (Graph API, la llamada lenta) no depende de
+  // creatives/targetsBulk (Supabase) — antes esperaba a que esas dos
+  // terminen para recién arrancar, en vez de correr las tres en paralelo
+  // (auditoría de performance, 2026-08-01).
+  const [creatives, targetsBulk, metaAdsResult] = await Promise.all([
     getLibraryCreatives(supabase, activeOrganizationId),
     getAllCampaignTargets(supabase, activeOrganizationId),
+    connection && !tokenExpired ? getMetaAccountAds(connection.token, connection.account_id) : Promise.resolve(null),
   ])
 
   let metaAds: MetaAccountAd[] = []
@@ -37,12 +42,11 @@ export default async function MetaAdsLibraryPage() {
     metaAdsError = 'Meta Ads no está conectado.'
   } else if (tokenExpired) {
     metaAdsError = 'Tu conexión con Meta Ads venció — reconectá para ver los anuncios en vivo.'
-  } else {
-    const result = await getMetaAccountAds(connection.token, connection.account_id)
-    if (result.ok) {
-      metaAds = result.ads
+  } else if (metaAdsResult) {
+    if (metaAdsResult.ok) {
+      metaAds = metaAdsResult.ads
     } else {
-      metaAdsError = result.error
+      metaAdsError = metaAdsResult.error
     }
   }
 

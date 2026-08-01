@@ -1,6 +1,6 @@
 'use client'
 
-import { useActionState, useState } from 'react'
+import { useActionState, useEffect, useState } from 'react'
 import { useFormStatus } from 'react-dom'
 import { createPostAction, updatePostAction, cancelPostScheduleAction, type PostState } from './actions'
 import { ContentPreviewSimulator } from './content-preview-simulator'
@@ -81,6 +81,16 @@ export function PostForm({
   // handler, no efecto) — ver comentario en content-preview-simulator.tsx
   // sobre por qué esto no vive en un useEffect.
   const [finalPreview, setFinalPreview] = useState<{ url: string; isVideo: boolean } | null>(null)
+
+  // Bug real reportado por la PO (2026-08-01): sin esto, el modal se
+  // quedaba abierto y el botón se re-habilitaba apenas terminaba el
+  // guardado exitoso — sin ningún feedback de "ya se guardó", el usuario
+  // volvía a tocar "Guardar" pensando que no había andado, y
+  // createPostAction generaba una fila nueva cada vez (duplicados reales
+  // en la base). Mismo patrón que ya usa piece-edit-form.tsx.
+  useEffect(() => {
+    if (state.success) onDone()
+  }, [state.success, onDone])
 
   function handleFinalFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     setFinalPreview((prev) => {

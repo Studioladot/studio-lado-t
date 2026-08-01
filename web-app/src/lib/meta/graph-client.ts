@@ -10,7 +10,17 @@ export async function metaGraphGet<T>(
 ): Promise<{ ok: true; data: T } | { ok: false; error: string }> {
   try {
     const separator = path.includes('?') ? '&' : '?'
-    const res = await fetch(`${META_GRAPH_URL}${path}${separator}access_token=${token}`)
+    // Auditoría de performance (2026-08-01): antes cada lectura le pegaba a
+    // la Graph API sin ningún caché — dos componentes de la misma página, o
+    // una navegación de ida y vuelta en segundos, disparaban la misma
+    // consulta dos veces. 20s alcanza para eliminar esa redundancia sin
+    // arriesgar datos viejos para una decisión real de negocio (el propio
+    // reporting de Meta ya tiene minutos de lag por atribución). No aplica
+    // a metaGraphPost/metaGraphPostRaw — las mutaciones (pausar, cambiar
+    // presupuesto, lanzar campaña) siguen yendo sin caché, a propósito.
+    const res = await fetch(`${META_GRAPH_URL}${path}${separator}access_token=${token}`, {
+      next: { revalidate: 20 },
+    })
     const data = (await res.json()) as T & GraphErrorBody
     if (data.error) {
       return { ok: false, error: data.error.message ?? 'Error desconocido de Meta.' }

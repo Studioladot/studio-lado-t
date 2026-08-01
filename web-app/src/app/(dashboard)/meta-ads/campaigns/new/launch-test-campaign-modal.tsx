@@ -1,9 +1,21 @@
 'use client'
 
 import { useState } from 'react'
+import dynamic from 'next/dynamic'
 import Link from 'next/link'
 import { getLaunchWizardDataAction, type LaunchWizardData } from './data-actions'
-import { TestCampaignWizard } from './test-campaign-wizard'
+
+// Auditoría de performance (2026-08-01): el wizard son ~800 líneas que
+// antes se bundleaban en la carga inicial de /meta-ads/campaigns para
+// TODOS los visitantes, aunque la mayoría nunca clickea "Lanzar Testeo".
+// Con dynamic() el chunk se pide recién acá, en paralelo con el spinner
+// que ya existía mientras carga getLaunchWizardDataAction() — no agrega
+// demora percibida, solo saca peso de la carga inicial de la página.
+// ssr:false porque el wizard nunca se renderiza en el HTML servido (solo
+// existe una vez que el usuario ya clickeó el botón, del lado cliente).
+const TestCampaignWizard = dynamic(() => import('./test-campaign-wizard').then((m) => m.TestCampaignWizard), {
+  ssr: false,
+})
 
 const MESSAGE: Partial<Record<LaunchWizardData['status'], { title: string; sub: string }>> = {
   no_org: { title: 'Todavía no pertenecés a ninguna organización', sub: '' },

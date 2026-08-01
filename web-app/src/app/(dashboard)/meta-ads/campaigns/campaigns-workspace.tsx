@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
+import dynamic from 'next/dynamic'
 import Link from 'next/link'
 import type { MetaCampaign } from '@/lib/meta/campaigns'
 import { bulkToggleCampaignStatusAction } from './actions'
@@ -11,7 +12,6 @@ import { CampaignsFilters } from './campaigns-filters'
 import { CampaignsHeaderMenu } from './campaigns-header-menu'
 import { ColumnsPopover } from './columns-popover'
 import { CampaignStatusToggle } from './campaign-status-toggle'
-import { AutopilotPanel } from './autopilot-panel'
 import { StrategicStatusDot } from './strategic-status-dot'
 import { InlineBudgetCell } from './inline-budget-cell'
 import { resolveCampaignTargets, type CampaignTargets } from '@/lib/meta/autopilot'
@@ -20,6 +20,15 @@ import { FocusCards } from './focus-cards'
 import { Pagination } from './pagination'
 import { ConfirmSubmitButton } from '@/components/features/confirm-submit-button'
 import { LaunchTestCampaignModal } from './new/launch-test-campaign-modal'
+
+// Auditoría de performance (2026-08-01): AutopilotPanel se monta una vez
+// POR FILA de esta tabla (cada campaña tiene la suya) — antes su JS (más
+// el de UnitEconomicsModal, que vive adentro) se sumaba entero a la carga
+// inicial de la página más visitada de Meta Ads, para todas las filas,
+// aunque el usuario nunca abra ninguna. ssr:false porque el trigger de
+// cada fila es un ícono chico — perder su SSR es un costo mínimo frente al
+// peso que saca de la carga inicial.
+const AutopilotPanel = dynamic(() => import('./autopilot-panel').then((m) => m.AutopilotPanel), { ssr: false })
 
 const PAGE_SIZE = 10
 

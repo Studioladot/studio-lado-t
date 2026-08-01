@@ -45,8 +45,11 @@ export async function getMetaAdsInsights(
   const fields = `id,name,effective_status,campaign{name},insights.time_range({"since":"${formatDate(since)}","until":"${formatDate(until)}"}){spend,action_values,actions}`
 
   try {
+    // Mismo criterio que metaGraphGet (graph-client.ts) — 20s de caché para
+    // evitar pegarle dos veces seguidas a la misma consulta.
     const res = await fetch(
-      `${META_GRAPH_URL}/act_${cleanAccountId}/ads?fields=${encodeURIComponent(fields)}&limit=200&access_token=${token}`
+      `${META_GRAPH_URL}/act_${cleanAccountId}/ads?fields=${encodeURIComponent(fields)}&limit=200&access_token=${token}`,
+      { next: { revalidate: 20 } }
     )
     const data = await res.json()
 

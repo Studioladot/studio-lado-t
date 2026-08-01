@@ -38,8 +38,16 @@ export default async function MetaAdsCampaignsPage({
 
   const tokenExpired = connection?.expires_at ? new Date(connection.expires_at) < new Date() : false
   const days = Number(range) || 30
-  const result =
-    connection && !tokenExpired ? await getMetaCampaigns(connection.token, connection.account_id, days) : null
+
+  // targetsBulk no depende del resultado de Meta — antes esperaba a que
+  // termine la llamada a la Graph API (red externa, la parte lenta de esta
+  // página) para recién ahí pedirle a Supabase algo que podía haber
+  // arrancado en paralelo desde el principio (auditoría de performance,
+  // 2026-08-01).
+  const [result, targetsBulk] = await Promise.all([
+    connection && !tokenExpired ? getMetaCampaigns(connection.token, connection.account_id, days) : Promise.resolve(null),
+    getAllCampaignTargets(supabase, activeOrganizationId),
+  ])
 
   let campaigns = result && result.ok ? result.campaigns : []
 
@@ -54,8 +62,6 @@ export default async function MetaAdsCampaignsPage({
   } else if (statusFilter === 'other') {
     campaigns = campaigns.filter((c) => c.effectiveStatus !== 'ACTIVE' && !PAUSED_LIKE.has(c.effectiveStatus))
   }
-
-  const targetsBulk = await getAllCampaignTargets(supabase, activeOrganizationId)
 
   const banner = campaignError
     ? { tone: 'error' as const, message: campaignError }
