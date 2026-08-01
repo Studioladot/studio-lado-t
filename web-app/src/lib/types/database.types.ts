@@ -1720,6 +1720,7 @@ export type Database = {
           impressions: number | null
           like_count: number | null
           link_clicks: number | null
+          media_product_type: string | null
           media_type: string | null
           media_url: string | null
           organization_id: string
@@ -1743,6 +1744,7 @@ export type Database = {
           impressions?: number | null
           like_count?: number | null
           link_clicks?: number | null
+          media_product_type?: string | null
           media_type?: string | null
           media_url?: string | null
           organization_id: string
@@ -1766,6 +1768,7 @@ export type Database = {
           impressions?: number | null
           like_count?: number | null
           link_clicks?: number | null
+          media_product_type?: string | null
           media_type?: string | null
           media_url?: string | null
           organization_id?: string

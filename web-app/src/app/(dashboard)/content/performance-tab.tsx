@@ -65,6 +65,7 @@ export function PerformanceTab({
   tiktokConnected,
   tiktokVideos,
   instagramCatalog,
+  gotixMediaIds,
 }: {
   instagramConnected: boolean
   igUsername: string | null
@@ -74,6 +75,7 @@ export function PerformanceTab({
   tiktokConnected: boolean
   tiktokVideos: TiktokVideoRow[]
   instagramCatalog: InstagramCatalogRow[]
+  gotixMediaIds: Set<string>
 }) {
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [comparing, setComparing] = useState(false)
@@ -161,7 +163,7 @@ export function PerformanceTab({
               diario de instagram-metrics-sync que alimenta accountInsights/
               mediaInsights más abajo: se sincroniza manual, a demanda, así
               que tiene que verse aunque el cron todavía no haya corrido. */}
-          <InstagramMediaCatalogSection items={instagramCatalog} />
+          <InstagramMediaCatalogSection items={instagramCatalog} gotixMediaIds={gotixMediaIds} />
 
           {instagramHasNoData ? (
             <div className="rounded-card border border-dashed border-border bg-surface-2/40 px-6 py-12 text-center">

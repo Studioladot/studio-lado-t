@@ -97,6 +97,15 @@ export default async function ContentPage() {
   // eso se calcula acá, sobre mediaInsightsRaw, antes de esa reducción.
   const winningItems = detectWinningItems(mediaInsightsRaw ?? [])
 
+  // "¿esto nació en nuestro pipeline?" (pedido real, 2026-08-01): no existe
+  // ningún flag dedicado tipo "reel_de_prueba" en el esquema — lo más
+  // cercano y honesto es ig_media_id, que posts/piezas ya guardan cuando
+  // instagram-publish-run publica con éxito. Si el ig_media_id de un ítem
+  // del catálogo zero-fricción aparece acá, es porque Gotix lo publicó.
+  const gotixMediaIds = new Set<string>(
+    [...(posts ?? []), ...(pieces ?? [])].map((item) => item.ig_media_id).filter((id): id is string => !!id)
+  )
+
   return (
     <div>
       <div className="mb-[22px]">
@@ -115,6 +124,7 @@ export default async function ContentPage() {
         tiktokConnected={!!tiktokConnection}
         tiktokVideos={tiktokVideos ?? []}
         instagramCatalog={instagramCatalog ?? []}
+        gotixMediaIds={gotixMediaIds}
         accountInsights={accountInsights ?? []}
         mediaInsights={[...latestByItem.values()]}
         winningItems={winningItems}

@@ -14,16 +14,35 @@ import { META_GRAPH_URL } from '@/lib/meta/oauth'
 // mismos que ya usa, probados en producción,
 // supabase/functions/instagram-metrics-sync/index.ts — no se inventaron
 // nombres nuevos acá.
-const MEDIA_FIELDS = 'id,caption,media_type,media_url,thumbnail_url,permalink,timestamp'
+//
+// Bug real reportado (2026-08-01): las métricas venían todas en 0/—.
+// like_count/comments_count SÍ vienen directo en el objeto de /media (no
+// hace falta /insights para esos dos) — se agregan acá como fuente
+// primaria, con el valor de /insights como respaldo. Esto importa en
+// serio para el "feed histórico completo": la Insights API de Instagram
+// tiene una ventana de retención real y no siempre devuelve datos para
+// contenido viejo (mismo motivo por el que instagram-metrics-sync acota a
+// MEDIA_LOOKBACK_DAYS=90 en vez de traer todo) — like_count/comments_count
+// del objeto de media no tienen esa restricción, son un contador vigente
+// como cualquier "me gusta" de la app, así que funcionan para posts de
+// cualquier antigüedad aunque /insights falle o venga vacío para ellos.
+//
+// media_product_type (FEED/REELS/STORY) se agrega para poder mostrar el
+// badge real de formato — media_type solo distingue IMAGE/VIDEO/
+// CAROUSEL_ALBUM, no alcanza para saber si un VIDEO es un Reel.
+const MEDIA_FIELDS = 'id,caption,media_type,media_product_type,media_url,thumbnail_url,permalink,timestamp,like_count,comments_count'
 
 export type InstagramMediaItem = {
   id: string
   caption?: string
   media_type?: 'IMAGE' | 'VIDEO' | 'CAROUSEL_ALBUM'
+  media_product_type?: 'FEED' | 'REELS' | 'STORY' | 'CAROUSEL_CONTAINER' | 'AD'
   media_url?: string
   thumbnail_url?: string
   permalink?: string
   timestamp: string
+  like_count?: number
+  comments_count?: number
 }
 
 type MediaPageResult = { ok: true; items: InstagramMediaItem[]; nextAfter: string | null } | { ok: false; error: string }

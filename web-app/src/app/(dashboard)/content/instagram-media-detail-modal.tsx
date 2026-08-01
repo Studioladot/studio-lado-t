@@ -1,7 +1,7 @@
 'use client'
 
 import { InstagramIcon } from '@/components/features/nav-icons'
-import { primaryMetric, type InstagramCatalogRow } from '@/lib/instagram/media-catalog-winners'
+import { primaryMetric, formatLabel, type InstagramCatalogRow } from '@/lib/instagram/media-catalog-winners'
 
 // Mismo fix que tiktok-video-detail-modal.tsx (bug real reportado,
 // 2026-08-01): columnas nuevas sin migrar vienen `undefined`, no `null` —
@@ -73,12 +73,14 @@ export function InstagramMediaDetailModal({
   maxPrimary,
   maxLikes,
   maxComments,
+  publishedWithGotix,
   onClose,
 }: {
   item: InstagramCatalogRow
   maxPrimary: number
   maxLikes: number
   maxComments: number
+  publishedWithGotix?: boolean
   onClose: () => void
 }) {
   const engagementBase = item.plays ?? item.impressions ?? item.reach ?? 0
@@ -99,6 +101,9 @@ export function InstagramMediaDetailModal({
               <InstagramIcon size={28} />
             </div>
           )}
+          <span className="absolute left-2 top-2 rounded-full bg-black/60 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-white shadow">
+            {formatLabel(item)}
+          </span>
           <button
             type="button"
             onClick={onClose}
@@ -112,6 +117,11 @@ export function InstagramMediaDetailModal({
         </div>
 
         <div className="flex flex-col gap-4 p-5">
+          {publishedWithGotix && (
+            <span className="w-fit rounded-full bg-accent/[0.12] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-accent">
+              Publicado con Gotix
+            </span>
+          )}
           <p className="text-sm leading-relaxed text-text">{item.caption || 'Sin descripción'}</p>
 
           <div className="flex flex-col gap-2.5">

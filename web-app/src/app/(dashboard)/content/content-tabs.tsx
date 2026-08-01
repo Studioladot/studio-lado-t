@@ -35,6 +35,7 @@ export function ContentTabs({
   tiktokConnected,
   tiktokVideos,
   instagramCatalog,
+  gotixMediaIds,
   accountInsights,
   mediaInsights,
   winningItems,
@@ -47,6 +48,7 @@ export function ContentTabs({
   tiktokConnected: boolean
   tiktokVideos: TiktokVideoRow[]
   instagramCatalog: InstagramCatalogRow[]
+  gotixMediaIds: Set<string>
   accountInsights: AccountInsight[]
   mediaInsights: MediaInsight[]
   winningItems: WinningItem[]
@@ -102,6 +104,7 @@ export function ContentTabs({
           tiktokConnected={tiktokConnected}
           tiktokVideos={tiktokVideos}
           instagramCatalog={instagramCatalog}
+          gotixMediaIds={gotixMediaIds}
         />
       )}
     </div>

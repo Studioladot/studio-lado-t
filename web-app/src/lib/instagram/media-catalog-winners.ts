@@ -28,3 +28,16 @@ export function detectInstagramCatalogWinners(rows: InstagramCatalogRow[]): Set<
   }
   return winners
 }
+
+// Badge de formato (bug real reportado, 2026-08-01): media_type
+// (IMAGE/VIDEO/CAROUSEL_ALBUM) solo no alcanza para distinguir un Reel de
+// un video de feed normal — los dos vienen con media_type=VIDEO, la
+// diferencia está en media_product_type (REELS/FEED/...), un campo
+// separado de la Graph API que antes no se pedía ni se guardaba.
+export function formatLabel(row: InstagramCatalogRow): string {
+  if (row.media_product_type === 'REELS') return 'Reel'
+  if (row.media_type === 'CAROUSEL_ALBUM') return 'Carrusel'
+  if (row.media_type === 'VIDEO') return 'Video'
+  if (row.media_type === 'IMAGE') return 'Imagen'
+  return 'Publicación'
+}

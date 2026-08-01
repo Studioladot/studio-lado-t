@@ -4,7 +4,7 @@ import { useMemo, useState, useTransition } from 'react'
 import { syncInstagramMediaAction } from './instagram-sync-actions'
 import { InstagramMediaDetailModal } from './instagram-media-detail-modal'
 import { Pagination } from '../meta-ads/campaigns/pagination'
-import { detectInstagramCatalogWinners, primaryMetric, type InstagramCatalogRow } from '@/lib/instagram/media-catalog-winners'
+import { detectInstagramCatalogWinners, primaryMetric, formatLabel, type InstagramCatalogRow } from '@/lib/instagram/media-catalog-winners'
 import { InstagramIcon } from '@/components/features/nav-icons'
 
 function fmt(n: number): string {
@@ -43,7 +43,13 @@ function sortItems(items: InstagramCatalogRow[], mode: SortMode): InstagramCatal
 // modal de detalle) a propósito, para que las dos plataformas se sientan
 // como el mismo producto. Sin botón de "Escalar": el contenido ya está en
 // Instagram, no tiene destino al que cross-postear todavía.
-export function InstagramMediaCatalogSection({ items }: { items: InstagramCatalogRow[] }) {
+export function InstagramMediaCatalogSection({
+  items,
+  gotixMediaIds,
+}: {
+  items: InstagramCatalogRow[]
+  gotixMediaIds: Set<string>
+}) {
   const [syncing, startSync] = useTransition()
   const [syncError, setSyncError] = useState<string | null>(null)
   const [syncMessage, setSyncMessage] = useState<string | null>(null)
@@ -77,12 +83,16 @@ export function InstagramMediaCatalogSection({ items }: { items: InstagramCatalo
         setSyncError(result.error)
         return
       }
+      const insightsNote =
+        result.withoutInsights > 0
+          ? ` (${result.withoutInsights} sin impresiones/reproducciones — Instagram no siempre las expone para contenido antiguo; like_count y comments_count sí llegaron.)`
+          : ''
       if (result.count === 0 && result.done) {
         setSyncMessage('Historial completo — no hay nada nuevo para traer.')
       } else if (result.done) {
-        setSyncMessage(`Sincronizados ${result.count} — historial completo.`)
+        setSyncMessage(`Sincronizados ${result.count} — historial completo.${insightsNote}`)
       } else {
-        setSyncMessage(`Sincronizados ${result.count} — todavía queda historial. Tocá "Sincronizar ahora" de nuevo para seguir.`)
+        setSyncMessage(`Sincronizados ${result.count} — todavía queda historial. Tocá "Sincronizar ahora" de nuevo para seguir.${insightsNote}`)
       }
     })
   }
@@ -160,11 +170,19 @@ export function InstagramMediaCatalogSection({ items }: { items: InstagramCatalo
                         Viral
                       </span>
                     )}
+                    <span className="absolute right-1 top-1 rounded-full bg-black/60 px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wide text-white shadow">
+                      {formatLabel(item)}
+                    </span>
                     <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent px-1.5 pb-1 pt-3 text-[10px] font-semibold tabular-nums text-white">
                       {fmt(primaryMetric(item))}
                     </span>
                   </div>
                   <p className="line-clamp-2 px-1.5 py-1.5 text-[10px] leading-snug text-text-2">{item.caption || 'Sin descripción'}</p>
+                  {item.ig_media_id && gotixMediaIds.has(item.ig_media_id) && (
+                    <span className="mx-1.5 mb-1.5 w-fit rounded-full bg-accent/[0.12] px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wide text-accent">
+                      Publicado con Gotix
+                    </span>
+                  )}
                 </button>
               )
             })}
@@ -175,7 +193,14 @@ export function InstagramMediaCatalogSection({ items }: { items: InstagramCatalo
       )}
 
       {selectedItem && (
-        <InstagramMediaDetailModal item={selectedItem} maxPrimary={maxPrimary} maxLikes={maxLikes} maxComments={maxComments} onClose={() => setSelectedId(null)} />
+        <InstagramMediaDetailModal
+          item={selectedItem}
+          maxPrimary={maxPrimary}
+          maxLikes={maxLikes}
+          maxComments={maxComments}
+          publishedWithGotix={!!selectedItem.ig_media_id && gotixMediaIds.has(selectedItem.ig_media_id)}
+          onClose={() => setSelectedId(null)}
+        />
       )}
     </div>
   )

@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase/server'
 import { getDashboardContext } from '@/lib/organization/dashboard-context'
 import { getInstagramMediaPage, getInstagramMediaInsights, type InstagramMediaItem } from '@/lib/instagram/media-catalog'
 
-export type SyncInstagramResult = { ok: true; count: number; done: boolean } | { ok: false; error: string }
+export type SyncInstagramResult = { ok: true; count: number; done: boolean; withoutInsights: number } | { ok: false; error: string }
 
 const MAX_ITEMS_PER_RUN = 40
 const INSIGHT_CONCURRENCY = 5
@@ -68,6 +68,7 @@ export async function syncInstagramMediaAction(): Promise<SyncInstagramResult> {
 
     const items = batch.slice(0, MAX_ITEMS_PER_RUN)
     let synced = 0
+    let withoutInsights = 0
     let lastUpsertError: string | null = null
 
     for (let i = 0; i < items.length; i += INSIGHT_CONCURRENCY) {
@@ -77,9 +78,13 @@ export async function syncInstagramMediaAction(): Promise<SyncInstagramResult> {
       for (let j = 0; j < chunk.length; j++) {
         const item = chunk[j]
         const insightsResult = results[j]
-        // Un ítem puntual con error (cuenta chica sin umbral, media
-        // borrada, etc.) no frena el resto del lote — se guarda igual con
-        // las métricas en null en vez de perder el ítem entero.
+        // Un ítem puntual con error de /insights (cuenta chica sin umbral,
+        // o el motivo real reportado: la Insights API de Instagram no
+        // siempre tiene datos para contenido viejo — mismo motivo por el
+        // que instagram-metrics-sync acota a MEDIA_LOOKBACK_DAYS=90) no
+        // frena el resto del lote. Se cuenta (withoutInsights) para poder
+        // avisarlo, en vez de tragarlo en silencio como antes.
+        if (!insightsResult.ok) withoutInsights++
         const insights = insightsResult.ok
           ? insightsResult.data
           : { plays: null, reach: null, likes: null, comments: null, shares: null, saved: null, impressions: null }
@@ -90,12 +95,19 @@ export async function syncInstagramMediaAction(): Promise<SyncInstagramResult> {
             ig_media_id: item.id,
             caption: item.caption ?? null,
             media_type: item.media_type ?? null,
+            media_product_type: item.media_product_type ?? null,
             media_url: item.media_url ?? null,
             thumbnail_url: item.thumbnail_url ?? null,
             permalink: item.permalink ?? null,
             posted_at: item.timestamp ?? null,
-            like_count: insights.likes,
-            comments_count: insights.comments,
+            // like_count/comments_count del objeto de media son la fuente
+            // primaria (bug real corregido acá, 2026-08-01) — a diferencia
+            // de /insights, no dependen de ninguna ventana de retención,
+            // son un contador vigente como cualquier "me gusta" de la app.
+            // insights.likes/comments quedan de respaldo por si el objeto
+            // de media no los trajera por algún motivo.
+            like_count: item.like_count ?? insights.likes,
+            comments_count: item.comments_count ?? insights.comments,
             impressions: insights.impressions,
             reach: insights.reach,
             plays: insights.plays,
@@ -125,7 +137,7 @@ export async function syncInstagramMediaAction(): Promise<SyncInstagramResult> {
     if (cursorError) return { ok: false, error: `Se sincronizaron ${synced} videos, pero no pudimos guardar el progreso: ${cursorError.message}` }
 
     revalidatePath('/content')
-    return { ok: true, count: synced, done: reachedEnd }
+    return { ok: true, count: synced, done: reachedEnd, withoutInsights }
   } catch (err) {
     return { ok: false, error: err instanceof Error ? err.message : 'Error inesperado al sincronizar Instagram.' }
   }
