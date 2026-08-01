@@ -41,7 +41,7 @@ export default async function ContentPage() {
   // organización que nunca sincronizó nada. Las tres corren en paralelo
   // (ninguna depende de las otras).
   const since30d = new Date(new Date().getTime() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
-  const [{ data: accountInsights }, { data: mediaInsightsRaw }, { data: tiktokVideos }] = await Promise.all([
+  const [{ data: accountInsights }, { data: mediaInsightsRaw }, { data: tiktokVideos }, { data: instagramCatalog }] = await Promise.all([
     instagramConnection
       ? supabase
           .from('instagram_account_insights')
@@ -69,6 +69,16 @@ export default async function ContentPage() {
           .select('*')
           .eq('organization_id', activeOrganizationId)
           .order('view_count', { ascending: false })
+      : Promise.resolve({ data: null }),
+    // Catálogo "zero fricción" del feed histórico de Instagram (Panel de
+    // Inteligencia de Contenido, 2026-08-01) — independiente de
+    // instagram_media_insights, ver instagram-media-catalog-winners.ts.
+    instagramConnection
+      ? supabase
+          .from('instagram_media_catalog')
+          .select('*')
+          .eq('organization_id', activeOrganizationId)
+          .order('plays', { ascending: false, nullsFirst: false })
       : Promise.resolve({ data: null }),
   ])
 
@@ -104,6 +114,7 @@ export default async function ContentPage() {
         igUsername={instagramConnection?.ig_username ?? null}
         tiktokConnected={!!tiktokConnection}
         tiktokVideos={tiktokVideos ?? []}
+        instagramCatalog={instagramCatalog ?? []}
         accountInsights={accountInsights ?? []}
         mediaInsights={[...latestByItem.values()]}
         winningItems={winningItems}

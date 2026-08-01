@@ -1663,6 +1663,8 @@ export type Database = {
           id: string
           ig_user_id: string
           ig_username: string | null
+          media_sync_complete: boolean
+          media_sync_cursor: string | null
           organization_id: string
           page_access_token: string
           page_id: string
@@ -1675,6 +1677,8 @@ export type Database = {
           id?: string
           ig_user_id: string
           ig_username?: string | null
+          media_sync_complete?: boolean
+          media_sync_cursor?: string | null
           organization_id: string
           page_access_token: string
           page_id: string
@@ -1687,6 +1691,8 @@ export type Database = {
           id?: string
           ig_user_id?: string
           ig_username?: string | null
+          media_sync_complete?: boolean
+          media_sync_cursor?: string | null
           organization_id?: string
           page_access_token?: string
           page_id?: string
@@ -1696,6 +1702,86 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "instagram_connections_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      instagram_media_catalog: {
+        Row: {
+          attributed_sales: number | null
+          caption: string | null
+          comments_count: number | null
+          created_at: string
+          id: string
+          ig_media_id: string
+          impressions: number | null
+          like_count: number | null
+          link_clicks: number | null
+          media_type: string | null
+          media_url: string | null
+          organization_id: string
+          permalink: string | null
+          plays: number | null
+          posted_at: string | null
+          reach: number | null
+          roas_organic: number | null
+          saved: number | null
+          shares: number | null
+          synced_at: string
+          thumbnail_url: string | null
+        }
+        Insert: {
+          attributed_sales?: number | null
+          caption?: string | null
+          comments_count?: number | null
+          created_at?: string
+          id?: string
+          ig_media_id: string
+          impressions?: number | null
+          like_count?: number | null
+          link_clicks?: number | null
+          media_type?: string | null
+          media_url?: string | null
+          organization_id: string
+          permalink?: string | null
+          plays?: number | null
+          posted_at?: string | null
+          reach?: number | null
+          roas_organic?: number | null
+          saved?: number | null
+          shares?: number | null
+          synced_at?: string
+          thumbnail_url?: string | null
+        }
+        Update: {
+          attributed_sales?: number | null
+          caption?: string | null
+          comments_count?: number | null
+          created_at?: string
+          id?: string
+          ig_media_id?: string
+          impressions?: number | null
+          like_count?: number | null
+          link_clicks?: number | null
+          media_type?: string | null
+          media_url?: string | null
+          organization_id?: string
+          permalink?: string | null
+          plays?: number | null
+          posted_at?: string | null
+          reach?: number | null
+          roas_organic?: number | null
+          saved?: number | null
+          shares?: number | null
+          synced_at?: string
+          thumbnail_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "instagram_media_catalog_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
@@ -2709,6 +2795,7 @@ export type Database = {
       }
       tiktok_videos: {
         Row: {
+          attributed_sales: number | null
           comment_count: number
           cover_image_url: string | null
           created_at: string
@@ -2716,8 +2803,10 @@ export type Database = {
           duration_seconds: number | null
           id: string
           like_count: number
+          link_clicks: number | null
           organization_id: string
           posted_at: string | null
+          roas_organic: number | null
           share_count: number
           share_url: string | null
           synced_at: string
@@ -2726,6 +2815,7 @@ export type Database = {
           view_count: number
         }
         Insert: {
+          attributed_sales?: number | null
           comment_count?: number
           cover_image_url?: string | null
           created_at?: string
@@ -2733,8 +2823,10 @@ export type Database = {
           duration_seconds?: number | null
           id?: string
           like_count?: number
+          link_clicks?: number | null
           organization_id: string
           posted_at?: string | null
+          roas_organic?: number | null
           share_count?: number
           share_url?: string | null
           synced_at?: string
@@ -2743,6 +2835,7 @@ export type Database = {
           view_count?: number
         }
         Update: {
+          attributed_sales?: number | null
           comment_count?: number
           cover_image_url?: string | null
           created_at?: string
@@ -2750,8 +2843,10 @@ export type Database = {
           duration_seconds?: number | null
           id?: string
           like_count?: number
+          link_clicks?: number | null
           organization_id?: string
           posted_at?: string | null
+          roas_organic?: number | null
           share_count?: number
           share_url?: string | null
           synced_at?: string

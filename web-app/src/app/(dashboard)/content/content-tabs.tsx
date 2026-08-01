@@ -7,6 +7,7 @@ import { PublicationsTable } from './publications-table'
 import { PerformanceTab } from './performance-tab'
 import type { WinningItem } from '@/lib/content/winners'
 import type { TiktokVideoRow } from '@/lib/tiktok/winners'
+import type { InstagramCatalogRow } from '@/lib/instagram/media-catalog-winners'
 import type { Database } from '@/lib/types/database.types'
 
 type Post = Database['public']['Tables']['content_posts']['Row']
@@ -33,6 +34,7 @@ export function ContentTabs({
   igUsername,
   tiktokConnected,
   tiktokVideos,
+  instagramCatalog,
   accountInsights,
   mediaInsights,
   winningItems,
@@ -44,6 +46,7 @@ export function ContentTabs({
   igUsername: string | null
   tiktokConnected: boolean
   tiktokVideos: TiktokVideoRow[]
+  instagramCatalog: InstagramCatalogRow[]
   accountInsights: AccountInsight[]
   mediaInsights: MediaInsight[]
   winningItems: WinningItem[]
@@ -98,6 +101,7 @@ export function ContentTabs({
           winningItems={winningItems}
           tiktokConnected={tiktokConnected}
           tiktokVideos={tiktokVideos}
+          instagramCatalog={instagramCatalog}
         />
       )}
     </div>

@@ -23,6 +23,47 @@ function Bar({ label, value, max }: { label: string; value: number; max: number 
   )
 }
 
+// "Arquitectura del Santo Grial" (2026-08-01) — mismo bloque que
+// instagram-media-detail-modal.tsx, a propósito: las dos plataformas
+// quedan con la misma forma para cuando exista el cruce real con
+// Tiendanube/WhatsApp. Nunca en 0 ni inventado, siempre "—" hasta que
+// haya un dato real.
+function SalesAttributionRow({
+  attributedSales,
+  roasOrganic,
+  linkClicks,
+}: {
+  attributedSales: number | null
+  roasOrganic: number | null
+  linkClicks: number | null
+}) {
+  const hasData = attributedSales !== null || roasOrganic !== null || linkClicks !== null
+  return (
+    <div className="rounded-control border border-dashed border-accent/30 bg-accent/[0.03] p-3">
+      <p className="mb-2 text-[10px] font-bold uppercase tracking-wide text-text-3">Impacto en ventas</p>
+      <div className="grid grid-cols-3 gap-2 text-center">
+        <div>
+          <p className="text-sm font-bold tabular-nums text-text">{attributedSales !== null ? fmt(attributedSales) : '—'}</p>
+          <p className="mt-0.5 text-[9px] text-text-3">Ventas atrib.</p>
+        </div>
+        <div>
+          <p className="text-sm font-bold tabular-nums text-text">{roasOrganic !== null ? `${roasOrganic.toFixed(1)}x` : '—'}</p>
+          <p className="mt-0.5 text-[9px] text-text-3">ROAS orgánico</p>
+        </div>
+        <div>
+          <p className="text-sm font-bold tabular-nums text-text">{linkClicks !== null ? fmt(linkClicks) : '—'}</p>
+          <p className="mt-0.5 text-[9px] text-text-3">Clics al link</p>
+        </div>
+      </div>
+      {!hasData && (
+        <p className="mt-2 text-[10px] leading-relaxed text-text-3">
+          Todavía no hay conexión con Tiendanube/WhatsApp para atribuir ventas a este contenido — próxima fase.
+        </p>
+      )}
+    </div>
+  )
+}
+
 // Modal de "Analítica Profunda" (2026-08-01) — las barras comparan cada
 // métrica contra el máximo de TODO el historial sincronizado (no solo la
 // página visible), para que el contexto no cambie según en qué página de
@@ -113,6 +154,8 @@ export function TiktokVideoDetailModal({
             datos los reserva TikTok para su propia app (TikTok Studio) y requerirían el programa de TikTok Business/Ads API, una integración aparte
             con su propia revisión, para poder mostrarlos acá.
           </div>
+
+          <SalesAttributionRow attributedSales={video.attributed_sales} roasOrganic={video.roas_organic} linkClicks={video.link_clicks} />
 
           {/* Banner con color, no un texto gris chico — antes era fácil no
               notar que la acción sí había terminado (reporte real: "hace

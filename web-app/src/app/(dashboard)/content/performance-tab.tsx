@@ -6,9 +6,11 @@ import { AccountTrendChart } from './account-trend-chart'
 import { ComparisonPanel } from './comparison-panel'
 import { CrossPostModal } from './cross-post-modal'
 import { TiktokPerformanceSection } from './tiktok-performance-section'
+import { InstagramMediaCatalogSection } from './instagram-media-catalog-section'
 import type { AccountInsight, MediaInsight } from './content-tabs'
 import type { WinningItem } from '@/lib/content/winners'
 import type { TiktokVideoRow } from '@/lib/tiktok/winners'
+import type { InstagramCatalogRow } from '@/lib/instagram/media-catalog-winners'
 
 function fmt(n: number | null): string {
   return n === null ? '—' : n.toLocaleString('es-AR')
@@ -62,6 +64,7 @@ export function PerformanceTab({
   winningItems,
   tiktokConnected,
   tiktokVideos,
+  instagramCatalog,
 }: {
   instagramConnected: boolean
   igUsername: string | null
@@ -70,6 +73,7 @@ export function PerformanceTab({
   winningItems: WinningItem[]
   tiktokConnected: boolean
   tiktokVideos: TiktokVideoRow[]
+  instagramCatalog: InstagramCatalogRow[]
 }) {
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [comparing, setComparing] = useState(false)
@@ -151,18 +155,24 @@ export function PerformanceTab({
 
       {tiktokConnected && (!showNetworkTabs || networkTab === 'tiktok') && <TiktokPerformanceSection videos={tiktokVideos} />}
 
-      {instagramConnected &&
-        (!showNetworkTabs || networkTab === 'meta') &&
-        (instagramHasNoData ? (
-          <div className="rounded-card border border-dashed border-border bg-surface-2/40 px-6 py-12 text-center">
-            <p className="text-sm font-semibold text-text">Instagram conectado{igUsername ? ` (@${igUsername})` : ''}, todavía sin datos</p>
-            <p className="mx-auto mt-1 max-w-[380px] text-xs text-text-2">
-              La sincronización corre una vez al día — la primera tanda de métricas va a aparecer acá después de la próxima corrida.
-            </p>
-          </div>
-        ) : (
-          <>
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+      {instagramConnected && (!showNetworkTabs || networkTab === 'meta') && (
+        <>
+          {/* Catálogo "zero fricción" (2026-08-01) — independiente del cron
+              diario de instagram-metrics-sync que alimenta accountInsights/
+              mediaInsights más abajo: se sincroniza manual, a demanda, así
+              que tiene que verse aunque el cron todavía no haya corrido. */}
+          <InstagramMediaCatalogSection items={instagramCatalog} />
+
+          {instagramHasNoData ? (
+            <div className="rounded-card border border-dashed border-border bg-surface-2/40 px-6 py-12 text-center">
+              <p className="text-sm font-semibold text-text">Instagram conectado{igUsername ? ` (@${igUsername})` : ''}, todavía sin datos</p>
+              <p className="mx-auto mt-1 max-w-[380px] text-xs text-text-2">
+                La sincronización corre una vez al día — la primera tanda de métricas va a aparecer acá después de la próxima corrida.
+              </p>
+            </div>
+          ) : (
+            <>
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
               <KpiCard label="Seguidores" value={fmt(latestAccount?.follower_count ?? null)} sub={latestAccount ? `al ${latestAccount.captured_at}` : undefined} />
               <KpiCard
                 label="Variación 7 días"
@@ -284,7 +294,9 @@ export function PerformanceTab({
               )}
             </div>
           </>
-        ))}
+          )}
+        </>
+      )}
 
       {comparing && selectedItems.length >= 2 && <ComparisonPanel items={selectedItems} onClose={() => setComparing(false)} />}
 
