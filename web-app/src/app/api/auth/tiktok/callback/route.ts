@@ -98,7 +98,14 @@ export async function GET(request: Request) {
     const tokenData = await tokenRes.json()
 
     if (tokenData.error) {
-      return redirectWithError(tokenData.error_description || tokenData.error)
+      // Diagnóstico temporal (2026-08-01) — "Client key or secret is
+      // incorrect" persistió después de recargar las env vars en Vercel
+      // varias veces. En vez de seguir adivinando, esto expone el LARGO de
+      // cada valor tal como Vercel los está leyendo ahora mismo, y si
+      // tienen espacios/saltos de línea de más — nunca el valor real. Sacar
+      // este bloque en cuanto se resuelva, no debe quedar en producción.
+      const diag = `clientKey: ${clientKey.length} chars${clientKey !== clientKey.trim() ? ' (con espacios de más!)' : ''} · clientSecret: ${clientSecret.length} chars${clientSecret !== clientSecret.trim() ? ' (con espacios de más!)' : ''} · redirectUri: "${redirectUri}"`
+      return redirectWithError(`${tokenData.error_description || tokenData.error} — DIAG: ${diag}`)
     }
 
     const accessToken: string = tokenData.access_token
