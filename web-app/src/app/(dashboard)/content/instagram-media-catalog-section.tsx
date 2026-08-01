@@ -1,7 +1,7 @@
 'use client'
 
 import { useMemo, useState, useTransition } from 'react'
-import { syncInstagramMediaAction, debugInstagramRawFetchAction } from './instagram-sync-actions'
+import { syncInstagramMediaAction } from './instagram-sync-actions'
 import { InstagramMediaDetailModal } from './instagram-media-detail-modal'
 import { Pagination } from '../meta-ads/campaigns/pagination'
 import { detectInstagramCatalogWinners, primaryMetric, formatLabel, type InstagramCatalogRow } from '@/lib/instagram/media-catalog-winners'
@@ -56,8 +56,6 @@ export function InstagramMediaCatalogSection({
   const [sortMode, setSortMode] = useState<SortMode>('primary')
   const [page, setPage] = useState(1)
   const [selectedId, setSelectedId] = useState<string | null>(null)
-  const [debugRaw, setDebugRaw] = useState<string | null>(null)
-  const [debuggingFetch, startDebugFetch] = useTransition()
 
   const winners = useMemo(() => detectInstagramCatalogWinners(items), [items])
   const sorted = useMemo(() => sortItems(items, sortMode), [items, sortMode])
@@ -74,14 +72,6 @@ export function InstagramMediaCatalogSection({
   function handleSortChange(mode: SortMode) {
     setSortMode(mode)
     setPage(1)
-  }
-
-  function handleDebugFetch() {
-    setDebugRaw(null)
-    startDebugFetch(async () => {
-      const result = await debugInstagramRawFetchAction()
-      setDebugRaw(result.ok ? result.raw : `ERROR: ${result.error}`)
-    })
   }
 
   function handleSync() {
@@ -118,36 +108,15 @@ export function InstagramMediaCatalogSection({
           <InstagramIcon size={16} gradient />
           <p className="text-[10px] font-bold uppercase tracking-wide text-text-3">Catálogo Instagram</p>
         </div>
-        <div className="flex gap-2">
-          {/* Botón temporal de diagnóstico (2026-08-01) — el sync no tira
-              error pero like_count/comments_count siguen en null después de
-              resincronizar; esto muestra la respuesta cruda de la Graph API
-              para ver si Meta directamente no está mandando esos campos.
-              Se saca en cuanto se identifique la causa real. */}
-          <button
-            type="button"
-            onClick={handleDebugFetch}
-            disabled={debuggingFetch}
-            className="rounded-control border border-dashed border-border px-3 py-1.5 text-[11px] font-semibold text-text-3 transition-all duration-200 ease-out hover:border-text-3 hover:text-text disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {debuggingFetch ? 'Consultando…' : 'Diagnóstico: ver respuesta cruda'}
-          </button>
-          <button
-            type="button"
-            onClick={handleSync}
-            disabled={syncing}
-            className="rounded-control border border-border px-3 py-1.5 text-[11px] font-semibold text-text-2 transition-all duration-200 ease-out hover:border-text-3 hover:text-text disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {syncing ? 'Sincronizando…' : 'Sincronizar ahora'}
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={handleSync}
+          disabled={syncing}
+          className="rounded-control border border-border px-3 py-1.5 text-[11px] font-semibold text-text-2 transition-all duration-200 ease-out hover:border-text-3 hover:text-text disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {syncing ? 'Sincronizando…' : 'Sincronizar ahora'}
+        </button>
       </div>
-
-      {debugRaw && (
-        <pre className="mb-3 max-h-64 overflow-auto rounded-control border border-dashed border-border bg-surface-2/40 p-3 text-[10px] text-text-2">
-          {debugRaw}
-        </pre>
-      )}
 
       {syncError && <p className="mb-3 text-xs text-red">{syncError}</p>}
       {syncMessage && <p className="mb-3 text-xs text-green">{syncMessage}</p>}

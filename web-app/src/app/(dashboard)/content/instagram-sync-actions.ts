@@ -4,43 +4,10 @@ import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { getDashboardContext } from '@/lib/organization/dashboard-context'
 import { getInstagramMediaPage, getInstagramMediaInsights, type InstagramMediaItem } from '@/lib/instagram/media-catalog'
-import { META_GRAPH_URL } from '@/lib/meta/oauth'
 
 export type SyncInstagramResult =
   | { ok: true; count: number; done: boolean; withoutInsights: number; withoutLikeData: number }
   | { ok: false; error: string }
-
-// Diagnóstico temporal (2026-08-01): el sync no está tirando error, pero
-// like_count/comments_count siguen llegando null incluso después de
-// re-sincronizar — significa que la Graph API está respondiendo bien pero
-// sin esos campos en el payload, no un bug de fetch/parseo de este lado.
-// Esta acción no transforma nada: pide el mismo MEDIA_FIELDS de siempre
-// para los 3 medios más recientes y devuelve la respuesta cruda para
-// diagnosticar por qué. Se borra en cuanto se identifique la causa real.
-export async function debugInstagramRawFetchAction(): Promise<{ ok: true; raw: string } | { ok: false; error: string }> {
-  try {
-    const { activeOrganizationId } = await getDashboardContext()
-    if (!activeOrganizationId) return { ok: false, error: 'No encontramos tu organización activa.' }
-
-    const supabase = await createClient()
-    const { data: connection, error: connectionError } = await supabase
-      .from('instagram_connections')
-      .select('*')
-      .eq('organization_id', activeOrganizationId)
-      .maybeSingle()
-
-    if (connectionError) return { ok: false, error: connectionError.message }
-    if (!connection) return { ok: false, error: 'Instagram no está conectado.' }
-
-    const fields = 'id,caption,media_type,media_product_type,timestamp,like_count,comments_count'
-    const url = `${META_GRAPH_URL}/${connection.ig_user_id}/media?fields=${fields}&limit=3&access_token=${connection.page_access_token}`
-    const res = await fetch(url)
-    const json = await res.json()
-    return { ok: true, raw: JSON.stringify(json, null, 2) }
-  } catch (err) {
-    return { ok: false, error: err instanceof Error ? err.message : 'Error inesperado.' }
-  }
-}
 
 const MAX_ITEMS_PER_RUN = 40
 const INSIGHT_CONCURRENCY = 5
