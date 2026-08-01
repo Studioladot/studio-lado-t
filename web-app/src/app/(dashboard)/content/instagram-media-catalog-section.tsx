@@ -93,10 +93,14 @@ export function InstagramMediaCatalogSection({
         setSyncError(result.error)
         return
       }
-      const insightsNote =
-        result.withoutInsights > 0
-          ? ` (${result.withoutInsights} sin impresiones/reproducciones — Instagram no siempre las expone para contenido antiguo; like_count y comments_count sí llegaron.)`
-          : ''
+      const notes: string[] = []
+      if (result.withoutInsights > 0) {
+        notes.push(`${result.withoutInsights} sin impresiones/reproducciones`)
+      }
+      if (result.withoutLikeData > 0) {
+        notes.push(`${result.withoutLikeData} sin likes/comentarios (Meta no los devolvió para esos posts)`)
+      }
+      const insightsNote = notes.length > 0 ? ` (${notes.join(', ')}.)` : ''
       if (result.count === 0 && result.done) {
         setSyncMessage('Historial completo — no hay nada nuevo para traer.')
       } else if (result.done) {

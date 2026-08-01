@@ -6,7 +6,9 @@ import { getDashboardContext } from '@/lib/organization/dashboard-context'
 import { getInstagramMediaPage, getInstagramMediaInsights, type InstagramMediaItem } from '@/lib/instagram/media-catalog'
 import { META_GRAPH_URL } from '@/lib/meta/oauth'
 
-export type SyncInstagramResult = { ok: true; count: number; done: boolean; withoutInsights: number } | { ok: false; error: string }
+export type SyncInstagramResult =
+  | { ok: true; count: number; done: boolean; withoutInsights: number; withoutLikeData: number }
+  | { ok: false; error: string }
 
 // Diagnóstico temporal (2026-08-01): el sync no está tirando error, pero
 // like_count/comments_count siguen llegando null incluso después de
@@ -102,6 +104,12 @@ export async function syncInstagramMediaAction(): Promise<SyncInstagramResult> {
     const items = batch.slice(0, MAX_ITEMS_PER_RUN)
     let synced = 0
     let withoutInsights = 0
+    // Antes el mensaje de la UI afirmaba "like_count y comments_count sí
+    // llegaron" sin verificarlo — era una suposición, no un hecho medido.
+    // Esto cuenta de verdad cuántos ítems terminan sin ninguno de los dos
+    // (ni del objeto de media ni de /insights como respaldo), para que el
+    // mensaje solo afirme lo que realmente pasó.
+    let withoutLikeData = 0
     let lastUpsertError: string | null = null
 
     for (let i = 0; i < items.length; i += INSIGHT_CONCURRENCY) {
@@ -122,6 +130,16 @@ export async function syncInstagramMediaAction(): Promise<SyncInstagramResult> {
           ? insightsResult.data
           : { plays: null, reach: null, likes: null, comments: null, shares: null, saved: null, impressions: null }
 
+        // like_count/comments_count del objeto de media son la fuente
+        // primaria (bug real corregido acá, 2026-08-01) — a diferencia de
+        // /insights, no dependen de ninguna ventana de retención, son un
+        // contador vigente como cualquier "me gusta" de la app.
+        // insights.likes/comments quedan de respaldo por si el objeto de
+        // media no los trajera por algún motivo.
+        const finalLikes = item.like_count ?? insights.likes
+        const finalComments = item.comments_count ?? insights.comments
+        if (finalLikes == null && finalComments == null) withoutLikeData++
+
         const { error: upsertError } = await supabase.from('instagram_media_catalog').upsert(
           {
             organization_id: activeOrganizationId,
@@ -133,14 +151,8 @@ export async function syncInstagramMediaAction(): Promise<SyncInstagramResult> {
             thumbnail_url: item.thumbnail_url ?? null,
             permalink: item.permalink ?? null,
             posted_at: item.timestamp ?? null,
-            // like_count/comments_count del objeto de media son la fuente
-            // primaria (bug real corregido acá, 2026-08-01) — a diferencia
-            // de /insights, no dependen de ninguna ventana de retención,
-            // son un contador vigente como cualquier "me gusta" de la app.
-            // insights.likes/comments quedan de respaldo por si el objeto
-            // de media no los trajera por algún motivo.
-            like_count: item.like_count ?? insights.likes,
-            comments_count: item.comments_count ?? insights.comments,
+            like_count: finalLikes,
+            comments_count: finalComments,
             impressions: insights.impressions,
             reach: insights.reach,
             plays: insights.plays,
@@ -170,7 +182,7 @@ export async function syncInstagramMediaAction(): Promise<SyncInstagramResult> {
     if (cursorError) return { ok: false, error: `Se sincronizaron ${synced} videos, pero no pudimos guardar el progreso: ${cursorError.message}` }
 
     revalidatePath('/content')
-    return { ok: true, count: synced, done: reachedEnd, withoutInsights }
+    return { ok: true, count: synced, done: reachedEnd, withoutInsights, withoutLikeData }
   } catch (err) {
     return { ok: false, error: err instanceof Error ? err.message : 'Error inesperado al sincronizar Instagram.' }
   }
