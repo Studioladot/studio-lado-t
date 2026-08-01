@@ -48,7 +48,10 @@ export async function syncInstagramMediaAction(): Promise<SyncInstagramResult> {
       .eq('organization_id', activeOrganizationId)
       .maybeSingle()
 
-    if (connectionError) return { ok: false, error: `No pudimos leer la conexión de Instagram: ${connectionError.message}` }
+    if (connectionError) {
+      console.error('[syncInstagramMediaAction] lectura de la conexión falló:', connectionError.message)
+      return { ok: false, error: 'No pudimos revisar tu conexión de Instagram. Probá de nuevo en unos minutos.' }
+    }
     if (!connection) return { ok: false, error: 'Instagram no está conectado.' }
 
     const cursor: string | undefined = connection.media_sync_complete ? undefined : (connection.media_sync_cursor ?? undefined)
@@ -59,7 +62,10 @@ export async function syncInstagramMediaAction(): Promise<SyncInstagramResult> {
 
     while (batch.length < MAX_ITEMS_PER_RUN) {
       const page = await getInstagramMediaPage(connection.ig_user_id, connection.page_access_token, nextAfter ?? undefined)
-      if (!page.ok) return { ok: false, error: page.error }
+      if (!page.ok) {
+        console.error('[syncInstagramMediaAction] Graph API falló:', page.error)
+        return { ok: false, error: 'No pudimos traer tu historial de Instagram. Probá de nuevo en unos minutos.' }
+      }
       batch.push(...page.items)
       nextAfter = page.nextAfter
       if (!nextAfter) {
@@ -139,18 +145,23 @@ export async function syncInstagramMediaAction(): Promise<SyncInstagramResult> {
     // "éxito" falso que escondía el problema real. Con items de sobra y
     // cero guardados, es un error real, no "no había nada nuevo".
     if (items.length > 0 && synced === 0 && lastUpsertError) {
-      return { ok: false, error: `No pudimos guardar el catálogo: ${lastUpsertError}` }
+      console.error('[syncInstagramMediaAction] upsert falló:', lastUpsertError)
+      return { ok: false, error: 'No pudimos guardar tu historial. Probá de nuevo en unos minutos.' }
     }
 
     const { error: cursorError } = await supabase
       .from('instagram_connections')
       .update({ media_sync_cursor: reachedEnd ? null : nextAfter, media_sync_complete: reachedEnd })
       .eq('organization_id', activeOrganizationId)
-    if (cursorError) return { ok: false, error: `Se sincronizaron ${synced} videos, pero no pudimos guardar el progreso: ${cursorError.message}` }
+    if (cursorError) {
+      console.error('[syncInstagramMediaAction] no se pudo guardar el progreso:', cursorError.message)
+      return { ok: false, error: `Actualizamos ${synced} publicaciones, pero no pudimos guardar el progreso. Probá de nuevo en unos minutos.` }
+    }
 
     revalidatePath('/content')
     return { ok: true, count: synced, done: reachedEnd, withoutInsights, withoutLikeData }
   } catch (err) {
-    return { ok: false, error: err instanceof Error ? err.message : 'Error inesperado al sincronizar Instagram.' }
+    console.error('[syncInstagramMediaAction] excepción inesperada:', err)
+    return { ok: false, error: 'Error inesperado al sincronizar Instagram. Probá de nuevo en unos minutos.' }
   }
 }

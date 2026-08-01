@@ -52,7 +52,12 @@ export async function syncTiktokVideosAction(): Promise<SyncTiktokResult> {
   }))
 
   const { error } = await supabase.from('tiktok_videos').upsert(rows, { onConflict: 'organization_id,tiktok_video_id' })
-  if (error) return { ok: false, error: `No pudimos guardar los videos: ${error.message}` }
+  // Detalle técnico solo en el log del servidor — el usuario final nunca
+  // debe ver mensajes de Postgres/Supabase (regla fija, 2026-08-01).
+  if (error) {
+    console.error('[syncTiktokVideosAction] upsert falló:', error.message)
+    return { ok: false, error: 'No pudimos guardar tus videos. Probá de nuevo en unos minutos.' }
+  }
 
   revalidatePath('/content')
   return { ok: true, count: rows.length }

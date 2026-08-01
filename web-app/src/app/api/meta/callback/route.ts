@@ -22,7 +22,7 @@ export async function GET(request: Request) {
   }
 
   if (!code || !state) {
-    return redirectWithError('Falta code o state en la respuesta de Meta.')
+    return redirectWithError('No pudimos completar la conexión con Meta. Probá de nuevo.')
   }
 
   const cookieStore = await cookies()
@@ -30,7 +30,7 @@ export async function GET(request: Request) {
   cookieStore.delete(META_OAUTH_STATE_COOKIE)
 
   if (!expectedState || expectedState !== state) {
-    return redirectWithError('El estado de la conexión no es válido — probá de nuevo.')
+    return redirectWithError('No pudimos verificar la conexión con Meta — probá de nuevo.')
   }
 
   const appId = process.env.META_APP_ID
@@ -62,13 +62,19 @@ export async function GET(request: Request) {
       `${META_GRAPH_URL}/oauth/access_token?client_id=${appId}&redirect_uri=${encodeURIComponent(redirectUri)}&client_secret=${appSecret}&code=${code}`
     )
     const shortData = await shortRes.json()
-    if (shortData.error) return redirectWithError(shortData.error.message)
+    if (shortData.error) {
+      console.error('[meta/callback] intercambio de código falló:', shortData.error.message)
+      return redirectWithError('No pudimos completar la conexión con Meta. Probá de nuevo en unos minutos.')
+    }
 
     const longRes = await fetch(
       `${META_GRAPH_URL}/oauth/access_token?grant_type=fb_exchange_token&client_id=${appId}&client_secret=${appSecret}&fb_exchange_token=${shortData.access_token}`
     )
     const longData = await longRes.json()
-    if (longData.error) return redirectWithError(longData.error.message)
+    if (longData.error) {
+      console.error('[meta/callback] intercambio de token largo falló:', longData.error.message)
+      return redirectWithError('No pudimos completar la conexión con Meta. Probá de nuevo en unos minutos.')
+    }
 
     const longLivedToken = longData.access_token
     const expiresInSec = longData.expires_in || 60 * 24 * 60 * 60
@@ -84,7 +90,10 @@ export async function GET(request: Request) {
       getFacebookUserId(longLivedToken),
     ])
 
-    if (!accountsResult.ok) return redirectWithError(accountsResult.error)
+    if (!accountsResult.ok) {
+      console.error('[meta/callback] lectura de cuentas publicitarias falló:', accountsResult.error)
+      return redirectWithError('No pudimos leer tus cuentas publicitarias de Meta. Probá de nuevo en unos minutos.')
+    }
     const { accounts } = accountsResult
     const igAccounts = instagramResult.ok ? instagramResult.accounts : []
 
@@ -140,7 +149,10 @@ export async function GET(request: Request) {
         expiresAt,
         fbUserId,
       })
-      if (!saved.ok) return redirectWithError(`No pudimos guardar la conexión: ${saved.error}`)
+      if (!saved.ok) {
+        console.error('[meta/callback] guardado de la conexión falló:', saved.error)
+        return redirectWithError('No pudimos guardar la conexión con Meta. Probá de nuevo en unos minutos.')
+      }
       if (igAccounts.length > 1) return NextResponse.redirect(`${origin}/meta-ads/connections/select-instagram`)
       return NextResponse.redirect(`${origin}/settings/integrations?meta_connected=1`)
     }
@@ -162,6 +174,7 @@ export async function GET(request: Request) {
     // /meta-ads/connections (ver select-account/actions.ts).
     return NextResponse.redirect(`${origin}/meta-ads/connections/select-account`)
   } catch (err) {
-    return redirectWithError(err instanceof Error ? err.message : 'Error desconocido.')
+    console.error('[meta/callback] excepción inesperada:', err)
+    return redirectWithError('No pudimos completar la conexión con Meta. Probá de nuevo en unos minutos.')
   }
 }

@@ -39,7 +39,7 @@ export async function GET(request: Request) {
   }
 
   if (!code || !state) {
-    return redirectWithError('Falta code o state en la respuesta de TikTok.')
+    return redirectWithError('No pudimos completar la conexión con TikTok. Probá de nuevo.')
   }
 
   const cookieStore = await cookies()
@@ -49,11 +49,11 @@ export async function GET(request: Request) {
   cookieStore.delete(TIKTOK_OAUTH_VERIFIER_COOKIE)
 
   if (!expectedState || expectedState !== state) {
-    return redirectWithError('El estado de la conexión no es válido — probá de nuevo.')
+    return redirectWithError('No pudimos verificar la conexión con TikTok — probá de nuevo.')
   }
 
   if (!codeVerifier) {
-    return redirectWithError('Falta el code_verifier de PKCE — probá conectar de nuevo desde el principio.')
+    return redirectWithError('No pudimos completar la conexión con TikTok — probá conectar de nuevo desde el principio.')
   }
 
   const clientKey = process.env.TIKTOK_CLIENT_KEY
@@ -98,7 +98,8 @@ export async function GET(request: Request) {
     const tokenData = await tokenRes.json()
 
     if (tokenData.error) {
-      return redirectWithError(tokenData.error_description || tokenData.error)
+      console.error('[tiktok/callback] intercambio de código falló:', tokenData.error_description || tokenData.error)
+      return redirectWithError('No pudimos completar la conexión con TikTok. Probá de nuevo en unos minutos.')
     }
 
     const accessToken: string = tokenData.access_token
@@ -126,10 +127,14 @@ export async function GET(request: Request) {
       expiresAt,
     })
 
-    if (!saved.ok) return redirectWithError(`No pudimos guardar la conexión: ${saved.error}`)
+    if (!saved.ok) {
+      console.error('[tiktok/callback] guardado de la conexión falló:', saved.error)
+      return redirectWithError('No pudimos guardar la conexión con TikTok. Probá de nuevo en unos minutos.')
+    }
 
     return NextResponse.redirect(`${origin}/settings/integrations?tiktok_connected=1`)
   } catch (err) {
-    return redirectWithError(err instanceof Error ? err.message : 'Error desconocido.')
+    console.error('[tiktok/callback] excepción inesperada:', err)
+    return redirectWithError('No pudimos completar la conexión con TikTok. Probá de nuevo en unos minutos.')
   }
 }

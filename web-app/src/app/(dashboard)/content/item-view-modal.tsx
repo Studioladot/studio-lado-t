@@ -109,17 +109,14 @@ export function ItemViewModal({
           )}
 
           {item.publishStatus === 'failed' && item.publishError && (
-            <p className="mt-3 text-xs text-red">Último error: {item.publishError}</p>
+            <p className="mt-3 text-xs text-red">No pudimos publicar este contenido. Revisá el archivo y volvé a intentarlo, o contactá a soporte si el problema persiste.</p>
           )}
 
           {metrics && (
             <div className="mt-5 border-t border-divider pt-4">
-              <div className="mb-2 flex items-center justify-between">
-                <p className="text-[10px] font-bold uppercase tracking-wide text-text-3">Métricas (Instagram)</p>
-                {metrics.ig_media_id && <span className="font-mono text-[9px] text-text-3">#{metrics.ig_media_id.slice(-6)}</span>}
-              </div>
+              <p className="mb-2 text-[10px] font-bold uppercase tracking-wide text-text-3">Métricas (Instagram)</p>
               <div className="grid grid-cols-3 gap-2.5">
-                <MetricStat label="Plays" value={fmt(metrics.plays)} />
+                <MetricStat label="Reproducciones" value={fmt(metrics.plays)} />
                 <MetricStat label="Alcance" value={fmt(metrics.reach)} />
                 <MetricStat label="Likes" value={fmt(metrics.likes)} />
                 <MetricStat label="Coment." value={fmt(metrics.comments)} />

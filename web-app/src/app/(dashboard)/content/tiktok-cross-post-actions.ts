@@ -30,10 +30,15 @@ export async function crossPostTiktokVideoAction(tiktokVideoId: string): Promise
       .eq('organization_id', activeOrganizationId)
       .maybeSingle()
 
-    // Antes esto tragaba el error real de Postgres/RLS detrás de un
-    // mensaje genérico — mismo bug ya corregido una vez en
-    // saveMetaConnection (src/lib/meta/connections.ts), reaparecido acá.
-    if (error) return { ok: false, error: `No pudimos leer el video de origen: ${error.message}` }
+    // El detalle técnico (Postgres/RLS) se loguea server-side para poder
+    // diagnosticar — el usuario final solo ve un mensaje claro (regla fija,
+    // 2026-08-01). Antes esto tragaba el error en silencio directamente;
+    // ahora se loguea Y se muestra un mensaje limpio, nunca ninguno de los
+    // dos extremos (ni silencio total, ni mensaje técnico crudo).
+    if (error) {
+      console.error('[crossPostTiktokVideoAction] lectura del video falló:', error.message)
+      return { ok: false, error: 'No pudimos leer ese video. Probá de nuevo en unos minutos.' }
+    }
     if (!video) return { ok: false, error: 'No encontramos el video de origen.' }
 
     const hasMedia = !!video.video_download_url
@@ -56,7 +61,10 @@ export async function crossPostTiktokVideoAction(tiktokVideoId: string): Promise
       .select('id')
       .single()
 
-    if (insertError) return { ok: false, error: `No pudimos crear la republicación: ${insertError.message}` }
+    if (insertError) {
+      console.error('[crossPostTiktokVideoAction] insert falló:', insertError.message)
+      return { ok: false, error: 'No pudimos crear la republicación. Probá de nuevo en unos minutos.' }
+    }
     if (!inserted) return { ok: false, error: 'No pudimos crear la republicación. Probá de nuevo.' }
 
     revalidatePath('/content')
@@ -65,7 +73,9 @@ export async function crossPostTiktokVideoAction(tiktokVideoId: string): Promise
     // Cualquier excepción no prevista queda acá en vez de rechazar la
     // promise — si esto no estuviera, handleEscalate (tiktok-performance-
     // section.tsx) se quedaría con el botón trabado en "Escalando…" para
-    // siempre, porque nunca llegaría a setEscalatingId(null).
-    return { ok: false, error: err instanceof Error ? err.message : 'Error inesperado al escalar el video.' }
+    // siempre, porque nunca llegaría a setEscalatingId(null). El detalle
+    // real queda en el log del servidor, no en pantalla.
+    console.error('[crossPostTiktokVideoAction] excepción inesperada:', err)
+    return { ok: false, error: 'Error inesperado al escalar el video. Probá de nuevo en unos minutos.' }
   }
 }

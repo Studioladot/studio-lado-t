@@ -236,7 +236,7 @@ export function PieceEditForm({
               )
             )}
             {piece.publish_status === 'failed' && piece.publish_error && (
-              <p className="mt-2 text-[11px] text-red">Último error: {piece.publish_error}</p>
+              <p className="mt-2 text-[11px] text-red">No pudimos publicar este contenido. Revisá el archivo y volvé a intentarlo, o contactá a soporte si el problema persiste.</p>
             )}
           </div>
         )}
@@ -245,7 +245,7 @@ export function PieceEditForm({
       <div className={networkTab === 'tiktok' ? 'flex flex-col gap-3' : 'hidden'}>
         {!tiktokConnected ? (
           <div className="rounded-control border border-dashed border-border bg-surface-2/40 p-3 text-[11px] text-text-3">
-            Conectá TikTok primero — necesita credenciales de la Content Posting API (Fase 2, todavía no disponible).
+            Conectá TikTok primero — la publicación automática en TikTok todavía no está disponible.
           </div>
         ) : (
           <>
@@ -281,7 +281,7 @@ export function PieceEditForm({
                 </label>
               )}
               {piece.tiktok_publish_status === 'failed' && piece.tiktok_publish_error && (
-                <p className="mt-2 text-[11px] text-red">Último error: {piece.tiktok_publish_error}</p>
+                <p className="mt-2 text-[11px] text-red">No pudimos publicar este contenido. Revisá el archivo y volvé a intentarlo, o contactá a soporte si el problema persiste.</p>
               )}
             </div>
           </>

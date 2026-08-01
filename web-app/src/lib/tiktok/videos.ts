@@ -120,7 +120,8 @@ export async function ensureValidTiktokAccessToken(
     const data = await res.json()
 
     if (data.error) {
-      return { ok: false, error: data.error_description || data.error }
+      console.error('[ensureValidTiktokAccessToken] TikTok rechazó la renovación:', data.error_description || data.error)
+      return { ok: false, error: 'Tu conexión con TikTok venció. Reconectala desde Ajustes → Integraciones.' }
     }
 
     const newExpiresAt = new Date(Date.now() + data.expires_in * 1000).toISOString()
@@ -134,10 +135,14 @@ export async function ensureValidTiktokAccessToken(
       })
       .eq('organization_id', organizationId)
 
-    if (updateError) return { ok: false, error: `No pudimos guardar el token renovado: ${updateError.message}` }
+    if (updateError) {
+      console.error('[ensureValidTiktokAccessToken] no se pudo guardar el token renovado:', updateError.message)
+      return { ok: false, error: 'No pudimos renovar tu conexión con TikTok. Probá de nuevo en unos minutos.' }
+    }
 
     return { ok: true, accessToken: data.access_token }
   } catch (err) {
-    return { ok: false, error: err instanceof Error ? err.message : 'Error de red al renovar el token.' }
+    console.error('[ensureValidTiktokAccessToken] excepción inesperada:', err)
+    return { ok: false, error: 'No pudimos renovar tu conexión con TikTok. Probá de nuevo en unos minutos.' }
   }
 }

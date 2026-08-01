@@ -13,7 +13,7 @@ export async function GET(request: Request) {
     NextResponse.redirect(`${origin}/settings/integrations?tn_error=${encodeURIComponent(message)}`)
 
   if (!code || !state) {
-    return redirectWithError('Falta code o state en la respuesta de Tienda Nube.')
+    return redirectWithError('No pudimos completar la conexión con Tienda Nube. Probá de nuevo.')
   }
 
   const cookieStore = await cookies()
@@ -21,7 +21,7 @@ export async function GET(request: Request) {
   cookieStore.delete(TIENDANUBE_OAUTH_STATE_COOKIE)
 
   if (!expectedState || expectedState !== state) {
-    return redirectWithError('El estado de la conexión no es válido — probá de nuevo.')
+    return redirectWithError('No pudimos verificar la conexión con Tienda Nube — probá de nuevo.')
   }
 
   const clientId = process.env.TIENDANUBE_CLIENT_ID
@@ -98,11 +98,13 @@ export async function GET(request: Request) {
     })
 
     if (insertError) {
-      return redirectWithError('No pudimos guardar la conexión. Probá de nuevo.')
+      console.error('[tiendanube/callback] guardado de la conexión falló:', insertError.message)
+      return redirectWithError('No pudimos guardar la conexión. Probá de nuevo en unos minutos.')
     }
 
     return NextResponse.redirect(`${origin}/settings/integrations?tn_connected=1`)
   } catch (err) {
-    return redirectWithError(err instanceof Error ? err.message : 'Error desconocido.')
+    console.error('[tiendanube/callback] excepción inesperada:', err)
+    return redirectWithError('No pudimos completar la conexión con Tienda Nube. Probá de nuevo en unos minutos.')
   }
 }

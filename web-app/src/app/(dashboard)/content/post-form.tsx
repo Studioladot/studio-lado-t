@@ -291,7 +291,9 @@ export function PostForm({
                 </label>
               )
             )}
-            {post?.publish_status === 'failed' && post.publish_error && <p className="mt-2 text-[11px] text-red">Último error: {post.publish_error}</p>}
+            {post?.publish_status === 'failed' && post.publish_error && (
+              <p className="mt-2 text-[11px] text-red">No pudimos publicar este contenido. Revisá el archivo y volvé a intentarlo, o contactá a soporte si el problema persiste.</p>
+            )}
           </div>
         )}
       </div>
@@ -299,7 +301,7 @@ export function PostForm({
       <div className={networkTab === 'tiktok' ? 'flex flex-col gap-3' : 'hidden'}>
         {!tiktokConnected ? (
           <div className="rounded-control border border-dashed border-border bg-surface-2/40 p-3 text-[11px] text-text-3">
-            Conectá TikTok primero — necesita credenciales de la Content Posting API (Fase 2, todavía no disponible).
+            Conectá TikTok primero — la publicación automática en TikTok todavía no está disponible.
           </div>
         ) : (
           <>

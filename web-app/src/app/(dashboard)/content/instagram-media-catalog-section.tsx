@@ -83,20 +83,22 @@ export function InstagramMediaCatalogSection({
         setSyncError(result.error)
         return
       }
-      const notes: string[] = []
-      if (result.withoutInsights > 0) {
-        notes.push(`${result.withoutInsights} sin impresiones/reproducciones`)
+      // Copy 100% comercial de cara al usuario final (regla fija,
+      // 2026-08-01): nunca mencionar nombres de campo ni jerga de API acá.
+      // withoutInsights/withoutLikeData siguen viajando en el resultado
+      // para decidir QUÉ frase mostrar, pero nunca se imprimen literales.
+      let note = ''
+      if (result.withoutInsights > 0 && result.withoutLikeData === 0) {
+        note = ' Algunas publicaciones muy antiguas pueden no mostrar reproducciones, pero tus me gusta y comentarios ya están actualizados.'
+      } else if (result.withoutLikeData > 0) {
+        note = ' Algunas publicaciones antiguas pueden tardar un poco más en reflejar todas sus estadísticas.'
       }
-      if (result.withoutLikeData > 0) {
-        notes.push(`${result.withoutLikeData} sin likes/comentarios (Meta no los devolvió para esos posts)`)
-      }
-      const insightsNote = notes.length > 0 ? ` (${notes.join(', ')}.)` : ''
       if (result.count === 0 && result.done) {
-        setSyncMessage('Historial completo — no hay nada nuevo para traer.')
+        setSyncMessage('Tu historial ya está al día — no hay publicaciones nuevas para traer.')
       } else if (result.done) {
-        setSyncMessage(`Sincronizados ${result.count} — historial completo.${insightsNote}`)
+        setSyncMessage(`Actualizamos ${result.count} publicaciones. Tu historial ya está completo.${note}`)
       } else {
-        setSyncMessage(`Sincronizados ${result.count} — todavía queda historial. Tocá "Sincronizar ahora" de nuevo para seguir.${insightsNote}`)
+        setSyncMessage(`Actualizamos ${result.count} publicaciones. Tocá "Sincronizar ahora" de nuevo para seguir cargando tu historial.${note}`)
       }
     })
   }

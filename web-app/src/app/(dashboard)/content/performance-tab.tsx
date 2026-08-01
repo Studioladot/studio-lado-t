@@ -243,7 +243,7 @@ export function PerformanceTab({
                       <tr className="border-b border-divider text-left text-[10px] font-bold uppercase tracking-wide text-text-3">
                         <th className="w-6 px-1 py-2"></th>
                         <th className="px-2 py-2">Pieza</th>
-                        <th className="px-2 py-2 text-right">Plays</th>
+                        <th className="px-2 py-2 text-right">Reprod.</th>
                         <th className="px-2 py-2 text-right">Alcance</th>
                         <th className="px-2 py-2 text-right">Likes</th>
                         <th className="px-2 py-2 text-right">Coment.</th>
@@ -275,11 +275,6 @@ export function PerformanceTab({
                                 <span className="truncate text-xs font-semibold text-text">{itemTitle(m)}</span>
                               )}
                               {format && <span className="ml-1.5 text-[10px] text-text-3">{format}</span>}
-                              {/* ID real de Instagram — prueba visible de que cada fila viene de un medio
-                                  distinto (no una métrica de cuenta repetida). font-mono acá es intencional:
-                                  es un identificador técnico, no una cifra financiera (esa regla es la que
-                                  rige en Ventas), así que distinguir 0/O y 1/l importa más que el tabular-nums. */}
-                              {m.ig_media_id && <span className="ml-1.5 font-mono text-[9px] text-text-3">#{m.ig_media_id.slice(-6)}</span>}
                             </td>
                             <td className="px-2 py-2 text-right text-xs font-semibold tabular-nums text-text">{fmt(m.plays)}</td>
                             <td className="px-2 py-2 text-right text-xs tabular-nums text-text-2">{fmt(m.reach)}</td>

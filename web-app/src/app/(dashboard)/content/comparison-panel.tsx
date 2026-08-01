@@ -75,8 +75,6 @@ export function ComparisonPanel({ items, onClose }: { items: MediaInsight[]; onC
                     ) : (
                       <span className="block text-text">{itemTitle(m)}</span>
                     )}
-                    {/* Prueba visible de que cada columna es un medio real distinto — no una métrica de cuenta repetida. */}
-                    {m.ig_media_id && <span className="font-mono text-[9px] font-normal normal-case text-text-3">#{m.ig_media_id.slice(-6)}</span>}
                   </th>
                 ))}
               </tr>
