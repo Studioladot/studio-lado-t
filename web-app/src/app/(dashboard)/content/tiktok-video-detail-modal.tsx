@@ -4,12 +4,22 @@ import Link from 'next/link'
 import { TiktokIcon } from '@/components/features/nav-icons'
 import type { TiktokVideoRow } from '@/lib/tiktok/winners'
 
-function fmt(n: number): string {
-  return n.toLocaleString('es-AR')
+// Bug real reportado (2026-08-01): crash en producción con "This page
+// couldn't load" al abrir el modal. Causa: attributed_sales/roas_organic/
+// link_clicks son columnas nuevas (migración 20260805130000) — si esa
+// migración todavía no corrió contra la base, Supabase devuelve las filas
+// SIN esas claves en vez de con null, así que en runtime valen `undefined`
+// aunque el tipo generado diga `number | null`. fmt(undefined) tiraba
+// "Cannot read properties of undefined" — acá y en el resto del archivo,
+// todo lo que puede venir de una columna nueva ahora acepta también
+// undefined explícitamente, no solo null.
+function fmt(n: number | null | undefined): string {
+  return n === null || n === undefined ? '—' : n.toLocaleString('es-AR')
 }
 
-function Bar({ label, value, max }: { label: string; value: number; max: number }) {
-  const pct = max > 0 ? Math.min(100, (value / max) * 100) : 0
+function Bar({ label, value, max }: { label: string; value: number | null | undefined; max: number }) {
+  const v = value ?? 0
+  const pct = max > 0 ? Math.min(100, (v / max) * 100) : 0
   return (
     <div>
       <div className="mb-1 flex items-center justify-between text-[11px]">
@@ -33,25 +43,25 @@ function SalesAttributionRow({
   roasOrganic,
   linkClicks,
 }: {
-  attributedSales: number | null
-  roasOrganic: number | null
-  linkClicks: number | null
+  attributedSales: number | null | undefined
+  roasOrganic: number | null | undefined
+  linkClicks: number | null | undefined
 }) {
-  const hasData = attributedSales !== null || roasOrganic !== null || linkClicks !== null
+  const hasData = attributedSales != null || roasOrganic != null || linkClicks != null
   return (
     <div className="rounded-control border border-dashed border-accent/30 bg-accent/[0.03] p-3">
       <p className="mb-2 text-[10px] font-bold uppercase tracking-wide text-text-3">Impacto en ventas</p>
       <div className="grid grid-cols-3 gap-2 text-center">
         <div>
-          <p className="text-sm font-bold tabular-nums text-text">{attributedSales !== null ? fmt(attributedSales) : '—'}</p>
+          <p className="text-sm font-bold tabular-nums text-text">{fmt(attributedSales)}</p>
           <p className="mt-0.5 text-[9px] text-text-3">Ventas atrib.</p>
         </div>
         <div>
-          <p className="text-sm font-bold tabular-nums text-text">{roasOrganic !== null ? `${roasOrganic.toFixed(1)}x` : '—'}</p>
+          <p className="text-sm font-bold tabular-nums text-text">{roasOrganic != null ? `${roasOrganic.toFixed(1)}x` : '—'}</p>
           <p className="mt-0.5 text-[9px] text-text-3">ROAS orgánico</p>
         </div>
         <div>
-          <p className="text-sm font-bold tabular-nums text-text">{linkClicks !== null ? fmt(linkClicks) : '—'}</p>
+          <p className="text-sm font-bold tabular-nums text-text">{fmt(linkClicks)}</p>
           <p className="mt-0.5 text-[9px] text-text-3">Clics al link</p>
         </div>
       </div>
@@ -99,7 +109,8 @@ export function TiktokVideoDetailModal({
   escalating: boolean
   escalateResult: { ok: boolean; message: string } | null
 }) {
-  const engagementRate = video.view_count > 0 ? ((video.like_count + video.comment_count + video.share_count) / video.view_count) * 100 : 0
+  const viewCount = video.view_count ?? 0
+  const engagementRate = viewCount > 0 ? (((video.like_count ?? 0) + (video.comment_count ?? 0) + (video.share_count ?? 0)) / viewCount) * 100 : 0
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={onClose}>

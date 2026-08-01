@@ -3,11 +3,14 @@
 import { InstagramIcon } from '@/components/features/nav-icons'
 import { primaryMetric, type InstagramCatalogRow } from '@/lib/instagram/media-catalog-winners'
 
-function fmt(n: number | null): string {
-  return n === null ? '—' : n.toLocaleString('es-AR')
+// Mismo fix que tiktok-video-detail-modal.tsx (bug real reportado,
+// 2026-08-01): columnas nuevas sin migrar vienen `undefined`, no `null` —
+// fmt/Bar/SalesAttributionRow tienen que aceptar los dos.
+function fmt(n: number | null | undefined): string {
+  return n === null || n === undefined ? '—' : n.toLocaleString('es-AR')
 }
 
-function Bar({ label, value, max }: { label: string; value: number | null; max: number }) {
+function Bar({ label, value, max }: { label: string; value: number | null | undefined; max: number }) {
   const v = value ?? 0
   const pct = max > 0 ? Math.min(100, (v / max) * 100) : 0
   return (
@@ -34,25 +37,25 @@ function SalesAttributionRow({
   roasOrganic,
   linkClicks,
 }: {
-  attributedSales: number | null
-  roasOrganic: number | null
-  linkClicks: number | null
+  attributedSales: number | null | undefined
+  roasOrganic: number | null | undefined
+  linkClicks: number | null | undefined
 }) {
-  const hasData = attributedSales !== null || roasOrganic !== null || linkClicks !== null
+  const hasData = attributedSales != null || roasOrganic != null || linkClicks != null
   return (
     <div className="rounded-control border border-dashed border-accent/30 bg-accent/[0.03] p-3">
       <p className="mb-2 text-[10px] font-bold uppercase tracking-wide text-text-3">Impacto en ventas</p>
       <div className="grid grid-cols-3 gap-2 text-center">
         <div>
-          <p className="text-sm font-bold tabular-nums text-text">{attributedSales !== null ? fmt(attributedSales) : '—'}</p>
+          <p className="text-sm font-bold tabular-nums text-text">{fmt(attributedSales)}</p>
           <p className="mt-0.5 text-[9px] text-text-3">Ventas atrib.</p>
         </div>
         <div>
-          <p className="text-sm font-bold tabular-nums text-text">{roasOrganic !== null ? `${roasOrganic.toFixed(1)}x` : '—'}</p>
+          <p className="text-sm font-bold tabular-nums text-text">{roasOrganic != null ? `${roasOrganic.toFixed(1)}x` : '—'}</p>
           <p className="mt-0.5 text-[9px] text-text-3">ROAS orgánico</p>
         </div>
         <div>
-          <p className="text-sm font-bold tabular-nums text-text">{linkClicks !== null ? fmt(linkClicks) : '—'}</p>
+          <p className="text-sm font-bold tabular-nums text-text">{fmt(linkClicks)}</p>
           <p className="mt-0.5 text-[9px] text-text-3">Clics al link</p>
         </div>
       </div>
@@ -112,7 +115,7 @@ export function InstagramMediaDetailModal({
           <p className="text-sm leading-relaxed text-text">{item.caption || 'Sin descripción'}</p>
 
           <div className="flex flex-col gap-2.5">
-            <Bar label={item.plays !== null ? 'Reproducciones' : 'Impresiones'} value={primaryMetric(item)} max={maxPrimary} />
+            <Bar label={item.plays != null ? 'Reproducciones' : 'Impresiones'} value={primaryMetric(item)} max={maxPrimary} />
             <Bar label="Likes" value={item.like_count} max={maxLikes} />
             <Bar label="Comentarios" value={item.comments_count} max={maxComments} />
           </div>

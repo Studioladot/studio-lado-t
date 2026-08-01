@@ -29,12 +29,24 @@ export async function syncInstagramMediaAction(): Promise<SyncInstagramResult> {
     if (!activeOrganizationId) return { ok: false, error: 'No encontramos tu organización activa.' }
 
     const supabase = await createClient()
-    const { data: connection } = await supabase
+    // Bug real reportado (2026-08-01): pedir media_sync_cursor/
+    // media_sync_complete por nombre explícito hacía fallar la consulta
+    // ENTERA si esas columnas todavía no existían (migración 20260805130000
+    // sin correr) — Postgres/PostgREST rechaza un select de una columna que
+    // no existe, a diferencia de select('*') que simplemente no la incluye.
+    // Esa consulta fallida volvía connection=null, y el mensaje genérico de
+    // "Instagram no está conectado" aparecía aunque sí estuviera conectado
+    // (era la consulta la que fallaba, no la conexión). select('*') hace
+    // que esto ande igual aunque la migración nueva no haya corrido —
+    // media_sync_cursor/media_sync_complete simplemente van a ser
+    // undefined hasta que corra.
+    const { data: connection, error: connectionError } = await supabase
       .from('instagram_connections')
-      .select('ig_user_id, page_access_token, media_sync_cursor, media_sync_complete')
+      .select('*')
       .eq('organization_id', activeOrganizationId)
       .maybeSingle()
 
+    if (connectionError) return { ok: false, error: `No pudimos leer la conexión de Instagram: ${connectionError.message}` }
     if (!connection) return { ok: false, error: 'Instagram no está conectado.' }
 
     const cursor: string | undefined = connection.media_sync_complete ? undefined : (connection.media_sync_cursor ?? undefined)
@@ -56,6 +68,7 @@ export async function syncInstagramMediaAction(): Promise<SyncInstagramResult> {
 
     const items = batch.slice(0, MAX_ITEMS_PER_RUN)
     let synced = 0
+    let lastUpsertError: string | null = null
 
     for (let i = 0; i < items.length; i += INSIGHT_CONCURRENCY) {
       const chunk = items.slice(i, i + INSIGHT_CONCURRENCY)
@@ -92,8 +105,17 @@ export async function syncInstagramMediaAction(): Promise<SyncInstagramResult> {
           },
           { onConflict: 'organization_id,ig_media_id' }
         )
-        if (!upsertError) synced++
+        if (upsertError) lastUpsertError = upsertError.message
+        else synced++
       }
+    }
+
+    // Si todo falló (ej. instagram_media_catalog todavía no existe porque
+    // la migración no corrió), antes esto volvía {ok:true, count:0} — un
+    // "éxito" falso que escondía el problema real. Con items de sobra y
+    // cero guardados, es un error real, no "no había nada nuevo".
+    if (items.length > 0 && synced === 0 && lastUpsertError) {
+      return { ok: false, error: `No pudimos guardar el catálogo: ${lastUpsertError}` }
     }
 
     const { error: cursorError } = await supabase

@@ -148,7 +148,7 @@ export function PerformanceTab({
               networkTab === 'meta' ? 'bg-accent/[0.12] text-accent' : 'text-text-3 hover:text-text'
             }`}
           >
-            Rendimiento Meta
+            Rendimiento Instagram
           </button>
         </div>
       )}
