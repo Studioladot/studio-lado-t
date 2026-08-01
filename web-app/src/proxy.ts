@@ -5,14 +5,27 @@ import { NextResponse, type NextRequest } from 'next/server'
 // antes de que exista sesión — tiene que quedar público o el proxy lo
 // mandaría a /login antes de poder intercambiar el code por la sesión.
 //
-// /privacy-policy y /data-deletion-status son compliance de Meta App Review
-// — tienen que ser legibles sin sesión (por clientes y por el revisor de
-// Meta). /api/meta/data-deletion es el webhook que Meta llama
-// server-to-server sin ninguna cookie de Gotix: si no está acá, el proxy lo
-// redirige a /login y el callback de Meta se rompe por completo (la
-// autenticación real de esa ruta es la firma HMAC del signed_request, no
-// una sesión — ver src/app/api/meta/data-deletion/route.ts).
-const PUBLIC_PATHS = ['/login', '/auth', '/privacy-policy', '/data-deletion-status', '/api/meta/data-deletion']
+// /privacy-policy, /terms y /data-deletion-status son compliance de Meta
+// App Review — tienen que ser legibles sin sesión (por clientes, por el
+// footer/pasarelas de pago, y por el revisor de Meta). /api/meta/data-deletion
+// es el webhook que Meta llama server-to-server sin ninguna cookie de
+// Gotix: si no está acá, el proxy lo redirige a /login y el callback de
+// Meta se rompe por completo (la autenticación real de esa ruta es la
+// firma HMAC del signed_request, no una sesión — ver
+// src/app/api/meta/data-deletion/route.ts). El matcher de abajo solo
+// excluye imágenes (.svg/.png/.jpg/...), no .html — un archivo estático
+// como googleaa655e68170c8d27.html (verificación de dominio de Google
+// Search Console, en public/) igual pasa por acá y necesita su propia
+// entrada, o el proxy lo manda a /login antes de que Google pueda leerlo.
+const PUBLIC_PATHS = [
+  '/login',
+  '/auth',
+  '/privacy-policy',
+  '/terms',
+  '/data-deletion-status',
+  '/api/meta/data-deletion',
+  '/googleaa655e68170c8d27.html',
+]
 
 function isPublicPath(pathname: string) {
   return PUBLIC_PATHS.some((path) => pathname === path || pathname.startsWith(`${path}/`))
