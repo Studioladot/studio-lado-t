@@ -74,6 +74,12 @@ export function PerformanceTab({
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [comparing, setComparing] = useState(false)
   const [crossPostItem, setCrossPostItem] = useState<WinningItem | null>(null)
+  // Rediseño (2026-08-01): con las dos redes conectadas, antes se
+  // apilaban verticalmente — separadas en sub-tabs para navegar en
+  // entornos aislados. Si solo hay una red conectada, no tiene sentido
+  // mostrar un toggle de una sola opción — se salta directo a esa sección.
+  const [networkTab, setNetworkTab] = useState<'tiktok' | 'meta'>(tiktokConnected ? 'tiktok' : 'meta')
+  const showNetworkTabs = instagramConnected && tiktokConnected
 
   // Antes esto cortaba TODO (incluida una futura sección de TikTok) si
   // Instagram no estaba conectado — Fase 1 del Hub Omnicanal (2026-08-01):
@@ -120,9 +126,33 @@ export function PerformanceTab({
 
   return (
     <div className="flex flex-col gap-4">
-      {tiktokConnected && <TiktokPerformanceSection videos={tiktokVideos} />}
+      {showNetworkTabs && (
+        <div className="flex w-fit gap-1 rounded-control border border-border bg-surface-2/40 p-1">
+          <button
+            type="button"
+            onClick={() => setNetworkTab('tiktok')}
+            className={`rounded-control px-3 py-1.5 text-xs font-semibold transition-colors duration-200 ease-out ${
+              networkTab === 'tiktok' ? 'bg-accent/[0.12] text-accent' : 'text-text-3 hover:text-text'
+            }`}
+          >
+            Rendimiento TikTok
+          </button>
+          <button
+            type="button"
+            onClick={() => setNetworkTab('meta')}
+            className={`rounded-control px-3 py-1.5 text-xs font-semibold transition-colors duration-200 ease-out ${
+              networkTab === 'meta' ? 'bg-accent/[0.12] text-accent' : 'text-text-3 hover:text-text'
+            }`}
+          >
+            Rendimiento Meta
+          </button>
+        </div>
+      )}
+
+      {tiktokConnected && (!showNetworkTabs || networkTab === 'tiktok') && <TiktokPerformanceSection videos={tiktokVideos} />}
 
       {instagramConnected &&
+        (!showNetworkTabs || networkTab === 'meta') &&
         (instagramHasNoData ? (
           <div className="rounded-card border border-dashed border-border bg-surface-2/40 px-6 py-12 text-center">
             <p className="text-sm font-semibold text-text">Instagram conectado{igUsername ? ` (@${igUsername})` : ''}, todavía sin datos</p>
