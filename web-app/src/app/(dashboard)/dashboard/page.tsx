@@ -7,25 +7,88 @@ import {
   disconnectTiendaNubeAction,
 } from '../actions'
 import { getMetaAdsInsights } from '@/lib/meta/insights'
-import { getTiendaNubeSalesSummary } from '@/lib/tiendanube/orders'
+import { getTiendaNubeOrders, summarizeOrders } from '@/lib/tiendanube/orders'
+import { getOrganizationRunLog, type OrgRunLogEntry } from '@/lib/meta/autopilot'
+import { formatMoney, type Currency } from '@/lib/currency'
 import { ConfirmSubmitButton } from '@/components/features/confirm-submit-button'
+
+// Command Center real (bloque de corrección, 2026-08-03) — reemplaza el
+// hero de video decorativo (sin reproducción real, "Onboarding · 3:42" era
+// solo una etiqueta) y los 2 controles que no hacían nada (el selector de
+// período no tenía handler ni action, "+ Cargar métricas" tampoco). Un
+// dashboard "real" no puede tener controles falsos — se sacan en vez de
+// dejarlos de adorno. Los 3 widgets que sí pidió la PO: ventas del día
+// (Tienda Nube), top anuncios activos (Meta), alertas del Autopiloto.
+
+function KpiCard({ label, value, sub }: { label: string; value: string; sub?: string }) {
+  return (
+    <div className="flex flex-col justify-between gap-3 bg-surface p-5">
+      <span className="text-[10px] font-bold uppercase tracking-wide text-text-3">{label}</span>
+      <div>
+        <span className="text-2xl font-extrabold leading-none tracking-[-0.03em] tabular-nums text-text">{value}</span>
+        {sub && <p className="mt-1 text-xs text-text-2">{sub}</p>}
+      </div>
+    </div>
+  )
+}
+
+function EmptyStateCard({ title, subtitle }: { title: string; subtitle: string }) {
+  return (
+    <div className="flex h-full flex-col items-center justify-center gap-1 rounded-card border border-dashed border-border bg-surface-2/40 px-6 py-10 text-center">
+      <p className="text-sm font-semibold text-text">{title}</p>
+      <p className="max-w-[280px] text-xs text-text-2">{subtitle}</p>
+    </div>
+  )
+}
+
+const RUN_LOG_ACTION_LABEL: Record<string, string> = {
+  pause: 'Pausó',
+  increase_budget: 'Subió presupuesto',
+  reduce_budget: 'Bajó presupuesto',
+  rotate_creative: 'Rotó creativo',
+  notify: 'Aviso',
+  error: 'Error',
+}
+
+function AutopilotAlertsCard({ entries }: { entries: OrgRunLogEntry[] }) {
+  return (
+    <div className="rounded-card border border-border bg-surface p-5">
+      <p className="mb-3 text-[10px] font-bold uppercase tracking-wide text-text-3">Alertas del Autopiloto</p>
+      {entries.length === 0 ? (
+        <EmptyStateCard title="Sin actividad reciente" subtitle="El Autopiloto corre cada hora y solo actúa sobre playbooks prendidos." />
+      ) : (
+        <ul className="flex flex-col gap-2">
+          {entries.map((entry) => (
+            <li
+              key={entry.id}
+              className={`rounded-control border px-3 py-2.5 ${
+                entry.action === 'error' ? 'border-red/30 bg-red/[6%]' : 'border-border bg-surface-2/60'
+              }`}
+            >
+              <div className="flex items-center gap-1.5">
+                {entry.campaignName && <span className="text-[10px] font-semibold text-text-3">{entry.campaignName}</span>}
+                <span className={`text-[10px] font-bold uppercase tracking-wide ${entry.action === 'error' ? 'text-red' : 'text-text-3'}`}>
+                  {RUN_LOG_ACTION_LABEL[entry.action] ?? entry.action}
+                </span>
+              </div>
+              <p className={`mt-0.5 text-xs leading-relaxed ${entry.action === 'error' ? 'text-red' : 'text-text-2'}`}>{entry.message}</p>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  )
+}
 
 export default async function DashboardPage({
   searchParams,
 }: {
   searchParams: Promise<{
-    meta_connected?: string
-    meta_error?: string
     tn_connected?: string
     tn_error?: string
   }>
 }) {
-  const {
-    meta_connected: metaConnected,
-    meta_error: metaError,
-    tn_connected: tnConnected,
-    tn_error: tnError,
-  } = await searchParams
+  const { tn_connected: tnConnected, tn_error: tnError } = await searchParams
   const { activeOrganizationId } = await getDashboardContext()
 
   if (!activeOrganizationId) {
@@ -43,6 +106,7 @@ export default async function DashboardPage({
 
   const now = new Date()
   const startOfMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`
+  const startOfTodayISO = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString()
 
   const [
     { count: activeCampaigns },
@@ -51,6 +115,7 @@ export default async function DashboardPage({
     { count: pendingPosts },
     { data: metaConnection },
     { data: tiendaNubeConnection },
+    autopilotAlerts,
   ] = await Promise.all([
     supabase
       .from('content_campaigns')
@@ -74,7 +139,7 @@ export default async function DashboardPage({
       .eq('status', 'pendiente'),
     supabase
       .from('meta_connections')
-      .select('account_name, expires_at, token, account_id')
+      .select('account_name, expires_at, token, account_id, account_currency')
       .eq('organization_id', activeOrganizationId)
       .maybeSingle(),
     supabase
@@ -82,30 +147,44 @@ export default async function DashboardPage({
       .select('store_name, store_url, access_token, store_id')
       .eq('organization_id', activeOrganizationId)
       .maybeSingle(),
+    getOrganizationRunLog(supabase, activeOrganizationId, 5),
   ])
 
   const tokenExpired = metaConnection?.expires_at
     ? new Date(metaConnection.expires_at) < new Date()
     : false
+  const accountCurrency: Currency = metaConnection?.account_currency === 'ARS' ? 'ARS' : 'USD'
 
-  const [metaInsights, tiendaNubeOrders] = await Promise.all([
+  const ordersSince = new Date()
+  ordersSince.setDate(ordersSince.getDate() - 30)
+  const ordersUntil = new Date()
+
+  const [metaInsights, tiendaNubeOrdersResult] = await Promise.all([
     metaConnection && !tokenExpired
       ? getMetaAdsInsights(metaConnection.token, metaConnection.account_id)
       : Promise.resolve(null),
     tiendaNubeConnection
-      ? getTiendaNubeSalesSummary(tiendaNubeConnection.access_token, tiendaNubeConnection.store_id)
+      ? getTiendaNubeOrders(tiendaNubeConnection.access_token, tiendaNubeConnection.store_id, ordersSince, ordersUntil)
       : Promise.resolve(null),
   ])
 
-  const banner = metaConnected
-    ? { tone: 'ok' as const, message: 'Meta Ads conectado correctamente.' }
-    : metaError
-      ? { tone: 'error' as const, message: metaError }
-      : tnConnected
-        ? { tone: 'ok' as const, message: 'Tienda Nube conectado correctamente.' }
-        : tnError
-          ? { tone: 'error' as const, message: tnError }
-          : null
+  // Ventas del día — mismo fetch de 30 días que ya se necesitaba para el
+  // resto del negocio, filtrado en memoria (evita un segundo llamado a la
+  // API de Tienda Nube solo para achicar el rango).
+  const todaySummary =
+    tiendaNubeOrdersResult && tiendaNubeOrdersResult.ok
+      ? summarizeOrders(tiendaNubeOrdersResult.orders.filter((o) => o.createdAt >= startOfTodayISO))
+      : null
+  const tiendaNubeError = tiendaNubeOrdersResult && !tiendaNubeOrdersResult.ok ? tiendaNubeOrdersResult.error : null
+  const aovToday = todaySummary && todaySummary.ordenes > 0 ? Math.round(todaySummary.bruto / todaySummary.ordenes) : 0
+
+  const topAds = metaInsights?.ok ? [...metaInsights.ads].sort((a, b) => b.spend - a.spend).slice(0, 5) : []
+
+  const banner = tnConnected
+    ? { tone: 'ok' as const, message: 'Tienda Nube conectado correctamente.' }
+    : tnError
+      ? { tone: 'error' as const, message: tnError }
+      : null
 
   return (
     <div>
@@ -119,107 +198,82 @@ export default async function DashboardPage({
         </div>
       )}
 
-      <div className="mb-[22px] flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-[22px] font-bold tracking-[-0.03em] text-text">Dashboard</h1>
-          <p className="mt-0.5 text-[13px] text-text-2">Resumen de tu negocio</p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <select
-            defaultValue="this_month"
-            className="rounded-control border border-border bg-surface px-2.5 py-1.5 text-[13px] text-text outline-none transition-all duration-200 ease-out focus-visible:ring-2 focus-visible:ring-accent"
-          >
-            <option value="today">Hoy</option>
-            <option value="yesterday">Ayer</option>
-            <option value="last_7d">7 días</option>
-            <option value="last_14d">14 días</option>
-            <option value="last_30d">30 días</option>
-            <option value="last_90d">90 días</option>
-            <option value="this_month">Este mes</option>
-            <option value="last_month">Mes pasado</option>
-            <option value="maximum">Histórico</option>
-          </select>
-          <button
-            type="button"
-            className="rounded-control bg-primary px-[18px] py-[10px] text-[13px] font-bold text-white shadow-[0_0_16px_var(--primary-glow)] transition-all duration-200 ease-out hover:bg-primary-hover hover:shadow-[0_0_28px_var(--primary-glow),0_0_8px_rgba(45,91,138,0.2)] active:scale-[0.98]"
-          >
-            + Cargar métricas
-          </button>
-        </div>
+      <div className="mb-[22px]">
+        <h1 className="text-[22px] font-bold tracking-[-0.03em] text-text">Dashboard</h1>
+        <p className="mt-0.5 text-[13px] text-text-2">Command Center — cómo viene tu negocio hoy</p>
       </div>
 
-      <div className="dash-hero mb-3.5 grid gap-8 rounded-card p-7 md:grid-cols-[1.1fr_0.9fr]">
-        <div className="flex flex-col justify-center">
-          <div className="mb-2 text-[22px] font-extrabold tracking-[-0.03em] text-text">
-            LA BASE DE TU NEGOCIO
+      <div className="mb-3.5">
+        <p className="mb-2 text-[11px] font-bold uppercase tracking-[.08em] text-text-3">Ventas de hoy</p>
+        {!tiendaNubeConnection ? (
+          <EmptyStateCard title="Conectá Tienda Nube" subtitle="Para ver tus ventas del día acá necesitás vincular tu tienda." />
+        ) : tiendaNubeError ? (
+          <div className="rounded-card border border-red/30 bg-red/[8%] px-4 py-3 text-sm text-red">{tiendaNubeError}</div>
+        ) : todaySummary ? (
+          <div className="grid grid-cols-2 gap-px overflow-hidden rounded-card border border-border bg-border sm:grid-cols-4">
+            <KpiCard label="Facturación Bruta" value={`$${todaySummary.bruto.toLocaleString('es-AR')}`} />
+            <KpiCard label="Facturación Neta" value={`$${todaySummary.neto.toLocaleString('es-AR')}`} />
+            <KpiCard label="Órdenes" value={String(todaySummary.ordenes)} />
+            <KpiCard label="Ticket Promedio" value={todaySummary.ordenes > 0 ? `$${aovToday.toLocaleString('es-AR')}` : '—'} />
           </div>
-          <p className="mb-[18px] max-w-[380px] text-[13px] leading-relaxed text-[#5E5E5A]">
-            Controlá tus anuncios, medí tus márgenes reales y escalá tu marca en un solo lugar.
-          </p>
-          <button
-            type="button"
-            className="w-fit rounded-control border border-primary/25 bg-transparent px-4 py-[9px] text-[13px] font-semibold text-primary shadow-[0_0_12px_rgba(45,91,138,0.1)] transition-all duration-200 ease-out hover:bg-primary/[6%] hover:shadow-[0_0_24px_rgba(45,91,138,0.2)] active:scale-[0.98]"
-          >
-            Ver recorrido
-          </button>
+        ) : null}
+      </div>
+
+      <div className="mb-3.5 grid grid-cols-1 gap-3.5 md:grid-cols-2">
+        <div className="rounded-card border border-border bg-surface p-5">
+          <p className="mb-3 text-[10px] font-bold uppercase tracking-wide text-text-3">Top anuncios activos (7 días)</p>
+          {!metaConnection ? (
+            <EmptyStateCard title="Conectá Meta Ads" subtitle="Para ver qué anuncios están corriendo y cómo les va." />
+          ) : tokenExpired ? (
+            <div className="rounded-control border border-amber/30 bg-amber/[8%] px-4 py-3 text-sm text-amber">
+              Tu conexión con Meta Ads venció — reconectá para ver métricas actualizadas.
+            </div>
+          ) : metaInsights && !metaInsights.ok ? (
+            <div className="rounded-control border border-red/30 bg-red/[8%] px-4 py-3 text-sm text-red">{metaInsights.error}</div>
+          ) : topAds.length === 0 ? (
+            <EmptyStateCard title="Sin anuncios activos" subtitle="No hay anuncios corriendo en este momento." />
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="border-b border-divider text-left text-[10px] font-bold uppercase tracking-wide text-text-3">
+                    <th className="px-2 py-2">Anuncio</th>
+                    <th className="px-2 py-2 text-right">Gasto</th>
+                    <th className="px-2 py-2 text-right">ROAS</th>
+                    <th className="px-2 py-2 text-right">Compras</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {topAds.map((ad) => (
+                    <tr key={ad.adId} className="border-b border-divider last:border-0">
+                      <td className="min-w-0 px-2 py-2">
+                        <p className="truncate text-xs font-semibold text-text">{ad.name}</p>
+                        <p className="truncate text-[10px] text-text-3">{ad.campaignName}</p>
+                      </td>
+                      <td className="px-2 py-2 text-right text-xs tabular-nums text-text">{formatMoney(ad.spend, accountCurrency)}</td>
+                      <td className={`px-2 py-2 text-right text-xs font-semibold tabular-nums ${ad.roas >= 2 ? 'text-green' : 'text-red'}`}>
+                        {ad.roas.toFixed(2)}x
+                      </td>
+                      <td className="px-2 py-2 text-right text-xs tabular-nums text-text-2">{ad.purchases}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
 
-        <div className="relative aspect-[16/10] w-full overflow-hidden rounded-control border border-[rgba(26,26,24,0.08)] bg-surface-2 shadow-[0_8px_32px_rgba(0,0,0,0.09)]">
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="flex h-[52px] w-[52px] items-center justify-center rounded-full border border-white/40 bg-black/55 backdrop-blur-sm">
-              <svg width="15" height="15" viewBox="0 0 18 18" fill="#ffffff" aria-hidden="true">
-                <path d="M3 1.5l13 7.5-13 7.5z" />
-              </svg>
-            </div>
-          </div>
-          <span className="absolute bottom-2.5 left-2.5 rounded-md border border-white/15 bg-black/65 px-2.5 py-0.5 text-[10px] font-medium text-[#F5F5F3] backdrop-blur-sm">
-            Onboarding · 3:42
-          </span>
-        </div>
+        <AutopilotAlertsCard entries={autopilotAlerts} />
       </div>
 
       <div className="mb-3.5 grid grid-cols-1 gap-px overflow-hidden rounded-card border border-border bg-border sm:grid-cols-3">
-        <div className="flex flex-col justify-between gap-4 bg-surface p-5">
-          <span className="text-[11px] font-bold uppercase tracking-[.08em] text-text-3">
-            Campañas activas
-          </span>
-          <div>
-            <span className="text-[34px] font-extrabold leading-none tracking-[-0.04em] text-text">
-              {activeCampaigns ?? 0}
-            </span>
-            <p className="mt-1 text-xs text-text-2">de {totalCampaigns ?? 0} totales</p>
-          </div>
-        </div>
-
-        <div className="flex flex-col justify-between gap-4 bg-surface p-5">
-          <span className="text-[11px] font-bold uppercase tracking-[.08em] text-text-3">
-            Publicado este mes
-          </span>
-          <div>
-            <span className="text-2xl font-extrabold leading-none tracking-[-0.03em] text-text">
-              {publishedThisMonth ?? 0}
-            </span>
-            <p className="mt-1 text-xs text-text-2">posts</p>
-          </div>
-        </div>
-
-        <div className="flex flex-col justify-between gap-4 bg-surface p-5">
-          <span className="text-[11px] font-bold uppercase tracking-[.08em] text-text-3">
-            Por publicar
-          </span>
-          <div>
-            <span className="text-2xl font-extrabold leading-none tracking-[-0.03em] text-text">
-              {pendingPosts ?? 0}
-            </span>
-            <p className="mt-1 text-xs text-text-2">pendientes</p>
-          </div>
-        </div>
+        <KpiCard label="Campañas activas" value={String(activeCampaigns ?? 0)} sub={`de ${totalCampaigns ?? 0} totales`} />
+        <KpiCard label="Publicado este mes" value={String(publishedThisMonth ?? 0)} sub="posts" />
+        <KpiCard label="Por publicar" value={String(pendingPosts ?? 0)} sub="pendientes" />
       </div>
 
       <div>
-        <p className="mb-2 text-[11px] font-bold uppercase tracking-[.08em] text-text-3">
-          Integraciones
-        </p>
+        <p className="mb-2 text-[11px] font-bold uppercase tracking-[.08em] text-text-3">Integraciones</p>
         <div className="flex flex-wrap gap-3">
           <div className="flex items-center gap-2.5 rounded-card border border-border bg-surface px-4 py-3">
             <span
@@ -288,102 +342,6 @@ export default async function DashboardPage({
           </div>
         </div>
       </div>
-
-      {metaConnection && (
-        <div className="mt-3.5">
-          <p className="mb-2 text-[11px] font-bold uppercase tracking-[.08em] text-text-3">
-            Meta Ads — anuncios activos (7 días)
-          </p>
-
-          {tokenExpired ? (
-            <div className="rounded-card border border-amber/30 bg-amber/[8%] px-4 py-3 text-sm text-amber">
-              Tu conexión con Meta Ads venció — reconectá para ver métricas actualizadas.
-            </div>
-          ) : metaInsights && !metaInsights.ok ? (
-            <div className="rounded-card border border-red/30 bg-red/[8%] px-4 py-3 text-sm text-red">
-              {metaInsights.error}
-            </div>
-          ) : metaInsights && metaInsights.ok && metaInsights.ads.length === 0 ? (
-            <div className="rounded-card border border-border bg-surface px-6 py-8 text-center text-sm text-text-2">
-              No hay anuncios activos en este momento.
-            </div>
-          ) : metaInsights && metaInsights.ok ? (
-            <div className="overflow-x-auto rounded-card border border-border bg-surface">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-border text-left text-[10px] font-bold uppercase tracking-wide text-text-3">
-                    <th className="px-4 py-2.5">Anuncio</th>
-                    <th className="px-4 py-2.5">Campaña</th>
-                    <th className="px-4 py-2.5 text-right">Gasto</th>
-                    <th className="px-4 py-2.5 text-right">ROAS</th>
-                    <th className="px-4 py-2.5 text-right">Compras</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {metaInsights.ads.map((ad) => (
-                    <tr key={ad.adId} className="border-b border-border last:border-0">
-                      <td className="px-4 py-2.5 font-medium text-text">{ad.name}</td>
-                      <td className="px-4 py-2.5 text-text-2">{ad.campaignName}</td>
-                      <td className="px-4 py-2.5 text-right text-text">USD {ad.spend.toFixed(0)}</td>
-                      <td
-                        className={`px-4 py-2.5 text-right font-semibold ${
-                          ad.roas >= 2 ? 'text-green' : 'text-red'
-                        }`}
-                      >
-                        {ad.roas.toFixed(2)}x
-                      </td>
-                      <td className="px-4 py-2.5 text-right text-text-2">{ad.purchases}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ) : null}
-        </div>
-      )}
-
-      {tiendaNubeConnection && (
-        <div className="mt-3.5">
-          <p className="mb-2 text-[11px] font-bold uppercase tracking-[.08em] text-text-3">
-            Tienda Nube — ventas (30 días)
-          </p>
-
-          {tiendaNubeOrders && !tiendaNubeOrders.ok ? (
-            <div className="rounded-card border border-red/30 bg-red/[8%] px-4 py-3 text-sm text-red">
-              {tiendaNubeOrders.error}
-            </div>
-          ) : tiendaNubeOrders && tiendaNubeOrders.ok ? (
-            <div className="grid grid-cols-2 gap-px overflow-hidden rounded-card border border-border bg-border sm:grid-cols-4">
-              <div className="flex flex-col justify-between gap-3 bg-surface p-4">
-                <span className="text-[10px] font-bold uppercase tracking-wide text-text-3">Bruto</span>
-                <span className="text-xl font-extrabold tracking-[-0.03em] text-text">
-                  USD {tiendaNubeOrders.summary.bruto.toLocaleString('es-AR')}
-                </span>
-              </div>
-              <div className="flex flex-col justify-between gap-3 bg-surface p-4">
-                <span className="text-[10px] font-bold uppercase tracking-wide text-text-3">Envío</span>
-                <span className="text-xl font-extrabold tracking-[-0.03em] text-text">
-                  USD {tiendaNubeOrders.summary.envio.toLocaleString('es-AR')}
-                </span>
-              </div>
-              <div className="flex flex-col justify-between gap-3 bg-surface p-4">
-                <span className="text-[10px] font-bold uppercase tracking-wide text-text-3">Neto</span>
-                <span className="text-xl font-extrabold tracking-[-0.03em] text-text">
-                  USD {tiendaNubeOrders.summary.neto.toLocaleString('es-AR')}
-                </span>
-              </div>
-              <div className="flex flex-col justify-between gap-3 bg-surface p-4">
-                <span className="text-[10px] font-bold uppercase tracking-wide text-text-3">
-                  Órdenes
-                </span>
-                <span className="text-xl font-extrabold tracking-[-0.03em] text-text">
-                  {tiendaNubeOrders.summary.ordenes}
-                </span>
-              </div>
-            </div>
-          ) : null}
-        </div>
-      )}
     </div>
   )
 }

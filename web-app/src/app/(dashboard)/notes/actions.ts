@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { getDashboardContext } from '@/lib/organization/dashboard-context'
+import { validateMediaFile } from '@/lib/media/validate-upload'
 import type { Database } from '@/lib/types/database.types'
 
 type NoteUpdate = Database['public']['Tables']['notes']['Update']
@@ -22,6 +23,17 @@ async function uploadNoteMedia(
   userId: string,
   file: File
 ): Promise<{ url: string | null; error: string | null }> {
+  const validation = await validateMediaFile(file)
+  if (!validation.ok) {
+    return { url: null, error: validation.error }
+  }
+  // Notas solo ofrece adjuntar imagen en su UI (accept="image/*") — la
+  // validación del servidor tiene que coincidir con esa promesa, no solo
+  // aceptar cualquier tipo de media que el helper compartido reconozca.
+  if (validation.kind !== 'image') {
+    return { url: null, error: `"${file.name}" no es una imagen — las notas solo admiten adjuntar imágenes.` }
+  }
+
   const ext = file.name.split('.').pop() || 'bin'
   const path = `${userId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`
 

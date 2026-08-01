@@ -32,7 +32,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
     <div className="min-h-screen bg-bg">
       <SidebarNav collapsed={collapsed} onToggle={toggleCollapsed} />
       <div
-        className={`transition-[margin] duration-200 ease-out ${collapsed ? 'ml-[64px]' : 'ml-[220px]'}`}
+        className={`transition-[margin] duration-200 ease-out ${collapsed ? 'ml-[64px]' : 'ml-[228px]'}`}
       >
         {children}
       </div>

@@ -2,7 +2,11 @@ import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { createClient } from '@/lib/supabase/server'
 import { getDashboardContext } from '@/lib/organization/dashboard-context'
-import { META_OAUTH_STATE_COOKIE, META_GRAPH_URL } from '@/lib/meta/oauth'
+import { META_OAUTH_STATE_COOKIE, META_OAUTH_PENDING_COOKIE, INSTAGRAM_OAUTH_PENDING_COOKIE, META_GRAPH_URL } from '@/lib/meta/oauth'
+import { getMetaAdAccounts, getFacebookUserId } from '@/lib/meta/accounts'
+import { saveMetaConnection } from '@/lib/meta/connections'
+import { getInstagramBusinessAccounts } from '@/lib/instagram/accounts'
+import { saveInstagramConnection } from '@/lib/instagram/connections'
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url)
@@ -11,7 +15,7 @@ export async function GET(request: Request) {
   const oauthError = searchParams.get('error')
 
   const redirectWithError = (message: string) =>
-    NextResponse.redirect(`${origin}/dashboard?meta_error=${encodeURIComponent(message)}`)
+    NextResponse.redirect(`${origin}/settings/integrations?meta_error=${encodeURIComponent(message)}`)
 
   if (oauthError) {
     return redirectWithError('Conexión cancelada.')
@@ -70,39 +74,93 @@ export async function GET(request: Request) {
     const expiresInSec = longData.expires_in || 60 * 24 * 60 * 60
     const expiresAt = new Date(Date.now() + expiresInSec * 1000).toISOString()
 
-    const accRes = await fetch(
-      `${META_GRAPH_URL}/me/adaccounts?fields=id,name&access_token=${longLivedToken}&limit=200`
-    )
-    const accData = await accRes.json()
-    const accounts: Array<{ id: string; name?: string }> = accData?.data ?? []
+    // Cuentas publicitarias e Instagram se resuelven en paralelo — son
+    // independientes (una organización puede tener una sin la otra) y no
+    // hay que bloquear una por la otra. fb_user_id es el id de identidad de
+    // Facebook, necesario únicamente para el Data Deletion Callback.
+    const [accountsResult, instagramResult, fbUserId] = await Promise.all([
+      getMetaAdAccounts(longLivedToken),
+      getInstagramBusinessAccounts(longLivedToken),
+      getFacebookUserId(longLivedToken),
+    ])
+
+    if (!accountsResult.ok) return redirectWithError(accountsResult.error)
+    const { accounts } = accountsResult
+    const igAccounts = instagramResult.ok ? instagramResult.accounts : []
+
+    // Instagram: con una sola Página con IG Business conectado, se guarda
+    // directo. Con más de una, se guarda en cookie y se resuelve en
+    // /meta-ads/connections/select-instagram — antes este caso se
+    // descartaba en silencio, causando el bug real de "me conecté pero
+    // Rendimiento sigue pidiendo Instagram" (2026-07-31).
+    if (igAccounts.length === 1) {
+      const ig = igAccounts[0]
+      await saveInstagramConnection(supabase, {
+        organizationId: activeOrganizationId,
+        pageId: ig.pageId,
+        pageName: ig.pageName,
+        igUserId: ig.igUserId,
+        igUsername: ig.igUsername,
+        profilePictureUrl: ig.profilePictureUrl,
+        pageAccessToken: ig.pageAccessToken,
+        fbUserId,
+      })
+    } else if (igAccounts.length > 1) {
+      cookieStore.set(INSTAGRAM_OAUTH_PENDING_COOKIE, JSON.stringify({ accounts: igAccounts, fbUserId }), {
+        httpOnly: true,
+        sameSite: 'lax',
+        secure: process.env.NODE_ENV === 'production',
+        path: '/',
+        maxAge: 60 * 10,
+      })
+    }
 
     if (accounts.length === 0) {
-      return redirectWithError('No encontramos ninguna cuenta publicitaria en tu usuario de Meta.')
+      // Sin cuenta publicitaria no es un error si sí se pudo conectar (o
+      // queda por elegir) Instagram — recién si las dos cosas fallan no hay
+      // nada que ofrecer.
+      if (igAccounts.length > 1) return NextResponse.redirect(`${origin}/meta-ads/connections/select-instagram`)
+      if (igAccounts.length === 1) return NextResponse.redirect(`${origin}/settings/integrations?meta_connected=1`)
+      return redirectWithError('No encontramos ninguna cuenta publicitaria ni de Instagram en tu usuario de Meta.')
     }
 
-    // Si el usuario tiene varias cuentas publicitarias, tomamos la primera —
-    // mismo comportamiento que app.html. Falta un selector real para elegir
-    // entre varias cuando haga falta (ya era un TODO pendiente en el legado).
-    const account = accounts[0]
-    const accountId = account.id.replace('act_', '')
-
-    await supabase.from('meta_connections').delete().eq('organization_id', activeOrganizationId)
-
-    const { error: insertError } = await supabase.from('meta_connections').insert({
-      user_id: user.id,
-      organization_id: activeOrganizationId,
-      token: longLivedToken,
-      account_id: accountId,
-      account_name: account.name ?? null,
-      app_id: appId,
-      expires_at: expiresAt,
-    })
-
-    if (insertError) {
-      return redirectWithError('No pudimos guardar la conexión. Probá de nuevo.')
+    // Con una sola cuenta no hace falta preguntar — se vincula directo. Con
+    // varias (portafolios distintos), se guarda todo temporalmente y se pide
+    // elegir cuál en /meta-ads/connections/select-account.
+    if (accounts.length === 1) {
+      const account = accounts[0]
+      const saved = await saveMetaConnection(supabase, {
+        userId: user.id,
+        organizationId: activeOrganizationId,
+        token: longLivedToken,
+        accountId: account.id,
+        accountName: account.name,
+        accountCurrency: account.currency,
+        appId,
+        expiresAt,
+        fbUserId,
+      })
+      if (!saved.ok) return redirectWithError(`No pudimos guardar la conexión: ${saved.error}`)
+      if (igAccounts.length > 1) return NextResponse.redirect(`${origin}/meta-ads/connections/select-instagram`)
+      return NextResponse.redirect(`${origin}/settings/integrations?meta_connected=1`)
     }
 
-    return NextResponse.redirect(`${origin}/dashboard?meta_connected=1`)
+    cookieStore.set(
+      META_OAUTH_PENDING_COOKIE,
+      JSON.stringify({ token: longLivedToken, expiresAt, accounts, fbUserId }),
+      {
+        httpOnly: true,
+        sameSite: 'lax',
+        secure: process.env.NODE_ENV === 'production',
+        path: '/',
+        maxAge: 60 * 10,
+      }
+    )
+    // Si además hay que elegir cuenta de Instagram, esa selección se resuelve
+    // después de la de Ads — selectMetaAccountAction chequea el cookie
+    // pendiente de Instagram antes de mandar al usuario de vuelta a
+    // /meta-ads/connections (ver select-account/actions.ts).
+    return NextResponse.redirect(`${origin}/meta-ads/connections/select-account`)
   } catch (err) {
     return redirectWithError(err instanceof Error ? err.message : 'Error desconocido.')
   }

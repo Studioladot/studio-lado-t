@@ -3,6 +3,7 @@
 import { useActionState, useEffect, useState } from 'react'
 import { useFormStatus } from 'react-dom'
 import { createNoteAction, updateNoteAction, type NoteState } from './actions'
+import { TextInput, TextArea, Select } from '@/components/features/form-field'
 import type { Database } from '@/lib/types/database.types'
 
 type Note = Database['public']['Tables']['notes']['Row']
@@ -18,9 +19,6 @@ const CATEGORIES: Array<{ value: string; label: string }> = [
 const COLORS = ['#fef3d8', '#fbe8e3', '#e8f2f0', '#e4f0fb', '#e4f5e7', '#f0efec']
 
 const initialState: NoteState = { error: null, success: false }
-
-const fieldClass =
-  'rounded-control border border-[#D0D5DD] bg-[#F9FAFB] px-3 py-2.5 text-sm text-[#101828] outline-none transition-all duration-200 ease-out placeholder:text-[#667085] focus-visible:ring-2 focus-visible:ring-accent'
 
 function SubmitButton({ label, pendingLabel }: { label: string; pendingLabel: string }) {
   const { pending } = useFormStatus()
@@ -52,31 +50,29 @@ export function NoteForm({ note, onDone }: { note?: Note; onDone: () => void }) 
       <input type="hidden" name="color" value={color} />
       {removeMedia && <input type="hidden" name="remove_media" value="true" />}
 
-      <input
+      <TextInput
         name="titulo"
         type="text"
         placeholder="Título (opcional)"
         defaultValue={note?.titulo ?? ''}
-        className={fieldClass}
       />
 
-      <textarea
+      <TextArea
         name="contenido"
         rows={4}
         required
         placeholder="Escribí lo que se te ocurra..."
         defaultValue={note?.contenido ?? ''}
-        className={`resize-none ${fieldClass}`}
       />
 
       <div className="flex flex-wrap items-center gap-4">
-        <select name="categoria" defaultValue={note?.categoria ?? 'varios'} className={fieldClass}>
+        <Select name="categoria" defaultValue={note?.categoria ?? 'varios'}>
           {CATEGORIES.map((c) => (
             <option key={c.value} value={c.value}>
               {c.label}
             </option>
           ))}
-        </select>
+        </Select>
 
         <div className="flex items-center gap-1.5">
           {COLORS.map((c) => (

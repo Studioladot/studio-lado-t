@@ -16,8 +16,13 @@ const STATUS_OPTIONS = [
 
 const initialState: SaveState = { error: null, success: false }
 
+// Encontrado roto en la auditoría de cierre del módulo (2026-08-01): mismo
+// bug de colores hardcodeados que ya se había corregido en
+// add-piece-form.tsx/piece-edit-form.tsx/post-form.tsx, pero este archivo
+// había quedado afuera de esas rondas — en dark mode los campos de "Detalles
+// de la campaña" quedaban claros, rotos contra el fondo oscuro.
 const fieldClass =
-  'resize-none rounded-control border border-[#D0D5DD] bg-[#F9FAFB] px-3 py-2.5 text-sm text-[#101828] outline-none transition-all duration-200 ease-out placeholder:text-[#667085] focus-visible:ring-2 focus-visible:ring-accent'
+  'resize-none rounded-control border border-border bg-surface-2/60 px-3 py-2.5 text-sm text-text outline-none transition-all duration-200 ease-out placeholder:text-text-3 focus-visible:ring-2 focus-visible:ring-accent'
 
 const labelClass = 'flex flex-col gap-1 text-[11px] font-semibold uppercase tracking-[.06em] text-text-2'
 
@@ -68,7 +73,7 @@ export function CampaignDetailsForm({ campaign }: { campaign: Campaign }) {
         </label>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <label className={labelClass}>
           Inicio
           <input

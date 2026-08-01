@@ -298,6 +298,59 @@ export type Database = {
         }
         Relationships: []
       }
+      autopilot_custom_rules: {
+        Row: {
+          action: string
+          active: boolean
+          campaign_id: string | null
+          conditions: Json
+          created_at: string
+          created_by: string | null
+          id: string
+          min_spend: number
+          name: string
+          organization_id: string
+          params: Json
+          window_days: number
+        }
+        Insert: {
+          action: string
+          active?: boolean
+          campaign_id?: string | null
+          conditions?: Json
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          min_spend?: number
+          name: string
+          organization_id: string
+          params?: Json
+          window_days?: number
+        }
+        Update: {
+          action?: string
+          active?: boolean
+          campaign_id?: string | null
+          conditions?: Json
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          min_spend?: number
+          name?: string
+          organization_id?: string
+          params?: Json
+          window_days?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "autopilot_custom_rules_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       autopilot_log: {
         Row: {
           action: string
@@ -330,6 +383,47 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      autopilot_playbook_settings: {
+        Row: {
+          campaign_id: string
+          enabled: boolean
+          id: string
+          organization_id: string
+          params: Json
+          playbook_type: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          campaign_id: string
+          enabled?: boolean
+          id?: string
+          organization_id: string
+          params?: Json
+          playbook_type: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          campaign_id?: string
+          enabled?: boolean
+          id?: string
+          organization_id?: string
+          params?: Json
+          playbook_type?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "autopilot_playbook_settings_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       autopilot_rules: {
         Row: {
@@ -366,6 +460,101 @@ export type Database = {
           window_days?: number
         }
         Relationships: []
+      }
+      autopilot_run_log: {
+        Row: {
+          action: string
+          campaign_id: string
+          campaign_name: string | null
+          created_at: string
+          entity_id: string
+          entity_name: string | null
+          entity_type: string
+          id: string
+          message: string
+          organization_id: string
+          playbook_type: string | null
+          rule_id: string | null
+        }
+        Insert: {
+          action: string
+          campaign_id: string
+          campaign_name?: string | null
+          created_at?: string
+          entity_id: string
+          entity_name?: string | null
+          entity_type: string
+          id?: string
+          message: string
+          organization_id: string
+          playbook_type?: string | null
+          rule_id?: string | null
+        }
+        Update: {
+          action?: string
+          campaign_id?: string
+          campaign_name?: string | null
+          created_at?: string
+          entity_id?: string
+          entity_name?: string | null
+          entity_type?: string
+          id?: string
+          message?: string
+          organization_id?: string
+          playbook_type?: string | null
+          rule_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "autopilot_run_log_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "autopilot_run_log_rule_id_fkey"
+            columns: ["rule_id"]
+            isOneToOne: false
+            referencedRelation: "autopilot_custom_rules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      brand_journal_entries: {
+        Row: {
+          created_at: string
+          id: string
+          month: string
+          narrative: string
+          organization_id: string
+          stats: Json
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          month: string
+          narrative: string
+          organization_id: string
+          stats?: Json
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          month?: string
+          narrative?: string
+          organization_id?: string
+          stats?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "brand_journal_entries_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       business_profile: {
         Row: {
@@ -466,6 +655,50 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "campaign_presets_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      campaign_targets: {
+        Row: {
+          breakeven_cpa: number | null
+          breakeven_roas: number | null
+          campaign_id: string | null
+          id: string
+          organization_id: string
+          target_cpa: number | null
+          target_roas: number | null
+          unit_economics: Json | null
+          updated_at: string
+        }
+        Insert: {
+          breakeven_cpa?: number | null
+          breakeven_roas?: number | null
+          campaign_id?: string | null
+          id?: string
+          organization_id: string
+          target_cpa?: number | null
+          target_roas?: number | null
+          unit_economics?: Json | null
+          updated_at?: string
+        }
+        Update: {
+          breakeven_cpa?: number | null
+          breakeven_roas?: number | null
+          campaign_id?: string | null
+          id?: string
+          organization_id?: string
+          target_cpa?: number | null
+          target_roas?: number | null
+          unit_economics?: Json | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_targets_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
@@ -656,54 +889,114 @@ export type Database = {
       content_piezas: {
         Row: {
           campaign_id: string
+          caption: string | null
           created_at: string | null
           fecha_planificada: string | null
           formato: string | null
           id: string
+          ig_container_id: string | null
+          ig_media_id: string | null
+          ig_permalink: string | null
           media_type: string | null
           media_url: string | null
           media_urls: Json | null
           notas: string | null
           organization_id: string | null
           plataforma: string | null
+          production_status: string
           protagonista: string | null
+          publish_error: string | null
+          publish_status: string
+          published_at: string | null
+          reference_urls: Json
+          retry_count: number
+          scheduled_at: string | null
           status: string | null
+          tiktok_caption: string | null
+          tiktok_container_id: string | null
+          tiktok_media_id: string | null
+          tiktok_permalink: string | null
+          tiktok_publish_error: string | null
+          tiktok_publish_status: string
+          tiktok_published_at: string | null
+          tiktok_retry_count: number
+          tiktok_scheduled_at: string | null
           titulo: string
           turno: string | null
           user_id: string
         }
         Insert: {
           campaign_id: string
+          caption?: string | null
           created_at?: string | null
           fecha_planificada?: string | null
           formato?: string | null
           id?: string
+          ig_container_id?: string | null
+          ig_media_id?: string | null
+          ig_permalink?: string | null
           media_type?: string | null
           media_url?: string | null
           media_urls?: Json | null
           notas?: string | null
           organization_id?: string | null
           plataforma?: string | null
+          production_status?: string
           protagonista?: string | null
+          publish_error?: string | null
+          publish_status?: string
+          published_at?: string | null
+          reference_urls?: Json
+          retry_count?: number
+          scheduled_at?: string | null
           status?: string | null
+          tiktok_caption?: string | null
+          tiktok_container_id?: string | null
+          tiktok_media_id?: string | null
+          tiktok_permalink?: string | null
+          tiktok_publish_error?: string | null
+          tiktok_publish_status?: string
+          tiktok_published_at?: string | null
+          tiktok_retry_count?: number
+          tiktok_scheduled_at?: string | null
           titulo: string
           turno?: string | null
           user_id: string
         }
         Update: {
           campaign_id?: string
+          caption?: string | null
           created_at?: string | null
           fecha_planificada?: string | null
           formato?: string | null
           id?: string
+          ig_container_id?: string | null
+          ig_media_id?: string | null
+          ig_permalink?: string | null
           media_type?: string | null
           media_url?: string | null
           media_urls?: Json | null
           notas?: string | null
           organization_id?: string | null
           plataforma?: string | null
+          production_status?: string
           protagonista?: string | null
+          publish_error?: string | null
+          publish_status?: string
+          published_at?: string | null
+          reference_urls?: Json
+          retry_count?: number
+          scheduled_at?: string | null
           status?: string | null
+          tiktok_caption?: string | null
+          tiktok_container_id?: string | null
+          tiktok_media_id?: string | null
+          tiktok_permalink?: string | null
+          tiktok_publish_error?: string | null
+          tiktok_publish_status?: string
+          tiktok_published_at?: string | null
+          tiktok_retry_count?: number
+          tiktok_scheduled_at?: string | null
           titulo?: string
           turno?: string | null
           user_id?: string
@@ -732,14 +1025,33 @@ export type Database = {
           date: string | null
           format: string | null
           id: string
+          ig_container_id: string | null
+          ig_media_id: string | null
+          ig_permalink: string | null
           media_type: string | null
           media_url: string | null
           media_urls: Json | null
           notes: string | null
           organization_id: string | null
           platform: string | null
+          production_status: string
           protagonista: string | null
+          publish_error: string | null
+          publish_status: string
+          published_at: string | null
+          reference_urls: Json
+          retry_count: number
+          scheduled_at: string | null
           status: string | null
+          tiktok_caption: string | null
+          tiktok_container_id: string | null
+          tiktok_media_id: string | null
+          tiktok_permalink: string | null
+          tiktok_publish_error: string | null
+          tiktok_publish_status: string
+          tiktok_published_at: string | null
+          tiktok_retry_count: number
+          tiktok_scheduled_at: string | null
           title: string | null
           turno: string | null
           user_id: string | null
@@ -750,14 +1062,33 @@ export type Database = {
           date?: string | null
           format?: string | null
           id?: string
+          ig_container_id?: string | null
+          ig_media_id?: string | null
+          ig_permalink?: string | null
           media_type?: string | null
           media_url?: string | null
           media_urls?: Json | null
           notes?: string | null
           organization_id?: string | null
           platform?: string | null
+          production_status?: string
           protagonista?: string | null
+          publish_error?: string | null
+          publish_status?: string
+          published_at?: string | null
+          reference_urls?: Json
+          retry_count?: number
+          scheduled_at?: string | null
           status?: string | null
+          tiktok_caption?: string | null
+          tiktok_container_id?: string | null
+          tiktok_media_id?: string | null
+          tiktok_permalink?: string | null
+          tiktok_publish_error?: string | null
+          tiktok_publish_status?: string
+          tiktok_published_at?: string | null
+          tiktok_retry_count?: number
+          tiktok_scheduled_at?: string | null
           title?: string | null
           turno?: string | null
           user_id?: string | null
@@ -768,14 +1099,33 @@ export type Database = {
           date?: string | null
           format?: string | null
           id?: string
+          ig_container_id?: string | null
+          ig_media_id?: string | null
+          ig_permalink?: string | null
           media_type?: string | null
           media_url?: string | null
           media_urls?: Json | null
           notes?: string | null
           organization_id?: string | null
           platform?: string | null
+          production_status?: string
           protagonista?: string | null
+          publish_error?: string | null
+          publish_status?: string
+          published_at?: string | null
+          reference_urls?: Json
+          retry_count?: number
+          scheduled_at?: string | null
           status?: string | null
+          tiktok_caption?: string | null
+          tiktok_container_id?: string | null
+          tiktok_media_id?: string | null
+          tiktok_permalink?: string | null
+          tiktok_publish_error?: string | null
+          tiktok_publish_status?: string
+          tiktok_published_at?: string | null
+          tiktok_retry_count?: number
+          tiktok_scheduled_at?: string | null
           title?: string | null
           turno?: string | null
           user_id?: string | null
@@ -910,6 +1260,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      data_deletion_requests: {
+        Row: {
+          completed_at: string | null
+          confirmation_code: string
+          fb_user_id: string
+          id: string
+          requested_at: string
+          status: string
+        }
+        Insert: {
+          completed_at?: string | null
+          confirmation_code: string
+          fb_user_id: string
+          id?: string
+          requested_at?: string
+          status?: string
+        }
+        Update: {
+          completed_at?: string | null
+          confirmation_code?: string
+          fb_user_id?: string
+          id?: string
+          requested_at?: string
+          status?: string
+        }
+        Relationships: []
       }
       daily_sales: {
         Row: {
@@ -1048,10 +1425,12 @@ export type Database = {
           costos_adicionales_manual: number | null
           dias_operativos: number | null
           id: string
+          impuestos_pct: number | null
           margen_bruto: number | null
           meta_moneda: string | null
           objetivo_ganancia_pct: number | null
           organization_id: string | null
+          pasarela_pct: number | null
           presupuesto_ads_mensual: number | null
           usd_manual: number | null
           user_id: string
@@ -1062,10 +1441,12 @@ export type Database = {
           costos_adicionales_manual?: number | null
           dias_operativos?: number | null
           id?: string
+          impuestos_pct?: number | null
           margen_bruto?: number | null
           meta_moneda?: string | null
           objetivo_ganancia_pct?: number | null
           organization_id?: string | null
+          pasarela_pct?: number | null
           presupuesto_ads_mensual?: number | null
           usd_manual?: number | null
           user_id: string
@@ -1076,10 +1457,12 @@ export type Database = {
           costos_adicionales_manual?: number | null
           dias_operativos?: number | null
           id?: string
+          impuestos_pct?: number | null
           margen_bruto?: number | null
           meta_moneda?: string | null
           objetivo_ganancia_pct?: number | null
           organization_id?: string | null
+          pasarela_pct?: number | null
           presupuesto_ads_mensual?: number | null
           usd_manual?: number | null
           user_id?: string
@@ -1137,6 +1520,41 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "finances_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ia_chat_messages: {
+        Row: {
+          content: string
+          created_at: string
+          created_by: string | null
+          id: string
+          organization_id: string
+          role: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          organization_id: string
+          role: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          organization_id?: string
+          role?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ia_chat_messages_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
@@ -1203,35 +1621,306 @@ export type Database = {
         }
         Relationships: []
       }
+      instagram_account_insights: {
+        Row: {
+          captured_at: string
+          follower_count: number | null
+          id: string
+          impressions: number | null
+          organization_id: string
+          reach: number | null
+        }
+        Insert: {
+          captured_at?: string
+          follower_count?: number | null
+          id?: string
+          impressions?: number | null
+          organization_id: string
+          reach?: number | null
+        }
+        Update: {
+          captured_at?: string
+          follower_count?: number | null
+          id?: string
+          impressions?: number | null
+          organization_id?: string
+          reach?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "instagram_account_insights_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      instagram_connections: {
+        Row: {
+          connected_at: string
+          fb_user_id: string | null
+          id: string
+          ig_user_id: string
+          ig_username: string | null
+          organization_id: string
+          page_access_token: string
+          page_id: string
+          page_name: string | null
+          profile_picture_url: string | null
+        }
+        Insert: {
+          connected_at?: string
+          fb_user_id?: string | null
+          id?: string
+          ig_user_id: string
+          ig_username?: string | null
+          organization_id: string
+          page_access_token: string
+          page_id: string
+          page_name?: string | null
+          profile_picture_url?: string | null
+        }
+        Update: {
+          connected_at?: string
+          fb_user_id?: string | null
+          id?: string
+          ig_user_id?: string
+          ig_username?: string | null
+          organization_id?: string
+          page_access_token?: string
+          page_id?: string
+          page_name?: string | null
+          profile_picture_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "instagram_connections_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      instagram_media_insights: {
+        Row: {
+          captured_at: string
+          comments: number | null
+          id: string
+          ig_media_id: string | null
+          likes: number | null
+          organization_id: string
+          piece_id: string | null
+          platform: string
+          plays: number | null
+          post_id: string | null
+          reach: number | null
+          saves: number | null
+          shares: number | null
+        }
+        Insert: {
+          captured_at?: string
+          comments?: number | null
+          id?: string
+          ig_media_id?: string | null
+          likes?: number | null
+          organization_id: string
+          piece_id?: string | null
+          platform?: string
+          plays?: number | null
+          post_id?: string | null
+          reach?: number | null
+          saves?: number | null
+          shares?: number | null
+        }
+        Update: {
+          captured_at?: string
+          comments?: number | null
+          id?: string
+          ig_media_id?: string | null
+          likes?: number | null
+          organization_id?: string
+          piece_id?: string | null
+          platform?: string
+          plays?: number | null
+          post_id?: string | null
+          reach?: number | null
+          saves?: number | null
+          shares?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "instagram_media_insights_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "instagram_media_insights_piece_id_fkey"
+            columns: ["piece_id"]
+            isOneToOne: false
+            referencedRelation: "content_piezas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "instagram_media_insights_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "content_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      launch_activity_log: {
+        Row: {
+          campaign_id: string | null
+          campaign_name: string
+          created_at: string
+          created_by: string | null
+          id: string
+          organization_id: string
+          status: string
+          steps: Json
+        }
+        Insert: {
+          campaign_id?: string | null
+          campaign_name: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          organization_id: string
+          status: string
+          steps?: Json
+        }
+        Update: {
+          campaign_id?: string | null
+          campaign_name?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          organization_id?: string
+          status?: string
+          steps?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "launch_activity_log_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      library_creatives: {
+        Row: {
+          asset_type: string
+          created_at: string
+          created_by: string | null
+          cta: string
+          deployed_ad_id: string | null
+          deployed_at: string | null
+          file_url: string
+          headline: string | null
+          id: string
+          meta_image_hash: string | null
+          meta_video_id: string | null
+          name: string
+          organization_id: string
+          primary_text: string | null
+          source_script_id: string | null
+          status: string
+        }
+        Insert: {
+          asset_type: string
+          created_at?: string
+          created_by?: string | null
+          cta?: string
+          deployed_ad_id?: string | null
+          deployed_at?: string | null
+          file_url: string
+          headline?: string | null
+          id?: string
+          meta_image_hash?: string | null
+          meta_video_id?: string | null
+          name: string
+          organization_id: string
+          primary_text?: string | null
+          source_script_id?: string | null
+          status?: string
+        }
+        Update: {
+          asset_type?: string
+          created_at?: string
+          created_by?: string | null
+          cta?: string
+          deployed_ad_id?: string | null
+          deployed_at?: string | null
+          file_url?: string
+          headline?: string | null
+          id?: string
+          meta_image_hash?: string | null
+          meta_video_id?: string | null
+          name?: string
+          organization_id?: string
+          primary_text?: string | null
+          source_script_id?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "library_creatives_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "library_creatives_source_script_id_fkey"
+            columns: ["source_script_id"]
+            isOneToOne: false
+            referencedRelation: "scripts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       meta_connections: {
         Row: {
+          account_currency: string | null
           account_id: string
           account_name: string | null
           app_id: string | null
           created_at: string | null
           expires_at: string | null
+          fb_user_id: string | null
           id: string
           organization_id: string | null
           token: string
           user_id: string
         }
         Insert: {
+          account_currency?: string | null
           account_id: string
           account_name?: string | null
           app_id?: string | null
           created_at?: string | null
           expires_at?: string | null
+          fb_user_id?: string | null
           id?: string
           organization_id?: string | null
           token: string
           user_id: string
         }
         Update: {
+          account_currency?: string | null
           account_id?: string
           account_name?: string | null
           app_id?: string | null
           created_at?: string | null
           expires_at?: string | null
+          fb_user_id?: string | null
           id?: string
           organization_id?: string | null
           token?: string
@@ -1279,6 +1968,56 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      metric_benchmarks: {
+        Row: {
+          cpa_max: number | null
+          cpm_max: number | null
+          ctr_target: number | null
+          freq_max: number | null
+          hook_rate_target: number | null
+          organization_id: string
+          p100_target: number | null
+          p25_target: number | null
+          roas_min: number | null
+          roas_target: number | null
+          updated_at: string
+        }
+        Insert: {
+          cpa_max?: number | null
+          cpm_max?: number | null
+          ctr_target?: number | null
+          freq_max?: number | null
+          hook_rate_target?: number | null
+          organization_id: string
+          p100_target?: number | null
+          p25_target?: number | null
+          roas_min?: number | null
+          roas_target?: number | null
+          updated_at?: string
+        }
+        Update: {
+          cpa_max?: number | null
+          cpm_max?: number | null
+          ctr_target?: number | null
+          freq_max?: number | null
+          hook_rate_target?: number | null
+          organization_id?: string
+          p100_target?: number | null
+          p25_target?: number | null
+          roas_min?: number | null
+          roas_target?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "metric_benchmarks_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: true
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       metrics: {
         Row: {
@@ -1463,6 +2202,41 @@ export type Database = {
           },
         ]
       }
+      operating_costs: {
+        Row: {
+          concepto: string
+          created_at: string
+          id: string
+          monto: number
+          organization_id: string
+          updated_at: string
+        }
+        Insert: {
+          concepto: string
+          created_at?: string
+          id?: string
+          monto?: number
+          organization_id: string
+          updated_at?: string
+        }
+        Update: {
+          concepto?: string
+          created_at?: string
+          id?: string
+          monto?: number
+          organization_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "operating_costs_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       organization_members: {
         Row: {
           organization_id: string
@@ -1484,6 +2258,38 @@ export type Database = {
             foreignKeyName: "organization_members_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      organization_notification_settings: {
+        Row: {
+          email: string | null
+          enabled: boolean
+          organization_id: string
+          updated_at: string
+          whatsapp_number: string | null
+        }
+        Insert: {
+          email?: string | null
+          enabled?: boolean
+          organization_id: string
+          updated_at?: string
+          whatsapp_number?: string | null
+        }
+        Update: {
+          email?: string | null
+          enabled?: boolean
+          organization_id?: string
+          updated_at?: string
+          whatsapp_number?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organization_notification_settings_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: true
             referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
@@ -1530,18 +2336,21 @@ export type Database = {
           id: string
           name: string
           plan: string
+          trial_ends_at: string | null
         }
         Insert: {
           created_at?: string | null
           id?: string
           name: string
           plan?: string
+          trial_ends_at?: string | null
         }
         Update: {
           created_at?: string | null
           id?: string
           name?: string
           plan?: string
+          trial_ends_at?: string | null
         }
         Relationships: []
       }
@@ -1562,6 +2371,44 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      product_costs: {
+        Row: {
+          cost: number
+          id: string
+          organization_id: string
+          product_name: string | null
+          tn_product_id: number | null
+          tn_variant_id: number
+          updated_at: string
+        }
+        Insert: {
+          cost?: number
+          id?: string
+          organization_id: string
+          product_name?: string | null
+          tn_product_id?: number | null
+          tn_variant_id: number
+          updated_at?: string
+        }
+        Update: {
+          cost?: number
+          id?: string
+          organization_id?: string
+          product_name?: string | null
+          tn_product_id?: number | null
+          tn_variant_id?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_costs_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       rate_limits: {
         Row: {
@@ -1816,6 +2663,50 @@ export type Database = {
           },
         ]
       }
+      tiktok_connections: {
+        Row: {
+          access_token: string
+          avatar_url: string | null
+          connected_at: string
+          expires_at: string
+          id: string
+          organization_id: string
+          refresh_token: string
+          tiktok_open_id: string
+          tiktok_username: string | null
+        }
+        Insert: {
+          access_token: string
+          avatar_url?: string | null
+          connected_at?: string
+          expires_at: string
+          id?: string
+          organization_id: string
+          refresh_token: string
+          tiktok_open_id: string
+          tiktok_username?: string | null
+        }
+        Update: {
+          access_token?: string
+          avatar_url?: string | null
+          connected_at?: string
+          expires_at?: string
+          id?: string
+          organization_id?: string
+          refresh_token?: string
+          tiktok_open_id?: string
+          tiktok_username?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tiktok_connections_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tn_cache: {
         Row: {
           data: Json
@@ -1990,6 +2881,10 @@ export type Database = {
       is_admin: { Args: never; Returns: boolean }
       remove_member: {
         Args: { org_id: string; target_user_id: string }
+        Returns: Json
+      }
+      update_member_role: {
+        Args: { new_role: string; org_id: string; target_user_id: string }
         Returns: Json
       }
     }

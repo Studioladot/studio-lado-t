@@ -1,7 +1,9 @@
 import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { getDashboardContext } from '@/lib/organization/dashboard-context'
+import { getCreativesByScriptId } from '@/lib/meta/library'
 import { ScriptEditForm } from './script-edit-form'
+import { LinkedCreatives } from './linked-creatives'
 
 export default async function ScriptDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -27,9 +29,12 @@ export default async function ScriptDetailPage({ params }: { params: Promise<{ i
     notFound()
   }
 
+  const creatives = await getCreativesByScriptId(supabase, activeOrganizationId, id)
+
   return (
     <div className="mx-auto max-w-[720px]">
       <ScriptEditForm script={script} />
+      <LinkedCreatives creatives={creatives} />
     </div>
   )
 }

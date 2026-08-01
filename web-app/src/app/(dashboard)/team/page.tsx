@@ -1,15 +1,11 @@
 import { createClient } from '@/lib/supabase/server'
 import { getDashboardContext } from '@/lib/organization/dashboard-context'
 import { InviteMemberForm } from './invite-member-form'
-import { removeMemberAction } from './actions'
+import { removeMemberAction, updateMemberRoleAction } from './actions'
 import { ConfirmSubmitButton } from '@/components/features/confirm-submit-button'
+import { roleLabel } from '@/lib/organization/roles'
 
 type Member = { user_id: string; role: string; email: string }
-
-const ROLE_LABEL: Record<string, string> = {
-  owner: 'Dueño',
-  member: 'Miembro',
-}
 
 export default async function TeamPage() {
   const { userId, activeOrganizationId } = await getDashboardContext()
@@ -54,9 +50,24 @@ export default async function TeamPage() {
                   <p className="truncate text-sm font-medium text-text">{member.email}</p>
                 </div>
                 <div className="flex shrink-0 items-center gap-3">
-                  <span className="rounded-full border border-border bg-surface-2 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-text-2">
-                    {ROLE_LABEL[member.role] ?? member.role}
+                  <span
+                    className={`rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide ${
+                      member.role === 'admin' ? 'border-accent/40 bg-accent/[8%] text-accent' : 'border-border bg-surface-2 text-text-2'
+                    }`}
+                  >
+                    {roleLabel(member.role)}
                   </span>
+                  {/* Promover/degradar a Admin — exclusivo del dueño, nunca sobre sí mismo ni sobre otro dueño. */}
+                  {isOwner && member.user_id !== userId && member.role !== 'owner' && (
+                    <form action={updateMemberRoleAction.bind(null, member.user_id, member.role === 'admin' ? 'member' : 'admin')}>
+                      <button
+                        type="submit"
+                        className="text-xs font-medium text-text-3 transition-colors duration-200 ease-out hover:text-text"
+                      >
+                        {member.role === 'admin' ? 'Quitar Admin' : 'Hacer Admin'}
+                      </button>
+                    </form>
+                  )}
                   {isOwner && member.user_id !== userId && (
                     <form action={removeMemberAction.bind(null, member.user_id)}>
                       <ConfirmSubmitButton

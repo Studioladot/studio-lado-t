@@ -1,8 +1,7 @@
-import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { getDashboardContext } from '@/lib/organization/dashboard-context'
 import { CreateScriptButton } from './create-script-button'
-import { STATUS_LABEL, STATUS_COLOR } from './constants'
+import { ScriptsList } from './scripts-list'
 
 export default async function ScriptsPage() {
   const { activeOrganizationId } = await getDashboardContext()
@@ -38,27 +37,7 @@ export default async function ScriptsPage() {
           <p className="text-xs text-text-2">Creá tu primer guion para empezar a probar ángulos creativos</p>
         </div>
       ) : (
-        <div className="flex flex-col gap-2.5">
-          {scripts.map((script) => (
-            <Link
-              key={script.id}
-              href={`/scripts/${script.id}`}
-              className="flex flex-wrap items-center justify-between gap-3 rounded-card border border-border bg-surface px-5 py-4 transition-all duration-200 ease-out hover:border-border-2"
-            >
-              <div className="min-w-0">
-                <p className="truncate text-sm font-semibold text-text">{script.title || 'Sin título'}</p>
-                <p className="mt-0.5 text-xs text-text-2">{script.angle || '—'}</p>
-              </div>
-              <span
-                className={`shrink-0 rounded-full border border-border bg-surface-2 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide ${
-                  STATUS_COLOR[script.status ?? ''] ?? 'text-text-2'
-                }`}
-              >
-                {STATUS_LABEL[script.status ?? ''] ?? script.status}
-              </span>
-            </Link>
-          ))}
-        </div>
+        <ScriptsList scripts={scripts} />
       )}
     </div>
   )

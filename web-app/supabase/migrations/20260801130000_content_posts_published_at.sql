@@ -1,0 +1,23 @@
+-- Fix P0 (auditoría de cierre, 2026-07-30): content_posts nunca recibió
+-- published_at cuando se le agregó el scheduling en
+-- 20260731120000_content_posts_scheduling_and_polymorphic_insights.sql —
+-- content_piezas sí lo tiene desde 20260730150000_instagram_content_os.sql.
+--
+-- Las Edge Functions instagram-publish-run e instagram-metrics-sync tratan
+-- ambas tablas de forma genérica (parametrizadas por sourceTable) y asumen
+-- que las dos tienen esta columna:
+--   - instagram-publish-run: la escribe al marcar un ítem 'published', y la
+--     lee en countPublishedLast24h() para respetar el límite de 25
+--     posts/24h de Instagram.
+--   - instagram-metrics-sync: la lee para decidir qué ítems ya publicados
+--     sincronizar.
+--
+-- Sin esta columna, el UPDATE que marca 'published' en content_posts
+-- fallaba en silencio: la publicación suelta quedaba trabada en
+-- 'publishing', se reintentaba, e instagram-publish-run terminaba
+-- marcándola 'failed' después de MAX_RETRIES aunque ya estuviera publicada
+-- en Instagram de verdad. countPublishedLast24h() tampoco contaba nunca
+-- publicaciones sueltas, así que el límite diario de Instagram nunca se
+-- aplicaba para esa tabla.
+alter table content_posts
+  add column if not exists published_at timestamptz;

@@ -3,6 +3,7 @@
 import { useActionState } from 'react'
 import { useFormStatus } from 'react-dom'
 import { inviteMemberAction, type InviteState } from './actions'
+import { TextInput, Select } from '@/components/features/form-field'
 
 const initialState: InviteState = { error: null, success: false }
 
@@ -30,13 +31,14 @@ export function InviteMemberForm() {
           <span className="text-[11px] font-semibold uppercase tracking-[.06em] text-text-2">
             Invitar por email
           </span>
-          <input
-            name="email"
-            type="email"
-            required
-            placeholder="persona@empresa.com"
-            className="rounded-control border border-[#D0D5DD] bg-[#F9FAFB] px-3 py-2.5 text-sm text-[#101828] outline-none transition-all duration-200 ease-out placeholder:text-[#667085] focus-visible:ring-2 focus-visible:ring-accent"
-          />
+          <TextInput name="email" type="email" required placeholder="persona@empresa.com" />
+        </label>
+        <label className="flex flex-col gap-1.5">
+          <span className="text-[11px] font-semibold uppercase tracking-[.06em] text-text-2">Rol</span>
+          <Select name="role" defaultValue="member">
+            <option value="member">Miembro</option>
+            <option value="admin">Admin</option>
+          </Select>
         </label>
         <InviteButton />
       </div>

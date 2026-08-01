@@ -10,7 +10,7 @@ export async function GET(request: Request) {
   const state = searchParams.get('state')
 
   const redirectWithError = (message: string) =>
-    NextResponse.redirect(`${origin}/dashboard?tn_error=${encodeURIComponent(message)}`)
+    NextResponse.redirect(`${origin}/settings/integrations?tn_error=${encodeURIComponent(message)}`)
 
   if (!code || !state) {
     return redirectWithError('Falta code o state en la respuesta de Tienda Nube.')
@@ -101,7 +101,7 @@ export async function GET(request: Request) {
       return redirectWithError('No pudimos guardar la conexión. Probá de nuevo.')
     }
 
-    return NextResponse.redirect(`${origin}/dashboard?tn_connected=1`)
+    return NextResponse.redirect(`${origin}/settings/integrations?tn_connected=1`)
   } catch (err) {
     return redirectWithError(err instanceof Error ? err.message : 'Error desconocido.')
   }

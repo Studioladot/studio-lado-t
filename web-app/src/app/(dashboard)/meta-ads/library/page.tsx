@@ -1,0 +1,62 @@
+import { createClient } from '@/lib/supabase/server'
+import { getDashboardContext } from '@/lib/organization/dashboard-context'
+import { getLibraryCreatives } from '@/lib/meta/library'
+import { getMetaAccountAds, type MetaAccountAd } from '@/lib/meta/campaigns'
+import { getAllCampaignTargets } from '@/lib/meta/autopilot'
+import { LibraryTabs } from './library-tabs'
+
+export default async function MetaAdsLibraryPage() {
+  const { activeOrganizationId } = await getDashboardContext()
+
+  if (!activeOrganizationId) {
+    return (
+      <div className="flex min-h-[50vh] flex-col items-center justify-center gap-2 text-center">
+        <h1 className="text-lg font-semibold text-text">Todavía no pertenecés a ninguna organización</h1>
+      </div>
+    )
+  }
+
+  const supabase = await createClient()
+  const { data: connection } = await supabase
+    .from('meta_connections')
+    .select('account_id, token, expires_at')
+    .eq('organization_id', activeOrganizationId)
+    .maybeSingle()
+
+  const tokenExpired = connection?.expires_at ? new Date(connection.expires_at) < new Date() : false
+
+  const [creatives, targetsBulk] = await Promise.all([
+    getLibraryCreatives(supabase, activeOrganizationId),
+    getAllCampaignTargets(supabase, activeOrganizationId),
+  ])
+
+  let metaAds: MetaAccountAd[] = []
+  let metaAdsError: string | null = null
+
+  if (!connection) {
+    metaAdsError = 'Meta Ads no está conectado.'
+  } else if (tokenExpired) {
+    metaAdsError = 'Tu conexión con Meta Ads venció — reconectá para ver los anuncios en vivo.'
+  } else {
+    const result = await getMetaAccountAds(connection.token, connection.account_id)
+    if (result.ok) {
+      metaAds = result.ads
+    } else {
+      metaAdsError = result.error
+    }
+  }
+
+  return (
+    <div>
+      <div className="mb-[22px]">
+        <h1 className="text-[22px] font-bold tracking-[-0.03em] text-text">Biblioteca de Ads</h1>
+        <p className="mt-0.5 max-w-[560px] text-[13px] text-text-2">
+          Banco de creativos listos para lanzar, y lo que ya está corriendo de verdad en tu cuenta de Meta — en un solo
+          lugar.
+        </p>
+      </div>
+
+      <LibraryTabs creatives={creatives} metaAds={metaAds} metaAdsError={metaAdsError} targetsBulk={targetsBulk} />
+    </div>
+  )
+}

@@ -39,12 +39,18 @@ export default async function CampaignDetailPage({
     notFound()
   }
 
-  const { data: pieces } = await supabase
-    .from('content_piezas')
-    .select('*')
-    .eq('campaign_id', campaign.id)
-    .eq('organization_id', activeOrganizationId)
-    .order('fecha_planificada', { ascending: true })
+  const [{ data: pieces }, { data: instagramConnection }, { data: tiktokConnection }] = await Promise.all([
+    supabase
+      .from('content_piezas')
+      .select('*')
+      .eq('campaign_id', campaign.id)
+      .eq('organization_id', activeOrganizationId)
+      .order('fecha_planificada', { ascending: true }),
+    supabase.from('instagram_connections').select('id').eq('organization_id', activeOrganizationId).maybeSingle(),
+    supabase.from('tiktok_connections').select('id').eq('organization_id', activeOrganizationId).maybeSingle(),
+  ])
+  const instagramConnected = !!instagramConnection
+  const tiktokConnected = !!tiktokConnection
 
   return (
     <div className="mx-auto max-w-[840px]">
@@ -93,10 +99,10 @@ export default async function CampaignDetailPage({
         </div>
 
         <div className="mb-4">
-          <AddPieceForm campaignId={campaign.id} />
+          <AddPieceForm campaignId={campaign.id} instagramConnected={instagramConnected} tiktokConnected={tiktokConnected} />
         </div>
 
-        <PiecesList pieces={pieces ?? []} campaignId={campaign.id} />
+        <PiecesList pieces={pieces ?? []} campaignId={campaign.id} instagramConnected={instagramConnected} tiktokConnected={tiktokConnected} />
       </section>
     </div>
   )

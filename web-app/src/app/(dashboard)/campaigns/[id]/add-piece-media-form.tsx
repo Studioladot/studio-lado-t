@@ -20,9 +20,18 @@ function AddMediaButton() {
   )
 }
 
-export function AddPieceMediaForm({ pieceId, campaignId }: { pieceId: string; campaignId: string }) {
+export function AddPieceMediaForm({
+  pieceId,
+  campaignId,
+  kind,
+}: {
+  pieceId: string
+  campaignId: string
+  /** 'final' reemplaza el Archivo Final (single); 'reference' se acumula en Referencias (multi) — Épica Omnicanal, 2026-08-04. */
+  kind: 'final' | 'reference'
+}) {
   const [isOpen, setIsOpen] = useState(false)
-  const boundAction = addPieceMediaAction.bind(null, pieceId, campaignId)
+  const boundAction = addPieceMediaAction.bind(null, pieceId, campaignId, kind)
   const [state, formAction] = useActionState(boundAction, initialState)
 
   if (!isOpen) {
@@ -32,7 +41,7 @@ export function AddPieceMediaForm({ pieceId, campaignId }: { pieceId: string; ca
         onClick={() => setIsOpen(true)}
         className="text-[11px] font-medium text-primary transition-colors duration-200 ease-out hover:text-primary-hover"
       >
-        + Agregar archivo
+        {kind === 'final' ? '+ Reemplazar Archivo Final' : '+ Agregar Referencia'}
       </button>
     )
   }
@@ -43,7 +52,7 @@ export function AddPieceMediaForm({ pieceId, campaignId }: { pieceId: string; ca
         name="media_files"
         type="file"
         accept="image/*,video/*"
-        multiple
+        multiple={kind === 'reference'}
         className="text-[12px] text-text-2 file:mr-2 file:rounded-control file:border-0 file:bg-surface-2 file:px-2.5 file:py-1 file:text-[11px] file:font-medium file:text-text-2 file:transition-all file:duration-200 file:ease-out hover:file:bg-border-2"
       />
       {state.error && <p className="text-xs text-red">{state.error}</p>}

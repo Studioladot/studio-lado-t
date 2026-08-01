@@ -15,6 +15,10 @@
   --surface-2: #ebebe8;
   --border: rgba(26, 26, 24, 0.08);
   --border-2: rgba(26, 26, 24, 0.14);
+  /* Sin fuente en app.html — pedido explícito del usuario para las líneas
+     divisorias de tablas densas (Campañas), un escalón más sutil que
+     --border. Ver frontend-taste.md. */
+  --divider: rgba(26, 26, 24, 0.05);
   --text: #101828;
   --text-2: #344054;
   --text-3: #667085;
@@ -35,6 +39,7 @@
   --color-surface-2: var(--surface-2);
   --color-border: var(--border);
   --color-border-2: var(--border-2);
+  --color-divider: var(--divider);
   --color-text: var(--text);
   --color-text-2: var(--text-2);
   --color-text-3: var(--text-3);
@@ -50,30 +55,39 @@
   --font-sans: var(--font-inter);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #12151c;
-    --surface: #181c25;
-    --surface-2: #232833;
-    --border: rgba(255, 255, 255, 0.08);
-    --border-2: rgba(255, 255, 255, 0.16);
-    --text: #f5f5f3;
-    --text-2: #c0c5ce;
-    --text-3: #8b93a3;
-    --primary: #5b8fcc;
-    --primary-hover: #8fb4e0;
-    --primary-glow: rgba(91, 143, 204, 0.35);
-    --accent: #5b8fcc;
-    --red: #e5645a;
-    --green: #3eba85;
-    --amber: #e0a030;
-  }
+/*
+ * Modo día/noche: toggle manual (no depende de prefers-color-scheme), mismo
+ * criterio que el legado (applyDarkModePref/toggleDarkMode, app.html:5893) —
+ * localStorage guarda la preferencia explícita del usuario, default es claro.
+ * El atributo se setea antes de hidratar (ver Script beforeInteractive en
+ * layout.tsx) para no parpadear entre modos en la carga inicial.
+ */
+:root[data-theme="dark"] {
+  --bg: #12151c;
+  --surface: #181c25;
+  --surface-2: #232833;
+  --border: rgba(255, 255, 255, 0.08);
+  --border-2: rgba(255, 255, 255, 0.16);
+  --divider: rgba(255, 255, 255, 0.05);
+  --text: #f5f5f3;
+  --text-2: #c0c5ce;
+  --text-3: #8b93a3;
+  --primary: #5b8fcc;
+  --primary-hover: #8fb4e0;
+  --primary-glow: rgba(91, 143, 204, 0.35);
+  --accent: #5b8fcc;
+  --red: #e5645a;
+  --green: #3eba85;
+  --amber: #e0a030;
 }
 
 body {
   background: var(--bg);
   color: var(--text);
   letter-spacing: -0.01em;
+  /* Mismo criterio que body,body.dark-mode del legado (app.html:100) —
+     transición suave de colores al alternar modo, no instantánea. */
+  transition: background-color 0.25s ease, color 0.25s ease;
 }
 
 /*
@@ -108,11 +122,36 @@ body {
   position: relative;
   z-index: 1;
 }
-@media (prefers-color-scheme: dark) {
-  .dash-hero {
-    background:
-      linear-gradient(135deg, rgba(91, 143, 204, 0.09) 0%, rgba(0, 0, 0, 0) 55%),
-      rgba(255, 255, 255, 0.02);
-    border-color: rgba(255, 255, 255, 0.09);
-  }
+:root[data-theme="dark"] .dash-hero {
+  background:
+    linear-gradient(135deg, rgba(91, 143, 204, 0.09) 0%, rgba(0, 0, 0, 0) 55%),
+    rgba(255, 255, 255, 0.02);
+  border-color: rgba(255, 255, 255, 0.09);
+}
+
+/*
+ * Tarjeta de métrica premium — puerto de .an-card del legado (app.html:
+ * 1166-1175: gradiente sutil + blur + borde que se aclara al hover), mismo
+ * criterio dual-tema que .dash-hero arriba. No es una utilidad de Tailwind
+ * porque el gradiente + backdrop-filter no se expresan bien como clases
+ * sueltas y este mismo tratamiento se reutiliza en varias tarjetas.
+ */
+.metric-card {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(180deg, rgba(26, 26, 24, 0.03), rgba(26, 26, 24, 0.01));
+  border: 1px solid rgba(26, 26, 24, 0.06);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  transition: border-color 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.metric-card:hover {
+  border-color: rgba(26, 26, 24, 0.12);
+}
+:root[data-theme="dark"] .metric-card {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.015));
+  border-color: rgba(255, 255, 255, 0.07);
+}
+:root[data-theme="dark"] .metric-card:hover {
+  border-color: rgba(255, 255, 255, 0.14);
 }

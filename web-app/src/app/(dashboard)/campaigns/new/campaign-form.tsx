@@ -3,11 +3,9 @@
 import { useActionState } from 'react'
 import { createCampaignAction, type CreateCampaignState } from '../actions'
 import { CreateCampaignButton } from './create-campaign-button'
+import { TextInput, TextArea } from '@/components/features/form-field'
 
 const initialState: CreateCampaignState = { error: null }
-
-const fieldClass =
-  'rounded-control border border-[#D0D5DD] bg-[#F9FAFB] px-3 py-2.5 text-sm text-[#101828] outline-none transition-all duration-200 ease-out placeholder:text-[#667085] focus-visible:ring-2 focus-visible:ring-accent'
 
 const labelClass = 'text-[11px] font-semibold uppercase tracking-[.06em] text-text-2'
 
@@ -20,14 +18,13 @@ export function CampaignForm() {
         <label htmlFor="nombre" className={labelClass}>
           Nombre
         </label>
-        <input
+        <TextInput
           id="nombre"
           name="nombre"
           type="text"
           required
           autoFocus
           placeholder="Ej: Lanzamiento colección verano"
-          className={fieldClass}
         />
       </div>
 
@@ -35,7 +32,7 @@ export function CampaignForm() {
         <label htmlFor="periodo" className={labelClass}>
           Período
         </label>
-        <input id="periodo" name="periodo" type="text" placeholder="Ej: Noviembre 2026" className={fieldClass} />
+        <TextInput id="periodo" name="periodo" type="text" placeholder="Ej: Noviembre 2026" />
       </div>
 
       <div className="grid grid-cols-2 gap-3">
@@ -43,13 +40,13 @@ export function CampaignForm() {
           <label htmlFor="fecha_inicio" className={labelClass}>
             Inicio
           </label>
-          <input id="fecha_inicio" name="fecha_inicio" type="date" className={fieldClass} />
+          <TextInput id="fecha_inicio" name="fecha_inicio" type="date" />
         </div>
         <div className="flex flex-col gap-1.5">
           <label htmlFor="fecha_fin" className={labelClass}>
             Fin
           </label>
-          <input id="fecha_fin" name="fecha_fin" type="date" className={fieldClass} />
+          <TextInput id="fecha_fin" name="fecha_fin" type="date" />
         </div>
       </div>
 
@@ -57,13 +54,7 @@ export function CampaignForm() {
         <label htmlFor="objetivo" className={labelClass}>
           Objetivo
         </label>
-        <textarea
-          id="objetivo"
-          name="objetivo"
-          rows={3}
-          placeholder="¿Qué buscás lograr con esta campaña?"
-          className={`resize-none ${fieldClass}`}
-        />
+        <TextArea id="objetivo" name="objetivo" rows={3} placeholder="¿Qué buscás lograr con esta campaña?" />
       </div>
 
       <p
