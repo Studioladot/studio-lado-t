@@ -6,6 +6,7 @@ import { ContentCalendar } from './content-calendar'
 import { PublicationsTable } from './publications-table'
 import { PerformanceTab } from './performance-tab'
 import type { WinningItem } from '@/lib/content/winners'
+import type { TiktokVideoRow } from '@/lib/tiktok/winners'
 import type { Database } from '@/lib/types/database.types'
 
 type Post = Database['public']['Tables']['content_posts']['Row']
@@ -31,6 +32,7 @@ export function ContentTabs({
   instagramConnected,
   igUsername,
   tiktokConnected,
+  tiktokVideos,
   accountInsights,
   mediaInsights,
   winningItems,
@@ -40,8 +42,8 @@ export function ContentTabs({
   campaigns: Campaign[]
   instagramConnected: boolean
   igUsername: string | null
-  /** Siempre false hoy — tiktok_connections existe pero no hay OAuth real todavía (Fase 2). Ver src/lib/content/winners.ts. */
   tiktokConnected: boolean
+  tiktokVideos: TiktokVideoRow[]
   accountInsights: AccountInsight[]
   mediaInsights: MediaInsight[]
   winningItems: WinningItem[]
@@ -94,6 +96,8 @@ export function ContentTabs({
           accountInsights={accountInsights}
           mediaInsights={mediaInsights}
           winningItems={winningItems}
+          tiktokConnected={tiktokConnected}
+          tiktokVideos={tiktokVideos}
         />
       )}
     </div>

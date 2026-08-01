@@ -2707,6 +2707,68 @@ export type Database = {
           },
         ]
       }
+      tiktok_videos: {
+        Row: {
+          comment_count: number
+          cover_image_url: string | null
+          created_at: string
+          description: string | null
+          duration_seconds: number | null
+          id: string
+          like_count: number
+          organization_id: string
+          posted_at: string | null
+          share_count: number
+          share_url: string | null
+          synced_at: string
+          tiktok_video_id: string
+          video_download_url: string | null
+          view_count: number
+        }
+        Insert: {
+          comment_count?: number
+          cover_image_url?: string | null
+          created_at?: string
+          description?: string | null
+          duration_seconds?: number | null
+          id?: string
+          like_count?: number
+          organization_id: string
+          posted_at?: string | null
+          share_count?: number
+          share_url?: string | null
+          synced_at?: string
+          tiktok_video_id: string
+          video_download_url?: string | null
+          view_count?: number
+        }
+        Update: {
+          comment_count?: number
+          cover_image_url?: string | null
+          created_at?: string
+          description?: string | null
+          duration_seconds?: number | null
+          id?: string
+          like_count?: number
+          organization_id?: string
+          posted_at?: string | null
+          share_count?: number
+          share_url?: string | null
+          synced_at?: string
+          tiktok_video_id?: string
+          video_download_url?: string | null
+          view_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tiktok_videos_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tn_cache: {
         Row: {
           data: Json

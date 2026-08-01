@@ -32,35 +32,45 @@ export default async function ContentPage() {
       .select('*')
       .eq('organization_id', activeOrganizationId),
     supabase.from('instagram_connections').select('ig_username, profile_picture_url').eq('organization_id', activeOrganizationId).maybeSingle(),
-    // tiktok_connections existe desde la Épica Omnicanal (2026-08-04) pero
-    // todavía no hay ningún flujo de OAuth real que inserte filas ahí (Fase
-    // 2, pendiente de credenciales de TikTok) — esta lectura ya deja lista
-    // la gating de la pestaña "Configuración TikTok" para el día que exista.
+    // OAuth de TikTok real desde 2026-08-01 (src/app/api/auth/tiktok/callback) — gatea la pestaña "Configuración TikTok" y la sección de Rendimiento.
     supabase.from('tiktok_connections').select('tiktok_username, avatar_url').eq('organization_id', activeOrganizationId).maybeSingle(),
   ])
 
-  // Rendimiento y Comparativa — solo se piden si hay Instagram conectado,
-  // no tiene sentido pegarle a estas tablas para una organización que
-  // nunca sincronizó nada.
+  // Rendimiento y Comparativa — solo se piden si la red correspondiente
+  // está conectada, no tiene sentido pegarle a estas tablas para una
+  // organización que nunca sincronizó nada. Las tres corren en paralelo
+  // (ninguna depende de las otras).
   const since30d = new Date(new Date().getTime() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
-  const [{ data: accountInsights }, { data: mediaInsightsRaw }] = instagramConnection
-    ? await Promise.all([
-        supabase
+  const [{ data: accountInsights }, { data: mediaInsightsRaw }, { data: tiktokVideos }] = await Promise.all([
+    instagramConnection
+      ? supabase
           .from('instagram_account_insights')
           .select('*')
           .eq('organization_id', activeOrganizationId)
           .gte('captured_at', since30d)
-          .order('captured_at', { ascending: true }),
-        // instagram_media_insights ahora es polimórfico (piece_id O
-        // post_id) — se embeben las dos relaciones, cada fila solo va a
-        // tener una de las dos no-nula (ver constraint en la migración).
-        supabase
+          .order('captured_at', { ascending: true })
+      : Promise.resolve({ data: null }),
+    // instagram_media_insights ahora es polimórfico (piece_id O post_id) —
+    // se embeben las dos relaciones, cada fila solo va a tener una de las
+    // dos no-nula (ver constraint en la migración).
+    instagramConnection
+      ? supabase
           .from('instagram_media_insights')
           .select('*, content_piezas(titulo, ig_permalink, formato, media_type), content_posts(title, ig_permalink, format, media_type)')
           .eq('organization_id', activeOrganizationId)
-          .order('captured_at', { ascending: false }),
-      ])
-    : [{ data: null }, { data: null }]
+          .order('captured_at', { ascending: false })
+      : Promise.resolve({ data: null }),
+    // Catálogo sincronizado del historial de TikTok (Fase 1 del Hub
+    // Omnicanal, 2026-08-01) — ver src/lib/tiktok/winners.ts sobre por qué
+    // esto no vive en instagram_media_insights.
+    tiktokConnection
+      ? supabase
+          .from('tiktok_videos')
+          .select('*')
+          .eq('organization_id', activeOrganizationId)
+          .order('view_count', { ascending: false })
+      : Promise.resolve({ data: null }),
+  ])
 
   // Cada pieza/publicación puede tener varios snapshots diarios acumulados
   // — para "qué performó mejor" interesa el más reciente de cada una (plays
@@ -93,6 +103,7 @@ export default async function ContentPage() {
         instagramConnected={!!instagramConnection}
         igUsername={instagramConnection?.ig_username ?? null}
         tiktokConnected={!!tiktokConnection}
+        tiktokVideos={tiktokVideos ?? []}
         accountInsights={accountInsights ?? []}
         mediaInsights={[...latestByItem.values()]}
         winningItems={winningItems}
