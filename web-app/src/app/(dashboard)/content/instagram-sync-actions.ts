@@ -2,8 +2,10 @@
 
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
+import { createServiceRoleClient } from '@/lib/supabase/service-role'
 import { getDashboardContext } from '@/lib/organization/dashboard-context'
 import { getInstagramMediaPage, getInstagramMediaInsights, type InstagramMediaItem } from '@/lib/instagram/media-catalog'
+import { fetchInstagramAccountInsightsHistory } from '@/lib/instagram/account-insights-sync'
 
 export type SyncInstagramResult =
   | { ok: true; count: number; done: boolean; withoutInsights: number; withoutLikeData: number }
@@ -162,6 +164,76 @@ export async function syncInstagramMediaAction(): Promise<SyncInstagramResult> {
     return { ok: true, count: synced, done: reachedEnd, withoutInsights, withoutLikeData }
   } catch (err) {
     console.error('[syncInstagramMediaAction] excepción inesperada:', err)
+    return { ok: false, error: 'Error inesperado al sincronizar Instagram. Probá de nuevo en unos minutos.' }
+  }
+}
+
+export type SyncAccountInsightsResult = { ok: true; daysSynced: number } | { ok: false; error: string }
+
+/**
+ * Sync "instantáneo" de Insights a nivel cuenta (2026-08-06, "real-time
+ * feel") — a diferencia del cron diario de instagram-metrics-sync (1 punto
+ * por día, hasta 24hs para el primer dato), esto trae hasta 30 días de
+ * historial de una sola pasada para que los KPIs/gráficos de Nivel 1 no
+ * queden vacíos apenas se conecta la cuenta. Se dispara solo (ver
+ * instagram-sync-control.tsx) cuando se detecta conexión sin datos, y
+ * también manual desde el botón "Sincronizar" al lado del @usuario.
+ */
+export async function syncInstagramAccountInsightsAction(): Promise<SyncAccountInsightsResult> {
+  try {
+    const { activeOrganizationId } = await getDashboardContext()
+    if (!activeOrganizationId) return { ok: false, error: 'No encontramos tu organización activa.' }
+
+    const supabase = await createClient()
+    const { data: connection, error: connectionError } = await supabase
+      .from('instagram_connections')
+      .select('ig_user_id, page_access_token')
+      .eq('organization_id', activeOrganizationId)
+      .maybeSingle()
+
+    if (connectionError) {
+      console.error('[syncInstagramAccountInsightsAction] lectura de la conexión falló:', connectionError.message)
+      return { ok: false, error: 'No pudimos revisar tu conexión de Instagram. Probá de nuevo en unos minutos.' }
+    }
+    if (!connection) return { ok: false, error: 'Instagram no está conectado.' }
+
+    const history = await fetchInstagramAccountInsightsHistory(connection.ig_user_id, connection.page_access_token)
+    if (!history.ok) {
+      console.error('[syncInstagramAccountInsightsAction] Graph API falló:', history.error)
+      return { ok: false, error: 'No pudimos traer tus estadísticas de Instagram. Probá de nuevo en unos minutos.' }
+    }
+    if (history.days.length === 0) {
+      return { ok: true, daysSynced: 0 }
+    }
+
+    // instagram_account_insights no tiene policy de insert/update para
+    // authenticated (solo la Edge Function con service_role escribe ahí,
+    // ver migración 20260730150000) — activeOrganizationId ya está
+    // verificado arriba, así que este upsert queda tan scopeado como lo
+    // estaría con RLS.
+    const serviceRole = createServiceRoleClient()
+    const { error: upsertError } = await serviceRole.from('instagram_account_insights').upsert(
+      history.days.map((d) => ({
+        organization_id: activeOrganizationId,
+        captured_at: d.capturedAt,
+        follower_count: d.followerCount,
+        reach: d.reach,
+        impressions: d.impressions,
+        profile_views: d.profileViews,
+        total_interactions: d.totalInteractions,
+      })),
+      { onConflict: 'organization_id,captured_at' }
+    )
+
+    if (upsertError) {
+      console.error('[syncInstagramAccountInsightsAction] upsert falló:', upsertError.message)
+      return { ok: false, error: 'No pudimos guardar tus estadísticas. Probá de nuevo en unos minutos.' }
+    }
+
+    revalidatePath('/content')
+    return { ok: true, daysSynced: history.days.length }
+  } catch (err) {
+    console.error('[syncInstagramAccountInsightsAction] excepción inesperada:', err)
     return { ok: false, error: 'Error inesperado al sincronizar Instagram. Probá de nuevo en unos minutos.' }
   }
 }

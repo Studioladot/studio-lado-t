@@ -20,7 +20,16 @@ const SORT_OPTIONS: { value: SortMode; label: string }[] = [
   { value: 'comments', label: 'Más comentarios' },
 ]
 
-const PAGE_SIZE = 12
+type FilterMode = 'all' | 'reels' | 'carousel' | 'organic'
+
+const FILTER_OPTIONS: { value: FilterMode; label: string }[] = [
+  { value: 'all', label: 'Todos' },
+  { value: 'reels', label: 'Reels' },
+  { value: 'carousel', label: 'Carruseles' },
+  { value: 'organic', label: 'Orgánico' },
+]
+
+const PAGE_SIZE = 24
 
 function sortItems(items: InstagramCatalogRow[], mode: SortMode): InstagramCatalogRow[] {
   const sorted = [...items]
@@ -34,6 +43,23 @@ function sortItems(items: InstagramCatalogRow[], mode: SortMode): InstagramCatal
     case 'primary':
     default:
       return sorted.sort((a, b) => primaryMetric(b) - primaryMetric(a))
+  }
+}
+
+// "Orgánico" = no publicado desde el pipeline de Gotix (gotixMediaIds) —
+// mismo criterio de "¿esto nació acá?" que ya usa el badge "Publicado con
+// Gotix" más abajo, no un campo nuevo inventado.
+function filterItems(items: InstagramCatalogRow[], mode: FilterMode, gotixMediaIds: Set<string>): InstagramCatalogRow[] {
+  switch (mode) {
+    case 'reels':
+      return items.filter((i) => i.media_product_type === 'REELS')
+    case 'carousel':
+      return items.filter((i) => i.media_type === 'CAROUSEL_ALBUM')
+    case 'organic':
+      return items.filter((i) => !(i.ig_media_id && gotixMediaIds.has(i.ig_media_id)))
+    case 'all':
+    default:
+      return items
   }
 }
 
@@ -54,11 +80,13 @@ export function InstagramMediaCatalogSection({
   const [syncError, setSyncError] = useState<string | null>(null)
   const [syncMessage, setSyncMessage] = useState<string | null>(null)
   const [sortMode, setSortMode] = useState<SortMode>('primary')
+  const [filterMode, setFilterMode] = useState<FilterMode>('all')
   const [page, setPage] = useState(1)
   const [selectedId, setSelectedId] = useState<string | null>(null)
 
   const winners = useMemo(() => detectInstagramCatalogWinners(items), [items])
-  const sorted = useMemo(() => sortItems(items, sortMode), [items, sortMode])
+  const filtered = useMemo(() => filterItems(items, filterMode, gotixMediaIds), [items, filterMode, gotixMediaIds])
+  const sorted = useMemo(() => sortItems(filtered, sortMode), [filtered, sortMode])
   const totalPages = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE))
   const currentPage = Math.min(page, totalPages)
   const pageItems = sorted.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
@@ -71,6 +99,11 @@ export function InstagramMediaCatalogSection({
 
   function handleSortChange(mode: SortMode) {
     setSortMode(mode)
+    setPage(1)
+  }
+
+  function handleFilterChange(mode: FilterMode) {
+    setFilterMode(mode)
     setPage(1)
   }
 
@@ -123,7 +156,7 @@ export function InstagramMediaCatalogSection({
       {syncError && <p className="mb-3 text-xs text-red">{syncError}</p>}
       {syncMessage && <p className="mb-3 text-xs text-green">{syncMessage}</p>}
 
-      {sorted.length === 0 ? (
+      {items.length === 0 ? (
         <p className="text-xs text-text-3">
           Todavía no sincronizaste tu historial de Instagram — tocá &ldquo;Sincronizar ahora&rdquo;. Cuentas grandes pueden necesitar varios clics
           (cada uno trae un lote).
@@ -131,70 +164,87 @@ export function InstagramMediaCatalogSection({
       ) : (
         <>
           <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-            <div className="flex gap-1 rounded-control border border-border bg-surface-2/40 p-1">
-              {SORT_OPTIONS.map((opt) => (
-                <button
-                  key={opt.value}
-                  type="button"
-                  onClick={() => handleSortChange(opt.value)}
-                  className={`rounded-control px-2.5 py-1 text-[11px] font-semibold transition-colors duration-200 ease-out ${
-                    sortMode === opt.value ? 'bg-accent/[0.12] text-accent' : 'text-text-3 hover:text-text'
-                  }`}
-                >
-                  {opt.label}
-                </button>
-              ))}
+            <div className="flex flex-wrap gap-1.5">
+              <div className="flex gap-1 rounded-control border border-border bg-surface-2/40 p-1">
+                {FILTER_OPTIONS.map((opt) => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => handleFilterChange(opt.value)}
+                    className={`rounded-control px-2.5 py-1 text-[11px] font-semibold transition-colors duration-200 ease-out ${
+                      filterMode === opt.value ? 'bg-accent/[0.12] text-accent' : 'text-text-3 hover:text-text'
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+              <div className="flex gap-1 rounded-control border border-border bg-surface-2/40 p-1">
+                {SORT_OPTIONS.map((opt) => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => handleSortChange(opt.value)}
+                    className={`rounded-control px-2.5 py-1 text-[11px] font-semibold transition-colors duration-200 ease-out ${
+                      sortMode === opt.value ? 'bg-accent/[0.12] text-accent' : 'text-text-3 hover:text-text'
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
             </div>
             <p className="text-[10px] text-text-3">{sorted.length} publicaciones</p>
           </div>
 
-          <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-6">
-            {pageItems.map((item) => {
-              const isWinner = winners.has(item.id)
-              return (
-                <button
-                  key={item.id}
-                  type="button"
-                  onClick={() => setSelectedId(item.id)}
-                  className="group flex flex-col overflow-hidden rounded-control border border-border bg-surface-2/40 text-left transition-all duration-200 ease-out hover:border-text-3"
-                >
-                  <div className="relative aspect-[3/4] w-full bg-black">
-                    {item.thumbnail_url || item.media_url ? (
-                      // eslint-disable-next-line @next/next/no-img-element -- thumbnail remoto de Instagram, no un asset local.
-                      <img
-                        src={item.thumbnail_url ?? item.media_url ?? undefined}
-                        alt=""
-                        className="h-full w-full object-cover transition-transform duration-200 ease-out group-hover:scale-[1.03]"
-                      />
-                    ) : (
-                      <div className="flex h-full w-full items-center justify-center text-text-3">
-                        <InstagramIcon size={18} />
+          {sorted.length === 0 ? (
+            <p className="text-xs text-text-3">Ninguna publicación coincide con este filtro.</p>
+          ) : (
+            <>
+              <div className="grid grid-cols-4 gap-1.5 sm:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10">
+                {pageItems.map((item) => {
+                  const isWinner = winners.has(item.id)
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => setSelectedId(item.id)}
+                      className="group flex flex-col overflow-hidden rounded-control border border-border bg-surface-2/40 text-left transition-all duration-200 ease-out hover:border-text-3"
+                    >
+                      <div className="relative aspect-square w-full bg-black">
+                        {item.thumbnail_url || item.media_url ? (
+                          // eslint-disable-next-line @next/next/no-img-element -- thumbnail remoto de Instagram, no un asset local.
+                          <img
+                            src={item.thumbnail_url ?? item.media_url ?? undefined}
+                            alt=""
+                            className="h-full w-full object-cover transition-transform duration-200 ease-out group-hover:scale-[1.03]"
+                          />
+                        ) : (
+                          <div className="flex h-full w-full items-center justify-center text-text-3">
+                            <InstagramIcon size={14} />
+                          </div>
+                        )}
+                        {isWinner && (
+                          <span className="absolute left-0.5 top-0.5 rounded-full bg-accent px-1 py-0.5 text-[7px] font-bold uppercase tracking-wide text-white shadow">
+                            Viral
+                          </span>
+                        )}
+                        <span className="absolute right-0.5 top-0.5 rounded-full bg-black/60 px-1 py-0.5 text-[7px] font-bold uppercase tracking-wide text-white shadow">
+                          {formatLabel(item)}
+                        </span>
+                        <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent px-1 pb-0.5 pt-2.5 text-[9px] font-semibold tabular-nums text-white">
+                          {fmt(primaryMetric(item))}
+                        </span>
                       </div>
-                    )}
-                    {isWinner && (
-                      <span className="absolute left-1 top-1 rounded-full bg-accent px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wide text-white shadow">
-                        Viral
-                      </span>
-                    )}
-                    <span className="absolute right-1 top-1 rounded-full bg-black/60 px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wide text-white shadow">
-                      {formatLabel(item)}
-                    </span>
-                    <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent px-1.5 pb-1 pt-3 text-[10px] font-semibold tabular-nums text-white">
-                      {fmt(primaryMetric(item))}
-                    </span>
-                  </div>
-                  <p className="line-clamp-2 px-1.5 py-1.5 text-[10px] leading-snug text-text-2">{item.caption || 'Sin descripción'}</p>
-                  {item.ig_media_id && gotixMediaIds.has(item.ig_media_id) && (
-                    <span className="mx-1.5 mb-1.5 w-fit rounded-full bg-accent/[0.12] px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wide text-accent">
-                      Publicado con Gotix
-                    </span>
-                  )}
-                </button>
-              )
-            })}
-          </div>
+                      <p className="line-clamp-1 px-1 py-1 text-[9px] leading-snug text-text-3">{item.caption || 'Sin descripción'}</p>
+                    </button>
+                  )
+                })}
+              </div>
 
-          <Pagination page={currentPage} totalPages={totalPages} onChange={setPage} />
+              <Pagination page={currentPage} totalPages={totalPages} onChange={setPage} />
+            </>
+          )}
         </>
       )}
 

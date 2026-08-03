@@ -6,6 +6,7 @@ import { ComparisonPanel } from './comparison-panel'
 import { CrossPostModal } from './cross-post-modal'
 import { TiktokPerformanceSection } from './tiktok-performance-section'
 import { InstagramMediaCatalogSection } from './instagram-media-catalog-section'
+import { InstagramSyncControl } from './instagram-sync-control'
 import { InstagramOverviewKpis } from './instagram-overview-kpis'
 import { ReachImpressionsChart } from './reach-impressions-chart'
 import { ProfileGrowthChart } from './profile-growth-chart'
@@ -73,7 +74,9 @@ export function PerformanceTab({
   // apilaban verticalmente — separadas en sub-tabs para navegar en
   // entornos aislados. Si solo hay una red conectada, no tiene sentido
   // mostrar un toggle de una sola opción — se salta directo a esa sección.
-  const [networkTab, setNetworkTab] = useState<'tiktok' | 'meta'>(tiktokConnected ? 'tiktok' : 'meta')
+  // Instagram va primero por default (pedido explícito 2026-08-06) — antes
+  // priorizaba TikTok cuando las dos estaban conectadas.
+  const [networkTab, setNetworkTab] = useState<'tiktok' | 'meta'>('meta')
   const showNetworkTabs = instagramConnected && tiktokConnected
 
   // Antes esto cortaba TODO (incluida una futura sección de TikTok) si
@@ -122,21 +125,21 @@ export function PerformanceTab({
         <div className="flex w-fit gap-1 rounded-control border border-border bg-surface-2/40 p-1">
           <button
             type="button"
-            onClick={() => setNetworkTab('tiktok')}
-            className={`rounded-control px-3 py-1.5 text-xs font-semibold transition-colors duration-200 ease-out ${
-              networkTab === 'tiktok' ? 'bg-accent/[0.12] text-accent' : 'text-text-3 hover:text-text'
-            }`}
-          >
-            Rendimiento TikTok
-          </button>
-          <button
-            type="button"
             onClick={() => setNetworkTab('meta')}
             className={`rounded-control px-3 py-1.5 text-xs font-semibold transition-colors duration-200 ease-out ${
               networkTab === 'meta' ? 'bg-accent/[0.12] text-accent' : 'text-text-3 hover:text-text'
             }`}
           >
             Rendimiento Instagram
+          </button>
+          <button
+            type="button"
+            onClick={() => setNetworkTab('tiktok')}
+            className={`rounded-control px-3 py-1.5 text-xs font-semibold transition-colors duration-200 ease-out ${
+              networkTab === 'tiktok' ? 'bg-accent/[0.12] text-accent' : 'text-text-3 hover:text-text'
+            }`}
+          >
+            Rendimiento TikTok
           </button>
         </div>
       )}
@@ -145,21 +148,16 @@ export function PerformanceTab({
 
       {instagramConnected && (!showNetworkTabs || networkTab === 'meta') && (
         <>
-          {/* Catálogo "zero fricción" (2026-08-01) — independiente del cron
-              diario de instagram-metrics-sync que alimenta accountInsights/
-              mediaInsights más abajo: se sincroniza manual, a demanda, así
-              que tiene que verse aunque el cron todavía no haya corrido. */}
-          <InstagramMediaCatalogSection items={instagramCatalog} gotixMediaIds={gotixMediaIds} />
-
-          {/* Nivel 1 — Visión Global de la Cuenta: se renderiza siempre que
-              Instagram esté conectado, sin importar si accountInsights/
-              mediaInsights ya tienen datos sincronizados. Cada pieza sabe
-              mostrar su propio estado vacío (KPI en "—", gráfico con su
-              mensaje, tabla con su mensaje) — ocultar el bloque entero
-              detrás de un solo gate dejaba el panel en blanco para
-              cualquier cuenta recién conectada, antes de la primera
-              corrida del cron diario (bug reportado 2026-08-06). */}
-          {igUsername && <p className="text-xs font-medium text-text-2">@{igUsername}</p>}
+          {/* Jerarquía Nivel 1 (2026-08-06, "real-time feel"): handle +
+              control de sync arriba de todo, después los 4 KPIs, después
+              los gráficos de evolución, y la grilla de publicaciones al
+              fondo. Se renderiza siempre que Instagram esté conectado, sin
+              importar si accountInsights/mediaInsights ya tienen datos
+              sincronizados — cada pieza sabe mostrar su propio estado
+              vacío (KPI en "—", gráfico con su mensaje), ocultar el bloque
+              entero detrás de un solo gate dejaba el panel en blanco para
+              cualquier cuenta recién conectada (bug reportado 2026-08-06). */}
+          <InstagramSyncControl igUsername={igUsername} hasAccountData={accountInsights.length > 0} />
 
           <InstagramOverviewKpis kpis={overviewKpis} periodLabel="últimos 30 días" />
 
@@ -272,6 +270,15 @@ export function PerformanceTab({
               </div>
             )}
           </div>
+
+          {/* Grilla de publicaciones — al fondo de la jerarquía a
+              propósito (pedido explícito 2026-08-06): es la sección más
+              densa/exploratoria, viene después de los KPIs y gráficos de
+              resumen. Independiente del cron diario de instagram-metrics-
+              sync que alimenta accountInsights/mediaInsights arriba: se
+              sincroniza manual, a demanda, así que tiene que verse aunque
+              el cron todavía no haya corrido. */}
+          <InstagramMediaCatalogSection items={instagramCatalog} gotixMediaIds={gotixMediaIds} />
         </>
       )}
 
