@@ -1,23 +1,10 @@
 import type { AccountOverviewKpis } from '@/lib/instagram/account-overview'
-
-// Formato compacto para números grandes en una tarjeta KPI (1.284 / 12,9K /
-// 1,2M) — mismo criterio "proporcional para números grandes" que el resto
-// del panel usa con .toLocaleString('es-AR'), pero una tarjeta de 2 líneas
-// no tiene lugar para "1.284.392" entero sin partirse.
-function compact(n: number): string {
-  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1).replace('.', ',')}M`
-  if (n >= 10_000) return `${(n / 1_000).toFixed(1).replace('.', ',')}K`
-  return n.toLocaleString('es-AR')
-}
-
-function fmtCount(n: number | null): string {
-  return n === null ? '—' : compact(Math.round(n))
-}
+import { compactNumber, fmtCompactCount as fmtCount } from '@/lib/format/number'
 
 function fmtSigned(n: number | null): string {
   if (n === null) return '—'
   const rounded = Math.round(n)
-  return rounded > 0 ? `+${compact(rounded)}` : compact(rounded)
+  return rounded > 0 ? `+${compactNumber(rounded)}` : compactNumber(rounded)
 }
 
 function fmtPercent(n: number | null): string {

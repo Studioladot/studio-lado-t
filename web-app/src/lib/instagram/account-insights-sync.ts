@@ -47,7 +47,18 @@ export async function fetchInstagramAccountInsightsHistory(igUserId: string, acc
     })
     const res = await fetch(`${META_GRAPH_URL}/${igUserId}/insights?${params}`)
     const json = await res.json()
-    if (json.error) return { ok: false, error: json.error.message ?? 'Error desconocido de Meta.' }
+    if (json.error) {
+      // Log server-only con el error CRUDO de Meta (code/type/subcode/
+      // fbtrace_id) — nunca llega al cliente, pero es lo único que
+      // distingue en los logs de Vercel un token vencido (code 190) de un
+      // permiso faltante o un rate limit, en vez de un string genérico.
+      console.error('[fetchInstagramAccountInsightsHistory] Graph API respondió con error:', {
+        httpStatus: res.status,
+        igUserId,
+        ...json.error,
+      })
+      return { ok: false, error: json.error.message ?? 'Error desconocido de Meta.' }
+    }
 
     const data: InsightValue[] = json.data ?? []
     const followerCount = dailySeries(data, 'follower_count')
@@ -75,6 +86,7 @@ export async function fetchInstagramAccountInsightsHistory(igUserId: string, acc
 
     return { ok: true, days }
   } catch (err) {
+    console.error('[fetchInstagramAccountInsightsHistory] excepción de red o parseo:', err)
     return { ok: false, error: err instanceof Error ? err.message : 'Error de red.' }
   }
 }
