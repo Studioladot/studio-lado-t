@@ -140,8 +140,15 @@ Deno.serve(async (req) => {
       // de Analítica Avanzada (Nivel 1) — total_interactions es la métrica
       // real de Meta para engagement agregado a nivel cuenta (Graph API
       // v19+), no un cálculo propio.
+      //
+      // Bug real de producción (2026-08-06, confirmado con el error 400
+      // crudo de Meta): "impressions" dejó de ser una métrica válida en
+      // este endpoint — Graph API la reemplazó por "views". Se pide
+      // "views" pero se sigue guardando en la columna `impressions` (mismo
+      // concepto, Meta solo le cambió el nombre) — ver el mismo fix en
+      // src/lib/instagram/account-insights-sync.ts.
       const accountInsights = await graphGet(`${conn.ig_user_id}/insights`, conn.page_access_token, {
-        metric: 'follower_count,reach,impressions,profile_views,total_interactions',
+        metric: 'follower_count,reach,views,profile_views,total_interactions',
         period: 'day',
       })
 
@@ -153,7 +160,7 @@ Deno.serve(async (req) => {
             captured_at: today(),
             follower_count: pickMetric(data, 'follower_count'),
             reach: pickMetric(data, 'reach'),
-            impressions: pickMetric(data, 'impressions'),
+            impressions: pickMetric(data, 'views'),
             profile_views: pickMetric(data, 'profile_views'),
             total_interactions: pickMetric(data, 'total_interactions'),
           },

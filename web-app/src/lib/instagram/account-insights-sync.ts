@@ -5,9 +5,21 @@ import { META_GRAPH_URL } from '@/lib/meta/oauth'
 // por pg_cron y solo captura el punto del día en que corre), esto pide un
 // rango de días de una sola pasada vía since/until, para que una cuenta
 // recién conectada tenga curvas reales desde el primer instante en vez de
-// esperar hasta 24hs para el primer punto. Mismos nombres de métrica que la
-// Edge Function — ninguna cuenta nueva.
-const ACCOUNT_METRICS = 'follower_count,reach,impressions,profile_views,total_interactions'
+// esperar hasta 24hs para el primer punto.
+//
+// Bug real de producción (2026-08-06, confirmado con el error crudo de
+// Meta): "impressions" ya NO es una métrica válida en el endpoint de
+// Insights a nivel cuenta — Graph API la reemplazó por "views" (Meta lo
+// devuelve así en la lista de métricas válidas del error 400: "metric[2]
+// must be one of ... views ..." sin "impressions" en la lista). Se sigue
+// pidiendo "views" pero guardando en el campo `impressions` de acá para
+// abajo (y en la misma columna de la tabla) — incluyendo `dailySeries`,
+// `AccountInsightsDay.impressions` y todo lo que lee esa columna en
+// account-overview.ts/instagram-overview-kpis.tsx/reach-impressions-chart.tsx
+// — porque es el mismo concepto (vistas de contenido de la cuenta), Meta
+// solo le cambió el nombre. La Edge Function instagram-metrics-sync tiene
+// el mismo bug en su bloque de cuenta y necesita el mismo fix + redeploy.
+const ACCOUNT_METRICS = 'follower_count,reach,views,profile_views,total_interactions'
 const HISTORY_DAYS = 30
 
 type InsightValue = { name: string; values?: { value: number; end_time?: string }[] }
@@ -63,7 +75,9 @@ export async function fetchInstagramAccountInsightsHistory(igUserId: string, acc
     const data: InsightValue[] = json.data ?? []
     const followerCount = dailySeries(data, 'follower_count')
     const reach = dailySeries(data, 'reach')
-    const impressions = dailySeries(data, 'impressions')
+    // "views" es el nombre real que pide la Graph API — se guarda en el
+    // campo `impressions` de acá para abajo, ver comentario de ACCOUNT_METRICS.
+    const impressions = dailySeries(data, 'views')
     const profileViews = dailySeries(data, 'profile_views')
     const totalInteractions = dailySeries(data, 'total_interactions')
 
