@@ -1628,7 +1628,9 @@ export type Database = {
           id: string
           impressions: number | null
           organization_id: string
+          profile_views: number | null
           reach: number | null
+          total_interactions: number | null
         }
         Insert: {
           captured_at?: string
@@ -1636,7 +1638,9 @@ export type Database = {
           id?: string
           impressions?: number | null
           organization_id: string
+          profile_views?: number | null
           reach?: number | null
+          total_interactions?: number | null
         }
         Update: {
           captured_at?: string
@@ -1644,7 +1648,9 @@ export type Database = {
           id?: string
           impressions?: number | null
           organization_id?: string
+          profile_views?: number | null
           reach?: number | null
+          total_interactions?: number | null
         }
         Relationships: [
           {

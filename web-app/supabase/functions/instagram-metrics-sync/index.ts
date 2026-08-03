@@ -135,9 +135,13 @@ Deno.serve(async (req) => {
 
   for (const conn of connections ?? []) {
     try {
-      // ── Cuenta: seguidores, reach, impresiones ──────────────────────────
+      // ── Cuenta: seguidores, reach, impresiones, interacciones, visitas ──
+      // total_interactions/profile_views sumados 2026-08-06 para el panel
+      // de Analítica Avanzada (Nivel 1) — total_interactions es la métrica
+      // real de Meta para engagement agregado a nivel cuenta (Graph API
+      // v19+), no un cálculo propio.
       const accountInsights = await graphGet(`${conn.ig_user_id}/insights`, conn.page_access_token, {
-        metric: 'follower_count,reach,impressions',
+        metric: 'follower_count,reach,impressions,profile_views,total_interactions',
         period: 'day',
       })
 
@@ -150,6 +154,8 @@ Deno.serve(async (req) => {
             follower_count: pickMetric(data, 'follower_count'),
             reach: pickMetric(data, 'reach'),
             impressions: pickMetric(data, 'impressions'),
+            profile_views: pickMetric(data, 'profile_views'),
+            total_interactions: pickMetric(data, 'total_interactions'),
           },
           { onConflict: 'organization_id,captured_at' }
         )

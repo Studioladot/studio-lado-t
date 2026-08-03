@@ -2,15 +2,18 @@
 
 import Link from 'next/link'
 import { useState } from 'react'
-import { AccountTrendChart } from './account-trend-chart'
 import { ComparisonPanel } from './comparison-panel'
 import { CrossPostModal } from './cross-post-modal'
 import { TiktokPerformanceSection } from './tiktok-performance-section'
 import { InstagramMediaCatalogSection } from './instagram-media-catalog-section'
+import { InstagramOverviewKpis } from './instagram-overview-kpis'
+import { ReachImpressionsChart } from './reach-impressions-chart'
+import { ProfileGrowthChart } from './profile-growth-chart'
 import type { AccountInsight, MediaInsight } from './content-tabs'
 import type { WinningItem } from '@/lib/content/winners'
 import type { TiktokVideoRow } from '@/lib/tiktok/winners'
 import type { InstagramCatalogRow } from '@/lib/instagram/media-catalog-winners'
+import { computeAccountOverviewKpis, buildReachImpressionsSeries, buildProfileGrowthSeries } from '@/lib/instagram/account-overview'
 
 function fmt(n: number | null): string {
   return n === null ? '—' : n.toLocaleString('es-AR')
@@ -23,10 +26,6 @@ function fmt(n: number | null): string {
 // tabla compacta y densa para el ranking. Incluye piezas de campaña Y
 // publicaciones sueltas por igual — instagram_media_insights es polimórfico
 // desde la ronda de Comparativa.
-
-function money(n: number) {
-  return n.toLocaleString('es-AR')
-}
 
 // Auditoría de cierre (2026-08-01): antes no había límite — seleccionar 10+
 // piezas abría un ComparisonPanel con una tabla horizontal ilegible. 5 es el
@@ -44,16 +43,6 @@ function itemPermalink(m: MediaInsight): string | null {
 
 function itemFormat(m: MediaInsight): string | null {
   return m.content_piezas?.formato ?? m.content_posts?.format ?? null
-}
-
-function KpiCard({ label, value, sub }: { label: string; value: string; sub?: string }) {
-  return (
-    <div className="metric-card rounded-card px-4 pb-3 pt-3.5">
-      <p className="text-[10px] font-bold uppercase tracking-wide text-text-3">{label}</p>
-      <p className="mt-1.5 text-2xl font-extrabold tracking-tight tabular-nums text-text">{value}</p>
-      {sub && <p className="mt-0.5 text-[11px] text-text-3">{sub}</p>}
-    </div>
-  )
 }
 
 export function PerformanceTab({
@@ -108,14 +97,12 @@ export function PerformanceTab({
     )
   }
 
-  const latestAccount = accountInsights[accountInsights.length - 1] ?? null
-  const weekAgoAccount = accountInsights.length >= 7 ? accountInsights[accountInsights.length - 7] : accountInsights[0] ?? null
-  const followerDelta =
-    latestAccount?.follower_count !== null && latestAccount?.follower_count !== undefined && weekAgoAccount?.follower_count !== null && weekAgoAccount?.follower_count !== undefined
-      ? latestAccount.follower_count - weekAgoAccount.follower_count
-      : null
-
-  const reachLast7d = accountInsights.slice(-7).reduce((sum, d) => sum + (d.reach ?? 0), 0)
+  // Nivel 1 — Visión Global de la Cuenta (2026-08-06): KPIs y series
+  // agregadas sobre los 30 días que ya trae accountInsights desde
+  // content/page.tsx.
+  const overviewKpis = computeAccountOverviewKpis(accountInsights)
+  const reachImpressionsSeries = buildReachImpressionsSeries(accountInsights)
+  const profileGrowthSeries = buildProfileGrowthSeries(accountInsights)
 
   const topByPlays = [...mediaInsights].sort((a, b) => (b.plays ?? b.reach ?? 0) - (a.plays ?? a.reach ?? 0)).slice(0, 10)
   const selectedItems = mediaInsights.filter((m) => selected.has(m.id))
@@ -174,17 +161,12 @@ export function PerformanceTab({
             </div>
           ) : (
             <>
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-              <KpiCard label="Seguidores" value={fmt(latestAccount?.follower_count ?? null)} sub={latestAccount ? `al ${latestAccount.captured_at}` : undefined} />
-              <KpiCard
-                label="Variación 7 días"
-                value={followerDelta === null ? '—' : `${followerDelta > 0 ? '+' : ''}${money(followerDelta)}`}
-                sub="seguidores"
-              />
-              <KpiCard label="Alcance últimos 7 días" value={fmt(reachLast7d)} sub="suma diaria" />
-            </div>
+              <InstagramOverviewKpis kpis={overviewKpis} periodLabel="últimos 30 días" />
 
-            <AccountTrendChart data={accountInsights} />
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+              <ReachImpressionsChart data={reachImpressionsSeries} />
+              <ProfileGrowthChart data={profileGrowthSeries} />
+            </div>
 
             {/* Ganadores (Épica Omnicanal, 2026-08-04) — picos de crecimiento
                 detectados en src/lib/content/winners.ts, platform-agnóstico:
