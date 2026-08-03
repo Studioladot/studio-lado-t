@@ -20,13 +20,18 @@ function fmt(n: number | null): string {
   return n === null ? '—' : n.toLocaleString('es-AR')
 }
 
-// "Rendimiento" — analítica orgánica de Instagram, alimentada exclusivamente
-// por los snapshots cacheados que sincroniza instagram-metrics-sync (nunca
-// fetch en vivo, mismo criterio que el resto de Gotix). Mismo tratamiento
-// premium que Ventas: metric-card con delta+tabular-nums para los KPIs,
-// tabla compacta y densa para el ranking. Incluye piezas de campaña Y
-// publicaciones sueltas por igual — instagram_media_insights es polimórfico
-// desde la ronda de Comparativa.
+// "Rendimiento" — analítica orgánica de Instagram, alimentada por los
+// snapshots cacheados en instagram_account_insights/instagram_media_insights.
+// Hasta 2026-08-06 esos snapshots solo los escribía el cron diario de
+// instagram-metrics-sync; ahora InstagramSyncControl puede además disparar
+// un fetch en vivo bajo demanda (syncInstagramAccountInsightsAction) para
+// que una cuenta recién conectada no tenga que esperar hasta 24hs para ver
+// su primer dato — sigue siendo lectura desde caché en cada render, el
+// fetch en vivo solo ocurre en el momento puntual del sync. Mismo
+// tratamiento premium que Ventas: metric-card con delta+tabular-nums para
+// los KPIs, tabla compacta y densa para el ranking. Incluye piezas de
+// campaña Y publicaciones sueltas por igual — instagram_media_insights es
+// polimórfico desde la ronda de Comparativa.
 
 // Auditoría de cierre (2026-08-01): antes no había límite — seleccionar 10+
 // piezas abría un ComparisonPanel con una tabla horizontal ilegible. 5 es el
