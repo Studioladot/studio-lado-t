@@ -141,33 +141,49 @@ Deno.serve(async (req) => {
       // real de Meta para engagement agregado a nivel cuenta (Graph API
       // v19+), no un cálculo propio.
       //
-      // Bug real de producción (2026-08-06, confirmado con el error 400
-      // crudo de Meta): "impressions" dejó de ser una métrica válida en
-      // este endpoint — Graph API la reemplazó por "views". Se pide
-      // "views" pero se sigue guardando en la columna `impressions` (mismo
-      // concepto, Meta solo le cambió el nombre) — ver el mismo fix en
-      // src/lib/instagram/account-insights-sync.ts.
-      const accountInsights = await graphGet(`${conn.ig_user_id}/insights`, conn.page_access_token, {
-        metric: 'follower_count,reach,views,profile_views,total_interactions',
+      // Dos bugs reales de producción (2026-08-06, confirmados con el
+      // error 400 crudo de Meta, no adivinados):
+      // 1. "impressions" dejó de ser una métrica válida en este endpoint —
+      //    Graph API la reemplazó por "views". Se pide "views" pero se
+      //    sigue guardando en la columna `impressions` (mismo concepto,
+      //    Meta solo le cambió el nombre).
+      // 2. "views"/"profile_views"/"total_interactions" ya NO soportan
+      //    period=day junto con follower_count/reach — Meta exige pedirlas
+      //    aparte con metric_type=total_value ("(#100) ... should be
+      //    specified with parameter metric_type=total_value"). Por eso acá
+      //    abajo son 2 llamadas separadas, no una — mismo fix aplicado en
+      //    src/lib/instagram/account-insights-sync.ts.
+      const accountSeries = await graphGet(`${conn.ig_user_id}/insights`, conn.page_access_token, {
+        metric: 'follower_count,reach',
         period: 'day',
       })
 
-      if (!accountInsights.error) {
-        const data: InsightValue[] = accountInsights.data ?? []
+      const todayStartSec = Math.floor(new Date(`${today()}T00:00:00Z`).getTime() / 1000)
+      const accountTotals = await graphGet(`${conn.ig_user_id}/insights`, conn.page_access_token, {
+        metric: 'views,profile_views,total_interactions',
+        metric_type: 'total_value',
+        since: String(todayStartSec),
+        until: String(todayStartSec + 24 * 60 * 60),
+      })
+
+      if (!accountSeries.error && !accountTotals.error) {
+        const seriesData: InsightValue[] = accountSeries.data ?? []
+        const totalsData: InsightValue[] = accountTotals.data ?? []
         await supabase.from('instagram_account_insights').upsert(
           {
             organization_id: conn.organization_id,
             captured_at: today(),
-            follower_count: pickMetric(data, 'follower_count'),
-            reach: pickMetric(data, 'reach'),
-            impressions: pickMetric(data, 'views'),
-            profile_views: pickMetric(data, 'profile_views'),
-            total_interactions: pickMetric(data, 'total_interactions'),
+            follower_count: pickMetric(seriesData, 'follower_count'),
+            reach: pickMetric(seriesData, 'reach'),
+            impressions: pickMetric(totalsData, 'views'),
+            profile_views: pickMetric(totalsData, 'profile_views'),
+            total_interactions: pickMetric(totalsData, 'total_interactions'),
           },
           { onConflict: 'organization_id,captured_at' }
         )
       } else {
-        errors.push(`org ${conn.organization_id} (cuenta): ${accountInsights.error.message}`)
+        const err = accountSeries.error ?? accountTotals.error
+        errors.push(`org ${conn.organization_id} (cuenta): ${err.message}`)
       }
 
       // ── Piezas de campaña Y publicaciones sueltas publicadas ────────────
