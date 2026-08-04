@@ -94,13 +94,16 @@ Deno.serve(async (req) => {
     for (const item of items ?? []) {
       if (!item.ig_media_id) continue
       try {
-        // Los Reels exponen "video_views" (video_views reemplazó a "plays"
-        // en este endpoint, mismo tipo de rename que impressions→views a
-        // nivel cuenta — ver account-insights-sync.ts); los posts de
-        // imagen no — pedir el set equivocado devuelve error de la API en
-        // vez de nulls prolijos, así que se elige el set según el tipo de
-        // media. "impressions" sí sigue siendo válida en este endpoint.
-        const metricSet = item.media_type === 'video' ? 'video_views,reach,likes,comments,shares,saved' : 'impressions,reach,likes,comments,saved'
+        // Los Reels exponen "views" (reemplazó a "plays" en este endpoint,
+        // mismo tipo de rename que impressions→views a nivel cuenta — ver
+        // account-insights-sync.ts). Primer intento probó "video_views",
+        // INCORRECTO — confirmado con el error 400 real de Meta, que
+        // listó las métricas válidas de este endpoint y "video_views" no
+        // está entre ellas. Los posts de imagen no usan esta métrica —
+        // pedir el set equivocado devuelve error de la API en vez de
+        // nulls prolijos, así que se elige el set según el tipo de media.
+        // "impressions" sí sigue siendo válida en este endpoint.
+        const metricSet = item.media_type === 'video' ? 'views,reach,likes,comments,shares,saved' : 'impressions,reach,likes,comments,saved'
 
         const mediaInsights = await graphGet(`${item.ig_media_id}/insights`, pageAccessToken, { metric: metricSet })
         if (mediaInsights.error) {
@@ -120,7 +123,7 @@ Deno.serve(async (req) => {
             // cuenta), esto lo deja trazable también en la fila guardada.
             ig_media_id: item.ig_media_id,
             captured_at: today(),
-            plays: pickMetric(data, 'video_views'),
+            plays: pickMetric(data, 'views'),
             reach: pickMetric(data, 'reach'),
             likes: pickMetric(data, 'likes'),
             comments: pickMetric(data, 'comments'),

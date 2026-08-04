@@ -107,13 +107,15 @@ export async function getInstagramMediaInsights(
   accessToken: string
 ): Promise<MediaInsightsResult> {
   // "plays" dejó de ser una métrica válida a nivel media — mismo tipo de
-  // rename que "impressions"→"views" a nivel cuenta (2026-08-06, ver
-  // account-insights-sync.ts): Graph API la reemplazó por "video_views".
-  // Se sigue guardando en el campo `plays` de acá para abajo (mismo
-  // concepto, Meta solo le cambió el nombre) — "impressions" sí sigue
-  // siendo válida en ESTE endpoint (a diferencia del de cuenta), no se
-  // toca.
-  const metricSet = mediaType === 'VIDEO' ? 'video_views,reach,likes,comments,shares,saved' : 'impressions,reach,likes,comments,saved'
+  // rename que "impressions"→"views" a nivel cuenta. Primer intento
+  // (2026-08-06) probó "video_views", INCORRECTO — confirmado con el
+  // error 400 real de Meta, que además listó las métricas válidas de este
+  // endpoint: "views" es la que corresponde (no "video_views", que ni
+  // siquiera está en esa lista). Se sigue guardando en el campo `plays` de
+  // acá para abajo (mismo concepto, Meta solo le cambió el nombre) —
+  // "impressions" sí sigue siendo válida en ESTE endpoint (a diferencia
+  // del de cuenta), no se toca.
+  const metricSet = mediaType === 'VIDEO' ? 'views,reach,likes,comments,shares,saved' : 'impressions,reach,likes,comments,saved'
 
   try {
     const res = await fetch(`${META_GRAPH_URL}/${mediaId}/insights?metric=${metricSet}&access_token=${accessToken}`)
@@ -135,7 +137,7 @@ export async function getInstagramMediaInsights(
     return {
       ok: true,
       data: {
-        plays: pickMetric(data, 'video_views'),
+        plays: pickMetric(data, 'views'),
         reach: pickMetric(data, 'reach'),
         likes: pickMetric(data, 'likes'),
         comments: pickMetric(data, 'comments'),
