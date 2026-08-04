@@ -211,11 +211,11 @@ export async function syncInstagramAccountInsightsAction(): Promise<SyncAccountI
       return {
         ok: false,
         error: 'No pudimos traer tus estadísticas de Instagram. Probá de nuevo en unos minutos.',
-        // code/subcode de Meta (ej. 190 = token vencido) — enteros chicos,
-        // sin tokens ni datos de cuenta, seguros para la consola del
-        // navegador. El mensaje completo de Meta solo queda en los logs de
-        // Vercel (console.error de fetchInstagramAccountInsightsHistory).
-        debugCode: `graph-api-error: code=${history.code ?? '?'} subcode=${history.subcode ?? '?'} — mensaje completo en los logs de Vercel`,
+        // El texto de error de Meta para fallos de parámetro/permiso
+        // (code 100, 190, etc.) es descriptivo pero no sensible — no trae
+        // tokens ni datos de la cuenta, así que va completo acá para no
+        // depender de ir a buscar los logs de Vercel en cada intento.
+        debugCode: `graph-api-error: code=${history.code ?? '?'} subcode=${history.subcode ?? '?'} — ${history.error}`,
       }
     }
     if (history.days.length === 0) {
