@@ -298,75 +298,6 @@ function CatalogSummaryCard({ items }: { items: InstagramCatalogRow[] }) {
   )
 }
 
-type DateRangeMode = '7d' | '30d' | '90d' | 'all'
-
-const DATE_RANGE_OPTIONS: { value: DateRangeMode; label: string }[] = [
-  { value: '7d', label: 'Últimos 7 días' },
-  { value: '30d', label: 'Últimos 30 días' },
-  { value: '90d', label: 'Últimos 90 días' },
-  { value: 'all', label: 'Todo el historial' },
-]
-
-/**
- * Selector de rango de fechas — preparado 2026-08-06 para un filtrado real
- * de la data global, todavía sin conectar: hoy es solo estado local
- * (dateRange nunca se usa para filtrar `items`). Cuando el fetch de
- * content/page.tsx acepte un rango como parámetro, este componente pasa a
- * levantar el estado al padre en vez de guardarlo acá.
- */
-function DateRangePicker({ value, onChange }: { value: DateRangeMode; onChange: (mode: DateRangeMode) => void }) {
-  const [open, setOpen] = useState(false)
-  const current = DATE_RANGE_OPTIONS.find((o) => o.value === value) ?? DATE_RANGE_OPTIONS[1]
-
-  return (
-    <div className="relative">
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        className="flex items-center gap-1.5 rounded-control border border-border bg-surface-2/40 px-2.5 py-1.5 text-[11px] font-semibold text-text-2 transition-colors duration-200 ease-out hover:text-text"
-      >
-        <CalendarIcon size={11} />
-        {current.label}
-        <svg
-          width="8"
-          height="8"
-          viewBox="0 0 10 10"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.75"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          className={`shrink-0 transition-transform duration-200 ease-out ${open ? 'rotate-180' : ''}`}
-        >
-          <path d="M2.5 3.5 5 6l2.5-2.5" />
-        </svg>
-      </button>
-
-      {open && (
-        <>
-          <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
-          <div className="absolute left-0 top-[calc(100%+4px)] z-20 flex w-40 flex-col gap-0.5 rounded-control border border-border bg-surface p-1 shadow-[0_12px_32px_-8px_rgba(0,0,0,0.25)]">
-            {DATE_RANGE_OPTIONS.map((opt) => (
-              <button
-                key={opt.value}
-                type="button"
-                onClick={() => {
-                  onChange(opt.value)
-                  setOpen(false)
-                }}
-                className={`rounded-control px-2.5 py-1.5 text-left text-[11px] font-semibold transition-colors duration-200 ease-out ${
-                  opt.value === value ? 'bg-accent/[0.12] text-accent' : 'text-text-2 hover:bg-surface-2 hover:text-text'
-                }`}
-              >
-                {opt.label}
-              </button>
-            ))}
-          </div>
-        </>
-      )}
-    </div>
-  )
-}
 
 // Catálogo "zero fricción" del feed histórico de Instagram (Panel de
 // Inteligencia de Contenido, 2026-08-01) — rediseño 2026-08-06 al estilo de
@@ -380,14 +311,20 @@ function DateRangePicker({ value, onChange }: { value: DateRangeMode; onChange: 
 // distintas.
 export function InstagramMediaCatalogSection({
   items,
+  hasSyncedAny,
   gotixMediaIds,
 }: {
   items: InstagramCatalogRow[]
+  // El rango de fechas ya viene aplicado desde PerformanceTab (único
+  // selector de toda la sección, 2026-08-06) — `items` puede estar vacío
+  // simplemente porque no hay publicaciones en el rango elegido, no
+  // porque nunca se sincronizó. hasSyncedAny distingue esos dos casos
+  // para mostrar el mensaje correcto.
+  hasSyncedAny: boolean
   gotixMediaIds: Set<string>
 }) {
   const [sortMode, setSortMode] = useState<SortMode>('primary')
   const [filterMode, setFilterMode] = useState<FilterMode>('all')
-  const [dateRange, setDateRange] = useState<DateRangeMode>('30d')
   const [page, setPage] = useState(1)
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [comparing, setComparing] = useState(false)
@@ -444,11 +381,13 @@ export function InstagramMediaCatalogSection({
         <h2 className="text-sm font-semibold tracking-tight text-text">Catálogo y Evolución de Publicaciones</h2>
       </div>
 
-      {items.length === 0 ? (
+      {!hasSyncedAny ? (
         <p className="text-xs text-text-3">
           Todavía no sincronizaste tu historial de Instagram — tocá &ldquo;Sincronizar&rdquo; arriba, al lado de tu usuario. Cuentas grandes pueden
           necesitar varios clics (cada uno trae un lote).
         </p>
+      ) : items.length === 0 ? (
+        <p className="text-xs text-text-3">Ninguna publicación en el rango de fechas seleccionado arriba.</p>
       ) : (
         <>
           <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
@@ -483,7 +422,6 @@ export function InstagramMediaCatalogSection({
                   </button>
                 ))}
               </div>
-              <DateRangePicker value={dateRange} onChange={setDateRange} />
               <button
                 type="button"
                 onClick={toggleComparing}

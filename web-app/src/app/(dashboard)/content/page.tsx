@@ -40,14 +40,19 @@ export default async function ContentPage() {
   // está conectada, no tiene sentido pegarle a estas tablas para una
   // organización que nunca sincronizó nada. Las tres corren en paralelo
   // (ninguna depende de las otras).
-  const since30d = new Date(new Date().getTime() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+  //
+  // 90 días acá (no 30) porque el DateRangePicker de PerformanceTab ahora
+  // ofrece hasta "Últimos 90 días" — el filtrado real por rango pasa del
+  // lado del cliente sobre esta misma ventana, así que el server tiene que
+  // traer como mínimo el rango más amplio que el picker permite elegir.
+  const since90d = new Date(new Date().getTime() - 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
   const [{ data: accountInsights }, { data: mediaInsightsRaw }, { data: tiktokVideos }, { data: instagramCatalog }] = await Promise.all([
     instagramConnection
       ? supabase
           .from('instagram_account_insights')
           .select('*')
           .eq('organization_id', activeOrganizationId)
-          .gte('captured_at', since30d)
+          .gte('captured_at', since90d)
           .order('captured_at', { ascending: true })
       : Promise.resolve({ data: null }),
     // instagram_media_insights ahora es polimórfico (piece_id O post_id) —

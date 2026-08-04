@@ -9,11 +9,13 @@ import { InstagramSyncControl } from './instagram-sync-control'
 import { InstagramOverviewKpis } from './instagram-overview-kpis'
 import { ReachImpressionsChart } from './reach-impressions-chart'
 import { ProfileGrowthChart } from './profile-growth-chart'
+import { DateRangePicker } from './instagram-date-range-picker'
 import type { AccountInsight } from './content-tabs'
 import type { WinningItem } from '@/lib/content/winners'
 import type { TiktokVideoRow } from '@/lib/tiktok/winners'
 import type { InstagramCatalogRow } from '@/lib/instagram/media-catalog-winners'
 import { computeAccountOverviewKpis, buildReachImpressionsSeries, buildProfileGrowthSeries } from '@/lib/instagram/account-overview'
+import { DATE_RANGE_OPTIONS, filterByDateRange, type DateRangeMode } from '@/lib/instagram/date-range'
 
 // "Rendimiento" — analítica orgánica de Instagram, alimentada por los
 // snapshots cacheados en instagram_account_insights/instagram_media_catalog.
@@ -52,6 +54,10 @@ export function PerformanceTab({
   gotixMediaIds: Set<string>
 }) {
   const [crossPostItem, setCrossPostItem] = useState<WinningItem | null>(null)
+  // Único selector de rango de fechas de toda la sección (2026-08-06) —
+  // filtra tanto los KPIs/gráficos de cuenta como la grilla de contenido,
+  // nunca dos controles de fecha independientes en la misma pantalla.
+  const [dateRange, setDateRange] = useState<DateRangeMode>('30d')
   // Rediseño (2026-08-01): con las dos redes conectadas, antes se
   // apilaban verticalmente — separadas en sub-tabs para navegar en
   // entornos aislados. Si solo hay una red conectada, no tiene sentido
@@ -83,11 +89,22 @@ export function PerformanceTab({
   }
 
   // Nivel 1 — Visión Global de la Cuenta (2026-08-06): KPIs y series
-  // agregadas sobre los 30 días que ya trae accountInsights desde
-  // content/page.tsx.
-  const overviewKpis = computeAccountOverviewKpis(accountInsights)
-  const reachImpressionsSeries = buildReachImpressionsSeries(accountInsights)
-  const profileGrowthSeries = buildProfileGrowthSeries(accountInsights)
+  // agregadas sobre el rango elegido en el DateRangePicker de arriba,
+  // recortado sobre los hasta 90 días que ya trae accountInsights desde
+  // content/page.tsx (server-side). "Todo el historial" muestra lo que
+  // haya llegado a sincronizarse — no hay más que eso para mostrar.
+  const filteredAccountInsights = filterByDateRange(accountInsights, dateRange, (d) => d.captured_at)
+  const overviewKpis = computeAccountOverviewKpis(filteredAccountInsights)
+  const reachImpressionsSeries = buildReachImpressionsSeries(filteredAccountInsights)
+  const profileGrowthSeries = buildProfileGrowthSeries(filteredAccountInsights)
+  const periodLabel = DATE_RANGE_OPTIONS.find((o) => o.value === dateRange)?.label.toLowerCase() ?? 'período elegido'
+
+  // Mismo rango para la grilla de contenido — instagramCatalog llega sin
+  // acotar desde content/page.tsx (todo el historial sincronizado).
+  // hasSyncedAny usa el array SIN filtrar: "no hay nada en este rango" y
+  // "nunca sincronizaste" son estados distintos, la grilla necesita
+  // distinguirlos para mostrar el mensaje correcto.
+  const filteredInstagramCatalog = filterByDateRange(instagramCatalog, dateRange, (c) => c.posted_at)
 
   return (
     <div className="flex flex-col gap-4">
@@ -127,9 +144,12 @@ export function PerformanceTab({
               vacío (KPI en "—", gráfico con su mensaje), ocultar el bloque
               entero detrás de un solo gate dejaba el panel en blanco para
               cualquier cuenta recién conectada (bug reportado 2026-08-06). */}
-          <InstagramSyncControl igUsername={igUsername} hasAccountData={accountInsights.length > 0} />
+          <div className="flex items-center justify-between gap-2">
+            <InstagramSyncControl igUsername={igUsername} hasAccountData={accountInsights.length > 0} />
+            <DateRangePicker value={dateRange} onChange={setDateRange} />
+          </div>
 
-          <InstagramOverviewKpis kpis={overviewKpis} periodLabel="últimos 30 días" />
+          <InstagramOverviewKpis kpis={overviewKpis} periodLabel={periodLabel} />
 
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
             <ReachImpressionsChart data={reachImpressionsSeries} />
@@ -175,7 +195,7 @@ export function PerformanceTab({
               sync que alimenta accountInsights arriba: se sincroniza
               manual, a demanda, así que tiene que verse aunque el cron
               todavía no haya corrido. */}
-          <InstagramMediaCatalogSection items={instagramCatalog} gotixMediaIds={gotixMediaIds} />
+          <InstagramMediaCatalogSection items={filteredInstagramCatalog} hasSyncedAny={instagramCatalog.length > 0} gotixMediaIds={gotixMediaIds} />
         </>
       )}
 
