@@ -27,9 +27,21 @@ import { META_GRAPH_URL } from '@/lib/meta/oauth'
 // bloque de cuenta y necesita el mismo fix + redeploy.
 const TIME_SERIES_METRICS = 'follower_count,reach'
 const TOTAL_VALUE_METRICS = 'views,profile_views,total_interactions'
-const HISTORY_DAYS = 30
+// 90, no 30 (2026-08-06, bug real reportado: el selector de fechas ofrece
+// hasta "Últimos 90 días", pero el sync instantáneo solo traía 30 — más
+// allá de eso no había NADA que filtrar, así que 30d/90d mostraban
+// exactamente lo mismo. No era un bug de reactividad del picker (el
+// filtrado client-side siempre anduvo bien), era que no existía el dato.
+// Esto sí triplica los pedidos por día de TOTAL_VALUE_METRICS (90 en vez
+// de 30, ver el loop más abajo) — sigue acotado a TOTAL_VALUE_CONCURRENCY
+// en paralelo por vez, mismo criterio de no saturar la API de Meta.
+const HISTORY_DAYS = 90
 const DAY_SECONDS = 24 * 60 * 60
-const TOTAL_VALUE_CONCURRENCY = 6
+// Subido de 6 a 10 junto con HISTORY_DAYS 30→90 (2026-08-06) — con 90 días
+// y concurrencia 6 el loop pasa a 15 tandas secuenciales, un margen real
+// contra el timeout de un Server Action en Vercel. 10 en paralelo por vez
+// sigue siendo razonable contra la API de Meta y baja a 9 tandas.
+const TOTAL_VALUE_CONCURRENCY = 10
 
 type InsightValue = { name: string; values?: { value: number; end_time?: string }[]; total_value?: { value: number } }
 

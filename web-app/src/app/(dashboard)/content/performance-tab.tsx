@@ -9,6 +9,7 @@ import { InstagramSyncControl } from './instagram-sync-control'
 import { InstagramOverviewKpis } from './instagram-overview-kpis'
 import { ReachImpressionsChart } from './reach-impressions-chart'
 import { ProfileGrowthChart } from './profile-growth-chart'
+import { InstagramDayOfWeekChart } from './instagram-day-of-week-chart'
 import { DateRangePicker } from './instagram-date-range-picker'
 import type { AccountInsight } from './content-tabs'
 import type { WinningItem } from '@/lib/content/winners'
@@ -155,6 +156,13 @@ export function PerformanceTab({
             <ReachImpressionsChart data={reachImpressionsSeries} />
             <ProfileGrowthChart data={profileGrowthSeries} />
           </div>
+
+          {/* Radar de "mejor día para publicar" (2026-08-06) — cruza el
+              catálogo de publicaciones (no accountInsights: esto es por
+              publicación, no por snapshot diario de cuenta) agrupado por
+              día de la semana de posted_at. Mismo rango de fechas que el
+              resto de la sección. */}
+          <InstagramDayOfWeekChart items={filteredInstagramCatalog} />
 
           {/* Ganadores (Épica Omnicanal, 2026-08-04) — picos de crecimiento
               detectados en src/lib/content/winners.ts, platform-agnóstico:

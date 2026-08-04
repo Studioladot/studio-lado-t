@@ -26,6 +26,29 @@ function fmt(n: number | null): string {
   return n === null ? '—' : n.toLocaleString('es-AR')
 }
 
+/**
+ * Diferencia porcentual contra la primera publicación seleccionada (la
+ * "Base") — pedido explícito 2026-08-06: "+5% de likes", "-3% de
+ * comentarios" comparando una pieza contra la otra. Null si no hay base
+ * para comparar (falta el dato en la base, o la base es 0 — dividir por 0
+ * no es un "-100%" real, es indefinido).
+ */
+function deltaPct(value: number | null, baseline: number | null): number | null {
+  if (value === null || baseline === null || baseline === 0) return null
+  return ((value - baseline) / baseline) * 100
+}
+
+function DeltaBadge({ delta }: { delta: number | null }) {
+  if (delta === null || Math.abs(delta) < 0.5) return null
+  const positive = delta > 0
+  return (
+    <span className={`text-[10px] font-semibold tabular-nums ${positive ? 'text-green' : 'text-red'}`}>
+      {positive ? '+' : ''}
+      {delta.toFixed(0)}%
+    </span>
+  )
+}
+
 function metricValue(item: InstagramCatalogRow, key: MetricRow['key']): number | null {
   switch (key) {
     case 'views':
@@ -73,9 +96,14 @@ export function ComparisonPanel({ items, onClose }: { items: InstagramCatalogRow
             <thead>
               <tr className="text-left text-[10px] font-bold uppercase tracking-wide text-text-3">
                 <th className="w-24 px-2 py-2">Métrica</th>
-                {items.map((item) => (
+                {items.map((item, i) => (
                   <th key={item.id} className="px-2 py-2">
                     <div className="flex flex-col gap-1.5">
+                      {i === 0 && (
+                        <span className="w-fit rounded-full bg-surface-2 px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wide text-text-3">
+                          Base
+                        </span>
+                      )}
                       <div className="h-14 w-14 shrink-0 overflow-hidden rounded-control bg-black">
                         {item.thumbnail_url || item.media_url ? (
                           // eslint-disable-next-line @next/next/no-img-element -- thumbnail remoto de Instagram, no un asset local.
@@ -108,12 +136,16 @@ export function ComparisonPanel({ items, onClose }: { items: InstagramCatalogRow
               {METRIC_ROWS.map((row) => {
                 const values = items.map((item) => metricValue(item, row.key))
                 const max = values.every((v) => v === null) ? null : Math.max(...values.filter((v): v is number => v !== null))
+                const baseline = values[0]
                 return (
                   <tr key={row.key} className="border-t border-divider">
                     <td className="px-2 py-2 font-medium text-text-2">{row.label}</td>
                     {values.map((v, i) => (
                       <td key={i} className={`px-2 py-2 tabular-nums ${v !== null && v === max ? 'font-bold text-green' : 'text-text'}`}>
-                        {fmt(v)}
+                        <div className="flex items-center gap-1.5">
+                          <span>{fmt(v)}</span>
+                          {i > 0 && <DeltaBadge delta={deltaPct(v, baseline)} />}
+                        </div>
                       </td>
                     ))}
                   </tr>
