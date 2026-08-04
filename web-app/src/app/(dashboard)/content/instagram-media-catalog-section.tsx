@@ -463,7 +463,15 @@ export function InstagramMediaCatalogSection({
                 <div className="grid grid-cols-3 gap-2.5 sm:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5">
                   {pageItems.map((item) => {
                     const isWinner = winners.has(item.id)
-                    const views = primaryMetric(item)
+                    // viewsOf (no primaryMetric) para MOSTRAR el número —
+                    // primaryMetric devuelve 0 a propósito cuando no hay
+                    // ningún dato (para que el sort/badge nunca rompa),
+                    // pero eso hacía que la tarjeta mostrara "0" en vez de
+                    // "—" para un ítem sin plays/reach/impressions (bug
+                    // real reportado 2026-08-06, confirmado con captura de
+                    // producción: el modal mostraba "—" correctamente para
+                    // el mismo ítem que la grilla mostraba "0").
+                    const views = viewsOf(item)
                     const interactions = interactionsTotal(item)
                     const isSelected = compareIds.has(item.id)
                     return (
