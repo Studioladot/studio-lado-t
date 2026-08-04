@@ -61,6 +61,17 @@ export async function getInstagramMediaPage(igUserId: string, accessToken: strin
       nextAfter = new URL(data.paging.next).searchParams.get('after')
     }
 
+    // Diagnóstico de una sola vez (2026-08-06) — el primer ítem crudo tal
+    // cual lo devuelve Meta, sin tocar. Nunca trae token ni datos
+    // sensibles (son campos públicos del posteo: caption/tipo/contadores),
+    // sirve para confirmar si like_count/comments_count realmente vienen
+    // en la respuesta o si Meta los omite en silencio (sin marcar error)
+    // por falta de permiso — a diferencia de un metric inválido, esto no
+    // tira `data.error`, el campo directamente no está.
+    if (data.data?.[0]) {
+      console.error('[getInstagramMediaPage] primer ítem crudo de Meta:', data.data[0])
+    }
+
     return { ok: true, items: data.data ?? [], nextAfter }
   } catch (err) {
     return { ok: false, error: err instanceof Error ? err.message : 'Error de red.' }

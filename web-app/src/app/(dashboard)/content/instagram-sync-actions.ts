@@ -115,6 +115,23 @@ export async function syncInstagramMediaAction(): Promise<SyncInstagramResult> {
         const finalComments = item.comments_count ?? insights.comments
         if (finalLikes == null && finalComments == null) withoutLikeData++
 
+        // Diagnóstico de una sola vez (2026-08-06) — qué se calculó para el
+        // primer ítem del lote, justo antes de escribirlo. Sin esto, un
+        // upsert "exitoso" con todo null es indistinguible en los logs de
+        // uno que realmente guardó datos reales.
+        if (i === 0 && j === 0) {
+          console.error('[syncInstagramMediaAction] primer ítem del lote, valores a guardar:', {
+            id: item.id,
+            mediaType: item.media_type,
+            rawLikeCount: item.like_count,
+            rawCommentsCount: item.comments_count,
+            insightsOk: insightsResult.ok,
+            insights,
+            finalLikes,
+            finalComments,
+          })
+        }
+
         const { error: upsertError } = await supabase.from('instagram_media_catalog').upsert(
           {
             organization_id: activeOrganizationId,
