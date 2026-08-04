@@ -132,10 +132,24 @@ export function InstagramMediaDetailModal({
           )}
           <p className="text-sm leading-relaxed text-text">{item.caption || 'Sin descripción'}</p>
 
+          {/* Campos reales sin conflacionar (2026-08-06, pedido explícito) —
+              antes esto mostraba UN solo bar "Reproducciones o Impresiones"
+              (primaryMetric ya elige el mejor dato disponible para
+              ordenar/badges, pero acá el usuario quiere ver cada campo que
+              la API realmente devolvió, por separado). Reproducciones/
+              Alcance/Impresiones comparten `maxPrimary` como escala (misma
+              familia de magnitud); Compartidos/Guardados comparten
+              `maxComments` (magnitud típica más chica, misma familia que
+              Comentarios). Cualquiera que la Insights API no haya
+              devuelto para este ítem queda en "—", nunca 0. */}
           <div className="flex flex-col gap-2.5">
-            <Bar label={item.plays != null ? 'Reproducciones' : 'Impresiones'} value={primaryMetric(item)} max={maxPrimary} />
+            <Bar label="Reproducciones" value={item.plays} max={maxPrimary} />
+            <Bar label="Alcance" value={item.reach} max={maxPrimary} />
+            <Bar label="Impresiones" value={item.impressions} max={maxPrimary} />
             <Bar label="Likes" value={item.like_count} max={maxLikes} />
             <Bar label="Comentarios" value={item.comments_count} max={maxComments} />
+            <Bar label="Compartidos" value={item.shares} max={maxComments} />
+            <Bar label="Guardados" value={item.saved} max={maxComments} />
           </div>
 
           <div className="grid grid-cols-2 gap-px overflow-hidden rounded-control border border-border bg-border">
