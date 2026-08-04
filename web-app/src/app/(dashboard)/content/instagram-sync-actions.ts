@@ -168,7 +168,11 @@ export async function syncInstagramMediaAction(): Promise<SyncInstagramResult> {
   }
 }
 
-export type SyncAccountInsightsResult = { ok: true; daysSynced: number } | { ok: false; error: string }
+// debugCode nunca se muestra en la UI (el mensaje sigue siendo 100%
+// comercial) — es solo lo que InstagramSyncControl manda a console.error
+// del navegador, para poder distinguir en qué paso falló sin tener que ir
+// a buscar los logs de Vercel en cada intento.
+export type SyncAccountInsightsResult = { ok: true; daysSynced: number } | { ok: false; error: string; debugCode: string }
 
 /**
  * Sync "instantáneo" de Insights a nivel cuenta (2026-08-06, "real-time
@@ -182,7 +186,7 @@ export type SyncAccountInsightsResult = { ok: true; daysSynced: number } | { ok:
 export async function syncInstagramAccountInsightsAction(): Promise<SyncAccountInsightsResult> {
   try {
     const { activeOrganizationId } = await getDashboardContext()
-    if (!activeOrganizationId) return { ok: false, error: 'No encontramos tu organización activa.' }
+    if (!activeOrganizationId) return { ok: false, error: 'No encontramos tu organización activa.', debugCode: 'no-org' }
 
     const supabase = await createClient()
     const { data: connection, error: connectionError } = await supabase
@@ -193,14 +197,26 @@ export async function syncInstagramAccountInsightsAction(): Promise<SyncAccountI
 
     if (connectionError) {
       console.error('[syncInstagramAccountInsightsAction] lectura de la conexión falló:', connectionError.message)
-      return { ok: false, error: 'No pudimos revisar tu conexión de Instagram. Probá de nuevo en unos minutos.' }
+      return {
+        ok: false,
+        error: 'No pudimos revisar tu conexión de Instagram. Probá de nuevo en unos minutos.',
+        debugCode: `connection-read-failed: ${connectionError.message}`,
+      }
     }
-    if (!connection) return { ok: false, error: 'Instagram no está conectado.' }
+    if (!connection) return { ok: false, error: 'Instagram no está conectado.', debugCode: 'not-connected' }
 
     const history = await fetchInstagramAccountInsightsHistory(connection.ig_user_id, connection.page_access_token)
     if (!history.ok) {
       console.error('[syncInstagramAccountInsightsAction] Graph API falló:', history.error)
-      return { ok: false, error: 'No pudimos traer tus estadísticas de Instagram. Probá de nuevo en unos minutos.' }
+      return {
+        ok: false,
+        error: 'No pudimos traer tus estadísticas de Instagram. Probá de nuevo en unos minutos.',
+        // code/subcode de Meta (ej. 190 = token vencido) — enteros chicos,
+        // sin tokens ni datos de cuenta, seguros para la consola del
+        // navegador. El mensaje completo de Meta solo queda en los logs de
+        // Vercel (console.error de fetchInstagramAccountInsightsHistory).
+        debugCode: `graph-api-error: code=${history.code ?? '?'} subcode=${history.subcode ?? '?'} — mensaje completo en los logs de Vercel`,
+      }
     }
     if (history.days.length === 0) {
       return { ok: true, daysSynced: 0 }
@@ -211,7 +227,22 @@ export async function syncInstagramAccountInsightsAction(): Promise<SyncAccountI
     // ver migración 20260730150000) — activeOrganizationId ya está
     // verificado arriba, así que este upsert queda tan scopeado como lo
     // estaría con RLS.
-    const serviceRole = createServiceRoleClient()
+    let serviceRole
+    try {
+      serviceRole = createServiceRoleClient()
+    } catch (err) {
+      // Si SUPABASE_SERVICE_ROLE_KEY no está seteada en el entorno del
+      // servidor (Vercel), el constructor de supabase-js tira acá — antes
+      // esto caía en el catch genérico de más abajo y se perdía en un
+      // "Error inesperado" sin pista. debugCode lo deja explícito.
+      console.error('[syncInstagramAccountInsightsAction] no se pudo crear el cliente de service role:', err)
+      return {
+        ok: false,
+        error: 'No pudimos guardar tus estadísticas. Probá de nuevo en unos minutos.',
+        debugCode: `service-role-client-failed: ${err instanceof Error ? err.message : String(err)}`,
+      }
+    }
+
     const { error: upsertError } = await serviceRole.from('instagram_account_insights').upsert(
       history.days.map((d) => ({
         organization_id: activeOrganizationId,
@@ -227,13 +258,21 @@ export async function syncInstagramAccountInsightsAction(): Promise<SyncAccountI
 
     if (upsertError) {
       console.error('[syncInstagramAccountInsightsAction] upsert falló:', upsertError.message)
-      return { ok: false, error: 'No pudimos guardar tus estadísticas. Probá de nuevo en unos minutos.' }
+      return {
+        ok: false,
+        error: 'No pudimos guardar tus estadísticas. Probá de nuevo en unos minutos.',
+        debugCode: `upsert-failed: ${upsertError.message}`,
+      }
     }
 
     revalidatePath('/content')
     return { ok: true, daysSynced: history.days.length }
   } catch (err) {
     console.error('[syncInstagramAccountInsightsAction] excepción inesperada:', err)
-    return { ok: false, error: 'Error inesperado al sincronizar Instagram. Probá de nuevo en unos minutos.' }
+    return {
+      ok: false,
+      error: 'Error inesperado al sincronizar Instagram. Probá de nuevo en unos minutos.',
+      debugCode: `exception: ${err instanceof Error ? err.message : String(err)}`,
+    }
   }
 }

@@ -33,7 +33,12 @@ export type AccountInsightsDay = {
   totalInteractions: number | null
 }
 
-type HistoryResult = { ok: true; days: AccountInsightsDay[] } | { ok: false; error: string }
+// code/subcode son enteros chicos de Meta (ej. 190 = token vencido, 100 =
+// parámetro inválido) — a diferencia de `message`/`fbtrace_id`, son seguros
+// para que lleguen hasta la consola del navegador (no exponen tokens ni
+// datos de la cuenta), y le sirven al que está debuggeando para no tener
+// que ir a buscar los logs de Vercel por cada intento.
+type HistoryResult = { ok: true; days: AccountInsightsDay[] } | { ok: false; error: string; code?: number; subcode?: number }
 
 /** Un punto por día dentro del rango pedido — nunca inventa un valor si Meta no lo devolvió para esa fecha. */
 function dailySeries(data: InsightValue[], name: string): Map<string, number> {
@@ -69,7 +74,12 @@ export async function fetchInstagramAccountInsightsHistory(igUserId: string, acc
         igUserId,
         ...json.error,
       })
-      return { ok: false, error: json.error.message ?? 'Error desconocido de Meta.' }
+      return {
+        ok: false,
+        error: json.error.message ?? 'Error desconocido de Meta.',
+        code: typeof json.error.code === 'number' ? json.error.code : undefined,
+        subcode: typeof json.error.error_subcode === 'number' ? json.error.error_subcode : undefined,
+      }
     }
 
     const data: InsightValue[] = json.data ?? []

@@ -21,7 +21,14 @@ export function InstagramSyncControl({ igUsername, hasAccountData }: { igUsernam
     setError(null)
     startSync(async () => {
       const result = await syncInstagramAccountInsightsAction()
-      if (!result.ok) setError(result.error)
+      if (!result.ok) {
+        // Mensaje comercial en pantalla (result.error) + el motivo real en
+        // la consola del navegador (result.debugCode) — nunca al revés.
+        // debugCode nunca trae tokens ni datos de cuenta (ver
+        // instagram-sync-actions.ts), así que es seguro tenerlo acá.
+        console.error('[InstagramSyncControl] syncInstagramAccountInsightsAction falló:', result.debugCode)
+        setError(result.error)
+      }
     })
   }
 
