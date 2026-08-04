@@ -113,6 +113,11 @@ export async function fetchInstagramAccountInsightsHistory(igUserId: string, acc
     const impressions = new Map<string, number>()
     const profileViews = new Map<string, number>()
     const totalInteractions = new Map<string, number>()
+    // Diagnóstico de una sola vez (no por día, para no inundar los logs):
+    // si Meta responde ok pero sin ningún total_value reconocible, algo en
+    // la forma de la respuesta no es la esperada — mejor verlo una vez acá
+    // que repetir otra ronda de "sigue vacío, no sé por qué".
+    let loggedEmptyShape = false
 
     for (let i = 0; i < dayStarts.length; i += TOTAL_VALUE_CONCURRENCY) {
       const chunk = dayStarts.slice(i, i + TOTAL_VALUE_CONCURRENCY)
@@ -122,6 +127,7 @@ export async function fetchInstagramAccountInsightsHistory(igUserId: string, acc
           const params = new URLSearchParams({
             metric: TOTAL_VALUE_METRICS,
             metric_type: 'total_value',
+            period: 'day',
             since: String(dayStart),
             until: String(dayStart + DAY_SECONDS),
             access_token: accessToken,
@@ -147,6 +153,11 @@ export async function fetchInstagramAccountInsightsHistory(igUserId: string, acc
         if (pv !== null) profileViews.set(date, pv)
         const ti = pickTotalValue(data, 'total_interactions')
         if (ti !== null) totalInteractions.set(date, ti)
+
+        if (views === null && pv === null && ti === null && !loggedEmptyShape) {
+          loggedEmptyShape = true
+          console.error('[fetchInstagramAccountInsightsHistory] total_value sin datos reconocibles para', date, '— respuesta cruda de Meta:', json)
+        }
       }
     }
 

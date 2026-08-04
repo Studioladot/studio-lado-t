@@ -2,7 +2,6 @@
 
 import Link from 'next/link'
 import { useState } from 'react'
-import { ComparisonPanel } from './comparison-panel'
 import { CrossPostModal } from './cross-post-modal'
 import { TiktokPerformanceSection } from './tiktok-performance-section'
 import { InstagramMediaCatalogSection } from './instagram-media-catalog-section'
@@ -10,52 +9,33 @@ import { InstagramSyncControl } from './instagram-sync-control'
 import { InstagramOverviewKpis } from './instagram-overview-kpis'
 import { ReachImpressionsChart } from './reach-impressions-chart'
 import { ProfileGrowthChart } from './profile-growth-chart'
-import type { AccountInsight, MediaInsight } from './content-tabs'
+import type { AccountInsight } from './content-tabs'
 import type { WinningItem } from '@/lib/content/winners'
 import type { TiktokVideoRow } from '@/lib/tiktok/winners'
 import type { InstagramCatalogRow } from '@/lib/instagram/media-catalog-winners'
 import { computeAccountOverviewKpis, buildReachImpressionsSeries, buildProfileGrowthSeries } from '@/lib/instagram/account-overview'
 
-function fmt(n: number | null): string {
-  return n === null ? '—' : n.toLocaleString('es-AR')
-}
-
 // "Rendimiento" — analítica orgánica de Instagram, alimentada por los
-// snapshots cacheados en instagram_account_insights/instagram_media_insights.
+// snapshots cacheados en instagram_account_insights/instagram_media_catalog.
 // Hasta 2026-08-06 esos snapshots solo los escribía el cron diario de
 // instagram-metrics-sync; ahora InstagramSyncControl puede además disparar
-// un fetch en vivo bajo demanda (syncInstagramAccountInsightsAction) para
-// que una cuenta recién conectada no tenga que esperar hasta 24hs para ver
-// su primer dato — sigue siendo lectura desde caché en cada render, el
-// fetch en vivo solo ocurre en el momento puntual del sync. Mismo
-// tratamiento premium que Ventas: metric-card con delta+tabular-nums para
-// los KPIs, tabla compacta y densa para el ranking. Incluye piezas de
-// campaña Y publicaciones sueltas por igual — instagram_media_insights es
-// polimórfico desde la ronda de Comparativa.
-
-// Auditoría de cierre (2026-08-01): antes no había límite — seleccionar 10+
-// piezas abría un ComparisonPanel con una tabla horizontal ilegible. 5 es el
-// máximo que entra sin scroll horizontal en la mayoría de los anchos de
-// pantalla que soporta el panel.
-const MAX_COMPARE = 5
-
-function itemTitle(m: MediaInsight): string {
-  return m.content_piezas?.titulo ?? m.content_posts?.title ?? 'Sin título'
-}
-
-function itemPermalink(m: MediaInsight): string | null {
-  return m.content_piezas?.ig_permalink ?? m.content_posts?.ig_permalink ?? null
-}
-
-function itemFormat(m: MediaInsight): string | null {
-  return m.content_piezas?.formato ?? m.content_posts?.format ?? null
-}
+// un fetch en vivo bajo demanda (syncInstagramAccountInsightsAction +
+// syncInstagramMediaAction) para que una cuenta recién conectada no tenga
+// que esperar hasta 24hs para ver su primer dato — sigue siendo lectura
+// desde caché en cada render, el fetch en vivo solo ocurre en el momento
+// puntual del sync. Mismo tratamiento premium que Ventas: metric-card con
+// delta+tabular-nums para los KPIs, grilla densa para el catálogo.
+//
+// La vieja tabla "Piezas y publicaciones por reproducciones" (con su
+// selección para comparar) se sacó acá el 2026-08-06 — quedaba vacía para
+// cualquier cuenta sin piezas de campaña publicadas por Gotix, redundante
+// con la grilla premium de instagram_media_catalog de más abajo, que
+// cubre el mismo propósito con datos reales de entrada "zero fricción".
 
 export function PerformanceTab({
   instagramConnected,
   igUsername,
   accountInsights,
-  mediaInsights,
   winningItems,
   tiktokConnected,
   tiktokVideos,
@@ -65,15 +45,12 @@ export function PerformanceTab({
   instagramConnected: boolean
   igUsername: string | null
   accountInsights: AccountInsight[]
-  mediaInsights: MediaInsight[]
   winningItems: WinningItem[]
   tiktokConnected: boolean
   tiktokVideos: TiktokVideoRow[]
   instagramCatalog: InstagramCatalogRow[]
   gotixMediaIds: Set<string>
 }) {
-  const [selected, setSelected] = useState<Set<string>>(new Set())
-  const [comparing, setComparing] = useState(false)
   const [crossPostItem, setCrossPostItem] = useState<WinningItem | null>(null)
   // Rediseño (2026-08-01): con las dos redes conectadas, antes se
   // apilaban verticalmente — separadas en sub-tabs para navegar en
@@ -112,18 +89,6 @@ export function PerformanceTab({
   const reachImpressionsSeries = buildReachImpressionsSeries(accountInsights)
   const profileGrowthSeries = buildProfileGrowthSeries(accountInsights)
 
-  const topByPlays = [...mediaInsights].sort((a, b) => (b.plays ?? b.reach ?? 0) - (a.plays ?? a.reach ?? 0)).slice(0, 10)
-  const selectedItems = mediaInsights.filter((m) => selected.has(m.id))
-
-  function toggleSelected(id: string) {
-    setSelected((prev) => {
-      const next = new Set(prev)
-      if (next.has(id)) next.delete(id)
-      else if (next.size < MAX_COMPARE) next.add(id)
-      return next
-    })
-  }
-
   return (
     <div className="flex flex-col gap-4">
       {showNetworkTabs && (
@@ -157,7 +122,7 @@ export function PerformanceTab({
               control de sync arriba de todo, después los 4 KPIs, después
               los gráficos de evolución, y la grilla de publicaciones al
               fondo. Se renderiza siempre que Instagram esté conectado, sin
-              importar si accountInsights/mediaInsights ya tienen datos
+              importar si accountInsights/instagramCatalog ya tienen datos
               sincronizados — cada pieza sabe mostrar su propio estado
               vacío (KPI en "—", gráfico con su mensaje), ocultar el bloque
               entero detrás de un solo gate dejaba el panel en blanco para
@@ -203,91 +168,16 @@ export function PerformanceTab({
             </div>
           )}
 
-          <div className="rounded-card border border-border bg-surface p-5">
-            <div className="mb-3 flex items-center justify-between">
-              <div className="flex items-baseline gap-2">
-                <p className="text-[10px] font-bold uppercase tracking-wide text-text-3">Piezas y publicaciones por reproducciones</p>
-                {selected.size > 0 && <p className="text-[10px] text-text-3">{selected.size}/{MAX_COMPARE} seleccionadas</p>}
-              </div>
-              {selected.size >= 2 && (
-                <button
-                  type="button"
-                  onClick={() => setComparing(true)}
-                  className="rounded-control bg-primary px-3 py-1.5 text-[11px] font-bold text-white transition-all duration-200 ease-out hover:bg-primary-hover active:scale-[0.98]"
-                >
-                  Comparar ({selected.size})
-                </button>
-              )}
-            </div>
-            {topByPlays.length === 0 ? (
-              <p className="text-xs text-text-3">Todavía no hay piezas publicadas con métricas sincronizadas.</p>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-xs">
-                  <thead>
-                    <tr className="border-b border-divider text-left text-[10px] font-bold uppercase tracking-wide text-text-3">
-                      <th className="w-6 px-1 py-2"></th>
-                      <th className="px-2 py-2">Pieza</th>
-                      <th className="px-2 py-2 text-right">Reprod.</th>
-                      <th className="px-2 py-2 text-right">Alcance</th>
-                      <th className="px-2 py-2 text-right">Likes</th>
-                      <th className="px-2 py-2 text-right">Coment.</th>
-                      <th className="px-2 py-2 text-right">Compart.</th>
-                      <th className="px-2 py-2 text-right">Guard.</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {topByPlays.map((m) => {
-                      const permalink = itemPermalink(m)
-                      const format = itemFormat(m)
-                      return (
-                        <tr key={m.id} className="border-b border-divider last:border-0">
-                          <td className="px-1 py-2">
-                            <input
-                              type="checkbox"
-                              checked={selected.has(m.id)}
-                              disabled={!selected.has(m.id) && selected.size >= MAX_COMPARE}
-                              onChange={() => toggleSelected(m.id)}
-                              title={!selected.has(m.id) && selected.size >= MAX_COMPARE ? `Podés comparar hasta ${MAX_COMPARE} a la vez.` : undefined}
-                            />
-                          </td>
-                          <td className="min-w-0 px-2 py-2">
-                            {permalink ? (
-                              <a href={permalink} target="_blank" rel="noreferrer" className="truncate text-xs font-semibold text-text hover:text-accent">
-                                {itemTitle(m)}
-                              </a>
-                            ) : (
-                              <span className="truncate text-xs font-semibold text-text">{itemTitle(m)}</span>
-                            )}
-                            {format && <span className="ml-1.5 text-[10px] text-text-3">{format}</span>}
-                          </td>
-                          <td className="px-2 py-2 text-right text-xs font-semibold tabular-nums text-text">{fmt(m.plays)}</td>
-                          <td className="px-2 py-2 text-right text-xs tabular-nums text-text-2">{fmt(m.reach)}</td>
-                          <td className="px-2 py-2 text-right text-xs tabular-nums text-text-2">{fmt(m.likes)}</td>
-                          <td className="px-2 py-2 text-right text-xs tabular-nums text-text-2">{fmt(m.comments)}</td>
-                          <td className="px-2 py-2 text-right text-xs tabular-nums text-text-2">{fmt(m.shares)}</td>
-                          <td className="px-2 py-2 text-right text-xs tabular-nums text-text-2">{fmt(m.saves)}</td>
-                        </tr>
-                      )
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-
           {/* Grilla de publicaciones — al fondo de la jerarquía a
               propósito (pedido explícito 2026-08-06): es la sección más
               densa/exploratoria, viene después de los KPIs y gráficos de
               resumen. Independiente del cron diario de instagram-metrics-
-              sync que alimenta accountInsights/mediaInsights arriba: se
-              sincroniza manual, a demanda, así que tiene que verse aunque
-              el cron todavía no haya corrido. */}
+              sync que alimenta accountInsights arriba: se sincroniza
+              manual, a demanda, así que tiene que verse aunque el cron
+              todavía no haya corrido. */}
           <InstagramMediaCatalogSection items={instagramCatalog} gotixMediaIds={gotixMediaIds} />
         </>
       )}
-
-      {comparing && selectedItems.length >= 2 && <ComparisonPanel items={selectedItems} onClose={() => setComparing(false)} />}
 
       {crossPostItem && <CrossPostModal item={crossPostItem} onClose={() => setCrossPostItem(null)} />}
     </div>

@@ -83,8 +83,16 @@ export function InstagramMediaDetailModal({
   publishedWithGotix?: boolean
   onClose: () => void
 }) {
-  const engagementBase = item.plays ?? item.impressions ?? item.reach ?? 0
-  const engagementRate = engagementBase > 0 ? (((item.like_count ?? 0) + (item.comments_count ?? 0) + (item.saved ?? 0)) / engagementBase) * 100 : 0
+  // Denominador = primaryMetric (plays ?? impressions ?? reach, mismo
+  // criterio que el resto del catálogo) — para un Reel eso es plays, más
+  // representativo que impressions/reach como base de "cuánta gente vio
+  // esto e interactuó". Numerador con los 4 tipos de interacción reales
+  // (antes faltaba `shares`, subestimando la tasa real).
+  const engagementBase = primaryMetric(item)
+  const engagementRate =
+    engagementBase > 0
+      ? (((item.like_count ?? 0) + (item.comments_count ?? 0) + (item.shares ?? 0) + (item.saved ?? 0)) / engagementBase) * 100
+      : 0
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={onClose}>

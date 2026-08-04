@@ -1,7 +1,6 @@
 'use client'
 
-import { useId, useMemo, useState, useTransition } from 'react'
-import { syncInstagramMediaAction } from './instagram-sync-actions'
+import { useId, useMemo, useState } from 'react'
 import { InstagramMediaDetailModal } from './instagram-media-detail-modal'
 import { Pagination } from '../meta-ads/campaigns/pagination'
 import { detectInstagramCatalogWinners, primaryMetric, type InstagramCatalogRow } from '@/lib/instagram/media-catalog-winners'
@@ -281,12 +280,86 @@ function CatalogSummaryCard({ items }: { items: InstagramCatalogRow[] }) {
   )
 }
 
+type DateRangeMode = '7d' | '30d' | '90d' | 'all'
+
+const DATE_RANGE_OPTIONS: { value: DateRangeMode; label: string }[] = [
+  { value: '7d', label: 'Últimos 7 días' },
+  { value: '30d', label: 'Últimos 30 días' },
+  { value: '90d', label: 'Últimos 90 días' },
+  { value: 'all', label: 'Todo el historial' },
+]
+
+/**
+ * Selector de rango de fechas — preparado 2026-08-06 para un filtrado real
+ * de la data global, todavía sin conectar: hoy es solo estado local
+ * (dateRange nunca se usa para filtrar `items`). Cuando el fetch de
+ * content/page.tsx acepte un rango como parámetro, este componente pasa a
+ * levantar el estado al padre en vez de guardarlo acá.
+ */
+function DateRangePicker({ value, onChange }: { value: DateRangeMode; onChange: (mode: DateRangeMode) => void }) {
+  const [open, setOpen] = useState(false)
+  const current = DATE_RANGE_OPTIONS.find((o) => o.value === value) ?? DATE_RANGE_OPTIONS[1]
+
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="flex items-center gap-1.5 rounded-control border border-border bg-surface-2/40 px-2.5 py-1.5 text-[11px] font-semibold text-text-2 transition-colors duration-200 ease-out hover:text-text"
+      >
+        <CalendarIcon size={11} />
+        {current.label}
+        <svg
+          width="8"
+          height="8"
+          viewBox="0 0 10 10"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.75"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className={`shrink-0 transition-transform duration-200 ease-out ${open ? 'rotate-180' : ''}`}
+        >
+          <path d="M2.5 3.5 5 6l2.5-2.5" />
+        </svg>
+      </button>
+
+      {open && (
+        <>
+          <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
+          <div className="absolute left-0 top-[calc(100%+4px)] z-20 flex w-40 flex-col gap-0.5 rounded-control border border-border bg-surface p-1 shadow-[0_12px_32px_-8px_rgba(0,0,0,0.25)]">
+            {DATE_RANGE_OPTIONS.map((opt) => (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => {
+                  onChange(opt.value)
+                  setOpen(false)
+                }}
+                className={`rounded-control px-2.5 py-1.5 text-left text-[11px] font-semibold transition-colors duration-200 ease-out ${
+                  opt.value === value ? 'bg-accent/[0.12] text-accent' : 'text-text-2 hover:bg-surface-2 hover:text-text'
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  )
+}
+
 // Catálogo "zero fricción" del feed histórico de Instagram (Panel de
 // Inteligencia de Contenido, 2026-08-01) — rediseño 2026-08-06 al estilo de
 // benchmarks premium de BI (Moka): tarjetas cuadradas uniformes, overlay de
 // métricas con íconos en vez de texto ruidoso, resumen agregado al costado.
 // Sin botón de "Escalar": el contenido ya está en Instagram, no tiene
-// destino al que cross-postear todavía.
+// destino al que cross-postear todavía. Sin botón de sync propio (sacado
+// 2026-08-06): el único control de sincronización de toda la sección vive
+// en InstagramSyncControl, arriba de todo — dos botones de "Sincronizar"
+// en la misma pantalla leía como un descuido, no como dos funciones
+// distintas.
 export function InstagramMediaCatalogSection({
   items,
   gotixMediaIds,
@@ -294,11 +367,9 @@ export function InstagramMediaCatalogSection({
   items: InstagramCatalogRow[]
   gotixMediaIds: Set<string>
 }) {
-  const [syncing, startSync] = useTransition()
-  const [syncError, setSyncError] = useState<string | null>(null)
-  const [syncMessage, setSyncMessage] = useState<string | null>(null)
   const [sortMode, setSortMode] = useState<SortMode>('primary')
   const [filterMode, setFilterMode] = useState<FilterMode>('all')
+  const [dateRange, setDateRange] = useState<DateRangeMode>('30d')
   const [page, setPage] = useState(1)
   const [selectedId, setSelectedId] = useState<string | null>(null)
 
@@ -325,64 +396,17 @@ export function InstagramMediaCatalogSection({
     setPage(1)
   }
 
-  function handleSync() {
-    setSyncError(null)
-    setSyncMessage(null)
-    startSync(async () => {
-      const result = await syncInstagramMediaAction()
-      if (!result.ok) {
-        // Debug real para el desarrollador (nunca de cara al usuario, ver
-        // mensaje de abajo) — si esto falla en producción, el motivo real
-        // (token vencido, permiso faltante, rate limit de Meta) queda acá,
-        // no en un string genérico.
-        console.error('[InstagramMediaCatalogSection] syncInstagramMediaAction falló:', result.error)
-        setSyncError(result.error)
-        return
-      }
-      // Copy 100% comercial de cara al usuario final (regla fija,
-      // 2026-08-01): nunca mencionar nombres de campo ni jerga de API acá.
-      // withoutInsights/withoutLikeData siguen viajando en el resultado
-      // para decidir QUÉ frase mostrar, pero nunca se imprimen literales.
-      let note = ''
-      if (result.withoutInsights > 0 && result.withoutLikeData === 0) {
-        note = ' Algunas publicaciones muy antiguas pueden no mostrar reproducciones, pero tus me gusta y comentarios ya están actualizados.'
-      } else if (result.withoutLikeData > 0) {
-        note = ' Algunas publicaciones antiguas pueden tardar un poco más en reflejar todas sus estadísticas.'
-      }
-      if (result.count === 0 && result.done) {
-        setSyncMessage('Tu historial ya está al día — no hay publicaciones nuevas para traer.')
-      } else if (result.done) {
-        setSyncMessage(`Actualizamos ${result.count} publicaciones. Tu historial ya está completo.${note}`)
-      } else {
-        setSyncMessage(`Actualizamos ${result.count} publicaciones. Tocá "Sincronizar ahora" de nuevo para seguir cargando tu historial.${note}`)
-      }
-    })
-  }
-
   return (
     <div className="rounded-card border border-border bg-surface p-5">
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-        <div className="flex items-center gap-2">
-          <InstagramIcon size={17} gradient />
-          <h2 className="text-sm font-semibold tracking-tight text-text">Catálogo y Evolución de Publicaciones</h2>
-        </div>
-        <button
-          type="button"
-          onClick={handleSync}
-          disabled={syncing}
-          className="rounded-control border border-border px-3 py-1.5 text-[11px] font-semibold text-text-2 transition-all duration-200 ease-out hover:border-text-3 hover:text-text disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          {syncing ? 'Sincronizando…' : 'Sincronizar ahora'}
-        </button>
+      <div className="mb-4 flex items-center gap-2">
+        <InstagramIcon size={17} gradient />
+        <h2 className="text-sm font-semibold tracking-tight text-text">Catálogo y Evolución de Publicaciones</h2>
       </div>
-
-      {syncError && <p className="mb-3 text-xs text-red">{syncError}</p>}
-      {syncMessage && <p className="mb-3 text-xs text-green">{syncMessage}</p>}
 
       {items.length === 0 ? (
         <p className="text-xs text-text-3">
-          Todavía no sincronizaste tu historial de Instagram — tocá &ldquo;Sincronizar ahora&rdquo;. Cuentas grandes pueden necesitar varios clics
-          (cada uno trae un lote).
+          Todavía no sincronizaste tu historial de Instagram — tocá &ldquo;Sincronizar&rdquo; arriba, al lado de tu usuario. Cuentas grandes pueden
+          necesitar varios clics (cada uno trae un lote).
         </p>
       ) : (
         <>
@@ -418,6 +442,7 @@ export function InstagramMediaCatalogSection({
                   </button>
                 ))}
               </div>
+              <DateRangePicker value={dateRange} onChange={setDateRange} />
             </div>
             <p className="text-[10px] text-text-3">{sorted.length} publicaciones</p>
           </div>

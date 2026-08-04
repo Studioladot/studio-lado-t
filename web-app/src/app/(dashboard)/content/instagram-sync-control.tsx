@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState, useTransition } from 'react'
-import { syncInstagramAccountInsightsAction } from './instagram-sync-actions'
+import { syncInstagramAccountInsightsAction, syncInstagramMediaAction } from './instagram-sync-actions'
 
 // "Real-time feel" (2026-08-06, Parte 1 de la refactorización del Nivel 1) —
 // apenas se detecta que Instagram está conectado pero
@@ -12,6 +12,15 @@ import { syncInstagramAccountInsightsAction } from './instagram-sync-actions'
 // @usuario para forzarlo de nuevo cuando quiera. autoTriggered evita que el
 // efecto se repita (incluido el doble-mount de StrictMode en dev) una vez
 // que ya se disparó.
+//
+// Único botón de sync de toda la sección (2026-08-06) — antes convivía con
+// un segundo botón "Sincronizar ahora" propio de InstagramMediaCatalogSection,
+// visualmente duplicado. Un solo click ahora dispara las dos
+// sincronizaciones en paralelo: los KPIs/gráficos de cuenta
+// (syncInstagramAccountInsightsAction) y un lote del catálogo de
+// publicaciones (syncInstagramMediaAction, que sigue necesitando varios
+// clicks para traer el historial completo — cuentas grandes no entran en
+// un solo Server Action, ver su propio comentario).
 export function InstagramSyncControl({ igUsername, hasAccountData }: { igUsername: string | null; hasAccountData: boolean }) {
   const [isSyncing, startSync] = useTransition()
   const [error, setError] = useState<string | null>(null)
@@ -20,15 +29,21 @@ export function InstagramSyncControl({ igUsername, hasAccountData }: { igUsernam
   function runSync() {
     setError(null)
     startSync(async () => {
-      const result = await syncInstagramAccountInsightsAction()
-      if (!result.ok) {
-        // Mensaje comercial en pantalla (result.error) + el motivo real en
-        // la consola del navegador (result.debugCode) — nunca al revés.
-        // debugCode nunca trae tokens ni datos de cuenta (ver
-        // instagram-sync-actions.ts), así que es seguro tenerlo acá.
-        console.error('[InstagramSyncControl] syncInstagramAccountInsightsAction falló:', result.debugCode)
-        setError(result.error)
+      const [accountResult, catalogResult] = await Promise.all([syncInstagramAccountInsightsAction(), syncInstagramMediaAction()])
+
+      // Mensaje comercial en pantalla + el motivo real en la consola del
+      // navegador (nunca al revés) — ninguno de los dos debugCode/error
+      // trae tokens ni datos de cuenta (ver instagram-sync-actions.ts).
+      const failures: string[] = []
+      if (!accountResult.ok) {
+        console.error('[InstagramSyncControl] syncInstagramAccountInsightsAction falló:', accountResult.debugCode)
+        failures.push(accountResult.error)
       }
+      if (!catalogResult.ok) {
+        console.error('[InstagramSyncControl] syncInstagramMediaAction falló:', catalogResult.error)
+        failures.push(catalogResult.error)
+      }
+      if (failures.length > 0) setError(failures[0])
     })
   }
 
@@ -45,7 +60,7 @@ export function InstagramSyncControl({ igUsername, hasAccountData }: { igUsernam
         type="button"
         onClick={runSync}
         disabled={isSyncing}
-        title="Sincronizar estadísticas ahora"
+        title="Sincronizar Instagram ahora"
         className="flex items-center gap-1 rounded-control px-1.5 py-0.5 text-text-3 transition-colors duration-200 ease-out hover:bg-surface-2 hover:text-accent disabled:cursor-not-allowed disabled:opacity-60"
       >
         <svg

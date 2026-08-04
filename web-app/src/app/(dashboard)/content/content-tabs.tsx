@@ -99,7 +99,6 @@ export function ContentTabs({
           instagramConnected={instagramConnected}
           igUsername={igUsername}
           accountInsights={accountInsights}
-          mediaInsights={mediaInsights}
           winningItems={winningItems}
           tiktokConnected={tiktokConnected}
           tiktokVideos={tiktokVideos}

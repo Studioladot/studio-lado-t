@@ -94,10 +94,13 @@ Deno.serve(async (req) => {
     for (const item of items ?? []) {
       if (!item.ig_media_id) continue
       try {
-        // Los Reels exponen "plays"; los posts de imagen no — pedir el
-        // set equivocado devuelve error de la API en vez de nulls
-        // prolijos, así que se elige el set según el tipo de media.
-        const metricSet = item.media_type === 'video' ? 'plays,reach,likes,comments,shares,saved' : 'impressions,reach,likes,comments,saved'
+        // Los Reels exponen "video_views" (video_views reemplazó a "plays"
+        // en este endpoint, mismo tipo de rename que impressions→views a
+        // nivel cuenta — ver account-insights-sync.ts); los posts de
+        // imagen no — pedir el set equivocado devuelve error de la API en
+        // vez de nulls prolijos, así que se elige el set según el tipo de
+        // media. "impressions" sí sigue siendo válida en este endpoint.
+        const metricSet = item.media_type === 'video' ? 'video_views,reach,likes,comments,shares,saved' : 'impressions,reach,likes,comments,saved'
 
         const mediaInsights = await graphGet(`${item.ig_media_id}/insights`, pageAccessToken, { metric: metricSet })
         if (mediaInsights.error) {
@@ -117,7 +120,7 @@ Deno.serve(async (req) => {
             // cuenta), esto lo deja trazable también en la fila guardada.
             ig_media_id: item.ig_media_id,
             captured_at: today(),
-            plays: pickMetric(data, 'plays'),
+            plays: pickMetric(data, 'video_views'),
             reach: pickMetric(data, 'reach'),
             likes: pickMetric(data, 'likes'),
             comments: pickMetric(data, 'comments'),
@@ -162,6 +165,7 @@ Deno.serve(async (req) => {
       const accountTotals = await graphGet(`${conn.ig_user_id}/insights`, conn.page_access_token, {
         metric: 'views,profile_views,total_interactions',
         metric_type: 'total_value',
+        period: 'day',
         since: String(todayStartSec),
         until: String(todayStartSec + 24 * 60 * 60),
       })
