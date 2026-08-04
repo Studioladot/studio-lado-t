@@ -31,18 +31,24 @@ export function InstagramSyncControl({ igUsername, hasAccountData }: { igUsernam
     startSync(async () => {
       const [accountResult, catalogResult] = await Promise.all([syncInstagramAccountInsightsAction(), syncInstagramMediaAction()])
 
-      // Mensaje comercial en pantalla + el motivo real en la consola del
-      // navegador (nunca al revés) — ninguno de los dos debugCode/error
-      // trae tokens ni datos de cuenta (ver instagram-sync-actions.ts).
+      // Bug real reportado (2026-08-06): este log SOLO se disparaba adentro
+      // de los "if (!result.ok)" — cuando las dos acciones terminan en
+      // ok:true (que es lo que pasaba: syncInstagramMediaAction reporta
+      // éxito aunque items puntuales se hayan quedado sin datos de
+      // Insights, ver withoutInsights) la consola quedaba 100% muda, sin
+      // ninguna pista. Todos los demás console.error (getInstagramMediaPage,
+      // getInstagramMediaInsights, el propio syncInstagramMediaAction) VIVEN
+      // EN EL SERVIDOR — corren dentro de un Server Action, así que ese
+      // texto va a los logs de Vercel, nunca al navegador, sin importar
+      // qué pase acá. Por eso ahora esto loguea SIEMPRE, haya o no error,
+      // con el resultado completo de las dos acciones — firstInsightsError/
+      // debugCode viajan explícitamente en el objeto para no depender de
+      // ir a buscar logs del servidor.
+      console.log('[InstagramSyncControl] resultado del sync:', { account: accountResult, catalog: catalogResult })
+
       const failures: string[] = []
-      if (!accountResult.ok) {
-        console.error('[InstagramSyncControl] syncInstagramAccountInsightsAction falló:', accountResult.debugCode)
-        failures.push(accountResult.error)
-      }
-      if (!catalogResult.ok) {
-        console.error('[InstagramSyncControl] syncInstagramMediaAction falló:', catalogResult.error)
-        failures.push(catalogResult.error)
-      }
+      if (!accountResult.ok) failures.push(accountResult.error)
+      if (!catalogResult.ok) failures.push(catalogResult.error)
       if (failures.length > 0) setError(failures[0])
     })
   }

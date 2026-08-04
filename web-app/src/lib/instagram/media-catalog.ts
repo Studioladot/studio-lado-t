@@ -97,7 +97,9 @@ export type InstagramMediaInsightsData = {
   impressions: number | null
 }
 
-type MediaInsightsResult = { ok: true; data: InstagramMediaInsightsData } | { ok: false; error: string }
+type MediaInsightsResult =
+  | { ok: true; data: InstagramMediaInsightsData }
+  | { ok: false; error: string; code?: number; subcode?: number }
 
 export async function getInstagramMediaInsights(
   mediaId: string,
@@ -121,7 +123,12 @@ export async function getInstagramMediaInsights(
       // fetchInstagramAccountInsightsHistory, para no repetir una ronda de
       // "sigue en 0" sin poder ver por qué.
       console.error('[getInstagramMediaInsights] Graph API respondió con error:', { httpStatus: res.status, mediaId, mediaType, ...json.error })
-      return { ok: false, error: json.error.message ?? 'Error desconocido de Meta.' }
+      return {
+        ok: false,
+        error: json.error.message ?? 'Error desconocido de Meta.',
+        code: typeof json.error.code === 'number' ? json.error.code : undefined,
+        subcode: typeof json.error.error_subcode === 'number' ? json.error.error_subcode : undefined,
+      }
     }
 
     const data: InsightValue[] = json.data ?? []

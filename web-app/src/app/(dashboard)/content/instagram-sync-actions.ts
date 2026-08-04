@@ -7,8 +7,23 @@ import { getDashboardContext } from '@/lib/organization/dashboard-context'
 import { getInstagramMediaPage, getInstagramMediaInsights, type InstagramMediaItem } from '@/lib/instagram/media-catalog'
 import { fetchInstagramAccountInsightsHistory } from '@/lib/instagram/account-insights-sync'
 
+// firstInsightsError viaja incluso cuando ok:true — un ítem puntual sin
+// Insights (cuenta chica, contenido viejo, o un metric inválido de Meta)
+// no hace fallar la acción entera (withoutInsights ya lo contaba), pero
+// eso significa que el "éxito" nunca disparaba ningún log en el navegador
+// — los console.error de acá adentro y de media-catalog.ts corren en el
+// servidor (Vercel), nunca llegan al navegador. Este campo es la forma de
+// que ESE motivo real cruce al cliente sin necesidad de ir a buscar logs
+// de Vercel.
 export type SyncInstagramResult =
-  | { ok: true; count: number; done: boolean; withoutInsights: number; withoutLikeData: number }
+  | {
+      ok: true
+      count: number
+      done: boolean
+      withoutInsights: number
+      withoutLikeData: number
+      firstInsightsError: string | null
+    }
   | { ok: false; error: string }
 
 const MAX_ITEMS_PER_RUN = 40
@@ -86,6 +101,7 @@ export async function syncInstagramMediaAction(): Promise<SyncInstagramResult> {
     // mensaje solo afirme lo que realmente pasó.
     let withoutLikeData = 0
     let lastUpsertError: string | null = null
+    let firstInsightsError: string | null = null
 
     for (let i = 0; i < items.length; i += INSIGHT_CONCURRENCY) {
       const chunk = items.slice(i, i + INSIGHT_CONCURRENCY)
@@ -100,7 +116,12 @@ export async function syncInstagramMediaAction(): Promise<SyncInstagramResult> {
         // que instagram-metrics-sync acota a MEDIA_LOOKBACK_DAYS=90) no
         // frena el resto del lote. Se cuenta (withoutInsights) para poder
         // avisarlo, en vez de tragarlo en silencio como antes.
-        if (!insightsResult.ok) withoutInsights++
+        if (!insightsResult.ok) {
+          withoutInsights++
+          if (firstInsightsError === null) {
+            firstInsightsError = `code=${insightsResult.code ?? '?'} subcode=${insightsResult.subcode ?? '?'} — ${insightsResult.error}`
+          }
+        }
         const insights = insightsResult.ok
           ? insightsResult.data
           : { plays: null, reach: null, likes: null, comments: null, shares: null, saved: null, impressions: null }
@@ -178,7 +199,7 @@ export async function syncInstagramMediaAction(): Promise<SyncInstagramResult> {
     }
 
     revalidatePath('/content')
-    return { ok: true, count: synced, done: reachedEnd, withoutInsights, withoutLikeData }
+    return { ok: true, count: synced, done: reachedEnd, withoutInsights, withoutLikeData, firstInsightsError }
   } catch (err) {
     console.error('[syncInstagramMediaAction] excepción inesperada:', err)
     return { ok: false, error: 'Error inesperado al sincronizar Instagram. Probá de nuevo en unos minutos.' }
