@@ -109,13 +109,22 @@ export async function getInstagramMediaInsights(
   // "plays" dejó de ser una métrica válida a nivel media — mismo tipo de
   // rename que "impressions"→"views" a nivel cuenta. Primer intento
   // (2026-08-06) probó "video_views", INCORRECTO — confirmado con el
-  // error 400 real de Meta, que además listó las métricas válidas de este
-  // endpoint: "views" es la que corresponde (no "video_views", que ni
-  // siquiera está en esa lista). Se sigue guardando en el campo `plays` de
-  // acá para abajo (mismo concepto, Meta solo le cambió el nombre) —
-  // "impressions" sí sigue siendo válida en ESTE endpoint (a diferencia
-  // del de cuenta), no se toca.
-  const metricSet = mediaType === 'VIDEO' ? 'views,reach,likes,comments,shares,saved' : 'impressions,reach,likes,comments,saved'
+  // error 400 real de Meta: "views" es la métrica real. Se sigue
+  // guardando en el campo `plays` de acá para abajo (mismo concepto, Meta
+  // solo le cambió el nombre).
+  //
+  // "impressions" TAMBIÉN dejó de ser válida acá (confirmado con OTRO
+  // error 400 real, distinto y más explícito: "Starting from version
+  // v22.0 and above, the impressions metric is no longer supported for
+  // the queried media") — Meta unificó "impressions" (fotos) y "plays"
+  // (video) en una sola métrica "views" para todo tipo de media. Por eso
+  // ahora las dos ramas piden "views" — no queda ninguna métrica que
+  // pedirle a Meta para llenar el campo `impressions` de este endpoint,
+  // así que se guarda `null` a propósito (ver el return de abajo), nunca
+  // 0 inventado. "shares" solo se pide para video — no hay evidencia de
+  // que sea válida para fotos y agregarla sin confirmar reintroduciría el
+  // mismo tipo de error que esto arregla.
+  const metricSet = mediaType === 'VIDEO' ? 'views,reach,likes,comments,shares,saved' : 'views,reach,likes,comments,saved'
 
   try {
     const res = await fetch(`${META_GRAPH_URL}/${mediaId}/insights?metric=${metricSet}&access_token=${accessToken}`)
@@ -143,7 +152,9 @@ export async function getInstagramMediaInsights(
         comments: pickMetric(data, 'comments'),
         shares: pickMetric(data, 'shares'),
         saved: pickMetric(data, 'saved'),
-        impressions: pickMetric(data, 'impressions'),
+        // Ya no se pide "impressions" a Meta en este endpoint (ver
+        // comentario de metricSet) — null explícito, no inventar 0.
+        impressions: null,
       },
     }
   } catch (err) {

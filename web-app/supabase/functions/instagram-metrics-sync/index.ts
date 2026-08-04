@@ -94,16 +94,16 @@ Deno.serve(async (req) => {
     for (const item of items ?? []) {
       if (!item.ig_media_id) continue
       try {
-        // Los Reels exponen "views" (reemplazó a "plays" en este endpoint,
-        // mismo tipo de rename que impressions→views a nivel cuenta — ver
-        // account-insights-sync.ts). Primer intento probó "video_views",
-        // INCORRECTO — confirmado con el error 400 real de Meta, que
-        // listó las métricas válidas de este endpoint y "video_views" no
-        // está entre ellas. Los posts de imagen no usan esta métrica —
-        // pedir el set equivocado devuelve error de la API en vez de
-        // nulls prolijos, así que se elige el set según el tipo de media.
-        // "impressions" sí sigue siendo válida en este endpoint.
-        const metricSet = item.media_type === 'video' ? 'views,reach,likes,comments,shares,saved' : 'impressions,reach,likes,comments,saved'
+        // "views" reemplazó tanto a "plays" (Reels) como a "impressions"
+        // (fotos) en este endpoint — Meta unificó las dos en una sola
+        // métrica para todo tipo de media (confirmado con el error 400
+        // real: "Starting from version v22.0 and above, the impressions
+        // metric is no longer supported for the queried media"; antes
+        // "video_views" también había resultado inválido para Reels).
+        // "shares" solo se pide para video — sin evidencia de que sea
+        // válida para fotos, agregarla sin confirmar reintroduciría el
+        // mismo tipo de error que esto arregla.
+        const metricSet = item.media_type === 'video' ? 'views,reach,likes,comments,shares,saved' : 'views,reach,likes,comments,saved'
 
         const mediaInsights = await graphGet(`${item.ig_media_id}/insights`, pageAccessToken, { metric: metricSet })
         if (mediaInsights.error) {

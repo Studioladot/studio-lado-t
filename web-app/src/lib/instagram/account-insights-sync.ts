@@ -7,7 +7,7 @@ import { META_GRAPH_URL } from '@/lib/meta/oauth'
 // tenga curvas reales desde el primer instante en vez de esperar hasta
 // 24hs para el primer punto.
 //
-// Dos bugs reales de producción encontrados con el error CRUDO de Meta
+// Tres bugs reales de producción encontrados con el error CRUDO de Meta
 // (nunca adivinados):
 // 1. "impressions" ya no es una métrica válida en este endpoint — Graph
 //    API la reemplazó por "views" (mismo concepto: vistas de contenido de
@@ -22,9 +22,16 @@ import { META_GRAPH_URL } from '@/lib/meta/oauth'
 //    pedido por día, con concurrencia acotada) para las otras 3 — así se
 //    reconstruye el detalle diario real sin inventar ningún valor
 //    (nunca se reparte un total del período entre los días).
+// 3. (2026-08-06, al subir HISTORY_DAYS de 30 a 90) Meta rechaza un solo
+//    pedido de period=day con más de 30 días entre since/until: "There
+//    cannot be more than 30 days (2592000 s) between since and until."
+//    La serie diaria de follower_count/reach se pide en tandas de ≤30
+//    días (fetchTimeSeriesChunked) y se combina, en vez de un solo pedido
+//    de 90 días.
 //
 // La Edge Function instagram-metrics-sync tiene el mismo bug 1 y 2 en su
-// bloque de cuenta y necesita el mismo fix + redeploy.
+// bloque de cuenta y necesita el mismo fix + redeploy — no el 3, porque
+// esa nunca pide un rango: solo captura el día de la corrida.
 const TIME_SERIES_METRICS = 'follower_count,reach'
 const TOTAL_VALUE_METRICS = 'views,profile_views,total_interactions'
 // 90, no 30 (2026-08-06, bug real reportado: el selector de fechas ofrece
@@ -42,6 +49,10 @@ const DAY_SECONDS = 24 * 60 * 60
 // contra el timeout de un Server Action en Vercel. 10 en paralelo por vez
 // sigue siendo razonable contra la API de Meta y baja a 9 tandas.
 const TOTAL_VALUE_CONCURRENCY = 10
+// Límite real de Meta para period=day con since/until explícitos —
+// confirmado con el error 400: "There cannot be more than 30 days
+// (2592000 s) between since and until."
+const MAX_SERIES_SPAN_DAYS = 30
 
 type InsightValue = { name: string; values?: { value: number; end_time?: string }[]; total_value?: { value: number } }
 
@@ -80,6 +91,49 @@ function pickTotalValue(data: InsightValue[], name: string): number | null {
   return typeof value === 'number' ? value : null
 }
 
+type SeriesChunkResult =
+  | { ok: true; followerCount: Map<string, number>; reach: Map<string, number> }
+  | { ok: false; error: string; code?: number; subcode?: number }
+
+/**
+ * Serie diaria de follower_count/reach en tandas de ≤MAX_SERIES_SPAN_DAYS
+ * — Meta rechaza un solo pedido de period=day con un since/until más
+ * ancho que eso (error 400 real, ver comentario de cabecera del
+ * archivo). Para HISTORY_DAYS=90 son 3 pedidos secuenciales en vez de
+ * uno solo de 90 días.
+ */
+async function fetchTimeSeriesChunked(igUserId: string, accessToken: string, since: number, until: number): Promise<SeriesChunkResult> {
+  const followerCount = new Map<string, number>()
+  const reach = new Map<string, number>()
+
+  for (let chunkStart = since; chunkStart < until; chunkStart += MAX_SERIES_SPAN_DAYS * DAY_SECONDS) {
+    const chunkEnd = Math.min(chunkStart + MAX_SERIES_SPAN_DAYS * DAY_SECONDS, until)
+    const params = new URLSearchParams({
+      metric: TIME_SERIES_METRICS,
+      period: 'day',
+      since: String(chunkStart),
+      until: String(chunkEnd),
+      access_token: accessToken,
+    })
+    const res = await fetch(`${META_GRAPH_URL}/${igUserId}/insights?${params}`)
+    const json = await res.json()
+    if (json.error) {
+      logGraphError('fetchInstagramAccountInsightsHistory:series', igUserId, res.status, json.error)
+      return {
+        ok: false,
+        error: json.error.message ?? 'Error desconocido de Meta.',
+        code: typeof json.error.code === 'number' ? json.error.code : undefined,
+        subcode: typeof json.error.error_subcode === 'number' ? json.error.error_subcode : undefined,
+      }
+    }
+    const data: InsightValue[] = json.data ?? []
+    for (const [date, value] of dailySeries(data, 'follower_count')) followerCount.set(date, value)
+    for (const [date, value] of dailySeries(data, 'reach')) reach.set(date, value)
+  }
+
+  return { ok: true, followerCount, reach }
+}
+
 export async function fetchInstagramAccountInsightsHistory(igUserId: string, accessToken: string): Promise<HistoryResult> {
   // Alineado a límites de día calendario (medianoche UTC), no a "ahora menos
   // 30 días" — así cada bucket de total_value representa un día calendario
@@ -91,28 +145,10 @@ export async function fetchInstagramAccountInsightsHistory(igUserId: string, acc
   const since = until - HISTORY_DAYS * DAY_SECONDS
 
   try {
-    const seriesParams = new URLSearchParams({
-      metric: TIME_SERIES_METRICS,
-      period: 'day',
-      since: String(since),
-      until: String(until),
-      access_token: accessToken,
-    })
-    const seriesRes = await fetch(`${META_GRAPH_URL}/${igUserId}/insights?${seriesParams}`)
-    const seriesJson = await seriesRes.json()
-    if (seriesJson.error) {
-      logGraphError('fetchInstagramAccountInsightsHistory:series', igUserId, seriesRes.status, seriesJson.error)
-      return {
-        ok: false,
-        error: seriesJson.error.message ?? 'Error desconocido de Meta.',
-        code: typeof seriesJson.error.code === 'number' ? seriesJson.error.code : undefined,
-        subcode: typeof seriesJson.error.error_subcode === 'number' ? seriesJson.error.error_subcode : undefined,
-      }
-    }
+    const seriesResult = await fetchTimeSeriesChunked(igUserId, accessToken, since, until)
+    if (!seriesResult.ok) return seriesResult
 
-    const seriesData: InsightValue[] = seriesJson.data ?? []
-    const followerCount = dailySeries(seriesData, 'follower_count')
-    const reach = dailySeries(seriesData, 'reach')
+    const { followerCount, reach } = seriesResult
 
     // views/profile_views/total_interactions: un total_value por día,
     // acotado a TOTAL_VALUE_CONCURRENCY en paralelo por vez (30 llamadas
