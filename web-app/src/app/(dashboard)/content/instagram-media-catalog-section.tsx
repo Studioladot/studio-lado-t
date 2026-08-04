@@ -2,8 +2,9 @@
 
 import { useId, useMemo, useState } from 'react'
 import { InstagramMediaDetailModal } from './instagram-media-detail-modal'
+import { ComparisonPanel } from './comparison-panel'
 import { Pagination } from '../meta-ads/campaigns/pagination'
-import { detectInstagramCatalogWinners, primaryMetric, type InstagramCatalogRow } from '@/lib/instagram/media-catalog-winners'
+import { detectInstagramCatalogWinners, primaryMetric, interactionsTotal, type InstagramCatalogRow } from '@/lib/instagram/media-catalog-winners'
 import { InstagramIcon } from '@/components/features/nav-icons'
 import { fmtCompactCount } from '@/lib/format/number'
 
@@ -104,6 +105,23 @@ function CommentIcon({ size = 11 }: IconProps) {
   )
 }
 
+function CompareIcon({ size = 11 }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="2" y="3" width="6" height="12" rx="1.5" />
+      <rect x="10" y="3" width="6" height="12" rx="1.5" />
+    </svg>
+  )
+}
+
+function CheckIcon({ size = 9 }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="2.25" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M4 9.5l3.2 3.2L14.5 5.5" />
+    </svg>
+  )
+}
+
 type SortMode = 'primary' | 'recent' | 'likes' | 'comments'
 
 const SORT_OPTIONS: { value: SortMode; label: string; Icon: (props: IconProps) => React.JSX.Element }[] = [
@@ -123,6 +141,11 @@ const FILTER_OPTIONS: { value: FilterMode; label: string; Icon: (props: IconProp
 ]
 
 const PAGE_SIZE = 24
+// "Comparación Premium" (2026-08-06, resurrección de comparison-panel.tsx
+// adaptado a InstagramCatalogRow) — mismo límite que la vieja tabla de
+// Rendimiento: más de 4 columnas frente a frente no entra sin scroll
+// horizontal ilegible.
+const MAX_COMPARE = 4
 
 function sortItems(items: InstagramCatalogRow[], mode: SortMode): InstagramCatalogRow[] {
   const sorted = [...items]
@@ -182,14 +205,6 @@ function FormatBadge({ item }: { item: InstagramCatalogRow }) {
   return null
 }
 
-/** null si no hay NINGÚN dato de interacción — nunca se suma como si un campo faltante fuera 0. */
-function interactionsTotal(item: InstagramCatalogRow): number | null {
-  const parts = [item.like_count, item.comments_count, item.shares, item.saved]
-  const present = parts.filter((v): v is number => v !== null)
-  if (present.length === 0) return null
-  return present.reduce((a, b) => a + b, 0)
-}
-
 function truncateWords(text: string, maxWords: number): string {
   const words = text.trim().split(/\s+/)
   if (words.length <= maxWords) return text.trim()
@@ -200,8 +215,11 @@ function formatPostedDate(iso: string): string {
   return new Date(iso).toLocaleDateString('es-AR', { day: 'numeric', month: 'short' })
 }
 
+// Mismo orden de fallback que primaryMetric (plays ?? reach ?? impressions)
+// — reusa null (no 0) para que sumOrNull no cuente un ítem sin ningún dato
+// como si valiera cero.
 function viewsOf(item: InstagramCatalogRow): number | null {
-  return item.plays ?? item.impressions ?? item.reach ?? null
+  return item.plays ?? item.reach ?? item.impressions ?? null
 }
 
 function sumOrNull(values: (number | null)[]): number | null {
@@ -372,6 +390,9 @@ export function InstagramMediaCatalogSection({
   const [dateRange, setDateRange] = useState<DateRangeMode>('30d')
   const [page, setPage] = useState(1)
   const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [comparing, setComparing] = useState(false)
+  const [compareIds, setCompareIds] = useState<Set<string>>(new Set())
+  const [showComparison, setShowComparison] = useState(false)
 
   const winners = useMemo(() => detectInstagramCatalogWinners(items), [items])
   const filtered = useMemo(() => filterItems(items, filterMode, gotixMediaIds), [items, filterMode, gotixMediaIds])
@@ -385,6 +406,7 @@ export function InstagramMediaCatalogSection({
   const maxComments = useMemo(() => Math.max(1, ...items.map((i) => i.comments_count ?? 0)), [items])
 
   const selectedItem = items.find((i) => i.id === selectedId) ?? null
+  const compareItems = items.filter((i) => compareIds.has(i.id))
 
   function handleSortChange(mode: SortMode) {
     setSortMode(mode)
@@ -394,6 +416,25 @@ export function InstagramMediaCatalogSection({
   function handleFilterChange(mode: FilterMode) {
     setFilterMode(mode)
     setPage(1)
+  }
+
+  function toggleComparing() {
+    setComparing((v) => !v)
+    setCompareIds(new Set())
+  }
+
+  function toggleCompareSelected(id: string) {
+    setCompareIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else if (next.size < MAX_COMPARE) next.add(id)
+      return next
+    })
+  }
+
+  function handleCardClick(id: string) {
+    if (comparing) toggleCompareSelected(id)
+    else setSelectedId(id)
   }
 
   return (
@@ -443,9 +484,38 @@ export function InstagramMediaCatalogSection({
                 ))}
               </div>
               <DateRangePicker value={dateRange} onChange={setDateRange} />
+              <button
+                type="button"
+                onClick={toggleComparing}
+                className={`flex items-center gap-1 rounded-control border px-2.5 py-1.5 text-[11px] font-semibold transition-colors duration-200 ease-out ${
+                  comparing ? 'border-accent/30 bg-accent/[0.12] text-accent' : 'border-border bg-surface-2/40 text-text-2 hover:text-text'
+                }`}
+              >
+                <CompareIcon />
+                {comparing ? 'Cancelar' : 'Comparar'}
+              </button>
             </div>
             <p className="text-[10px] text-text-3">{sorted.length} publicaciones</p>
           </div>
+
+          {comparing && (
+            <div className="mb-4 flex items-center justify-between rounded-control border border-accent/30 bg-accent/[0.03] px-3 py-2">
+              <p className="text-[11px] font-medium text-text-2">
+                {compareIds.size === 0
+                  ? `Elegí entre 2 y ${MAX_COMPARE} publicaciones para comparar frente a frente.`
+                  : `${compareIds.size}/${MAX_COMPARE} seleccionadas`}
+              </p>
+              {compareIds.size >= 2 && (
+                <button
+                  type="button"
+                  onClick={() => setShowComparison(true)}
+                  className="rounded-control bg-primary px-3 py-1.5 text-[11px] font-bold text-white transition-all duration-200 ease-out hover:bg-primary-hover active:scale-[0.98]"
+                >
+                  Comparar ({compareIds.size})
+                </button>
+              )}
+            </div>
+          )}
 
           {sorted.length === 0 ? (
             <p className="text-xs text-text-3">Ninguna publicación coincide con este filtro.</p>
@@ -457,12 +527,15 @@ export function InstagramMediaCatalogSection({
                     const isWinner = winners.has(item.id)
                     const views = primaryMetric(item)
                     const interactions = interactionsTotal(item)
+                    const isSelected = compareIds.has(item.id)
                     return (
                       <button
                         key={item.id}
                         type="button"
-                        onClick={() => setSelectedId(item.id)}
-                        className="group flex flex-col overflow-hidden rounded-control border border-border bg-surface-2/40 text-left transition-all duration-200 ease-out hover:border-text-3 hover:shadow-sm"
+                        onClick={() => handleCardClick(item.id)}
+                        className={`group flex flex-col overflow-hidden rounded-control border bg-surface-2/40 text-left transition-all duration-200 ease-out ${
+                          isSelected ? 'border-accent' : 'border-border hover:border-text-3 hover:shadow-sm'
+                        }`}
                       >
                         <div className="relative aspect-square w-full shrink-0 overflow-hidden bg-black">
                           {item.thumbnail_url || item.media_url ? (
@@ -478,13 +551,23 @@ export function InstagramMediaCatalogSection({
                             </div>
                           )}
 
-                          {isWinner && (
+                          {comparing ? (
                             <span
-                              title="Publicación viral"
-                              className="absolute left-1 top-1 flex h-4 w-4 items-center justify-center rounded-full bg-accent text-white shadow"
+                              className={`absolute left-1 top-1 flex h-4 w-4 items-center justify-center rounded-full border shadow ${
+                                isSelected ? 'border-accent bg-accent text-white' : 'border-white/70 bg-black/40 text-transparent'
+                              }`}
                             >
-                              <StarIcon size={8} />
+                              <CheckIcon size={8} />
                             </span>
+                          ) : (
+                            isWinner && (
+                              <span
+                                title="Publicación viral"
+                                className="absolute left-1 top-1 flex h-4 w-4 items-center justify-center rounded-full bg-accent text-white shadow"
+                              >
+                                <StarIcon size={8} />
+                              </span>
+                            )
                           )}
                           <FormatBadge item={item} />
 
@@ -533,6 +616,16 @@ export function InstagramMediaCatalogSection({
           maxComments={maxComments}
           publishedWithGotix={!!selectedItem.ig_media_id && gotixMediaIds.has(selectedItem.ig_media_id)}
           onClose={() => setSelectedId(null)}
+        />
+      )}
+
+      {showComparison && compareItems.length >= 2 && (
+        <ComparisonPanel
+          items={compareItems}
+          onClose={() => {
+            setShowComparison(false)
+            toggleComparing()
+          }}
         />
       )}
     </div>

@@ -6,14 +6,22 @@ export type InstagramCatalogRow = Database['public']['Tables']['instagram_media_
 // (cada sync trae el total vigente, no un delta diario), así que "Viral"
 // se calcula contra el promedio de la cuenta, no contra un crecimiento en
 // el tiempo (eso lo sigue haciendo detectWinningItems para lo que Gotix
-// publicó). La métrica primaria es plays si es un Reel/video, o
-// impressions/reach para fotos/carruseles — se usa el mejor dato
-// disponible por ítem, mismo fallback que ya usaba topByPlays en
-// performance-tab.tsx.
+// publicó). La métrica primaria es plays (video_views de un Reel) si está,
+// si no el mejor dato de alcance real disponible — reach antes que
+// impressions (2026-08-06: impressions puede faltar por la ventana de
+// retención de la Insights API en contenido viejo, reach es más estable).
 const WINNER_MULTIPLIER = 1.5
 
 export function primaryMetric(row: InstagramCatalogRow): number {
-  return row.plays ?? row.impressions ?? row.reach ?? 0
+  return row.plays ?? row.reach ?? row.impressions ?? 0
+}
+
+/** likes+comentarios+compartidos+guardados — null si NINGUNO de los 4 vino, nunca se suma como si un campo faltante fuera 0. */
+export function interactionsTotal(row: InstagramCatalogRow): number | null {
+  const parts = [row.like_count, row.comments_count, row.shares, row.saved]
+  const present = parts.filter((v): v is number => v !== null)
+  if (present.length === 0) return null
+  return present.reduce((a, b) => a + b, 0)
 }
 
 export function detectInstagramCatalogWinners(rows: InstagramCatalogRow[]): Set<string> {
