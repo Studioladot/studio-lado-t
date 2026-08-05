@@ -7,6 +7,12 @@
 export const TITLE_MAX_LENGTH = 100
 export const TEXT_MAX_LENGTH = 2200
 
-export function clamp(value: string, maxLength: number): string {
-  return value.slice(0, maxLength)
+// Bug real reportado (2026-08-06): esta función corre server-side sobre
+// datos que, en la práctica, no siempre son el `string` que el tipo
+// promete — un FormData con el campo ausente, o un valor que llegó null
+// desde otro punto de la cadena, tira TypeError sobre `.slice` y tumba la
+// ruta entera. Se acepta explícitamente cualquier cosa y se normaliza
+// antes de tocar un método de string.
+export function clamp(value: string | null | undefined, maxLength: number): string {
+  return String(value ?? '').slice(0, maxLength)
 }

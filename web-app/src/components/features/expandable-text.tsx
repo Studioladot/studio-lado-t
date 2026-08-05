@@ -22,16 +22,24 @@ export function ExpandableText({
   lines = 3,
   className,
 }: {
-  text: string
+  // Bug real reportado (2026-08-06): crash de la app cuando el texto venía
+  // null/undefined desde la base — `text.length` sobre null tira
+  // TypeError y tumba toda la ruta. El tipo acepta explícitamente null/
+  // undefined (no confiar en que el caller ya filtró) y se normaliza a
+  // string vacío antes de tocar cualquier método de string.
+  text: string | null | undefined
   lines?: 2 | 3 | 4
   className?: string
 }) {
   const [expanded, setExpanded] = useState(false)
-  const needsClamp = text.length > lines * APPROX_CHARS_PER_LINE
+  const safeText = text ?? ''
+  const needsClamp = safeText.length > lines * APPROX_CHARS_PER_LINE
+
+  if (!safeText) return null
 
   return (
     <div>
-      <p className={`whitespace-pre-wrap ${expanded || !needsClamp ? '' : CLAMP_CLASS[lines]} ${className ?? ''}`}>{text}</p>
+      <p className={`whitespace-pre-wrap ${expanded || !needsClamp ? '' : CLAMP_CLASS[lines]} ${className ?? ''}`}>{safeText}</p>
       {needsClamp && (
         <button
           type="button"
