@@ -11,6 +11,7 @@ import { getTiendaNubeOrders, summarizeOrders } from '@/lib/tiendanube/orders'
 import { getOrganizationRunLog, type OrgRunLogEntry } from '@/lib/meta/autopilot'
 import { formatMoney, type Currency } from '@/lib/currency'
 import { ConfirmSubmitButton } from '@/components/features/confirm-submit-button'
+import { OnboardingChecklist } from './onboarding-checklist'
 
 // Command Center real (bloque de corrección, 2026-08-03) — reemplaza el
 // hero de video decorativo (sin reproducción real, "Onboarding · 3:42" era
@@ -115,6 +116,7 @@ export default async function DashboardPage({
     { count: pendingPosts },
     { data: metaConnection },
     { data: tiendaNubeConnection },
+    { data: igConnection },
     autopilotAlerts,
   ] = await Promise.all([
     supabase
@@ -145,6 +147,11 @@ export default async function DashboardPage({
     supabase
       .from('tiendanube_connections')
       .select('store_name, store_url, access_token, store_id')
+      .eq('organization_id', activeOrganizationId)
+      .maybeSingle(),
+    supabase
+      .from('instagram_connections')
+      .select('ig_username')
       .eq('organization_id', activeOrganizationId)
       .maybeSingle(),
     getOrganizationRunLog(supabase, activeOrganizationId, 5),
@@ -188,6 +195,8 @@ export default async function DashboardPage({
 
   return (
     <div>
+      <OnboardingChecklist metaConnected={!!metaConnection} igConnected={!!igConnection} />
+
       {banner && (
         <div
           className={`mb-4 rounded-control border px-4 py-2.5 text-sm ${

@@ -47,15 +47,17 @@ const STEPS = [
   { id: 4, label: 'Ad Set y Anuncio', sub: 'Audiencia, ubicación y creativo' },
 ] as const
 
-function SubmitButton() {
+function SubmitButton({ addingToExisting }: { addingToExisting: boolean }) {
   const { pending } = useFormStatus()
+  const idleLabel = addingToExisting ? 'Agregar a la campaña' : 'Generar Testeo'
+  const pendingLabel = addingToExisting ? 'Agregando…' : 'Generando…'
   return (
     <button
       type="submit"
       disabled={pending}
       className="rounded-[20px] bg-primary px-6 py-[11px] text-sm font-semibold text-white shadow-[0_0_16px_var(--primary-glow)] transition-all duration-200 ease-out hover:bg-primary-hover active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-70"
     >
-      {pending ? 'Generando…' : 'Generar Testeo'}
+      {pending ? pendingLabel : idleLabel}
     </button>
   )
 }
@@ -139,6 +141,8 @@ export function TestCampaignWizard({
   }
 
   const objectiveDef = OBJECTIVES.find((o) => o.value === objective) ?? OBJECTIVES[0]
+  const selectedExistingCampaign = existingCampaigns.find((c) => c.id === existingCampaignId) ?? null
+  const addingToExisting = campaignMode === 'existing'
   const dailyBudgetNum = Number(dailyBudgetInput) || 0
   const budgetHintLow = Math.max(1, Math.round(dailyBudgetNum * 0.8))
   const budgetHintHigh = Math.round(dailyBudgetNum * 1.3)
@@ -259,7 +263,18 @@ export function TestCampaignWizard({
 
             <div className="mt-auto rounded-control border border-border bg-surface-2/50 p-3">
               <p className="mb-1 text-[10px] font-bold uppercase tracking-wide text-text-3">Resumen</p>
-              <p className="truncate text-sm font-semibold text-text">{name || 'Campaña sin nombre'}</p>
+              {addingToExisting ? (
+                <>
+                  <p className="inline-block rounded-full bg-accent/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-accent">
+                    Campaña existente
+                  </p>
+                  <p className="mt-1.5 truncate text-sm font-semibold text-text">
+                    {selectedExistingCampaign ? selectedExistingCampaign.name : 'Elegí una campaña'}
+                  </p>
+                </>
+              ) : (
+                <p className="truncate text-sm font-semibold text-text">{name || 'Campaña sin nombre'}</p>
+              )}
               <p className="mt-0.5 text-xs text-text-2">
                 {dailyBudgetNum > 0 ? `${formatMoney(dailyBudgetNum, accountCurrency)}/día` : 'Sin presupuesto todavía'}
               </p>
@@ -402,9 +417,29 @@ export function TestCampaignWizard({
                         </option>
                       ))}
                     </select>
-                    <p className="text-xs text-text-3">
-                      Los conjuntos y anuncios que armes se suman a esta campaña — no se crea una campaña nueva.
-                    </p>
+
+                    <div className="flex items-start gap-2.5 rounded-control border border-accent/30 bg-accent/[0.06] px-3.5 py-3">
+                      <svg
+                        width="15"
+                        height="15"
+                        viewBox="0 0 16 16"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.5"
+                        className="mt-0.5 shrink-0 text-accent"
+                      >
+                        <circle cx="8" cy="8" r="6.5" />
+                        <path d="M8 7.25v3.5" strokeLinecap="round" />
+                        <circle cx="8" cy="5.25" r="0.75" fill="currentColor" stroke="none" />
+                      </svg>
+                      <p className="text-xs leading-relaxed text-text">
+                        Los conjuntos y anuncios que armes acá se van a agregar dentro de{' '}
+                        <span className="font-bold">{selectedExistingCampaign ? `"${selectedExistingCampaign.name}"` : 'la campaña elegida'}</span>.
+                        {' '}
+                        <span className="font-semibold">No se crea una campaña nueva ni se duplica la existente</span> — es la misma
+                        campaña, con más conjuntos adentro.
+                      </p>
+                    </div>
                   </div>
                 )}
 
@@ -722,8 +757,15 @@ export function TestCampaignWizard({
 
                 <div className="border-t border-border pt-4">
                   <div className="mb-3 flex items-center justify-between">
-                    <p className="text-sm font-semibold text-text">Conjuntos de anuncios</p>
-                    <span className="text-xs text-text-3">
+                    <div>
+                      <p className="text-sm font-semibold text-text">Conjuntos de anuncios</p>
+                      {addingToExisting && (
+                        <p className="mt-0.5 text-xs text-accent">
+                          Se agregan dentro de {selectedExistingCampaign ? `"${selectedExistingCampaign.name}"` : 'la campaña elegida'} — no crean campaña nueva.
+                        </p>
+                      )}
+                    </div>
+                    <span className="shrink-0 text-xs text-text-3">
                       {adSetIds.length} conjunto{adSetIds.length === 1 ? '' : 's'} — para testear, agregá más de uno
                     </span>
                   </div>
@@ -781,7 +823,7 @@ export function TestCampaignWizard({
                   Siguiente →
                 </button>
               ) : (
-                <SubmitButton />
+                <SubmitButton addingToExisting={campaignMode === 'existing'} />
               )}
             </div>
           </div>

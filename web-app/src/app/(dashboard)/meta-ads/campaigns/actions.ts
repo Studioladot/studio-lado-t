@@ -24,12 +24,17 @@ import {
   buildAdvantagePayload,
   ADV_CONTROLS,
   ADV_CONTROLS_DEFAULT,
+  getMetaPages,
+  getMetaExistingPosts,
   type AdvControlKey,
   type AdvControls,
   type AudienceSpec,
+  type MetaPage,
+  type MetaExistingPost,
 } from '@/lib/meta/ad-launch'
-import { getLibraryCreativeById, markLibraryCreativeDeployed } from '@/lib/meta/library'
+import { getLibraryCreativeById, markLibraryCreativeDeployed, getLibraryCreatives, type LibraryCreative } from '@/lib/meta/library'
 import { insertLaunchActivityLog } from '@/lib/meta/history'
+import { duplicateMetaAdSetForCreativeTest } from '@/lib/meta/adset-duplicate'
 
 async function getMetaToken(activeOrganizationId: string) {
   const supabase = await createClient()
@@ -389,6 +394,183 @@ function parseAdSets(formData: FormData, campaignName: string, productUrl: strin
   return adSets
 }
 
+/**
+ * Crea UN anuncio (imagen/video/reuso de publicación/Biblioteca) dentro de
+ * un ad set ya existente. Extraído de launchTestCampaignAction (2026-08-06)
+ * para reusarlo tal cual desde addAdToAdSetAction — la "Duplicación
+ * Inteligente de Conjuntos" abre un conjunto vacío y necesita exactamente
+ * esta misma cadena (subir creativo → crear creative → crear ad) para
+ * llenarlo, sin duplicar los ~170 líneas de orquestación con Meta.
+ */
+export async function createSingleAd(params: {
+  token: string
+  accountId: string
+  pageId: string
+  adSetId: string
+  ad: AdInput
+  adLabel: string
+  status: 'ACTIVE' | 'PAUSED'
+  advPayload: ReturnType<typeof buildAdvantagePayload>
+  supabase: Awaited<ReturnType<typeof createClient>>
+  activeOrganizationId: string
+}): Promise<{ ok: boolean; steps: LaunchStep[]; adId?: string }> {
+  const { token, accountId, pageId, adSetId, ad, adLabel, status, advPayload, supabase, activeOrganizationId } = params
+  const steps: LaunchStep[] = []
+  let creativeResult: Awaited<ReturnType<typeof createTestAdCreative>> | null = null
+  // Solo se llena en modo 'library' — si el anuncio termina de crearse bien,
+  // esto es lo que le dice al activo "ya estás desplegado acá".
+  let libraryDeploy: { assetId: string; metaImageHash?: string | null; metaVideoId?: string | null } | null = null
+
+  if (ad.mode === 'library') {
+    const asset = await getLibraryCreativeById(supabase, activeOrganizationId, ad.libraryAssetId as string)
+    if (!asset || asset.status !== 'active') {
+      steps.push({ label: `Creativo de Biblioteca — ${adLabel}`, ok: false, detail: 'Ese creativo ya no está disponible en la Biblioteca.' })
+      return { ok: false, steps }
+    }
+
+    const headline = ad.headline || asset.headline || ''
+    const body = ad.body || asset.primaryText || ''
+    const link = ad.link
+
+    if (asset.assetType === 'image') {
+      let imageHash = asset.metaImageHash
+      if (!imageHash) {
+        const fileRes = await fetch(asset.fileUrl)
+        if (!fileRes.ok) {
+          steps.push({ label: `Imagen de Biblioteca — ${adLabel}`, ok: false, detail: 'No pudimos descargar el creativo de la Biblioteca.' })
+          return { ok: false, steps }
+        }
+        const buffer = Buffer.from(await fileRes.arrayBuffer())
+        const imageResult = await uploadMetaAdImage(token, accountId, buffer.toString('base64'))
+        if (!imageResult.ok) {
+          steps.push({ label: `Imagen de Biblioteca — ${adLabel}`, ok: false, detail: imageResult.error })
+          return { ok: false, steps }
+        }
+        imageHash = imageResult.hash
+      }
+      creativeResult = await createTestAdCreative(token, accountId, {
+        name: `${adLabel} — Creativo`,
+        pageId,
+        imageHash,
+        link,
+        headline,
+        body,
+        cta: asset.cta,
+        degreesOfFreedomSpec: advPayload.degreesOfFreedomSpec,
+      })
+      if (!creativeResult.ok) {
+        steps.push({ label: `Creativo de Biblioteca — ${adLabel}`, ok: false, detail: creativeResult.error })
+        return { ok: false, steps }
+      }
+      libraryDeploy = { assetId: asset.id, metaImageHash: imageHash }
+    } else {
+      let videoId = asset.metaVideoId
+      let thumbnailUrl: string | null = null
+      if (!videoId) {
+        const fileRes = await fetch(asset.fileUrl)
+        if (!fileRes.ok) {
+          steps.push({ label: `Video de Biblioteca — ${adLabel}`, ok: false, detail: 'No pudimos descargar el creativo de la Biblioteca.' })
+          return { ok: false, steps }
+        }
+        const buffer = Buffer.from(await fileRes.arrayBuffer())
+        const uploaded = await uploadMetaAdVideo(token, accountId, buffer, asset.name)
+        if (!uploaded.ok) {
+          steps.push({ label: `Video de Biblioteca — ${adLabel}`, ok: false, detail: uploaded.error })
+          return { ok: false, steps }
+        }
+        videoId = uploaded.videoId
+        const ready = await waitForMetaVideoReady(token, videoId)
+        if (!ready.ok) {
+          steps.push({ label: `Video de Biblioteca — ${adLabel}`, ok: false, detail: ready.error })
+          return { ok: false, steps }
+        }
+        thumbnailUrl = ready.thumbnailUrl
+      }
+      creativeResult = await createTestAdCreativeVideo(token, accountId, {
+        name: `${adLabel} — Creativo`,
+        pageId,
+        videoId,
+        thumbnailUrl,
+        link,
+        headline,
+        body,
+        cta: asset.cta,
+        degreesOfFreedomSpec: advPayload.degreesOfFreedomSpec,
+      })
+      if (!creativeResult.ok) {
+        steps.push({ label: `Creativo de Biblioteca — ${adLabel}`, ok: false, detail: creativeResult.error })
+        return { ok: false, steps }
+      }
+      libraryDeploy = { assetId: asset.id, metaVideoId: videoId }
+    }
+  } else if (ad.mode === 'existing') {
+    // El caller ya validó que existingPostObjectStoryId está presente.
+    creativeResult = await createTestAdCreativeFromExisting(token, accountId, {
+      name: `${adLabel} — Creativo`,
+      objectStoryId: ad.existingPostObjectStoryId as string,
+    })
+    if (!creativeResult.ok) {
+      steps.push({ label: `Creativo (publicación existente) — ${adLabel}`, ok: false, detail: creativeResult.error })
+      return { ok: false, steps }
+    }
+  } else if (ad.mediaType === 'video') {
+    // El video ya se subió y procesó antes de este submit (ver
+    // /api/meta/upload-video) — el caller ya validó que ad.videoId está presente.
+    creativeResult = await createTestAdCreativeVideo(token, accountId, {
+      name: `${adLabel} — Creativo`,
+      pageId,
+      videoId: ad.videoId as string,
+      thumbnailUrl: ad.videoThumbnailUrl ?? null,
+      link: ad.link,
+      headline: ad.headline,
+      body: ad.body,
+      degreesOfFreedomSpec: advPayload.degreesOfFreedomSpec,
+    })
+    if (!creativeResult.ok) {
+      steps.push({ label: `Creativo de video — ${adLabel}`, ok: false, detail: creativeResult.error })
+      return { ok: false, steps }
+    }
+  } else {
+    // El caller ya validó que ad.image existe y tiene contenido.
+    const buffer = Buffer.from(await (ad.image as File).arrayBuffer())
+    const imageResult = await uploadMetaAdImage(token, accountId, buffer.toString('base64'))
+    if (!imageResult.ok) {
+      steps.push({ label: `Imagen — ${adLabel}`, ok: false, detail: imageResult.error })
+      return { ok: false, steps }
+    }
+
+    creativeResult = await createTestAdCreative(token, accountId, {
+      name: `${adLabel} — Creativo`,
+      pageId,
+      imageHash: imageResult.hash,
+      link: ad.link,
+      headline: ad.headline,
+      body: ad.body,
+      degreesOfFreedomSpec: advPayload.degreesOfFreedomSpec,
+    })
+    if (!creativeResult.ok) {
+      steps.push({ label: `Creativo — ${adLabel}`, ok: false, detail: creativeResult.error })
+      return { ok: false, steps }
+    }
+  }
+
+  const adResult = await createTestAd(token, accountId, {
+    name: adLabel,
+    adsetId: adSetId,
+    creativeId: creativeResult.id,
+    status,
+  })
+  steps.push({ label: `Anuncio — ${adLabel}`, ok: adResult.ok, detail: adResult.ok ? undefined : adResult.error })
+  if (adResult.ok && libraryDeploy) {
+    await markLibraryCreativeDeployed(supabase, activeOrganizationId, libraryDeploy.assetId, {
+      deployedAdId: adResult.id,
+      metaImageHash: libraryDeploy.metaImageHash,
+      metaVideoId: libraryDeploy.metaVideoId,
+    })
+  }
+  return { ok: adResult.ok, steps, adId: adResult.ok ? adResult.id : undefined }
+}
+
 export async function launchTestCampaignAction(
   _prevState: LaunchTestCampaignState,
   formData: FormData
@@ -557,172 +739,20 @@ export async function launchTestCampaignAction(
 
       for (const ad of adSetInput.ads) {
         const adLabel = ad.name || adSetLabel
-        let creativeResult: Awaited<ReturnType<typeof createTestAdCreative>> | null = null
-        // Solo se llena en modo 'library' — si el anuncio termina de crearse
-        // bien, esto es lo que le dice al activo "ya estás desplegado acá".
-        let libraryDeploy: { assetId: string; metaImageHash?: string | null; metaVideoId?: string | null } | null = null
-
-        if (ad.mode === 'library') {
-          const asset = await getLibraryCreativeById(supabase, activeOrganizationId, ad.libraryAssetId as string)
-          if (!asset || asset.status !== 'active') {
-            steps.push({ label: `Creativo de Biblioteca — ${adLabel}`, ok: false, detail: 'Ese creativo ya no está disponible en la Biblioteca.' })
-            anyFailure = true
-            continue
-          }
-
-          const headline = ad.headline || asset.headline || ''
-          const body = ad.body || asset.primaryText || ''
-          const link = ad.link
-
-          if (asset.assetType === 'image') {
-            let imageHash = asset.metaImageHash
-            if (!imageHash) {
-              const fileRes = await fetch(asset.fileUrl)
-              if (!fileRes.ok) {
-                steps.push({ label: `Imagen de Biblioteca — ${adLabel}`, ok: false, detail: 'No pudimos descargar el creativo de la Biblioteca.' })
-                anyFailure = true
-                continue
-              }
-              const buffer = Buffer.from(await fileRes.arrayBuffer())
-              const imageResult = await uploadMetaAdImage(token, accountId, buffer.toString('base64'))
-              if (!imageResult.ok) {
-                steps.push({ label: `Imagen de Biblioteca — ${adLabel}`, ok: false, detail: imageResult.error })
-                anyFailure = true
-                continue
-              }
-              imageHash = imageResult.hash
-            }
-            creativeResult = await createTestAdCreative(token, accountId, {
-              name: `${adLabel} — Creativo`,
-              pageId,
-              imageHash,
-              link,
-              headline,
-              body,
-              cta: asset.cta,
-              degreesOfFreedomSpec: advPayload.degreesOfFreedomSpec,
-            })
-            if (!creativeResult.ok) {
-              steps.push({ label: `Creativo de Biblioteca — ${adLabel}`, ok: false, detail: creativeResult.error })
-              anyFailure = true
-              continue
-            }
-            libraryDeploy = { assetId: asset.id, metaImageHash: imageHash }
-          } else {
-            let videoId = asset.metaVideoId
-            let thumbnailUrl: string | null = null
-            if (!videoId) {
-              const fileRes = await fetch(asset.fileUrl)
-              if (!fileRes.ok) {
-                steps.push({ label: `Video de Biblioteca — ${adLabel}`, ok: false, detail: 'No pudimos descargar el creativo de la Biblioteca.' })
-                anyFailure = true
-                continue
-              }
-              const buffer = Buffer.from(await fileRes.arrayBuffer())
-              const uploaded = await uploadMetaAdVideo(token, accountId, buffer, asset.name)
-              if (!uploaded.ok) {
-                steps.push({ label: `Video de Biblioteca — ${adLabel}`, ok: false, detail: uploaded.error })
-                anyFailure = true
-                continue
-              }
-              videoId = uploaded.videoId
-              const ready = await waitForMetaVideoReady(token, videoId)
-              if (!ready.ok) {
-                steps.push({ label: `Video de Biblioteca — ${adLabel}`, ok: false, detail: ready.error })
-                anyFailure = true
-                continue
-              }
-              thumbnailUrl = ready.thumbnailUrl
-            }
-            creativeResult = await createTestAdCreativeVideo(token, accountId, {
-              name: `${adLabel} — Creativo`,
-              pageId,
-              videoId,
-              thumbnailUrl,
-              link,
-              headline,
-              body,
-              cta: asset.cta,
-              degreesOfFreedomSpec: advPayload.degreesOfFreedomSpec,
-            })
-            if (!creativeResult.ok) {
-              steps.push({ label: `Creativo de Biblioteca — ${adLabel}`, ok: false, detail: creativeResult.error })
-              anyFailure = true
-              continue
-            }
-            libraryDeploy = { assetId: asset.id, metaVideoId: videoId }
-          }
-        } else if (ad.mode === 'existing') {
-          // Ya validamos arriba que existingPostObjectStoryId está presente.
-          creativeResult = await createTestAdCreativeFromExisting(token, accountId, {
-            name: `${adLabel} — Creativo`,
-            objectStoryId: ad.existingPostObjectStoryId as string,
-          })
-          if (!creativeResult.ok) {
-            steps.push({ label: `Creativo (publicación existente) — ${adLabel}`, ok: false, detail: creativeResult.error })
-            anyFailure = true
-            continue
-          }
-        } else if (ad.mediaType === 'video') {
-          // El video ya se subió y procesó antes de este submit (ver
-          // /api/meta/upload-video) — ya validamos arriba que ad.videoId está presente.
-          creativeResult = await createTestAdCreativeVideo(token, accountId, {
-            name: `${adLabel} — Creativo`,
-            pageId,
-            videoId: ad.videoId as string,
-            thumbnailUrl: ad.videoThumbnailUrl ?? null,
-            link: ad.link,
-            headline: ad.headline,
-            body: ad.body,
-            degreesOfFreedomSpec: advPayload.degreesOfFreedomSpec,
-          })
-          if (!creativeResult.ok) {
-            steps.push({ label: `Creativo de video — ${adLabel}`, ok: false, detail: creativeResult.error })
-            anyFailure = true
-            continue
-          }
-        } else {
-          // Ya validamos arriba que ad.image existe y tiene contenido.
-          const buffer = Buffer.from(await (ad.image as File).arrayBuffer())
-          const imageResult = await uploadMetaAdImage(token, accountId, buffer.toString('base64'))
-          if (!imageResult.ok) {
-            steps.push({ label: `Imagen — ${adLabel}`, ok: false, detail: imageResult.error })
-            anyFailure = true
-            continue
-          }
-
-          creativeResult = await createTestAdCreative(token, accountId, {
-            name: `${adLabel} — Creativo`,
-            pageId,
-            imageHash: imageResult.hash,
-            link: ad.link,
-            headline: ad.headline,
-            body: ad.body,
-            degreesOfFreedomSpec: advPayload.degreesOfFreedomSpec,
-          })
-          if (!creativeResult.ok) {
-            steps.push({ label: `Creativo — ${adLabel}`, ok: false, detail: creativeResult.error })
-            anyFailure = true
-            continue
-          }
-        }
-
-        const adResult = await createTestAd(token, accountId, {
-          name: adLabel,
-          adsetId: adSetResult.id,
-          creativeId: creativeResult.id,
+        const adResult = await createSingleAd({
+          token,
+          accountId,
+          pageId,
+          adSetId: adSetResult.id,
+          ad,
+          adLabel,
           status,
+          advPayload,
+          supabase,
+          activeOrganizationId,
         })
-        steps.push({ label: `Anuncio — ${adLabel}`, ok: adResult.ok, detail: adResult.ok ? undefined : adResult.error })
-        if (!adResult.ok) {
-          anyFailure = true
-        } else if (libraryDeploy) {
-          await markLibraryCreativeDeployed(supabase, activeOrganizationId, libraryDeploy.assetId, {
-            deployedAdId: adResult.id,
-            metaImageHash: libraryDeploy.metaImageHash,
-            metaVideoId: libraryDeploy.metaVideoId,
-          })
-        }
+        steps.push(...adResult.steps)
+        if (!adResult.ok) anyFailure = true
       }
     }
   }
@@ -791,4 +821,157 @@ export async function updateCampaignBudgetAction(formData: FormData) {
   }
 
   redirect(`${returnTo}${returnTo.includes('?') ? '&' : '?'}campaign_success=1`)
+}
+
+// ---------------------------------------------------------------------------
+// "Duplicación Inteligente de Conjuntos" (2026-08-06) — Feature Killer para
+// el Media Buyer: un conjunto nuevo con la MISMA configuración (audiencia,
+// presupuesto, ubicaciones, optimización) que el original pero sin ningún
+// anuncio, listo para subir un creativo nuevo y testearlo aprovechando el
+// aprendizaje del conjunto original — sin tener que armar todo de cero ni
+// borrar manualmente lo viejo (nunca se copia, así que no hay nada que
+// borrar).
+// ---------------------------------------------------------------------------
+
+export type DuplicateAdSetActionResult =
+  | { ok: true; newAdSetId: string; newAdSetName: string }
+  | { ok: false; error: string }
+
+export async function duplicateAdSetForCreativeTestAction(
+  adSetId: string,
+  campaignId: string
+): Promise<DuplicateAdSetActionResult> {
+  if (!adSetId || !campaignId) return { ok: false, error: 'Faltan datos del conjunto a duplicar.' }
+
+  const { activeOrganizationId } = await getDashboardContext()
+  if (!activeOrganizationId) return { ok: false, error: 'No encontramos tu organización activa.' }
+
+  const connection = await getMetaConnectionInfo(activeOrganizationId)
+  if (!connection) return { ok: false, error: 'Meta Ads no está conectado.' }
+
+  const result = await duplicateMetaAdSetForCreativeTest(connection.token, connection.account_id, adSetId, campaignId)
+
+  if (result.ok) revalidatePath(`/meta-ads/campaigns/${campaignId}`)
+
+  return result
+}
+
+export type AddAdModalData =
+  | { ok: true; pages: MetaPage[]; existingPosts: MetaExistingPost[]; scripts: ScriptOptionRow[]; libraryCreatives: LibraryCreative[] }
+  | { ok: false; error: string }
+
+type ScriptOptionRow = { id: string; title: string | null; hook: string | null; body: string | null; copy_feed: string | null }
+
+/** Mismos datos que el wizard completo necesita para AdEditor, sin lo que ya no hace falta (pixels, audiencias, campañas existentes) — el conjunto y su targeting ya están fijados por la duplicación. */
+export async function getAddAdModalDataAction(): Promise<AddAdModalData> {
+  const { activeOrganizationId } = await getDashboardContext()
+  if (!activeOrganizationId) return { ok: false, error: 'No encontramos tu organización activa.' }
+
+  const connection = await getMetaConnectionInfo(activeOrganizationId)
+  if (!connection) return { ok: false, error: 'Meta Ads no está conectado.' }
+
+  const supabase = await createClient()
+  const [pagesResult, existingPostsResult, scriptsResult, libraryResult] = await Promise.all([
+    getMetaPages(connection.token),
+    getMetaExistingPosts(connection.token, connection.account_id),
+    supabase
+      .from('scripts')
+      .select('id, title, hook, body, copy_feed')
+      .eq('organization_id', activeOrganizationId)
+      .order('updated_at', { ascending: false }),
+    getLibraryCreatives(supabase, activeOrganizationId),
+  ])
+
+  if (!pagesResult.ok) return { ok: false, error: pagesResult.error }
+
+  return {
+    ok: true,
+    pages: pagesResult.pages,
+    existingPosts: existingPostsResult.ok ? existingPostsResult.posts : [],
+    scripts: scriptsResult.data ?? [],
+    libraryCreatives: libraryResult.filter((c) => c.status === 'active'),
+  }
+}
+
+export type AddAdToAdSetState = { error: string | null; success: boolean }
+
+/**
+ * Llena el conjunto vacío que dejó duplicateAdSetForCreativeTestAction —
+ * mismo parseo de campos que AdEditor ya arma (prefijo `0_0`, ver
+ * parseAdSets) y el mismo createSingleAd que usa el wizard completo.
+ */
+export async function addAdToAdSetAction(
+  adSetId: string,
+  campaignId: string,
+  _prevState: AddAdToAdSetState,
+  formData: FormData
+): Promise<AddAdToAdSetState> {
+  if (!adSetId || !campaignId) return { error: 'Faltan datos del conjunto.', success: false }
+  // Va como input oculto del form (no bindeado) — así siempre viaja el valor
+  // vigente en el momento del submit, sin depender de que el bind capture un
+  // valor de estado que todavía no se había resuelto cuando se armó la acción.
+  const pageId = String(formData.get('page_id') ?? '').trim()
+  if (!pageId) return { error: 'Elegí con qué Página de Facebook vas a publicar el anuncio.', success: false }
+
+  const modeRaw = String(formData.get('ad_mode_0_0') ?? 'new')
+  const mode = modeRaw === 'existing' || modeRaw === 'library' ? modeRaw : 'new'
+  const mediaType = String(formData.get('ad_media_type_0_0') ?? 'image') === 'video' ? 'video' : 'image'
+  const ad: AdInput = {
+    name: String(formData.get('ad_name_0_0') ?? '').trim(),
+    mode,
+    link: String(formData.get('ad_link_0_0') ?? '').trim(),
+    headline: String(formData.get('ad_headline_0_0') ?? '').trim(),
+    body: String(formData.get('ad_body_0_0') ?? '').trim(),
+    mediaType,
+    image: formData.get('ad_image_0_0') as File | null,
+    videoId: String(formData.get('ad_video_id_0_0') ?? '').trim() || undefined,
+    videoThumbnailUrl: String(formData.get('ad_video_thumbnail_0_0') ?? '').trim() || undefined,
+    existingPostObjectStoryId: String(formData.get('ad_existing_post_0_0') ?? '').trim() || undefined,
+    libraryAssetId: String(formData.get('ad_library_id_0_0') ?? '').trim() || undefined,
+  }
+
+  if (ad.mode === 'existing') {
+    if (!ad.existingPostObjectStoryId) return { error: 'Elegí qué publicación reusar.', success: false }
+  } else if (ad.mode === 'library') {
+    if (!ad.libraryAssetId) return { error: 'Elegí qué creativo de la Biblioteca usar.', success: false }
+  } else {
+    if (!ad.body) return { error: 'Falta el copy del anuncio.', success: false }
+    if (!ad.link) return { error: 'Falta el link de destino del anuncio.', success: false }
+    if (ad.mediaType === 'image' && (!ad.image || ad.image.size === 0)) {
+      return { error: 'Falta la imagen del anuncio.', success: false }
+    }
+    if (ad.mediaType === 'video' && !ad.videoId) {
+      return { error: 'Esperá a que el video termine de subirse (tiene que quedar en verde) antes de guardar.', success: false }
+    }
+  }
+
+  const { activeOrganizationId } = await getDashboardContext()
+  if (!activeOrganizationId) return { error: 'No encontramos tu organización activa.', success: false }
+
+  const connection = await getMetaConnectionInfo(activeOrganizationId)
+  if (!connection) return { error: 'Meta Ads no está conectado.', success: false }
+
+  const supabase = await createClient()
+  const advPayload = buildAdvantagePayload(ADV_CONTROLS_DEFAULT)
+
+  const result = await createSingleAd({
+    token: connection.token,
+    accountId: connection.account_id,
+    pageId,
+    adSetId,
+    ad,
+    adLabel: ad.name || 'Anuncio',
+    status: 'PAUSED',
+    advPayload,
+    supabase,
+    activeOrganizationId,
+  })
+
+  if (!result.ok) {
+    const detail = result.steps.find((s) => !s.ok)?.detail
+    return { error: detail || 'No pudimos crear el anuncio. Probá de nuevo.', success: false }
+  }
+
+  revalidatePath(`/meta-ads/campaigns/${campaignId}`)
+  return { error: null, success: true }
 }

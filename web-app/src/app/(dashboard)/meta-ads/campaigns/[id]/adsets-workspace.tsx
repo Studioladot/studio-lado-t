@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import type { MetaAdSet } from '@/lib/meta/campaigns'
-import { bulkToggleAdSetStatusAction, toggleAdSetStatusAction } from '../actions'
+import { bulkToggleAdSetStatusAction, toggleAdSetStatusAction, duplicateAdSetForCreativeTestAction } from '../actions'
 import { STATUS_LABEL, STATUS_COLOR, TOGGLEABLE, matchesStatusFilter, formatBudget } from '../status'
 import { buildMetricColumns, METRIC_LABELS, DEFAULT_COLUMN_IDS, COLUMNS_STORAGE_KEY, type MetricColumnId } from '../metric-defs'
 import { SortableTh, type SortDirection } from '../sortable-th'
@@ -15,7 +15,9 @@ import type { CampaignTargets } from '@/lib/meta/autopilot'
 import { useCurrency } from '@/lib/context/currency-context'
 import { convertAmount } from '@/lib/currency'
 import { ConfirmSubmitButton } from '@/components/features/confirm-submit-button'
+import { useToast } from '@/components/features/toast'
 import { EntityStatusFilter } from './entity-status-filter'
+import { AddAdModal } from './add-ad-modal'
 
 const PAGE_SIZE = 10
 const HIGH_SPEND_CONFIRM_USD = 30
@@ -63,6 +65,61 @@ function AdSetStatusToggle({
   )
 }
 
+// "Duplicación Inteligente de Conjuntos" (2026-08-06) — Feature Killer del
+// Media Buyer: un solo click clona audiencia/presupuesto/ubicaciones del
+// conjunto (aprovechando su aprendizaje) SIN arrastrar los anuncios viejos,
+// y abre directo el panel en blanco (AddAdModal) para subir el creativo
+// nuevo — nunca hay que borrar nada a mano.
+function DuplicateAdSetButton({
+  adSetId,
+  adSetName,
+  campaignId,
+  onDuplicated,
+}: {
+  adSetId: string
+  adSetName: string
+  campaignId: string
+  onDuplicated: (result: { adSetId: string; adSetName: string }) => void
+}) {
+  const toast = useToast()
+  const [loading, setLoading] = useState(false)
+
+  async function handleClick(event: React.MouseEvent) {
+    event.stopPropagation()
+    if (loading) return
+    setLoading(true)
+    const result = await duplicateAdSetForCreativeTestAction(adSetId, campaignId)
+    setLoading(false)
+    if (!result.ok) {
+      toast.show(result.error, 'error')
+      return
+    }
+    onDuplicated({ adSetId: result.newAdSetId, adSetName: result.newAdSetName })
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={handleClick}
+      disabled={loading}
+      title={`Duplicar "${adSetName}" para testeo de creativos`}
+      aria-label={`Duplicar ${adSetName} para testeo de creativos`}
+      className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-text-3 transition-colors duration-200 ease-out hover:bg-surface-2 hover:text-accent disabled:opacity-50"
+    >
+      {loading ? (
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="animate-spin">
+          <path d="M14 8A6 6 0 1 1 8 2" strokeLinecap="round" />
+        </svg>
+      ) : (
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+          <rect x="5.5" y="5.5" width="8" height="8" rx="1.5" />
+          <path d="M2.5 10.5v-7a1 1 0 0 1 1-1h7" />
+        </svg>
+      )}
+    </button>
+  )
+}
+
 export function AdSetsWorkspace({
   adSets,
   campaignId,
@@ -81,6 +138,7 @@ export function AdSetsWorkspace({
   const [activeColumns, setActiveColumns] = useState<MetricColumnId[]>(DEFAULT_COLUMN_IDS)
   const [columnsOpen, setColumnsOpen] = useState(false)
   const [page, setPage] = useState(1)
+  const [duplicatedAdSet, setDuplicatedAdSet] = useState<{ id: string; name: string } | null>(null)
 
   // Mismo storage key que Campañas (COLUMNS_STORAGE_KEY, metric-defs.tsx) — la
   // preferencia de columnas es una sola, compartida entre los 3 niveles, igual
@@ -303,6 +361,12 @@ export function AdSetsWorkspace({
                             {STATUS_LABEL[adSet.effectiveStatus] ?? adSet.effectiveStatus}
                           </span>
                         )}
+                        <DuplicateAdSetButton
+                          adSetId={adSet.id}
+                          adSetName={adSet.name}
+                          campaignId={campaignId}
+                          onDuplicated={(result) => setDuplicatedAdSet({ id: result.adSetId, name: result.adSetName })}
+                        />
                       </div>
                     </td>
                     <td className="whitespace-nowrap px-5 py-1.5 text-center text-sm font-semibold text-text-2">
@@ -330,6 +394,15 @@ export function AdSetsWorkspace({
 
           <Pagination page={currentPage} totalPages={pageCount} onChange={setPage} />
         </>
+      )}
+
+      {duplicatedAdSet && (
+        <AddAdModal
+          adSetId={duplicatedAdSet.id}
+          adSetName={duplicatedAdSet.name}
+          campaignId={campaignId}
+          onClose={() => setDuplicatedAdSet(null)}
+        />
       )}
     </div>
   )
