@@ -3,6 +3,8 @@
 import { useActionState } from 'react'
 import { useFormStatus } from 'react-dom'
 import { saveBusinessProfileAction, type BusinessProfileState } from './actions'
+import { CharCounterTextarea } from '@/components/features/char-counter-textarea'
+import { TITLE_MAX_LENGTH, TEXT_MAX_LENGTH } from '@/lib/text-limits'
 import type { Database } from '@/lib/types/database.types'
 
 type BusinessProfile = Database['public']['Tables']['business_profile']['Row']
@@ -39,6 +41,7 @@ export function BusinessProfileForm({ profile }: { profile: BusinessProfile | nu
           <input
             name="brand_name"
             type="text"
+            maxLength={TITLE_MAX_LENGTH}
             defaultValue={profile?.brand_name ?? ''}
             placeholder="Ej: KIRIZ"
             className={`normal-case tracking-normal ${fieldClass}`}
@@ -49,6 +52,7 @@ export function BusinessProfileForm({ profile }: { profile: BusinessProfile | nu
           <input
             name="rubro"
             type="text"
+            maxLength={TITLE_MAX_LENGTH}
             defaultValue={profile?.rubro ?? ''}
             placeholder="Ej: Streetwear"
             className={`normal-case tracking-normal ${fieldClass}`}
@@ -59,6 +63,7 @@ export function BusinessProfileForm({ profile }: { profile: BusinessProfile | nu
           <input
             name="ubicacion"
             type="text"
+            maxLength={TITLE_MAX_LENGTH}
             defaultValue={profile?.ubicacion ?? ''}
             placeholder="Ej: Laferrere, Buenos Aires"
             className={`normal-case tracking-normal ${fieldClass}`}
@@ -69,6 +74,7 @@ export function BusinessProfileForm({ profile }: { profile: BusinessProfile | nu
           <input
             name="tono"
             type="text"
+            maxLength={TITLE_MAX_LENGTH}
             defaultValue={profile?.tono ?? ''}
             placeholder="Ej: directo, sin vueltas, rioplatense"
             className={`normal-case tracking-normal ${fieldClass}`}
@@ -108,6 +114,7 @@ export function BusinessProfileForm({ profile }: { profile: BusinessProfile | nu
             <input
               name="experto1_nombre"
               type="text"
+              maxLength={TITLE_MAX_LENGTH}
               defaultValue={profile?.experto1_nombre ?? ''}
               placeholder="Ej: Rodri"
               className={`normal-case tracking-normal ${fieldClass}`}
@@ -118,6 +125,7 @@ export function BusinessProfileForm({ profile }: { profile: BusinessProfile | nu
             <input
               name="experto1_rol"
               type="text"
+              maxLength={TITLE_MAX_LENGTH}
               defaultValue={profile?.experto1_rol ?? ''}
               placeholder="Ej: Meta Ads, Tienda Nube, e-commerce"
               className={`normal-case tracking-normal ${fieldClass}`}
@@ -128,6 +136,7 @@ export function BusinessProfileForm({ profile }: { profile: BusinessProfile | nu
             <input
               name="experto2_nombre"
               type="text"
+              maxLength={TITLE_MAX_LENGTH}
               defaultValue={profile?.experto2_nombre ?? ''}
               placeholder="Ej: Tizi"
               className={`normal-case tracking-normal ${fieldClass}`}
@@ -138,6 +147,7 @@ export function BusinessProfileForm({ profile }: { profile: BusinessProfile | nu
             <input
               name="experto2_rol"
               type="text"
+              maxLength={TITLE_MAX_LENGTH}
               defaultValue={profile?.experto2_rol ?? ''}
               placeholder="Ej: Comunicación y publicidad"
               className={`normal-case tracking-normal ${fieldClass}`}
@@ -148,10 +158,11 @@ export function BusinessProfileForm({ profile }: { profile: BusinessProfile | nu
 
       <label className={labelClass}>
         Notas libres (opcional)
-        <textarea
+        <CharCounterTextarea
           name="notas_libres"
           rows={3}
-          defaultValue={profile?.notas_libres ?? ''}
+          maxLength={TEXT_MAX_LENGTH}
+          defaultValue={profile?.notas_libres}
           placeholder="Cualquier otro contexto que la IA deba saber siempre…"
           className={`resize-none normal-case tracking-normal ${fieldClass}`}
         />

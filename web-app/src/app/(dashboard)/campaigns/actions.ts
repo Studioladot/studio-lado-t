@@ -3,6 +3,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { getDashboardContext } from '@/lib/organization/dashboard-context'
+import { clamp, TITLE_MAX_LENGTH, TEXT_MAX_LENGTH } from '@/lib/text-limits'
 
 export type CreateCampaignState = {
   error: string | null
@@ -12,9 +13,9 @@ export async function createCampaignAction(
   _prevState: CreateCampaignState,
   formData: FormData
 ): Promise<CreateCampaignState> {
-  const nombre = String(formData.get('nombre') ?? '').trim()
+  const nombre = clamp(String(formData.get('nombre') ?? '').trim(), TITLE_MAX_LENGTH)
   const periodo = String(formData.get('periodo') ?? '').trim()
-  const objetivo = String(formData.get('objetivo') ?? '').trim()
+  const objetivo = clamp(String(formData.get('objetivo') ?? '').trim(), TEXT_MAX_LENGTH)
   const fechaInicio = String(formData.get('fecha_inicio') ?? '').trim()
   const fechaFin = String(formData.get('fecha_fin') ?? '').trim()
 

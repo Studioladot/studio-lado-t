@@ -5,6 +5,8 @@ import { updatePieceAction, type UpdatePieceState } from './actions'
 import { useFormStatusToast } from '@/components/features/use-form-status-toast'
 import { MiniSpinner } from '@/components/features/action-pill'
 import { useToast } from '@/components/features/toast'
+import { CharCounterTextarea } from '@/components/features/char-counter-textarea'
+import { TITLE_MAX_LENGTH, TEXT_MAX_LENGTH } from '@/lib/text-limits'
 import type { Database } from '@/lib/types/database.types'
 
 type Piece = Database['public']['Tables']['content_piezas']['Row']
@@ -82,6 +84,7 @@ export function PieceEditForm({
           name="titulo"
           type="text"
           required
+          maxLength={TITLE_MAX_LENGTH}
           defaultValue={piece.titulo}
           className={`normal-case tracking-normal ${fieldClass}`}
         />
@@ -153,6 +156,7 @@ export function PieceEditForm({
         <input
           name="protagonista"
           type="text"
+          maxLength={TITLE_MAX_LENGTH}
           defaultValue={piece.protagonista ?? ''}
           className={`normal-case tracking-normal ${fieldClass}`}
         />
@@ -160,10 +164,11 @@ export function PieceEditForm({
 
       <label className={labelClass}>
         Notas internas (no se publican)
-        <textarea
+        <CharCounterTextarea
           name="notas"
           rows={2}
-          defaultValue={piece.notas ?? ''}
+          maxLength={TEXT_MAX_LENGTH}
+          defaultValue={piece.notas}
           className={`resize-none normal-case tracking-normal ${fieldClass}`}
         />
       </label>
@@ -192,10 +197,11 @@ export function PieceEditForm({
       <div className={networkTab === 'instagram' ? 'flex flex-col gap-2' : 'hidden'}>
         <label className={labelClass}>
           Copy (texto que se publica en Instagram)
-          <textarea
+          <CharCounterTextarea
             name="caption"
             rows={2}
-            defaultValue={piece.caption ?? ''}
+            maxLength={TEXT_MAX_LENGTH}
+            defaultValue={piece.caption}
             className={`resize-none normal-case tracking-normal ${fieldClass}`}
           />
         </label>
@@ -207,10 +213,11 @@ export function PieceEditForm({
       <div className={networkTab === 'tiktok' ? 'flex flex-col gap-2' : 'hidden'}>
         <label className={labelClass}>
           Copy (texto que se publica en TikTok)
-          <textarea
+          <CharCounterTextarea
             name="tiktok_caption"
             rows={2}
-            defaultValue={piece.tiktok_caption ?? ''}
+            maxLength={TEXT_MAX_LENGTH}
+            defaultValue={piece.tiktok_caption}
             className={`resize-none normal-case tracking-normal ${fieldClass}`}
           />
         </label>

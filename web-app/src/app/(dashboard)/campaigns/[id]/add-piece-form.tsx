@@ -5,6 +5,8 @@ import { createPieceAction, type CreatePieceState } from './actions'
 import { uploadReferenceFilesClient } from '@/lib/media/upload-client'
 import { useToast } from '@/components/features/toast'
 import { MiniSpinner } from '@/components/features/action-pill'
+import { CharCounterTextarea } from '@/components/features/char-counter-textarea'
+import { TITLE_MAX_LENGTH, TEXT_MAX_LENGTH } from '@/lib/text-limits'
 
 const FORMATOS = ['Reel', 'TikTok', 'Carrusel', 'Historia', 'Post', 'Video largo', 'Otro']
 const PLATAFORMAS = ['Instagram', 'TikTok', 'Ambas', 'YouTube']
@@ -164,6 +166,7 @@ export function AddPieceForm({
           type="text"
           required
           autoFocus
+          maxLength={TITLE_MAX_LENGTH}
           placeholder="Ej: Reel unboxing, Carrusel 5 outfits…"
           className={`normal-case tracking-normal ${fieldClass}`}
         />
@@ -218,6 +221,7 @@ export function AddPieceForm({
         <input
           name="protagonista"
           type="text"
+          maxLength={TITLE_MAX_LENGTH}
           placeholder="Quién actúa en el video…"
           className={`normal-case tracking-normal ${fieldClass}`}
         />
@@ -225,9 +229,10 @@ export function AddPieceForm({
 
       <label className={labelClass}>
         Notas internas (no se publican)
-        <textarea
+        <CharCounterTextarea
           name="notas"
           rows={2}
+          maxLength={TEXT_MAX_LENGTH}
           placeholder="Hook, guion, referencia, idea…"
           className={`resize-none normal-case tracking-normal ${fieldClass}`}
         />
@@ -271,9 +276,10 @@ export function AddPieceForm({
       <div className={networkTab === 'instagram' ? 'flex flex-col gap-2' : 'hidden'}>
         <label className={labelClass}>
           Copy (texto que se publica en Instagram)
-          <textarea
+          <CharCounterTextarea
             name="caption"
             rows={2}
+            maxLength={TEXT_MAX_LENGTH}
             placeholder="El texto que va a acompañar la publicación — distinto de las notas internas de arriba."
             className={`resize-none normal-case tracking-normal ${fieldClass}`}
           />
@@ -286,9 +292,10 @@ export function AddPieceForm({
       <div className={networkTab === 'tiktok' ? 'flex flex-col gap-2' : 'hidden'}>
         <label className={labelClass}>
           Copy (texto que se publica en TikTok)
-          <textarea
+          <CharCounterTextarea
             name="tiktok_caption"
             rows={2}
+            maxLength={TEXT_MAX_LENGTH}
             placeholder="El texto que va a acompañar la publicación en TikTok."
             className={`resize-none normal-case tracking-normal ${fieldClass}`}
           />

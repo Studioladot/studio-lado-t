@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { getDashboardContext } from '@/lib/organization/dashboard-context'
+import { clamp, TITLE_MAX_LENGTH, TEXT_MAX_LENGTH } from '@/lib/text-limits'
 
 export type BusinessProfileState = {
   error: string | null
@@ -28,18 +29,23 @@ export async function saveBusinessProfileAction(
 
   const supabase = await createClient()
 
+  const clampTitleField = (value: FormDataEntryValue | null) => {
+    const str = String(value ?? '').trim()
+    return str ? clamp(str, TITLE_MAX_LENGTH) : null
+  }
+
   const fields = {
-    brand_name: String(formData.get('brand_name') ?? '').trim() || null,
-    rubro: String(formData.get('rubro') ?? '').trim() || null,
-    ubicacion: String(formData.get('ubicacion') ?? '').trim() || null,
-    tono: String(formData.get('tono') ?? '').trim() || null,
+    brand_name: clampTitleField(formData.get('brand_name')),
+    rubro: clampTitleField(formData.get('rubro')),
+    ubicacion: clampTitleField(formData.get('ubicacion')),
+    tono: clampTitleField(formData.get('tono')),
     breakeven_roas: numberOrNull(formData.get('breakeven_roas')),
     margen_bruto_objetivo: numberOrNull(formData.get('margen_bruto_objetivo')),
-    experto1_nombre: String(formData.get('experto1_nombre') ?? '').trim() || null,
-    experto1_rol: String(formData.get('experto1_rol') ?? '').trim() || null,
-    experto2_nombre: String(formData.get('experto2_nombre') ?? '').trim() || null,
-    experto2_rol: String(formData.get('experto2_rol') ?? '').trim() || null,
-    notas_libres: String(formData.get('notas_libres') ?? '').trim() || null,
+    experto1_nombre: clampTitleField(formData.get('experto1_nombre')),
+    experto1_rol: clampTitleField(formData.get('experto1_rol')),
+    experto2_nombre: clampTitleField(formData.get('experto2_nombre')),
+    experto2_rol: clampTitleField(formData.get('experto2_rol')),
+    notas_libres: String(formData.get('notas_libres') ?? '').trim() ? clamp(String(formData.get('notas_libres')).trim(), TEXT_MAX_LENGTH) : null,
     updated_at: new Date().toISOString(),
   }
 

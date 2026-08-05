@@ -5,6 +5,8 @@ import { useEffect, useState, type ChangeEvent, type FormEvent } from 'react'
 import { getScriptConversionUploadUrlAction, convertScriptToCreativeAction } from '../actions'
 import { CTA_OPTIONS } from '@/lib/meta/library'
 import { createClient } from '@/lib/supabase/client'
+import { CharCounterTextarea } from '@/components/features/char-counter-textarea'
+import { TITLE_MAX_LENGTH, TEXT_MAX_LENGTH } from '@/lib/text-limits'
 
 // Mismo patrón de subida directa a Supabase Storage que creative-form.tsx
 // (Biblioteca de Ads) — el archivo nunca pasa por el servidor de Next. La
@@ -180,13 +182,13 @@ export function ConvertToAdModal({
 
           <label className={labelClass}>
             Nombre interno
-            <input name="name" type="text" required defaultValue={defaultName} className={FIELD_CLASS} />
+            <input name="name" type="text" required maxLength={TITLE_MAX_LENGTH} defaultValue={defaultName} className={FIELD_CLASS} />
           </label>
 
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <label className={labelClass}>
               Título
-              <input name="headline" type="text" defaultValue={defaultHeadline} className={FIELD_CLASS} />
+              <input name="headline" type="text" maxLength={TITLE_MAX_LENGTH} defaultValue={defaultHeadline} className={FIELD_CLASS} />
             </label>
             <label className={labelClass}>
               Llamada a la acción
@@ -202,7 +204,13 @@ export function ConvertToAdModal({
 
           <label className={labelClass}>
             Texto principal
-            <textarea name="primary_text" rows={3} defaultValue={defaultPrimaryText} className={`resize-none ${FIELD_CLASS}`} />
+            <CharCounterTextarea
+              name="primary_text"
+              rows={3}
+              maxLength={TEXT_MAX_LENGTH}
+              defaultValue={defaultPrimaryText}
+              className={`resize-none ${FIELD_CLASS}`}
+            />
           </label>
 
           {formError && <p className="text-xs text-red">{formError}</p>}

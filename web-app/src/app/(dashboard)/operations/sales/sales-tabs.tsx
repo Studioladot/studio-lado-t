@@ -9,6 +9,7 @@ import { LedgerTable } from './ledger-table'
 import { ProductCostsManager } from './product-costs-manager'
 import { OperatingCostsCard } from './operating-costs-card'
 import { AbandonedCartsList } from './abandoned-carts-list'
+import { TITLE_MAX_LENGTH } from '@/lib/text-limits'
 import type { Insight } from '@/lib/tiendanube/insights'
 import type { OrderLedgerEntry } from '@/lib/tiendanube/orders'
 import type { CheckoutFunnelSummary, TiendaNubeCheckout } from '@/lib/tiendanube/checkouts'
@@ -73,7 +74,7 @@ function ManualSaleForm() {
       </label>
       <label className={labelClass}>
         Canal
-        <input type="text" value={canal} onChange={(e) => setCanal(e.target.value)} className={`${FIELD_CLASS} w-[130px]`} />
+        <input type="text" maxLength={TITLE_MAX_LENGTH} value={canal} onChange={(e) => setCanal(e.target.value)} className={`${FIELD_CLASS} w-[130px]`} />
       </label>
       <label className={labelClass}>
         Unidades
@@ -85,7 +86,7 @@ function ManualSaleForm() {
       </label>
       <label className={`${labelClass} min-w-[160px] flex-1`}>
         Notas (opcional)
-        <input type="text" value={notas} onChange={(e) => setNotas(e.target.value)} className={FIELD_CLASS} />
+        <input type="text" maxLength={TITLE_MAX_LENGTH} value={notas} onChange={(e) => setNotas(e.target.value)} className={FIELD_CLASS} />
       </label>
       <button
         type="submit"

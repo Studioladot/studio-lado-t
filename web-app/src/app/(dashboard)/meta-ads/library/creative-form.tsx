@@ -4,6 +4,8 @@ import { useEffect, useState, type ChangeEvent, type FormEvent } from 'react'
 import { getLibraryUploadUrlAction, createLibraryCreativeRecordAction } from './actions'
 import { CTA_OPTIONS } from '@/lib/meta/library'
 import { createClient } from '@/lib/supabase/client'
+import { CharCounterTextarea } from '@/components/features/char-counter-textarea'
+import { TITLE_MAX_LENGTH, TEXT_MAX_LENGTH } from '@/lib/text-limits'
 
 // Techo de cordura, no una vuelta al límite de los Server Actions — el
 // archivo ya no pasa por Next (ver handleSubmit: sube directo a Supabase
@@ -143,13 +145,13 @@ export function CreativeForm({ onDone }: { onDone: () => void }) {
       <div className="flex flex-1 flex-col gap-3">
         <label className={labelClass}>
           Nombre interno
-          <input name="name" type="text" required placeholder="Ej: Hook lluvia — remera oversize" className={FIELD_CLASS} />
+          <input name="name" type="text" required maxLength={TITLE_MAX_LENGTH} placeholder="Ej: Hook lluvia — remera oversize" className={FIELD_CLASS} />
         </label>
 
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <label className={labelClass}>
             Título
-            <input name="headline" type="text" placeholder="Título del anuncio" className={FIELD_CLASS} />
+            <input name="headline" type="text" maxLength={TITLE_MAX_LENGTH} placeholder="Título del anuncio" className={FIELD_CLASS} />
           </label>
           <label className={labelClass}>
             Llamada a la acción
@@ -165,7 +167,13 @@ export function CreativeForm({ onDone }: { onDone: () => void }) {
 
         <label className={labelClass}>
           Texto principal
-          <textarea name="primary_text" rows={3} placeholder="Copy del anuncio..." className={`resize-none ${FIELD_CLASS}`} />
+          <CharCounterTextarea
+            name="primary_text"
+            rows={3}
+            maxLength={TEXT_MAX_LENGTH}
+            placeholder="Copy del anuncio..."
+            className={`resize-none ${FIELD_CLASS}`}
+          />
         </label>
 
         {formError && <p className="text-xs text-red">{formError}</p>}

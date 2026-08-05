@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation'
 import { updateScriptAction, deleteScriptAction, type UpdateScriptState } from '../actions'
 import { ConfirmSubmitButton } from '@/components/features/confirm-submit-button'
 import { TextInput, TextArea, Select, FORM_LABEL_CLASS } from '@/components/features/form-field'
+import { TITLE_MAX_LENGTH, TEXT_MAX_LENGTH } from '@/lib/text-limits'
 import { ConvertToAdModal } from './convert-to-ad-modal'
 import { ANGLES, STATUSES, STATUS_LABEL } from '../constants'
 import type { Database } from '@/lib/types/database.types'
@@ -69,6 +70,7 @@ export function ScriptEditForm({ script }: { script: Script }) {
             name="title"
             type="text"
             required
+            maxLength={TITLE_MAX_LENGTH}
             defaultValue={script.title ?? ''}
             className="text-base normal-case tracking-normal"
           />
@@ -88,6 +90,7 @@ export function ScriptEditForm({ script }: { script: Script }) {
             <TextInput
               name="product"
               type="text"
+              maxLength={TITLE_MAX_LENGTH}
               defaultValue={script.product ?? ''}
               placeholder="Ej: Campera Eme…"
               className="normal-case tracking-normal"
@@ -108,6 +111,7 @@ export function ScriptEditForm({ script }: { script: Script }) {
         <label className={labelClass}>
           Hook (primeros 3 segundos)
           <TextArea
+            maxLength={TEXT_MAX_LENGTH}
             name="hook"
             rows={2}
             defaultValue={script.hook ?? ''}
@@ -119,6 +123,7 @@ export function ScriptEditForm({ script }: { script: Script }) {
         <label className={labelClass}>
           Desarrollo (cuerpo del video)
           <TextArea
+            maxLength={TEXT_MAX_LENGTH}
             name="body"
             rows={8}
             defaultValue={script.body ?? ''}
@@ -130,6 +135,7 @@ export function ScriptEditForm({ script }: { script: Script }) {
         <label className={labelClass}>
           CTA (cierre)
           <TextArea
+            maxLength={TEXT_MAX_LENGTH}
             name="cta"
             rows={2}
             defaultValue={script.cta ?? ''}
@@ -141,6 +147,7 @@ export function ScriptEditForm({ script }: { script: Script }) {
         <label className={labelClass}>
           Copy del feed (texto del anuncio)
           <TextArea
+            maxLength={TEXT_MAX_LENGTH}
             name="copy_feed"
             rows={3}
             defaultValue={script.copy_feed ?? ''}
@@ -152,6 +159,7 @@ export function ScriptEditForm({ script }: { script: Script }) {
         <label className={labelClass}>
           Notas y resultados
           <TextArea
+            maxLength={TEXT_MAX_LENGTH}
             name="notes"
             rows={3}
             defaultValue={script.notes ?? ''}

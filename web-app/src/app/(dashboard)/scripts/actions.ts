@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/server'
 import { getDashboardContext } from '@/lib/organization/dashboard-context'
 import { ANGLES } from './constants'
 import { getSignedUploadTarget, insertLibraryCreative, type CreativeType } from '@/lib/meta/library'
+import { clamp, TITLE_MAX_LENGTH, TEXT_MAX_LENGTH } from '@/lib/text-limits'
 
 export async function createScriptAction() {
   const { userId, activeOrganizationId } = await getDashboardContext()
@@ -52,15 +53,15 @@ export async function updateScriptAction(
   const { error } = await supabase
     .from('scripts')
     .update({
-      title: String(formData.get('title') ?? '').trim() || 'Sin título',
+      title: clamp(String(formData.get('title') ?? '').trim(), TITLE_MAX_LENGTH) || 'Sin título',
       angle: String(formData.get('angle') ?? '').trim() || null,
-      product: String(formData.get('product') ?? '').trim() || null,
+      product: clamp(String(formData.get('product') ?? '').trim(), TITLE_MAX_LENGTH) || null,
       status: String(formData.get('status') ?? '').trim() || 'borrador',
-      hook: String(formData.get('hook') ?? '').trim() || null,
-      body: String(formData.get('body') ?? '').trim() || null,
-      cta: String(formData.get('cta') ?? '').trim() || null,
-      copy_feed: String(formData.get('copy_feed') ?? '').trim() || null,
-      notes: String(formData.get('notes') ?? '').trim() || null,
+      hook: clamp(String(formData.get('hook') ?? '').trim(), TEXT_MAX_LENGTH) || null,
+      body: clamp(String(formData.get('body') ?? '').trim(), TEXT_MAX_LENGTH) || null,
+      cta: clamp(String(formData.get('cta') ?? '').trim(), TEXT_MAX_LENGTH) || null,
+      copy_feed: clamp(String(formData.get('copy_feed') ?? '').trim(), TEXT_MAX_LENGTH) || null,
+      notes: clamp(String(formData.get('notes') ?? '').trim(), TEXT_MAX_LENGTH) || null,
       updated_at: new Date().toISOString(),
     })
     .eq('id', scriptId)
@@ -101,7 +102,7 @@ export async function convertScriptToCreativeAction(params: {
   primaryText: string | null
   cta: string
 }): Promise<{ ok: true } | { ok: false; error: string }> {
-  const name = params.name.trim()
+  const name = clamp(params.name.trim(), TITLE_MAX_LENGTH)
   if (!name) return { ok: false, error: 'Ponele un nombre al creativo.' }
   if (!params.fileUrl) return { ok: false, error: 'Subí una imagen o un video.' }
 
@@ -115,8 +116,8 @@ export async function convertScriptToCreativeAction(params: {
     fileUrl: params.fileUrl,
     assetType: params.assetType,
     name,
-    primaryText: params.primaryText,
-    headline: params.headline,
+    primaryText: params.primaryText ? clamp(params.primaryText, TEXT_MAX_LENGTH) : null,
+    headline: params.headline ? clamp(params.headline, TITLE_MAX_LENGTH) : null,
     cta: params.cta,
     sourceScriptId: params.scriptId,
   })

@@ -5,6 +5,7 @@ import type { MetaExistingPost } from '@/lib/meta/ad-launch'
 import type { LibraryCreative } from '@/lib/meta/library'
 import { fieldClass, labelClass, toggleBase } from './wizard-styles'
 import { FileDropzone } from './file-dropzone'
+import { TITLE_MAX_LENGTH, TEXT_MAX_LENGTH } from '@/lib/text-limits'
 
 type ScriptOption = { id: string; title: string | null; hook: string | null; body: string | null; copy_feed: string | null }
 
@@ -122,7 +123,7 @@ export function AdEditor({
           <label htmlFor={`ad_name_${prefix}`} className={labelClass}>
             Nombre del anuncio
           </label>
-          <input id={`ad_name_${prefix}`} name={`ad_name_${prefix}`} type="text" placeholder="Opcional" className={fieldClass} />
+          <input id={`ad_name_${prefix}`} name={`ad_name_${prefix}`} type="text" maxLength={TITLE_MAX_LENGTH} placeholder="Opcional" className={fieldClass} />
         </div>
 
         {(existingPosts.length > 0 || libraryCreatives.length > 0) && (
@@ -227,14 +228,14 @@ export function AdEditor({
               <label htmlFor={`ad_headline_${prefix}`} className={labelClass}>
                 Título
               </label>
-              <input id={`ad_headline_${prefix}`} name={`ad_headline_${prefix}`} type="text" ref={headlineRef} className={fieldClass} />
+              <input id={`ad_headline_${prefix}`} name={`ad_headline_${prefix}`} type="text" maxLength={TITLE_MAX_LENGTH} ref={headlineRef} className={fieldClass} />
             </div>
 
             <div className="flex flex-col gap-1.5">
               <label htmlFor={`ad_body_${prefix}`} className={labelClass}>
                 Copy
               </label>
-              <textarea id={`ad_body_${prefix}`} name={`ad_body_${prefix}`} ref={bodyRef} rows={3} className={fieldClass} />
+              <textarea id={`ad_body_${prefix}`} name={`ad_body_${prefix}`} ref={bodyRef} rows={3} maxLength={TEXT_MAX_LENGTH} className={fieldClass} />
             </div>
           </div>
         ) : (
@@ -274,14 +275,14 @@ export function AdEditor({
               <label htmlFor={`ad_headline_${prefix}`} className={labelClass}>
                 Título
               </label>
-              <input id={`ad_headline_${prefix}`} name={`ad_headline_${prefix}`} type="text" ref={headlineRef} className={fieldClass} />
+              <input id={`ad_headline_${prefix}`} name={`ad_headline_${prefix}`} type="text" maxLength={TITLE_MAX_LENGTH} ref={headlineRef} className={fieldClass} />
             </div>
 
             <div className="flex flex-col gap-1.5">
               <label htmlFor={`ad_body_${prefix}`} className={labelClass}>
                 Copy
               </label>
-              <textarea id={`ad_body_${prefix}`} name={`ad_body_${prefix}`} ref={bodyRef} rows={3} required className={fieldClass} />
+              <textarea id={`ad_body_${prefix}`} name={`ad_body_${prefix}`} ref={bodyRef} rows={3} required maxLength={TEXT_MAX_LENGTH} className={fieldClass} />
             </div>
 
             <div>

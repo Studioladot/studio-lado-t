@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { getDashboardContext } from '@/lib/organization/dashboard-context'
 import { validateMediaFile } from '@/lib/media/validate-upload'
+import { clamp, TITLE_MAX_LENGTH, TEXT_MAX_LENGTH } from '@/lib/text-limits'
 import type { Database } from '@/lib/types/database.types'
 
 type NoteUpdate = Database['public']['Tables']['notes']['Update']
@@ -54,7 +55,7 @@ export async function createNoteAction(
   _prevState: NoteState,
   formData: FormData
 ): Promise<NoteState> {
-  const contenido = String(formData.get('contenido') ?? '').trim()
+  const contenido = clamp(String(formData.get('contenido') ?? '').trim(), TEXT_MAX_LENGTH)
 
   if (!contenido) {
     return { error: 'Escribí algo en la nota.', success: false }
@@ -66,7 +67,7 @@ export async function createNoteAction(
     return { error: 'No encontramos tu organización activa.', success: false }
   }
 
-  const titulo = String(formData.get('titulo') ?? '').trim()
+  const titulo = clamp(String(formData.get('titulo') ?? '').trim(), TITLE_MAX_LENGTH)
   const categoria = NOTE_CATEGORIES.includes(String(formData.get('categoria')))
     ? String(formData.get('categoria'))
     : 'varios'
@@ -109,7 +110,7 @@ export async function updateNoteAction(
   _prevState: NoteState,
   formData: FormData
 ): Promise<NoteState> {
-  const contenido = String(formData.get('contenido') ?? '').trim()
+  const contenido = clamp(String(formData.get('contenido') ?? '').trim(), TEXT_MAX_LENGTH)
 
   if (!contenido) {
     return { error: 'Escribí algo en la nota.', success: false }
@@ -121,7 +122,7 @@ export async function updateNoteAction(
     return { error: 'No encontramos tu organización activa.', success: false }
   }
 
-  const titulo = String(formData.get('titulo') ?? '').trim()
+  const titulo = clamp(String(formData.get('titulo') ?? '').trim(), TITLE_MAX_LENGTH)
   const categoria = NOTE_CATEGORIES.includes(String(formData.get('categoria')))
     ? String(formData.get('categoria'))
     : 'varios'

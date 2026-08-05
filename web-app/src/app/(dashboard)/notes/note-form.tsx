@@ -4,6 +4,7 @@ import { useActionState, useEffect, useState } from 'react'
 import { useFormStatus } from 'react-dom'
 import { createNoteAction, updateNoteAction, type NoteState } from './actions'
 import { TextInput, TextArea, Select } from '@/components/features/form-field'
+import { TITLE_MAX_LENGTH, TEXT_MAX_LENGTH } from '@/lib/text-limits'
 import type { Database } from '@/lib/types/database.types'
 
 type Note = Database['public']['Tables']['notes']['Row']
@@ -53,6 +54,7 @@ export function NoteForm({ note, onDone }: { note?: Note; onDone: () => void }) 
       <TextInput
         name="titulo"
         type="text"
+        maxLength={TITLE_MAX_LENGTH}
         placeholder="Título (opcional)"
         defaultValue={note?.titulo ?? ''}
       />
@@ -61,6 +63,7 @@ export function NoteForm({ note, onDone }: { note?: Note; onDone: () => void }) 
         name="contenido"
         rows={4}
         required
+        maxLength={TEXT_MAX_LENGTH}
         placeholder="Escribí lo que se te ocurra..."
         defaultValue={note?.contenido ?? ''}
       />

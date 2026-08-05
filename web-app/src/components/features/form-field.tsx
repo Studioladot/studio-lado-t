@@ -1,4 +1,6 @@
-import type { InputHTMLAttributes, SelectHTMLAttributes, TextareaHTMLAttributes } from 'react'
+'use client'
+
+import { useState, type InputHTMLAttributes, type SelectHTMLAttributes, type TextareaHTMLAttributes } from 'react'
 
 // El bug de colores hardcodeados en campos de formulario (#D0D5DD/#F9FAFB/
 // #101828 en vez de los tokens de tema) se corrigió por separado, a mano,
@@ -27,8 +29,34 @@ export function TextInput({ className, ...props }: InputHTMLAttributes<HTMLInput
 
 // resize-none va por defecto porque los ~10 usos existentes en el proyecto
 // nunca quisieron que el usuario redimensionara el textarea a mano.
-export function TextArea({ className, ...props }: TextareaHTMLAttributes<HTMLTextAreaElement>) {
-  return <textarea {...props} className={cx(BASE_FIELD_CLASS, 'resize-none', className)} />
+//
+// Hotfix de seguridad/UI (2026-08-06): con `maxLength` seteado, aparece el
+// contador "150 / 2200" pedido para TODOS los textareas de la plataforma —
+// al vivir acá (el primitivo compartido por ~10 formularios), el contador
+// se propaga a todos con un solo cambio en vez de tener que tocar cada
+// formulario a mano. Sin `maxLength`, se comporta exactamente igual que
+// antes (compatibilidad con los pocos casos que todavía no lo usan).
+export function TextArea({ className, maxLength, defaultValue, ...props }: TextareaHTMLAttributes<HTMLTextAreaElement>) {
+  const [value, setValue] = useState(typeof defaultValue === 'string' ? defaultValue : '')
+
+  if (maxLength == null) {
+    return <textarea {...props} defaultValue={defaultValue} className={cx(BASE_FIELD_CLASS, 'resize-none', className)} />
+  }
+
+  return (
+    <div className="flex flex-col gap-1">
+      <textarea
+        {...props}
+        maxLength={maxLength}
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        className={cx(BASE_FIELD_CLASS, 'resize-none', className)}
+      />
+      <span className="self-end text-[10px] tabular-nums text-text-3">
+        {value.length} / {maxLength}
+      </span>
+    </div>
+  )
 }
 
 export function Select({ className, ...props }: SelectHTMLAttributes<HTMLSelectElement>) {

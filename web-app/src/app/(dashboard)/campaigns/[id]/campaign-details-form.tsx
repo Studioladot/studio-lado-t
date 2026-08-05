@@ -3,6 +3,8 @@
 import { useActionState } from 'react'
 import { updateCampaignDetailsAction, type SaveState } from './actions'
 import { SaveDetailsButton } from './save-details-button'
+import { CharCounterTextarea } from '@/components/features/char-counter-textarea'
+import { TITLE_MAX_LENGTH, TEXT_MAX_LENGTH } from '@/lib/text-limits'
 import type { Database } from '@/lib/types/database.types'
 
 type Campaign = Database['public']['Tables']['content_campaigns']['Row']
@@ -41,6 +43,7 @@ export function CampaignDetailsForm({ campaign }: { campaign: Campaign }) {
           type="text"
           name="nombre"
           required
+          maxLength={TITLE_MAX_LENGTH}
           defaultValue={campaign.nombre}
           className={`normal-case tracking-normal ${fieldClass}`}
         />
@@ -96,10 +99,11 @@ export function CampaignDetailsForm({ campaign }: { campaign: Campaign }) {
 
       <label className={labelClass}>
         Objetivo de la campaña
-        <textarea
+        <CharCounterTextarea
           name="objetivo"
           rows={2}
-          defaultValue={campaign.objetivo ?? ''}
+          maxLength={TEXT_MAX_LENGTH}
+          defaultValue={campaign.objetivo}
           placeholder="¿Qué querés lograr con esta campaña?"
           className={`normal-case tracking-normal ${fieldClass}`}
         />
@@ -111,10 +115,11 @@ export function CampaignDetailsForm({ campaign }: { campaign: Campaign }) {
           <span className="text-[10px] font-normal normal-case tracking-normal text-text-3">
             La promesa funcional, corta y literal
           </span>
-          <textarea
+          <CharCounterTextarea
             name="concepto_estrategico"
             rows={2}
-            defaultValue={campaign.concepto_estrategico ?? ''}
+            maxLength={TEXT_MAX_LENGTH}
+            defaultValue={campaign.concepto_estrategico}
             placeholder="Ej: Campera reversible al precio más bajo"
             className={`normal-case tracking-normal ${fieldClass}`}
           />
@@ -124,10 +129,11 @@ export function CampaignDetailsForm({ campaign }: { campaign: Campaign }) {
           <span className="text-[10px] font-normal normal-case tracking-normal text-text-3">
             La frase evocadora que atraviesa todos los formatos
           </span>
-          <textarea
+          <CharCounterTextarea
             name="concepto_creativo"
             rows={2}
-            defaultValue={campaign.concepto_creativo ?? ''}
+            maxLength={TEXT_MAX_LENGTH}
+            defaultValue={campaign.concepto_creativo}
             placeholder="Ej: Dos camperas, una historia"
             className={`normal-case tracking-normal ${fieldClass}`}
           />
@@ -139,10 +145,11 @@ export function CampaignDetailsForm({ campaign }: { campaign: Campaign }) {
         <span className="text-[10px] font-normal normal-case tracking-normal text-text-3">
           Fase 1, Fase 2 — escribí libremente
         </span>
-        <textarea
+        <CharCounterTextarea
           name="desarrollo"
           rows={4}
-          defaultValue={campaign.desarrollo ?? ''}
+          maxLength={TEXT_MAX_LENGTH}
+          defaultValue={campaign.desarrollo}
           placeholder="Fase 1 (semana 1): teaser en historias..."
           className={`normal-case tracking-normal ${fieldClass}`}
         />
@@ -171,10 +178,11 @@ export function CampaignDetailsForm({ campaign }: { campaign: Campaign }) {
 
       <label className={labelClass}>
         Notas e ideas libres
-        <textarea
+        <CharCounterTextarea
           name="notas"
           rows={3}
-          defaultValue={campaign.notas ?? ''}
+          maxLength={TEXT_MAX_LENGTH}
+          defaultValue={campaign.notas}
           placeholder="Ideas sueltas, referencias, inspiración..."
           className={`normal-case tracking-normal ${fieldClass}`}
         />

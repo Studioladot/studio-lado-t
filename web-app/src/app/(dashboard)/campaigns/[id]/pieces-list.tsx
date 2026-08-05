@@ -7,6 +7,7 @@ import { PieceEditForm } from './piece-edit-form'
 import { ConfirmSubmitButton } from '@/components/features/confirm-submit-button'
 import { SubmitPillButton } from '@/components/features/submit-pill-button'
 import { pillClass } from '@/components/features/action-pill'
+import { ExpandableText } from '@/components/features/expandable-text'
 import type { Database } from '@/lib/types/database.types'
 
 type Piece = Database['public']['Tables']['content_piezas']['Row']
@@ -127,7 +128,14 @@ export function PiecesList({
           return (
             <div
               key={piece.id}
-              className="flex flex-wrap items-start justify-between gap-3 rounded-card border border-border bg-surface p-4"
+              // Bug real reportado (2026-08-06): "flex flex-wrap" solo, sin
+              // flex-col en mobile, no alcanza para que el texto baje debajo
+              // de la miniatura — un hijo "flex-1 min-w-0" puede angostarse
+              // indefinidamente en vez de saltar de línea, así que en
+              // pantallas chicas el título/notas quedaban aplastados en una
+              // columna finísima entre la miniatura y las acciones. Se
+              // apila en columna por default y solo pasa a fila desde sm:.
+              className="flex flex-col gap-3 rounded-card border border-border bg-surface p-4 sm:flex-row sm:flex-wrap sm:items-start sm:justify-between"
             >
               {media.length > 0 && (
                 <div className="flex shrink-0 gap-1.5">
@@ -158,7 +166,7 @@ export function PiecesList({
                 </div>
               )}
 
-              <div className="min-w-0 flex-1">
+              <div className="min-w-0 w-full sm:w-auto sm:flex-1">
                 <div className="flex flex-wrap items-center gap-2">
                   <span
                     className={`text-sm font-semibold text-text ${isPublished ? 'text-text-2 line-through' : ''}`}
@@ -182,7 +190,11 @@ export function PiecesList({
                 {piece.protagonista && (
                   <p className="mt-1 text-xs text-text-2">Con {piece.protagonista}</p>
                 )}
-                {piece.notas && <p className="mt-1 text-xs text-text-2">{piece.notas}</p>}
+                {piece.notas && (
+                  <div className="mt-1 text-xs text-text-2">
+                    <ExpandableText text={piece.notas} lines={3} />
+                  </div>
+                )}
                 {piece.fecha_planificada && (
                   <div className="mt-1 flex flex-wrap items-center gap-2 text-[11px] text-text-3">
                     <span>{piece.fecha_planificada}</span>
@@ -193,7 +205,7 @@ export function PiecesList({
                 </div>
               </div>
 
-              <div className="flex shrink-0 flex-col items-end gap-2">
+              <div className="flex shrink-0 flex-row flex-wrap items-center gap-2 sm:flex-col sm:items-end">
                 <form action={togglePieceStatusAction.bind(null, piece.id, campaignId, nextStatus)}>
                   <SubmitPillButton
                     variant={isPublished ? 'neutral' : 'accent'}

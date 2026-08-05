@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { getDashboardContext } from '@/lib/organization/dashboard-context'
+import { clamp, TITLE_MAX_LENGTH, TEXT_MAX_LENGTH } from '@/lib/text-limits'
 
 type MediaItem = { url: string; type: 'image' | 'video' }
 
@@ -58,8 +59,18 @@ type BuiltPost =
       }
     }
 
+// Hotfix de seguridad (2026-08-06): el maxLength del <input>/<textarea> es
+// cosmético — un FormData armado a mano lo saltea sin problema. Acá es
+// donde el límite se vuelve real: nada llega a la base con más de
+// TITLE_MAX_LENGTH/TEXT_MAX_LENGTH caracteres, lo tipee quien lo tipee.
+const clampTitle = (value: string) => clamp(value, TITLE_MAX_LENGTH)
+const clampText = (value: FormDataEntryValue | null) => {
+  const nulled = emptyToNull(value)
+  return nulled ? clamp(nulled, TEXT_MAX_LENGTH) : null
+}
+
 async function buildPostRecord(formData: FormData): Promise<BuiltPost> {
-  const titulo = String(formData.get('title') ?? '').trim()
+  const titulo = clampTitle(String(formData.get('title') ?? '').trim())
 
   if (!titulo) {
     return { ok: false, error: 'Agregá un título a la publicación.' }
@@ -71,15 +82,15 @@ async function buildPostRecord(formData: FormData): Promise<BuiltPost> {
     ok: true,
     record: {
       title: titulo,
-      caption: emptyToNull(formData.get('caption')),
-      tiktok_caption: emptyToNull(formData.get('tiktok_caption')),
+      caption: clampText(formData.get('caption')),
+      tiktok_caption: clampText(formData.get('tiktok_caption')),
       platform: String(formData.get('platform') ?? 'Instagram'),
       format: String(formData.get('format') ?? 'Reel'),
       date: emptyToNull(formData.get('date')),
       turno: String(formData.get('turno') ?? 'Temprano'),
       status: String(formData.get('status') ?? 'pendiente'),
       production_status: PRODUCTION_STATUSES.includes(productionStatus) ? productionStatus : 'idea',
-      protagonista: emptyToNull(formData.get('protagonista')),
+      protagonista: emptyToNull(formData.get('protagonista')) ? clampTitle(String(formData.get('protagonista'))) : null,
     },
   }
 }

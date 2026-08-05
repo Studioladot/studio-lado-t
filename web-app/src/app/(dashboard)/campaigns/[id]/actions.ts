@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { getDashboardContext } from '@/lib/organization/dashboard-context'
+import { clamp, TITLE_MAX_LENGTH, TEXT_MAX_LENGTH } from '@/lib/text-limits'
 
 type MediaItem = { url: string; type: 'image' | 'video' }
 
@@ -39,12 +40,25 @@ const emptyToNull = (value: FormDataEntryValue | null) => {
   return str || null
 }
 
+// Hotfix de seguridad (2026-08-06): el maxLength del <input>/<textarea> es
+// cosmético — un FormData armado a mano lo saltea. Acá el límite se vuelve
+// real: nada llega a la base con más de TITLE_MAX_LENGTH/TEXT_MAX_LENGTH.
+const clampTitle = (value: string) => clamp(value, TITLE_MAX_LENGTH)
+const clampShortField = (value: FormDataEntryValue | null) => {
+  const nulled = emptyToNull(value)
+  return nulled ? clampTitle(nulled) : null
+}
+const clampText = (value: FormDataEntryValue | null) => {
+  const nulled = emptyToNull(value)
+  return nulled ? clamp(nulled, TEXT_MAX_LENGTH) : null
+}
+
 export async function updateCampaignDetailsAction(
   _prevState: SaveState,
   formData: FormData
 ): Promise<SaveState> {
   const campaignId = String(formData.get('campaign_id') ?? '')
-  const nombre = String(formData.get('nombre') ?? '').trim()
+  const nombre = clampTitle(String(formData.get('nombre') ?? '').trim())
 
   if (!campaignId) {
     return { error: 'Falta el id de la campaña.', success: false }
@@ -70,11 +84,11 @@ export async function updateCampaignDetailsAction(
       fecha_inicio: emptyToNull(formData.get('fecha_inicio')),
       fecha_fin: emptyToNull(formData.get('fecha_fin')),
       status: String(formData.get('status') ?? 'planificacion'),
-      objetivo: emptyToNull(formData.get('objetivo')),
-      concepto_estrategico: emptyToNull(formData.get('concepto_estrategico')),
-      concepto_creativo: emptyToNull(formData.get('concepto_creativo')),
-      desarrollo: emptyToNull(formData.get('desarrollo')),
-      notas: emptyToNull(formData.get('notas')),
+      objetivo: clampText(formData.get('objetivo')),
+      concepto_estrategico: clampText(formData.get('concepto_estrategico')),
+      concepto_creativo: clampText(formData.get('concepto_creativo')),
+      desarrollo: clampText(formData.get('desarrollo')),
+      notas: clampText(formData.get('notas')),
       formatos: formData.getAll('formatos').map(String),
     })
     .eq('id', campaignId)
@@ -100,7 +114,7 @@ export async function createPieceAction(
   formData: FormData
 ): Promise<CreatePieceState> {
   const campaignId = String(formData.get('campaign_id') ?? '')
-  const titulo = String(formData.get('titulo') ?? '').trim()
+  const titulo = clampTitle(String(formData.get('titulo') ?? '').trim())
 
   if (!campaignId) {
     return { error: 'Falta el id de la campaña.', success: false }
@@ -141,10 +155,10 @@ export async function createPieceAction(
     plataforma: emptyToNull(formData.get('plataforma')),
     fecha_planificada: emptyToNull(formData.get('fecha_planificada')),
     turno: emptyToNull(formData.get('turno')),
-    protagonista: emptyToNull(formData.get('protagonista')),
-    notas: emptyToNull(formData.get('notas')),
-    caption: emptyToNull(formData.get('caption')),
-    tiktok_caption: emptyToNull(formData.get('tiktok_caption')),
+    protagonista: clampShortField(formData.get('protagonista')),
+    notas: clampText(formData.get('notas')),
+    caption: clampText(formData.get('caption')),
+    tiktok_caption: clampText(formData.get('tiktok_caption')),
     status: 'pendiente',
     production_status: PRODUCTION_STATUSES.includes(productionStatusRaw) ? productionStatusRaw : 'idea',
     user_id: user.id,
@@ -262,7 +276,7 @@ export async function updatePieceAction(
   _prevState: UpdatePieceState,
   formData: FormData
 ): Promise<UpdatePieceState> {
-  const titulo = String(formData.get('titulo') ?? '').trim()
+  const titulo = clampTitle(String(formData.get('titulo') ?? '').trim())
 
   if (!titulo) {
     return { error: 'La pieza necesita un título.', success: false }
@@ -286,10 +300,10 @@ export async function updatePieceAction(
       plataforma: emptyToNull(formData.get('plataforma')),
       fecha_planificada: emptyToNull(formData.get('fecha_planificada')),
       turno: emptyToNull(formData.get('turno')),
-      protagonista: emptyToNull(formData.get('protagonista')),
-      notas: emptyToNull(formData.get('notas')),
-      caption: emptyToNull(formData.get('caption')),
-      tiktok_caption: emptyToNull(formData.get('tiktok_caption')),
+      protagonista: clampShortField(formData.get('protagonista')),
+      notas: clampText(formData.get('notas')),
+      caption: clampText(formData.get('caption')),
+      tiktok_caption: clampText(formData.get('tiktok_caption')),
       production_status: PRODUCTION_STATUSES.includes(productionStatusRaw) ? productionStatusRaw : 'idea',
     })
     .eq('id', pieceId)

@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { getDashboardContext } from '@/lib/organization/dashboard-context'
+import { clamp, TITLE_MAX_LENGTH, TEXT_MAX_LENGTH } from '@/lib/text-limits'
 import {
   getSignedUploadTarget,
   insertLibraryCreative,
@@ -37,7 +38,7 @@ export async function createLibraryCreativeRecordAction(params: {
   headline: string | null
   cta: string
 }): Promise<{ ok: true } | { ok: false; error: string }> {
-  const name = params.name.trim()
+  const name = clamp(params.name.trim(), TITLE_MAX_LENGTH)
   if (!name) return { ok: false, error: 'Ponele un nombre al creativo.' }
   if (!params.fileUrl) return { ok: false, error: 'Subí una imagen o un video.' }
 
@@ -51,8 +52,8 @@ export async function createLibraryCreativeRecordAction(params: {
     fileUrl: params.fileUrl,
     assetType: params.assetType,
     name,
-    primaryText: params.primaryText,
-    headline: params.headline,
+    primaryText: params.primaryText ? clamp(params.primaryText, TEXT_MAX_LENGTH) : null,
+    headline: params.headline ? clamp(params.headline, TITLE_MAX_LENGTH) : null,
     cta: params.cta,
   })
 
@@ -66,14 +67,19 @@ export async function updateLibraryCreativeAction(
   id: string,
   params: { name: string; headline: string | null; primaryText: string | null }
 ): Promise<{ ok: true } | { ok: false; error: string }> {
-  const name = params.name.trim()
+  const name = clamp(params.name.trim(), TITLE_MAX_LENGTH)
   if (!name) return { ok: false, error: 'Ponele un nombre al creativo.' }
 
   const { activeOrganizationId } = await getDashboardContext()
   if (!activeOrganizationId) return { ok: false, error: 'No encontramos tu organización activa.' }
 
   const supabase = await createClient()
-  const ok = await updateLibraryCreative(supabase, activeOrganizationId, id, { ...params, name })
+  const ok = await updateLibraryCreative(supabase, activeOrganizationId, id, {
+    ...params,
+    name,
+    headline: params.headline ? clamp(params.headline, TITLE_MAX_LENGTH) : null,
+    primaryText: params.primaryText ? clamp(params.primaryText, TEXT_MAX_LENGTH) : null,
+  })
   if (!ok) return { ok: false, error: 'No pudimos guardar los cambios. Probá de nuevo.' }
 
   revalidatePath('/meta-ads/library')

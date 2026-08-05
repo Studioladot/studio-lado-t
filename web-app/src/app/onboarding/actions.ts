@@ -3,6 +3,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { setActiveOrganizationCookie } from '@/lib/organization/active-organization'
+import { clamp, TITLE_MAX_LENGTH } from '@/lib/text-limits'
 
 export type OnboardingState = {
   error: string | null
@@ -13,7 +14,7 @@ export async function createOrganizationAction(
   formData: FormData
 ): Promise<OnboardingState> {
   const rawName = formData.get('name')
-  const name = typeof rawName === 'string' ? rawName.trim() : ''
+  const name = typeof rawName === 'string' ? clamp(rawName.trim(), TITLE_MAX_LENGTH) : ''
 
   if (!name) {
     return { error: 'Ingresá el nombre de tu marca o negocio.' }

@@ -8,6 +8,7 @@ import { upsertFinConfig, type FinConfig } from '@/lib/tiendanube/finance'
 import { upsertProductCost, deleteProductCost, bulkUpsertProductCosts } from '@/lib/tiendanube/product-costs'
 import { applyCheckoutCoupon } from '@/lib/tiendanube/checkouts'
 import { insertOperatingCost, deleteOperatingCost } from '@/lib/tiendanube/operating-costs'
+import { clamp, TITLE_MAX_LENGTH } from '@/lib/text-limits'
 
 export async function addManualSaleAction(params: {
   fecha: string
@@ -23,7 +24,13 @@ export async function addManualSaleAction(params: {
   if (!activeOrganizationId) return { ok: false, error: 'No encontramos tu organización activa.' }
 
   const supabase = await createClient()
-  const result = await insertManualSale(supabase, { organizationId: activeOrganizationId, userId, ...params })
+  const result = await insertManualSale(supabase, {
+    organizationId: activeOrganizationId,
+    userId,
+    ...params,
+    canal: clamp(params.canal, TITLE_MAX_LENGTH),
+    notas: params.notas ? clamp(params.notas, TITLE_MAX_LENGTH) : null,
+  })
   if (!result.ok) return result
 
   revalidatePath('/operations/sales')

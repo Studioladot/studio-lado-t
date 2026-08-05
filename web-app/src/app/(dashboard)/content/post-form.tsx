@@ -5,6 +5,8 @@ import { createPostAction, updatePostAction, type PostState } from './actions'
 import { uploadReferenceFilesClient } from '@/lib/media/upload-client'
 import { useToast } from '@/components/features/toast'
 import { MiniSpinner } from '@/components/features/action-pill'
+import { CharCounterTextarea } from '@/components/features/char-counter-textarea'
+import { TITLE_MAX_LENGTH, TEXT_MAX_LENGTH } from '@/lib/text-limits'
 import type { Database } from '@/lib/types/database.types'
 
 type Post = Database['public']['Tables']['content_posts']['Row']
@@ -129,6 +131,7 @@ export function PostForm({
           name="title"
           type="text"
           required
+          maxLength={TITLE_MAX_LENGTH}
           defaultValue={post?.title ?? ''}
           placeholder="Ej: Campera EME — Drop Invierno"
           className={`normal-case tracking-normal ${fieldClass}`}
@@ -200,6 +203,7 @@ export function PostForm({
         <input
           name="protagonista"
           type="text"
+          maxLength={TITLE_MAX_LENGTH}
           defaultValue={post?.protagonista ?? ''}
           placeholder="Quién actúa en el video..."
           className={`normal-case tracking-normal ${fieldClass}`}
@@ -242,10 +246,11 @@ export function PostForm({
       <div className={networkTab === 'instagram' ? 'flex flex-col gap-2' : 'hidden'}>
         <label className={labelClass}>
           Texto / Caption (Instagram)
-          <textarea
+          <CharCounterTextarea
             name="caption"
             rows={3}
-            defaultValue={post?.caption ?? ''}
+            maxLength={TEXT_MAX_LENGTH}
+            defaultValue={post?.caption}
             placeholder="Texto de la publicación..."
             className={`resize-none normal-case tracking-normal ${fieldClass}`}
           />
@@ -258,10 +263,11 @@ export function PostForm({
       <div className={networkTab === 'tiktok' ? 'flex flex-col gap-2' : 'hidden'}>
         <label className={labelClass}>
           Texto / Caption (TikTok)
-          <textarea
+          <CharCounterTextarea
             name="tiktok_caption"
             rows={3}
-            defaultValue={post?.tiktok_caption ?? ''}
+            maxLength={TEXT_MAX_LENGTH}
+            defaultValue={post?.tiktok_caption}
             placeholder="Texto de la publicación..."
             className={`resize-none normal-case tracking-normal ${fieldClass}`}
           />

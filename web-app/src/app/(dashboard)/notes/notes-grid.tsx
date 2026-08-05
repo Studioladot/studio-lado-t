@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react'
 import { NoteForm } from './note-form'
 import { deleteNoteAction } from './actions'
 import { ConfirmSubmitButton } from '@/components/features/confirm-submit-button'
+import { ExpandableText } from '@/components/features/expandable-text'
 import type { Database } from '@/lib/types/database.types'
 
 type Note = Database['public']['Tables']['notes']['Row']
@@ -126,7 +127,9 @@ export function NotesGrid({ notes }: { notes: Note[] }) {
 
                 {note.titulo && <p className="text-sm font-semibold text-text">{note.titulo}</p>}
 
-                <p className="flex-1 whitespace-pre-wrap text-sm text-text-2">{note.contenido}</p>
+                <div className="flex-1 text-sm text-text-2">
+                  <ExpandableText text={note.contenido} lines={3} />
+                </div>
 
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] text-text-3">{fecha}</span>

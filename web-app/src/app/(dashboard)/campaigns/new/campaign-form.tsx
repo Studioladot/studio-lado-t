@@ -4,6 +4,7 @@ import { useActionState } from 'react'
 import { createCampaignAction, type CreateCampaignState } from '../actions'
 import { CreateCampaignButton } from './create-campaign-button'
 import { TextInput, TextArea } from '@/components/features/form-field'
+import { TITLE_MAX_LENGTH, TEXT_MAX_LENGTH } from '@/lib/text-limits'
 
 const initialState: CreateCampaignState = { error: null }
 
@@ -24,6 +25,7 @@ export function CampaignForm() {
           type="text"
           required
           autoFocus
+          maxLength={TITLE_MAX_LENGTH}
           placeholder="Ej: Lanzamiento colección verano"
         />
       </div>
@@ -54,7 +56,7 @@ export function CampaignForm() {
         <label htmlFor="objetivo" className={labelClass}>
           Objetivo
         </label>
-        <TextArea id="objetivo" name="objetivo" rows={3} placeholder="¿Qué buscás lograr con esta campaña?" />
+        <TextArea id="objetivo" name="objetivo" rows={3} maxLength={TEXT_MAX_LENGTH} placeholder="¿Qué buscás lograr con esta campaña?" />
       </div>
 
       <p

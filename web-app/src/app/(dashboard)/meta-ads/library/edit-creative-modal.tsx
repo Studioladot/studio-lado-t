@@ -3,6 +3,8 @@
 import { createPortal } from 'react-dom'
 import { useState, type FormEvent } from 'react'
 import { updateLibraryCreativeAction } from './actions'
+import { CharCounterTextarea } from '@/components/features/char-counter-textarea'
+import { TITLE_MAX_LENGTH, TEXT_MAX_LENGTH } from '@/lib/text-limits'
 import type { LibraryCreative } from '@/lib/meta/library'
 
 // Editar Título/Copy/Hook sin borrar y resubir el archivo (2026-07-27).
@@ -67,15 +69,21 @@ export function EditCreativeModal({ creative, onClose, onDone }: { creative: Lib
         <form onSubmit={handleSubmit} className="flex flex-col gap-3 overflow-y-auto px-6 py-5">
           <label className={labelClass}>
             Nombre interno
-            <input name="name" type="text" required defaultValue={creative.name} className={FIELD_CLASS} />
+            <input name="name" type="text" required maxLength={TITLE_MAX_LENGTH} defaultValue={creative.name} className={FIELD_CLASS} />
           </label>
           <label className={labelClass}>
             Título (Hook)
-            <input name="headline" type="text" defaultValue={creative.headline ?? ''} className={FIELD_CLASS} />
+            <input name="headline" type="text" maxLength={TITLE_MAX_LENGTH} defaultValue={creative.headline ?? ''} className={FIELD_CLASS} />
           </label>
           <label className={labelClass}>
             Texto principal (Copy)
-            <textarea name="primary_text" rows={4} defaultValue={creative.primaryText ?? ''} className={`resize-none ${FIELD_CLASS}`} />
+            <CharCounterTextarea
+              name="primary_text"
+              rows={4}
+              maxLength={TEXT_MAX_LENGTH}
+              defaultValue={creative.primaryText}
+              className={`resize-none ${FIELD_CLASS}`}
+            />
           </label>
 
           {error && <p className="text-xs text-red">{error}</p>}
