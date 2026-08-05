@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { getDashboardContext } from '@/lib/organization/dashboard-context'
 import { DropdownMenu, FilterTrigger } from '@/components/features/dropdown-menu'
+import { DiagnosticErrorPanel } from '@/components/features/diagnostic-error-panel'
 
 const STATUS_LABEL: Record<string, string> = {
   planificacion: 'En planificación',
@@ -31,6 +32,21 @@ export default async function CampaignsPage({
     )
   }
 
+  // Diagnóstico temporal (2026-08-06): try/catch explícito para capturar
+  // el error REAL — Next.js redacta el mensaje de cualquier excepción de
+  // Server Component no controlada en producción (confirmado: llegó el
+  // digest, no el mensaje, ni siquiera dentro de un error.tsx propio).
+  // Atrapándolo acá, lo que se renderiza es data elegida por nosotros, no
+  // una excepción — Next no tiene nada que redactar.
+  try {
+    return await renderCampaignsList(activeOrganizationId, estado)
+  } catch (err) {
+    console.error('[CampaignsPage] excepción real:', err)
+    return <DiagnosticErrorPanel error={err} context="/campaigns" />
+  }
+}
+
+async function renderCampaignsList(activeOrganizationId: string, estado: string | undefined) {
   const supabase = await createClient()
 
   const [{ data: campaigns }, { data: pieces }] = await Promise.all([

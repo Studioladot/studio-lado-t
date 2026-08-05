@@ -7,6 +7,7 @@ import { AddPieceForm } from './add-piece-form'
 import { PiecesList } from './pieces-list'
 import { deleteCampaignAction } from './actions'
 import { ConfirmSubmitButton } from '@/components/features/confirm-submit-button'
+import { DiagnosticErrorPanel } from '@/components/features/diagnostic-error-panel'
 
 const STATUS_LABEL: Record<string, string> = {
   planificacion: 'En planificación',
@@ -26,6 +27,27 @@ export default async function CampaignDetailPage({
     notFound()
   }
 
+  // Diagnóstico temporal (2026-08-06): try/catch explícito para capturar
+  // el error REAL — Next.js redacta el mensaje de cualquier excepción de
+  // Server Component no controlada en producción. Ver campaigns/page.tsx
+  // para el mismo criterio.
+  try {
+    return await renderCampaignDetail(id, activeOrganizationId)
+  } catch (err) {
+    // notFound() adentro de renderCampaignDetail tira una excepción
+    // especial con digest "NEXT_NOT_FOUND" — hay que dejarla pasar para
+    // que el framework renderice el 404 real, nunca tratarla como un
+    // error nuestro (mismo criterio que el passthrough de NEXT_REDIRECT
+    // ya usado del lado del cliente en esta sesión).
+    if (err && typeof err === 'object' && 'digest' in err && typeof err.digest === 'string' && err.digest.startsWith('NEXT_')) {
+      throw err
+    }
+    console.error('[CampaignDetailPage] excepción real:', err)
+    return <DiagnosticErrorPanel error={err} context={`/campaigns/${id}`} />
+  }
+}
+
+async function renderCampaignDetail(id: string, activeOrganizationId: string) {
   const supabase = await createClient()
 
   const { data: campaign } = await supabase
