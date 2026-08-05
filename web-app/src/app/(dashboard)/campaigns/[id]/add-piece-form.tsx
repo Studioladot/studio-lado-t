@@ -2,6 +2,7 @@
 
 import { useRef, useState, type FormEvent } from 'react'
 import { createPieceAction, type CreatePieceState } from './actions'
+import { uploadReferenceFilesClient } from '@/lib/media/upload-client'
 
 const FORMATOS = ['Reel', 'TikTok', 'Carrusel', 'Historia', 'Post', 'Video largo', 'Otro']
 const PLATAFORMAS = ['Instagram', 'TikTok', 'Ambas', 'YouTube']
@@ -48,6 +49,7 @@ export function AddPieceForm({
   const [networkTab, setNetworkTab] = useState<'instagram' | 'tiktok'>('instagram')
   const [justAdded, setJustAdded] = useState(false)
   const [pending, setPending] = useState(false)
+  const [uploading, setUploading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const formRef = useRef<HTMLFormElement>(null)
   const justAddedTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -58,12 +60,32 @@ export function AddPieceForm({
   // react-hooks/set-state-in-effect (mismo motivo que Date.now()/Math.random()
   // en otros lados de esta sesión). Un handler de evento no tiene ese problema:
   // es exactamente el patrón que ya usa FinConfigCard en sales-tabs.tsx.
+  //
+  // Subida directa cliente→Storage (bug real reportado, 2026-08-06): las
+  // Referencias se suben ANTES de llamar al Server Action — mandar el File
+  // dentro de la Server Action pegaba contra el límite de ~4.5MB de las
+  // funciones serverless de Vercel (413), ver upload-client.ts.
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
     setPending(true)
     setError(null)
 
     const formData = new FormData(e.currentTarget)
+
+    const referenceFiles = formData.getAll('reference_files').filter((f): f is File => f instanceof File && f.size > 0)
+    formData.delete('reference_files')
+    if (referenceFiles.length > 0) {
+      setUploading(true)
+      const uploaded = await uploadReferenceFilesClient(referenceFiles)
+      setUploading(false)
+      if (uploaded.error) {
+        setPending(false)
+        setError(uploaded.error)
+        return
+      }
+      formData.set('reference_media', JSON.stringify(uploaded.media))
+    }
+
     let result: CreatePieceState
     try {
       result = await createPieceAction({ error: null, success: false }, formData)
@@ -282,7 +304,7 @@ export function AddPieceForm({
           disabled={pending}
           className="rounded-control bg-primary px-4 py-2 text-[13px] font-semibold text-white transition-all duration-200 ease-out hover:bg-primary-hover active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-70"
         >
-          {pending ? 'Agregando…' : 'Agregar pieza'}
+          {uploading ? 'Subiendo archivos…' : pending ? 'Agregando…' : 'Agregar pieza'}
         </button>
         <button
           type="button"

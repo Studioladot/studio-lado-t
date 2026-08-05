@@ -1,8 +1,8 @@
 'use client'
 
-import { useActionState, useEffect, useState } from 'react'
-import { useFormStatus } from 'react-dom'
+import { useState, type FormEvent } from 'react'
 import { createPostAction, updatePostAction, type PostState } from './actions'
+import { uploadReferenceFilesClient } from '@/lib/media/upload-client'
 import type { Database } from '@/lib/types/database.types'
 
 type Post = Database['public']['Tables']['content_posts']['Row']
@@ -30,8 +30,6 @@ const PRODUCTION_STATUSES = [
   { value: 'publicado', label: 'Publicado' },
 ]
 
-const initialState: PostState = { error: null, success: false }
-
 // Mismo fix que add-piece-form.tsx/piece-edit-form.tsx (2026-07-30):
 // colores theme-aware en vez de hex hardcodeado (#D0D5DD/#F9FAFB/#101828),
 // que rompía en dark mode.
@@ -39,20 +37,6 @@ const fieldClass =
   'rounded-control border border-border bg-surface-2/60 px-3 py-2.5 text-sm text-text outline-none transition-all duration-200 ease-out placeholder:text-text-3 focus:border-accent focus-visible:ring-2 focus-visible:ring-accent'
 
 const labelClass = 'flex flex-col gap-1.5 text-[11px] font-semibold uppercase tracking-[.06em] text-text-2'
-
-function SubmitButton({ label }: { label: string }) {
-  const { pending } = useFormStatus()
-
-  return (
-    <button
-      type="submit"
-      disabled={pending}
-      className="rounded-control bg-primary px-4 py-2 text-xs font-semibold text-white transition-all duration-200 ease-out hover:bg-primary-hover active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-70"
-    >
-      {pending ? 'Guardando…' : label}
-    </button>
-  )
-}
 
 export function PostForm({
   post,
@@ -67,22 +51,69 @@ export function PostForm({
   defaultDate?: string
   onDone: () => void
 }) {
-  const action = post ? updatePostAction.bind(null, post.id) : createPostAction
-  const [state, formAction] = useActionState(action, initialState)
   const [networkTab, setNetworkTab] = useState<'instagram' | 'tiktok'>('instagram')
+  const [pending, setPending] = useState(false)
+  const [uploading, setUploading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
-  // Bug real reportado por la PO (2026-08-01): sin esto, el modal se
-  // quedaba abierto y el botón se re-habilitaba apenas terminaba el
-  // guardado exitoso — sin ningún feedback de "ya se guardó", el usuario
-  // volvía a tocar "Guardar" pensando que no había andado, y
-  // createPostAction generaba una fila nueva cada vez (duplicados reales
-  // en la base). Mismo patrón que ya usa piece-edit-form.tsx.
-  useEffect(() => {
-    if (state.success) onDone()
-  }, [state.success, onDone])
+  // Submit manual (no useActionState) desde el fix de subida directa
+  // cliente→Storage (bug real reportado, 2026-08-06): las Referencias se
+  // suben ANTES de llamar al Server Action — mandar el File dentro de la
+  // Server Action pegaba contra el límite de ~4.5MB de las funciones
+  // serverless de Vercel (413), ver upload-client.ts. Mismo patrón que
+  // add-piece-form.tsx: sin el try/catch, cualquier excepción real deja el
+  // botón colgado en "Guardando…" para siempre (bug ya corregido antes,
+  // 2026-08-06).
+  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault()
+    setPending(true)
+    setError(null)
+
+    const formData = new FormData(e.currentTarget)
+
+    const referenceFiles = formData.getAll('reference').filter((f): f is File => f instanceof File && f.size > 0)
+    formData.delete('reference')
+    if (referenceFiles.length > 0) {
+      setUploading(true)
+      const uploaded = await uploadReferenceFilesClient(referenceFiles)
+      setUploading(false)
+      if (uploaded.error) {
+        setPending(false)
+        setError(uploaded.error)
+        return
+      }
+      formData.set('reference_media', JSON.stringify(uploaded.media))
+    }
+
+    const action = post ? updatePostAction.bind(null, post.id) : createPostAction
+    let result: PostState
+    try {
+      result = await action({ error: null, success: false }, formData)
+    } catch (err) {
+      if (err && typeof err === 'object' && 'digest' in err && typeof err.digest === 'string' && err.digest.startsWith('NEXT_REDIRECT')) {
+        throw err
+      }
+      console.error('[PostForm] excepción inesperada al guardar la publicación:', err)
+      setPending(false)
+      setError('No pudimos guardar la publicación. Probá de nuevo en unos minutos.')
+      return
+    }
+    setPending(false)
+
+    if (!result.success) {
+      setError(result.error)
+      return
+    }
+
+    // Bug real reportado por la PO (2026-08-01): antes esto dependía de un
+    // useEffect mirando `state.success` — sin feedback de "ya se guardó" el
+    // usuario volvía a tocar "Guardar" pensando que no había andado, y se
+    // duplicaba la fila. Acá cerrar es parte directa del mismo submit.
+    onDone()
+  }
 
   return (
-    <form action={formAction} className="flex flex-col gap-3 rounded-card border border-border bg-surface p-4">
+    <form onSubmit={handleSubmit} className="flex flex-col gap-3 rounded-card border border-border bg-surface p-4">
       <label className={labelClass}>
         Título
         <input
@@ -231,10 +262,16 @@ export function PostForm({
         )}
       </div>
 
-      {state.error && <p className="text-xs text-red">{state.error}</p>}
+      {error && <p className="text-xs text-red">{error}</p>}
 
       <div className="flex items-center gap-3">
-        <SubmitButton label={post ? 'Guardar cambios' : 'Guardar publicación'} />
+        <button
+          type="submit"
+          disabled={pending}
+          className="rounded-control bg-primary px-4 py-2 text-xs font-semibold text-white transition-all duration-200 ease-out hover:bg-primary-hover active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-70"
+        >
+          {uploading ? 'Subiendo archivos…' : pending ? 'Guardando…' : post ? 'Guardar cambios' : 'Guardar publicación'}
+        </button>
         <button
           type="button"
           onClick={onDone}

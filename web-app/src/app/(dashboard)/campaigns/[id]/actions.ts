@@ -2,45 +2,31 @@
 
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
-import type { SupabaseClient } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/server'
 import { getDashboardContext } from '@/lib/organization/dashboard-context'
-import { validateMediaFile } from '@/lib/media/validate-upload'
 
 type MediaItem = { url: string; type: 'image' | 'video' }
 
-// Bucket "piezas-media" (público) — mismo path que app.html:
-// {user_id}/{timestamp}-{random}.{ext}.
-async function uploadPieceMediaFiles(
-  supabase: SupabaseClient,
-  userId: string,
-  files: File[]
-): Promise<{ media: MediaItem[]; error: string | null }> {
-  const media: MediaItem[] = []
-
-  for (const file of files) {
-    const validation = await validateMediaFile(file)
-    if (!validation.ok) {
-      return { media, error: validation.error }
-    }
-
-    const ext = file.name.split('.').pop() || 'bin'
-    const path = `${userId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`
-
-    const { error: uploadError } = await supabase.storage.from('piezas-media').upload(path, file)
-
-    if (uploadError) {
-      return { media, error: `No pudimos subir "${file.name}". Probá de nuevo.` }
-    }
-
-    const {
-      data: { publicUrl },
-    } = supabase.storage.from('piezas-media').getPublicUrl(path)
-
-    media.push({ url: publicUrl, type: validation.kind })
+// El archivo ya se subió del lado del cliente directo a Storage (bug real
+// reportado, 2026-08-06: subir el File acá adentro pegaba contra el límite
+// de body de ~4.5MB de las funciones serverless de Vercel) — este campo
+// solo trae la URL pública ya resuelta, ver src/lib/media/upload-client.ts.
+function parseUploadedMedia(formData: FormData, field: string): MediaItem[] {
+  const raw = formData.get(field)
+  if (typeof raw !== 'string' || !raw) return []
+  try {
+    const parsed: unknown = JSON.parse(raw)
+    if (!Array.isArray(parsed)) return []
+    return parsed.filter(
+      (item): item is MediaItem =>
+        typeof item === 'object' &&
+        item !== null &&
+        typeof (item as MediaItem).url === 'string' &&
+        ((item as MediaItem).type === 'image' || (item as MediaItem).type === 'video')
+    )
+  } catch {
+    return []
   }
-
-  return { media, error: null }
 }
 
 export type SaveState = {
@@ -140,17 +126,11 @@ export async function createPieceAction(
   }
 
   // Referencias — multi-archivo, moodboard/tomas crudas para planificación.
-  // Gotix no sube nada a Instagram/TikTok directamente (decisión de
-  // producto, 2026-08-05): la pieza final se publica desde la app nativa.
-  const referenceFiles = formData
-    .getAll('reference_files')
-    .filter((entry): entry is File => entry instanceof File && entry.size > 0)
-
-  const { media: referenceUrls, error: referenceUploadError } = await uploadPieceMediaFiles(supabase, user.id, referenceFiles)
-
-  if (referenceUploadError) {
-    return { error: referenceUploadError, success: false }
-  }
+  // El archivo ya se subió del lado del cliente (ver upload-client.ts);
+  // acá solo llega la URL pública. Gotix no sube nada a Instagram/TikTok
+  // directamente (decisión de producto, 2026-08-05): la pieza final se
+  // publica desde la app nativa.
+  const referenceUrls = parseUploadedMedia(formData, 'reference_media')
 
   const productionStatusRaw = String(formData.get('production_status') ?? 'idea')
 
@@ -186,10 +166,11 @@ export type AddMediaState = {
 }
 
 /**
- * Sube más Referencias a una pieza ya creada — piece-edit-form.tsx no tiene
+ * Suma más Referencias a una pieza ya creada — piece-edit-form.tsx no tiene
  * input de archivo propio, esto es lo único que agrega media después de la
  * creación (ver add-piece-media-form.tsx). Se acumula (álbum), nunca
- * reemplaza lo que ya había.
+ * reemplaza lo que ya había. El archivo ya se subió del lado del cliente
+ * (ver upload-client.ts) — acá solo llegan las URLs públicas a mergear.
  */
 export async function addPieceMediaAction(
   pieceId: string,
@@ -197,11 +178,9 @@ export async function addPieceMediaAction(
   _prevState: AddMediaState,
   formData: FormData
 ): Promise<AddMediaState> {
-  const files = formData
-    .getAll('media_files')
-    .filter((entry): entry is File => entry instanceof File && entry.size > 0)
+  const newMedia = parseUploadedMedia(formData, 'reference_media')
 
-  if (files.length === 0) {
+  if (newMedia.length === 0) {
     return { error: 'Elegí al menos un archivo.' }
   }
 
@@ -229,12 +208,6 @@ export async function addPieceMediaAction(
 
   if (!existingPiece) {
     return { error: 'No encontramos la pieza.' }
-  }
-
-  const { media: newMedia, error: uploadError } = await uploadPieceMediaFiles(supabase, user.id, files)
-
-  if (uploadError) {
-    return { error: uploadError }
   }
 
   const existingReference = Array.isArray(existingPiece.reference_urls)
