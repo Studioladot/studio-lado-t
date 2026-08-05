@@ -24,7 +24,6 @@ const SCOPE_LABEL: Record<string, string> = {
   pages_show_list: 'Ver las Páginas de Facebook que administrás',
   pages_read_engagement: 'Leer la cuenta de Instagram vinculada a tus Páginas',
   instagram_basic: 'Ver tu perfil de Instagram',
-  instagram_content_publish: 'Publicar contenido en tu Instagram',
   instagram_manage_insights: 'Leer métricas de tu Instagram',
 }
 
