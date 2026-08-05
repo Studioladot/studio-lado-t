@@ -1,7 +1,7 @@
 'use client'
 
 import { useRef, useState, type FormEvent } from 'react'
-import { createPieceAction } from './actions'
+import { createPieceAction, type CreatePieceState } from './actions'
 import { ContentPreviewSimulator } from '../../content/content-preview-simulator'
 
 const FORMATOS = ['Reel', 'TikTok', 'Carrusel', 'Historia', 'Post', 'Video largo', 'Otro']
@@ -77,7 +77,27 @@ export function AddPieceForm({
     setError(null)
 
     const formData = new FormData(e.currentTarget)
-    const result = await createPieceAction({ error: null, success: false }, formData)
+    let result: CreatePieceState
+    try {
+      result = await createPieceAction({ error: null, success: false }, formData)
+    } catch (err) {
+      // redirect('/login') de createPieceAction (sesión vencida) funciona
+      // tirando una excepción especial con digest "NEXT_REDIRECT" — hay que
+      // dejarla pasar para que el framework haga la navegación real, nunca
+      // tratarla como un error nuestro.
+      if (err && typeof err === 'object' && 'digest' in err && typeof err.digest === 'string' && err.digest.startsWith('NEXT_REDIRECT')) {
+        throw err
+      }
+      // Bug real reportado (2026-08-06): sin este catch, cualquier
+      // excepción real acá (falla inesperada al subir el archivo, corte de
+      // red, un error del servidor no contemplado) dejaba `pending` en
+      // true para siempre — el botón se quedaba en "Agregando…" sin
+      // ningún mensaje, indistinguible de una carga que nunca termina.
+      console.error('[AddPieceForm] excepción inesperada al guardar la pieza:', err)
+      setPending(false)
+      setError('No pudimos guardar la pieza. Probá de nuevo en unos minutos.')
+      return
+    }
     setPending(false)
 
     if (!result.success) {

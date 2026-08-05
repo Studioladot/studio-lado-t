@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { crossPostAction } from './cross-post-actions'
+import { crossPostAction, type CrossPostResult } from './cross-post-actions'
 import type { WinningItem } from '@/lib/content/winners'
 
 // "Resubir a [Otra Plataforma]" (Épica Omnicanal, 2026-08-04) — clona el
@@ -23,7 +23,23 @@ export function CrossPostModal({ item, onClose }: { item: WinningItem; onClose: 
   async function handleSubmit() {
     setPending(true)
     setError(null)
-    const result = await crossPostAction(item.sourceTable, item.itemId, target)
+    let result: CrossPostResult
+    try {
+      result = await crossPostAction(item.sourceTable, item.itemId, target)
+    } catch (err) {
+      // Mismo fix que add-piece-form.tsx (bug real reportado, 2026-08-06):
+      // sin este catch, cualquier excepción real acá dejaba `pending` en
+      // true para siempre — el botón quedaba en "Creando…" sin ningún
+      // mensaje. Si la excepción es el redirect('/login') interno de Next
+      // (digest "NEXT_REDIRECT"), se deja pasar para que navegue de verdad.
+      if (err && typeof err === 'object' && 'digest' in err && typeof err.digest === 'string' && err.digest.startsWith('NEXT_REDIRECT')) {
+        throw err
+      }
+      console.error('[CrossPostModal] excepción inesperada al crear el borrador:', err)
+      setPending(false)
+      setError('No pudimos crear el borrador. Probá de nuevo en unos minutos.')
+      return
+    }
     setPending(false)
     if (!result.ok) {
       setError(result.error)
