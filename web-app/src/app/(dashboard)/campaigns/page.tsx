@@ -1,21 +1,15 @@
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { getDashboardContext } from '@/lib/organization/dashboard-context'
-import { DropdownMenu, FilterTrigger } from '@/components/features/dropdown-menu'
 import { DiagnosticErrorPanel } from '@/components/features/diagnostic-error-panel'
 import { isNextInternalControlFlow } from '@/lib/next-internal-error'
+import { CampaignsFilterDropdown } from './campaigns-filter-dropdown'
 
 const STATUS_LABEL: Record<string, string> = {
   planificacion: 'En planificación',
   activa: 'Activa',
   terminada: 'Terminada',
 }
-
-const FILTERS = [
-  { value: 'all', label: 'Todas' },
-  { value: 'activa', label: 'Activas' },
-  { value: 'apagada', label: 'Apagadas' },
-] as const
 
 export default async function CampaignsPage({
   searchParams,
@@ -105,34 +99,7 @@ async function renderCampaignsList(activeOrganizationId: string, estado: string 
       </div>
 
       <div className="mb-4">
-        <DropdownMenu
-          trigger={({ open, toggle }) => (
-            <FilterTrigger
-              label="Estado"
-              value={FILTERS.find((f) => f.value === (estado ?? 'all'))?.label ?? 'Todas'}
-              open={open}
-              onClick={toggle}
-              active={(estado ?? 'all') !== 'all'}
-            />
-          )}
-        >
-          {(close) => (
-            <>
-              {FILTERS.map((opt) => (
-                <Link
-                  key={opt.value}
-                  href={opt.value === 'all' ? '/campaigns' : `/campaigns?estado=${opt.value}`}
-                  onClick={close}
-                  className={`block w-full px-3.5 py-2 text-left text-xs transition-colors duration-150 ease-out hover:bg-surface-2 ${
-                    (estado ?? 'all') === opt.value ? 'font-semibold text-accent' : 'text-text-2'
-                  }`}
-                >
-                  {opt.label}
-                </Link>
-              ))}
-            </>
-          )}
-        </DropdownMenu>
+        <CampaignsFilterDropdown estado={estado} />
       </div>
 
       {filtered.length === 0 ? (
