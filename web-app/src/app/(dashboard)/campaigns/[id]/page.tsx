@@ -20,30 +20,29 @@ export default async function CampaignDetailPage({
 }: {
   params: Promise<{ id: string }>
 }) {
-  const { id } = await params
-  const { activeOrganizationId } = await getDashboardContext()
-
-  if (!activeOrganizationId) {
-    notFound()
-  }
-
-  // Diagnóstico temporal (2026-08-06): try/catch explícito para capturar
-  // el error REAL — Next.js redacta el mensaje de cualquier excepción de
-  // Server Component no controlada en producción. Ver campaigns/page.tsx
-  // para el mismo criterio.
+  // Diagnóstico temporal (2026-08-06): el try/catch de la ronda anterior
+  // no atrapó nada nuevo (el digest cambió mismo así) — cubría solo
+  // renderCampaignDetail, no getDashboardContext() ni el await de params,
+  // que corrían antes del try. Ahora TODO el cuerpo de la página está
+  // adentro, sin excepción.
   try {
+    const { id } = await params
+    const { activeOrganizationId } = await getDashboardContext()
+
+    if (!activeOrganizationId) {
+      notFound()
+    }
+
     return await renderCampaignDetail(id, activeOrganizationId)
   } catch (err) {
-    // notFound() adentro de renderCampaignDetail tira una excepción
-    // especial con digest "NEXT_NOT_FOUND" — hay que dejarla pasar para
-    // que el framework renderice el 404 real, nunca tratarla como un
-    // error nuestro (mismo criterio que el passthrough de NEXT_REDIRECT
-    // ya usado del lado del cliente en esta sesión).
+    // notFound() tira una excepción especial con digest "NEXT_NOT_FOUND"
+    // (redirect() usa "NEXT_REDIRECT") — hay que dejarlas pasar para que
+    // el framework haga lo suyo, nunca tratarlas como un error nuestro.
     if (err && typeof err === 'object' && 'digest' in err && typeof err.digest === 'string' && err.digest.startsWith('NEXT_')) {
       throw err
     }
     console.error('[CampaignDetailPage] excepción real:', err)
-    return <DiagnosticErrorPanel error={err} context={`/campaigns/${id}`} />
+    return <DiagnosticErrorPanel error={err} context="/campaigns/[id]" />
   }
 }
 

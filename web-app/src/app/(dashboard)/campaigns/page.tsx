@@ -21,8 +21,23 @@ export default async function CampaignsPage({
 }: {
   searchParams: Promise<{ estado?: string }>
 }) {
-  const { estado } = await searchParams
-  const { activeOrganizationId } = await getDashboardContext()
+  // Diagnóstico temporal (2026-08-06): ESLint (react-hooks/error-boundaries)
+  // confirmó por qué las dos rondas anteriores no atraparon nada — React no
+  // ejecuta el árbol de JSX de forma síncrona adentro de un try/catch, así
+  // que esto SOLO puede cubrir código plano (fetch de datos), nunca el
+  // render de un componente hijo (PiecesList, CampaignDetailsForm, etc.).
+  // Sigue siendo útil: si la excepción real está en las queries de acá, la
+  // vamos a ver.
+  let estado: string | undefined
+  let activeOrganizationId: string | null
+
+  try {
+    ;({ estado } = await searchParams)
+    ;({ activeOrganizationId } = await getDashboardContext())
+  } catch (err) {
+    console.error('[CampaignsPage] excepción real (contexto):', err)
+    return <DiagnosticErrorPanel error={err} context="/campaigns — getDashboardContext" />
+  }
 
   if (!activeOrganizationId) {
     return (
@@ -32,17 +47,11 @@ export default async function CampaignsPage({
     )
   }
 
-  // Diagnóstico temporal (2026-08-06): try/catch explícito para capturar
-  // el error REAL — Next.js redacta el mensaje de cualquier excepción de
-  // Server Component no controlada en producción (confirmado: llegó el
-  // digest, no el mensaje, ni siquiera dentro de un error.tsx propio).
-  // Atrapándolo acá, lo que se renderiza es data elegida por nosotros, no
-  // una excepción — Next no tiene nada que redactar.
   try {
     return await renderCampaignsList(activeOrganizationId, estado)
   } catch (err) {
     console.error('[CampaignsPage] excepción real:', err)
-    return <DiagnosticErrorPanel error={err} context="/campaigns" />
+    return <DiagnosticErrorPanel error={err} context="/campaigns — renderCampaignsList" />
   }
 }
 
