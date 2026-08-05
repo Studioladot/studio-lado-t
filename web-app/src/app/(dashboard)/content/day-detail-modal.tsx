@@ -3,6 +3,7 @@
 import { deletePostAction } from './actions'
 import { deletePieceAction } from '../campaigns/[id]/actions'
 import { ConfirmSubmitButton } from '@/components/features/confirm-submit-button'
+import { pillClass } from '@/components/features/action-pill'
 import type { UnifiedItem } from './unified-items'
 
 // Modal de "qué hay planificado este día" — antes, clickear un día del
@@ -62,22 +63,23 @@ export function DayDetailModal({
                         {item.campaignName}
                       </p>
                     )}
-                    <div className="mt-2 flex items-center gap-3 text-[11px]">
+                    <div className="mt-2 flex items-center gap-2">
                       {/* "Ver" — vista de solo lectura (copy completo, notas
                           internas, preview de referencias), pedida
                           explícitamente por la PO para no arriesgar cambiar
                           datos por accidente al querer solo revisar algo. */}
-                      <button type="button" onClick={() => onView(item)} className="font-medium text-text-2 transition-colors duration-200 ease-out hover:text-text">
+                      <button type="button" onClick={() => onView(item)} className={pillClass('neutral')}>
                         Ver
                       </button>
-                      <button type="button" onClick={() => onEdit(item)} className="font-medium text-text-2 transition-colors duration-200 ease-out hover:text-text">
+                      <button type="button" onClick={() => onEdit(item)} className={pillClass('neutral')}>
                         Editar
                       </button>
                       {item.sourceTable === 'content_posts' ? (
                         <form action={deletePostAction.bind(null, item.id)} className="ml-auto">
                           <ConfirmSubmitButton
                             confirmMessage={`¿Estás seguro? Se va a borrar "${item.titulo}".`}
-                            className="font-medium text-text-3 transition-colors duration-200 ease-out hover:text-red"
+                            toastPending="Borrando…"
+                            toastSuccess="Eliminado con éxito"
                           >
                             Eliminar
                           </ConfirmSubmitButton>
@@ -87,7 +89,8 @@ export function DayDetailModal({
                           <form action={deletePieceAction.bind(null, item.id, item.campaignId)} className="ml-auto">
                             <ConfirmSubmitButton
                               confirmMessage={`¿Estás seguro? Se va a borrar "${item.titulo}".`}
-                              className="font-medium text-text-3 transition-colors duration-200 ease-out hover:text-red"
+                              toastPending="Borrando…"
+                              toastSuccess="Eliminado con éxito"
                             >
                               Eliminar
                             </ConfirmSubmitButton>

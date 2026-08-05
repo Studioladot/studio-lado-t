@@ -3,9 +3,12 @@
 import Link from 'next/link'
 import { useMemo, useState } from 'react'
 import { PostForm } from './post-form'
-import { deletePostAction, togglePostStatusAction } from './actions'
+import { deletePostAction } from './actions'
 import { unifyContentItems, type UnifiedItem } from './unified-items'
+import { StatusEditBadge } from './status-edit-badge'
 import { ConfirmSubmitButton } from '@/components/features/confirm-submit-button'
+import { DropdownMenu, DropdownItem, FilterTrigger } from '@/components/features/dropdown-menu'
+import { pillClass } from '@/components/features/action-pill'
 import { Pagination } from '../meta-ads/campaigns/pagination'
 import type { Database } from '@/lib/types/database.types'
 
@@ -20,35 +23,48 @@ type Campaign = Database['public']['Tables']['content_campaigns']['Row']
 // de tabla densa que ya usa Ventas (ledger-table.tsx): thead bg-surface-2,
 // headers uppercase 10px, filas text-xs, paginado con el componente
 // genérico ya usado en Campañas.
+//
+// Pulido UX/UI (2026-08-06): las 7 pastillas de filtro sueltas ("choclo
+// visual") se agrupan en 2 dropdowns — Estado y Plataforma/Formato — que
+// ahora se combinan con AND (antes un filtro pisaba al otro porque todo
+// vivía en un único estado `filter`).
 
-const FILTERS = [
+const STATUS_FILTERS = [
   { value: 'all', label: 'Todas' },
   { value: 'publicado', label: 'Publicadas' },
   { value: 'pendiente', label: 'Pendientes' },
+] as const
+
+const PLATFORM_FORMAT_FILTERS = [
+  { value: 'all', label: 'Todas' },
   { value: 'Instagram', label: 'Instagram' },
   { value: 'TikTok', label: 'TikTok' },
   { value: 'Reel', label: 'Reels' },
   { value: 'Carrusel', label: 'Carruseles' },
 ] as const
 
-const MANUAL_STATUS_BADGE: Record<string, string> = {
-  publicado: 'border-green/40 bg-green/[8%] text-green',
-  pendiente: 'border-amber/40 bg-amber/[8%] text-amber',
-  borrador: 'border-border text-text-2',
-}
-
-function StatusBadge({ item }: { item: UnifiedItem }) {
+function ThumbPlaceholderIcon() {
   return (
-    <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium capitalize ${MANUAL_STATUS_BADGE[item.status] ?? 'border-border text-text-2'}`}>
-      {item.status}
-    </span>
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="4" width="18" height="16" rx="2" />
+      <circle cx="9" cy="10" r="1.5" />
+      <path d="m21 16-5.5-5.5a1.5 1.5 0 0 0-2.12 0L4 19" />
+    </svg>
   )
 }
 
+// Fix real reportado (2026-08-06): sin fallback, la caja quedaba vacía/rota
+// a simple vista — daba la impresión de que la página falló al cargar. Un
+// ícono minimalista + fondo tenue deja claro que "no hay imagen" es un
+// estado válido, no un error.
 function Thumb({ item }: { item: UnifiedItem }) {
   const thumb = item.mediaList[0] ?? null
   if (!thumb) {
-    return <div className="h-8 w-8 shrink-0 rounded-control border border-border bg-surface-2" />
+    return (
+      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-control border border-dashed border-border bg-surface-2/40 text-text-3">
+        <ThumbPlaceholderIcon />
+      </div>
+    )
   }
   return (
     <div className="h-8 w-8 shrink-0 overflow-hidden rounded-control border border-border bg-surface-2">
@@ -75,7 +91,8 @@ export function PublicationsTable({
   instagramConnected: boolean
   tiktokConnected: boolean
 }) {
-  const [filter, setFilter] = useState<string>('all')
+  const [statusFilter, setStatusFilter] = useState<string>('all')
+  const [platformFormatFilter, setPlatformFormatFilter] = useState<string>('all')
   const [page, setPage] = useState(1)
   const [creating, setCreating] = useState(false)
   const [editingItem, setEditingItem] = useState<UnifiedItem | null>(null)
@@ -83,9 +100,14 @@ export function PublicationsTable({
   const items = useMemo(() => unifyContentItems(posts, pieces, campaigns), [posts, pieces, campaigns])
 
   const filtered = useMemo(() => {
-    const base = filter === 'all' ? items : items.filter((i) => i.status === filter || i.platform === filter || i.format === filter)
+    const base = items.filter((i) => {
+      const matchesStatus = statusFilter === 'all' || i.status === statusFilter
+      const matchesPlatformFormat =
+        platformFormatFilter === 'all' || i.platform === platformFormatFilter || i.format === platformFormatFilter
+      return matchesStatus && matchesPlatformFormat
+    })
     return [...base].sort((a, b) => (b.date ?? '').localeCompare(a.date ?? ''))
-  }, [items, filter])
+  }, [items, statusFilter, platformFormatFilter])
 
   // Auditoría de cierre (2026-08-01): antes esto renderizaba `filtered`
   // completo sin paginar — funcionaba para pocas filas, pero una
@@ -95,29 +117,76 @@ export function PublicationsTable({
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
   const paged = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
 
-  function handleFilterChange(value: string) {
-    setFilter(value)
+  function handleStatusFilterChange(value: string) {
+    setStatusFilter(value)
+    setPage(1)
+  }
+
+  function handlePlatformFormatFilterChange(value: string) {
+    setPlatformFormatFilter(value)
     setPage(1)
   }
 
   const editingPost = editingItem?.sourceTable === 'content_posts' ? posts.find((p) => p.id === editingItem.id) : undefined
 
+  const statusFilterLabel = STATUS_FILTERS.find((f) => f.value === statusFilter)?.label ?? 'Todas'
+  const platformFormatFilterLabel = PLATFORM_FORMAT_FILTERS.find((f) => f.value === platformFormatFilter)?.label ?? 'Todas'
+
   return (
     <>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap gap-2">
-          {FILTERS.map((f) => (
-            <button
-              key={f.value}
-              type="button"
-              onClick={() => handleFilterChange(f.value)}
-              className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-all duration-200 ease-out ${
-                filter === f.value ? 'border-accent bg-accent/15 text-accent' : 'border-border text-text-2 hover:bg-surface-2'
-              }`}
-            >
-              {f.label}
-            </button>
-          ))}
+          <DropdownMenu
+            trigger={({ open, toggle }) => (
+              <FilterTrigger label="Estado" value={statusFilterLabel} open={open} onClick={toggle} active={statusFilter !== 'all'} />
+            )}
+          >
+            {(close) => (
+              <>
+                {STATUS_FILTERS.map((f) => (
+                  <DropdownItem
+                    key={f.value}
+                    active={f.value === statusFilter}
+                    onClick={() => {
+                      handleStatusFilterChange(f.value)
+                      close()
+                    }}
+                  >
+                    {f.label}
+                  </DropdownItem>
+                ))}
+              </>
+            )}
+          </DropdownMenu>
+
+          <DropdownMenu
+            trigger={({ open, toggle }) => (
+              <FilterTrigger
+                label="Plataforma / Formato"
+                value={platformFormatFilterLabel}
+                open={open}
+                onClick={toggle}
+                active={platformFormatFilter !== 'all'}
+              />
+            )}
+          >
+            {(close) => (
+              <>
+                {PLATFORM_FORMAT_FILTERS.map((f) => (
+                  <DropdownItem
+                    key={f.value}
+                    active={f.value === platformFormatFilter}
+                    onClick={() => {
+                      handlePlatformFormatFilterChange(f.value)
+                      close()
+                    }}
+                  >
+                    {f.label}
+                  </DropdownItem>
+                ))}
+              </>
+            )}
+          </DropdownMenu>
         </div>
 
         {!creating && (
@@ -170,34 +239,26 @@ export function PublicationsTable({
                     )}
                   </td>
                   <td className="px-3 py-2">
-                    <StatusBadge item={item} />
+                    <StatusEditBadge item={item} />
                   </td>
                   <td className="px-3 py-2 tabular-nums text-text-2">{item.date ?? '—'}</td>
                   <td className="px-3 py-2 text-text-2">{item.platform ?? '—'}</td>
                   <td className="px-3 py-2">
-                    <div className="flex items-center justify-end gap-3">
+                    <div className="flex items-center justify-end gap-2">
                       {item.source === 'campana' ? (
-                        <Link href={`/campaigns/${item.campaignId}`} className="font-medium text-text-2 transition-colors duration-200 ease-out hover:text-text">
+                        <Link href={`/campaigns/${item.campaignId}`} className={pillClass('neutral')}>
                           Ver campaña
                         </Link>
                       ) : (
                         <>
-                          <form action={togglePostStatusAction.bind(null, item.id, item.status === 'publicado' ? 'pendiente' : 'publicado')}>
-                            <button type="submit" className="font-medium text-text-2 transition-colors duration-200 ease-out hover:text-text">
-                              {item.status === 'publicado' ? 'Marcar pendiente' : 'Marcar publicado'}
-                            </button>
-                          </form>
-                          <button
-                            type="button"
-                            onClick={() => setEditingItem(item)}
-                            className="font-medium text-text-2 transition-colors duration-200 ease-out hover:text-text"
-                          >
+                          <button type="button" onClick={() => setEditingItem(item)} className={pillClass('neutral')}>
                             Editar
                           </button>
                           <form action={deletePostAction.bind(null, item.id)}>
                             <ConfirmSubmitButton
                               confirmMessage={`¿Estás seguro? Se va a borrar "${item.titulo}".`}
-                              className="font-medium text-text-3 transition-colors duration-200 ease-out hover:text-red"
+                              toastPending="Borrando…"
+                              toastSuccess="Eliminado con éxito"
                             >
                               Borrar
                             </ConfirmSubmitButton>

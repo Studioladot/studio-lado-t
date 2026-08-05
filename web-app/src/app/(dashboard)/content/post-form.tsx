@@ -3,6 +3,8 @@
 import { useState, type FormEvent } from 'react'
 import { createPostAction, updatePostAction, type PostState } from './actions'
 import { uploadReferenceFilesClient } from '@/lib/media/upload-client'
+import { useToast } from '@/components/features/toast'
+import { MiniSpinner } from '@/components/features/action-pill'
 import type { Database } from '@/lib/types/database.types'
 
 type Post = Database['public']['Tables']['content_posts']['Row']
@@ -55,6 +57,7 @@ export function PostForm({
   const [pending, setPending] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const toast = useToast()
 
   // Submit manual (no useActionState) desde el fix de subida directa
   // cliente→Storage (bug real reportado, 2026-08-06): las Referencias se
@@ -68,6 +71,7 @@ export function PostForm({
     e.preventDefault()
     setPending(true)
     setError(null)
+    const toastId = toast.show('Guardando…', 'pending')
 
     const formData = new FormData(e.currentTarget)
 
@@ -80,6 +84,7 @@ export function PostForm({
       if (uploaded.error) {
         setPending(false)
         setError(uploaded.error)
+        toast.dismiss(toastId)
         return
       }
       formData.set('reference_media', JSON.stringify(uploaded.media))
@@ -96,14 +101,18 @@ export function PostForm({
       console.error('[PostForm] excepción inesperada al guardar la publicación:', err)
       setPending(false)
       setError('No pudimos guardar la publicación. Probá de nuevo en unos minutos.')
+      toast.dismiss(toastId)
       return
     }
     setPending(false)
 
     if (!result.success) {
       setError(result.error)
+      toast.dismiss(toastId)
       return
     }
+
+    toast.update(toastId, 'Guardado con éxito', 'success')
 
     // Bug real reportado por la PO (2026-08-01): antes esto dependía de un
     // useEffect mirando `state.success` — sin feedback de "ya se guardó" el
@@ -268,8 +277,9 @@ export function PostForm({
         <button
           type="submit"
           disabled={pending}
-          className="rounded-control bg-primary px-4 py-2 text-xs font-semibold text-white transition-all duration-200 ease-out hover:bg-primary-hover active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-70"
+          className="inline-flex items-center gap-1.5 rounded-control bg-primary px-4 py-2 text-xs font-semibold text-white transition-all duration-200 ease-out hover:bg-primary-hover active:scale-[0.98] disabled:cursor-wait disabled:opacity-70"
         >
+          {pending && <MiniSpinner />}
           {uploading ? 'Subiendo archivos…' : pending ? 'Guardando…' : post ? 'Guardar cambios' : 'Guardar publicación'}
         </button>
         <button

@@ -5,6 +5,8 @@ import { togglePieceStatusAction, deletePieceAction } from './actions'
 import { AddPieceMediaForm } from './add-piece-media-form'
 import { PieceEditForm } from './piece-edit-form'
 import { ConfirmSubmitButton } from '@/components/features/confirm-submit-button'
+import { SubmitPillButton } from '@/components/features/submit-pill-button'
+import { pillClass } from '@/components/features/action-pill'
 import type { Database } from '@/lib/types/database.types'
 
 type Piece = Database['public']['Tables']['content_piezas']['Row']
@@ -193,23 +195,16 @@ export function PiecesList({
 
               <div className="flex shrink-0 flex-col items-end gap-2">
                 <form action={togglePieceStatusAction.bind(null, piece.id, campaignId, nextStatus)}>
-                  <button
-                    type="submit"
-                    className={`rounded-control border px-3 py-1.5 text-xs font-medium transition-all duration-200 ease-out active:scale-[0.98] ${
-                      isPublished
-                        ? 'border-border text-text-2 hover:bg-surface-2'
-                        : 'border-green/40 bg-green/[8%] text-green hover:bg-green/[14%]'
-                    }`}
+                  <SubmitPillButton
+                    variant={isPublished ? 'neutral' : 'accent'}
+                    toastPending="Actualizando…"
+                    toastSuccess="Estado actualizado"
                   >
                     {isPublished ? 'Marcar pendiente' : 'Marcar publicado'}
-                  </button>
+                  </SubmitPillButton>
                 </form>
-                <div className="flex items-center gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setEditingId(piece.id)}
-                    className="text-xs font-medium text-text-2 transition-colors duration-200 ease-out hover:text-text"
-                  >
+                <div className="flex items-center gap-2">
+                  <button type="button" onClick={() => setEditingId(piece.id)} className={pillClass('neutral')}>
                     Editar
                   </button>
                   {/* Auditoría de cierre: borrar algo 'publishing' no cancela la publicación real en Instagram, solo pierde el registro local. */}
@@ -217,7 +212,8 @@ export function PiecesList({
                     <form action={deletePieceAction.bind(null, piece.id, campaignId)}>
                       <ConfirmSubmitButton
                         confirmMessage={`¿Estás seguro? Se va a borrar "${piece.titulo}".`}
-                        className="text-xs font-medium text-text-3 transition-colors duration-200 ease-out hover:text-red"
+                        toastPending="Borrando…"
+                        toastSuccess="Eliminado con éxito"
                       >
                         Borrar
                       </ConfirmSubmitButton>

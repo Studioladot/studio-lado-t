@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { getDashboardContext } from '@/lib/organization/dashboard-context'
+import { DropdownMenu, FilterTrigger } from '@/components/features/dropdown-menu'
 
 const STATUS_LABEL: Record<string, string> = {
   planificacion: 'En planificación',
@@ -75,20 +76,35 @@ export default async function CampaignsPage({
         </Link>
       </div>
 
-      <div className="mb-4 flex gap-2">
-        {FILTERS.map((opt) => (
-          <Link
-            key={opt.value}
-            href={opt.value === 'all' ? '/campaigns' : `/campaigns?estado=${opt.value}`}
-            className={`rounded-control border px-3 py-1.5 text-xs font-medium transition-all duration-200 ease-out ${
-              (estado ?? 'all') === opt.value
-                ? 'border-primary bg-primary/[8%] text-primary'
-                : 'border-border text-text-2 hover:bg-surface-2'
-            }`}
-          >
-            {opt.label}
-          </Link>
-        ))}
+      <div className="mb-4">
+        <DropdownMenu
+          trigger={({ open, toggle }) => (
+            <FilterTrigger
+              label="Estado"
+              value={FILTERS.find((f) => f.value === (estado ?? 'all'))?.label ?? 'Todas'}
+              open={open}
+              onClick={toggle}
+              active={(estado ?? 'all') !== 'all'}
+            />
+          )}
+        >
+          {(close) => (
+            <>
+              {FILTERS.map((opt) => (
+                <Link
+                  key={opt.value}
+                  href={opt.value === 'all' ? '/campaigns' : `/campaigns?estado=${opt.value}`}
+                  onClick={close}
+                  className={`block w-full px-3.5 py-2 text-left text-xs transition-colors duration-150 ease-out hover:bg-surface-2 ${
+                    (estado ?? 'all') === opt.value ? 'font-semibold text-accent' : 'text-text-2'
+                  }`}
+                >
+                  {opt.label}
+                </Link>
+              ))}
+            </>
+          )}
+        </DropdownMenu>
       </div>
 
       {filtered.length === 0 ? (

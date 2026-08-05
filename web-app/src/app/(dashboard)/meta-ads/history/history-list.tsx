@@ -1,6 +1,7 @@
 'use client'
 
 import { useMemo, useState } from 'react'
+import { DropdownMenu, DropdownItem, FilterTrigger } from '@/components/features/dropdown-menu'
 import type { LaunchActivityEntry, LaunchLogStatus } from '@/lib/meta/history'
 
 const FILTERS: { value: 'all' | LaunchLogStatus; label: string }[] = [
@@ -30,19 +31,35 @@ export function HistoryList({ entries }: { entries: LaunchActivityEntry[] }) {
 
   return (
     <>
-      <div className="mb-4 flex flex-wrap gap-2">
-        {FILTERS.map((f) => (
-          <button
-            key={f.value}
-            type="button"
-            onClick={() => setFilter(f.value)}
-            className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-all duration-200 ease-out ${
-              filter === f.value ? 'border-accent bg-accent/15 text-accent' : 'border-border text-text-2 hover:bg-surface-2'
-            }`}
-          >
-            {f.label}
-          </button>
-        ))}
+      <div className="mb-4">
+        <DropdownMenu
+          trigger={({ open, toggle }) => (
+            <FilterTrigger
+              label="Estado"
+              value={FILTERS.find((f) => f.value === filter)?.label ?? 'Todos'}
+              open={open}
+              onClick={toggle}
+              active={filter !== 'all'}
+            />
+          )}
+        >
+          {(close) => (
+            <>
+              {FILTERS.map((f) => (
+                <DropdownItem
+                  key={f.value}
+                  active={f.value === filter}
+                  onClick={() => {
+                    setFilter(f.value)
+                    close()
+                  }}
+                >
+                  {f.label}
+                </DropdownItem>
+              ))}
+            </>
+          )}
+        </DropdownMenu>
       </div>
 
       {filtered.length === 0 ? (

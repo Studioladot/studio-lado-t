@@ -3,6 +3,8 @@
 import { useRef, useState, type FormEvent } from 'react'
 import { addPieceMediaAction, type AddMediaState } from './actions'
 import { uploadReferenceFilesClient } from '@/lib/media/upload-client'
+import { useToast } from '@/components/features/toast'
+import { MiniSpinner } from '@/components/features/action-pill'
 
 export function AddPieceMediaForm({ pieceId, campaignId }: { pieceId: string; campaignId: string }) {
   const [isOpen, setIsOpen] = useState(false)
@@ -10,6 +12,7 @@ export function AddPieceMediaForm({ pieceId, campaignId }: { pieceId: string; ca
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const formRef = useRef<HTMLFormElement>(null)
+  const toast = useToast()
 
   // Subida directa cliente→Storage (bug real reportado, 2026-08-06): mismo
   // fix que add-piece-form.tsx — el archivo se sube ANTES de llamar al
@@ -18,6 +21,7 @@ export function AddPieceMediaForm({ pieceId, campaignId }: { pieceId: string; ca
     e.preventDefault()
     setPending(true)
     setError(null)
+    const toastId = toast.show('Subiendo…', 'pending')
 
     const formData = new FormData(e.currentTarget)
     const files = formData.getAll('media_files').filter((f): f is File => f instanceof File && f.size > 0)
@@ -25,6 +29,7 @@ export function AddPieceMediaForm({ pieceId, campaignId }: { pieceId: string; ca
     if (files.length === 0) {
       setPending(false)
       setError('Elegí al menos un archivo.')
+      toast.dismiss(toastId)
       return
     }
 
@@ -35,6 +40,7 @@ export function AddPieceMediaForm({ pieceId, campaignId }: { pieceId: string; ca
     if (uploaded.error) {
       setPending(false)
       setError(uploaded.error)
+      toast.dismiss(toastId)
       return
     }
 
@@ -55,6 +61,7 @@ export function AddPieceMediaForm({ pieceId, campaignId }: { pieceId: string; ca
       console.error('[AddPieceMediaForm] excepción inesperada al guardar la referencia:', err)
       setPending(false)
       setError('No pudimos guardar el archivo. Probá de nuevo en unos minutos.')
+      toast.dismiss(toastId)
       return
     }
 
@@ -62,9 +69,11 @@ export function AddPieceMediaForm({ pieceId, campaignId }: { pieceId: string; ca
 
     if (result.error) {
       setError(result.error)
+      toast.dismiss(toastId)
       return
     }
 
+    toast.update(toastId, 'Referencia agregada con éxito', 'success')
     formRef.current?.reset()
     setIsOpen(false)
   }
@@ -95,8 +104,9 @@ export function AddPieceMediaForm({ pieceId, campaignId }: { pieceId: string; ca
         <button
           type="submit"
           disabled={pending}
-          className="rounded-control bg-primary px-3 py-1.5 text-[11px] font-semibold text-white transition-all duration-200 ease-out hover:bg-primary-hover active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-70"
+          className="inline-flex items-center gap-1.5 rounded-control bg-primary px-3 py-1.5 text-[11px] font-semibold text-white transition-all duration-200 ease-out hover:bg-primary-hover active:scale-[0.98] disabled:cursor-wait disabled:opacity-70"
         >
+          {pending && <MiniSpinner />}
           {uploading ? 'Subiendo…' : pending ? 'Guardando…' : 'Subir'}
         </button>
         <button

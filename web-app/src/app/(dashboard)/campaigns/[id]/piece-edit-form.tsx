@@ -1,8 +1,10 @@
 'use client'
 
 import { useActionState, useEffect, useState } from 'react'
-import { useFormStatus } from 'react-dom'
 import { updatePieceAction, type UpdatePieceState } from './actions'
+import { useFormStatusToast } from '@/components/features/use-form-status-toast'
+import { MiniSpinner } from '@/components/features/action-pill'
+import { useToast } from '@/components/features/toast'
 import type { Database } from '@/lib/types/database.types'
 
 type Piece = Database['public']['Tables']['content_piezas']['Row']
@@ -29,14 +31,19 @@ const fieldClass =
 const labelClass = 'flex flex-col gap-1.5 text-[11px] font-semibold uppercase tracking-[.06em] text-text-2'
 
 function SaveButton() {
-  const { pending } = useFormStatus()
+  // No dispara el toast de éxito acá — updatePieceAction no redirige y
+  // `state.success` (más abajo) es una señal más confiable que la
+  // transición de `pending`, que en algún caso podría coincidir con un
+  // `error` sin success real.
+  const pending = useFormStatusToast('Guardando…')
 
   return (
     <button
       type="submit"
       disabled={pending}
-      className="rounded-control bg-primary px-4 py-2 text-xs font-semibold text-white transition-all duration-200 ease-out hover:bg-primary-hover active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-70"
+      className="inline-flex items-center gap-1.5 rounded-control bg-primary px-4 py-2 text-xs font-semibold text-white transition-all duration-200 ease-out hover:bg-primary-hover active:scale-[0.98] disabled:cursor-wait disabled:opacity-70"
     >
+      {pending && <MiniSpinner />}
       {pending ? 'Guardando…' : 'Guardar'}
     </button>
   )
@@ -58,10 +65,14 @@ export function PieceEditForm({
   const boundAction = updatePieceAction.bind(null, piece.id, campaignId)
   const [state, formAction] = useActionState(boundAction, initialState)
   const [networkTab, setNetworkTab] = useState<'instagram' | 'tiktok'>('instagram')
+  const toast = useToast()
 
   useEffect(() => {
-    if (state.success) onSaved()
-  }, [state.success, onSaved])
+    if (state.success) {
+      toast.show('Guardado con éxito', 'success')
+      onSaved()
+    }
+  }, [state.success, onSaved, toast])
 
   return (
     <form action={formAction} className="flex flex-1 flex-col gap-3">

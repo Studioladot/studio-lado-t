@@ -5,6 +5,7 @@ import { CreativeForm } from './creative-form'
 import { EditCreativeModal } from './edit-creative-modal'
 import { setLibraryCreativeStatusAction, deleteLibraryCreativeAction } from './actions'
 import { ConfirmSubmitButton } from '@/components/features/confirm-submit-button'
+import { DropdownMenu, DropdownItem, FilterTrigger } from '@/components/features/dropdown-menu'
 import { CREATIVE_STATUS_LABEL, CREATIVE_STATUS_BADGE_CLASS, type LibraryCreative, type CreativeStatus } from '@/lib/meta/library'
 
 const FILTERS: { value: 'all' | CreativeStatus; label: string }[] = [
@@ -27,20 +28,34 @@ export function LibraryGrid({ creatives }: { creatives: LibraryCreative[] }) {
   return (
     <>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-wrap gap-2">
-          {FILTERS.map((f) => (
-            <button
-              key={f.value}
-              type="button"
-              onClick={() => setFilter(f.value)}
-              className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-all duration-200 ease-out ${
-                filter === f.value ? 'border-accent bg-accent/15 text-accent' : 'border-border text-text-2 hover:bg-surface-2'
-              }`}
-            >
-              {f.label}
-            </button>
-          ))}
-        </div>
+        <DropdownMenu
+          trigger={({ open, toggle }) => (
+            <FilterTrigger
+              label="Estado"
+              value={FILTERS.find((f) => f.value === filter)?.label ?? 'Todos'}
+              open={open}
+              onClick={toggle}
+              active={filter !== 'all'}
+            />
+          )}
+        >
+          {(close) => (
+            <>
+              {FILTERS.map((f) => (
+                <DropdownItem
+                  key={f.value}
+                  active={f.value === filter}
+                  onClick={() => {
+                    setFilter(f.value)
+                    close()
+                  }}
+                >
+                  {f.label}
+                </DropdownItem>
+              ))}
+            </>
+          )}
+        </DropdownMenu>
 
         {!creating && (
           <button

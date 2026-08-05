@@ -3,6 +3,8 @@
 import { useRef, useState, type FormEvent } from 'react'
 import { createPieceAction, type CreatePieceState } from './actions'
 import { uploadReferenceFilesClient } from '@/lib/media/upload-client'
+import { useToast } from '@/components/features/toast'
+import { MiniSpinner } from '@/components/features/action-pill'
 
 const FORMATOS = ['Reel', 'TikTok', 'Carrusel', 'Historia', 'Post', 'Video largo', 'Otro']
 const PLATAFORMAS = ['Instagram', 'TikTok', 'Ambas', 'YouTube']
@@ -53,6 +55,7 @@ export function AddPieceForm({
   const [error, setError] = useState<string | null>(null)
   const formRef = useRef<HTMLFormElement>(null)
   const justAddedTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const toast = useToast()
 
   // Submit manual (no useActionState) a propósito: necesitamos resetear el
   // form y mostrar "pieza agregada" dentro del mismo gesto de envío, sin
@@ -69,6 +72,7 @@ export function AddPieceForm({
     e.preventDefault()
     setPending(true)
     setError(null)
+    const toastId = toast.show('Guardando…', 'pending')
 
     const formData = new FormData(e.currentTarget)
 
@@ -81,6 +85,7 @@ export function AddPieceForm({
       if (uploaded.error) {
         setPending(false)
         setError(uploaded.error)
+        toast.dismiss(toastId)
         return
       }
       formData.set('reference_media', JSON.stringify(uploaded.media))
@@ -105,14 +110,18 @@ export function AddPieceForm({
       console.error('[AddPieceForm] excepción inesperada al guardar la pieza:', err)
       setPending(false)
       setError('No pudimos guardar la pieza. Probá de nuevo en unos minutos.')
+      toast.dismiss(toastId)
       return
     }
     setPending(false)
 
     if (!result.success) {
       setError(result.error)
+      toast.dismiss(toastId)
       return
     }
+
+    toast.update(toastId, 'Pieza agregada con éxito', 'success')
 
     if (onDone) {
       onDone()
@@ -302,8 +311,9 @@ export function AddPieceForm({
         <button
           type="submit"
           disabled={pending}
-          className="rounded-control bg-primary px-4 py-2 text-[13px] font-semibold text-white transition-all duration-200 ease-out hover:bg-primary-hover active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-70"
+          className="inline-flex items-center gap-1.5 rounded-control bg-primary px-4 py-2 text-[13px] font-semibold text-white transition-all duration-200 ease-out hover:bg-primary-hover active:scale-[0.98] disabled:cursor-wait disabled:opacity-70"
         >
+          {pending && <MiniSpinner />}
           {uploading ? 'Subiendo archivos…' : pending ? 'Agregando…' : 'Agregar pieza'}
         </button>
         <button
