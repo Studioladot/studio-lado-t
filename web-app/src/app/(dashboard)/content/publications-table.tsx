@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { useMemo, useState } from 'react'
 import { PostForm } from './post-form'
 import { deletePostAction, togglePostStatusAction } from './actions'
-import { unifyContentItems, isOverdueScheduled, type UnifiedItem } from './unified-items'
+import { unifyContentItems, type UnifiedItem } from './unified-items'
 import { ConfirmSubmitButton } from '@/components/features/confirm-submit-button'
 import { Pagination } from '../meta-ads/campaigns/pagination'
 import type { Database } from '@/lib/types/database.types'
@@ -37,26 +37,7 @@ const MANUAL_STATUS_BADGE: Record<string, string> = {
   borrador: 'border-border text-text-2',
 }
 
-const PUBLISH_STATUS_BADGE: Record<string, { label: string; className: string }> = {
-  scheduled: { label: 'Programado', className: 'border-accent/40 bg-accent/[8%] text-accent' },
-  publishing: { label: 'Publicando…', className: 'border-amber/40 bg-amber/[8%] text-amber animate-pulse' },
-  published: { label: 'Publicado (IG)', className: 'border-green/40 bg-green/[8%] text-green' },
-  failed: { label: 'Error', className: 'border-red/40 bg-red/[8%] text-red' },
-}
-
 function StatusBadge({ item }: { item: UnifiedItem }) {
-  const overdue = isOverdueScheduled(item)
-  const autoBadge = PUBLISH_STATUS_BADGE[item.publishStatus]
-  if (autoBadge) {
-    return (
-      <span
-        title={overdue ? 'Pasó la hora programada y todavía no se publicó — puede ser el límite diario de Instagram (25 posts/24h) u otro problema de conexión.' : undefined}
-        className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${overdue ? 'border-red/40 bg-red/[8%] text-red' : autoBadge.className}`}
-      >
-        {overdue ? 'Demorado' : autoBadge.label}
-      </span>
-    )
-  }
   return (
     <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium capitalize ${MANUAL_STATUS_BADGE[item.status] ?? 'border-border text-text-2'}`}>
       {item.status}
@@ -65,7 +46,7 @@ function StatusBadge({ item }: { item: UnifiedItem }) {
 }
 
 function Thumb({ item }: { item: UnifiedItem }) {
-  const thumb = item.mediaList[0] ?? (item.mediaUrl ? { url: item.mediaUrl, type: item.mediaType as 'image' | 'video' } : null)
+  const thumb = item.mediaList[0] ?? null
   if (!thumb) {
     return <div className="h-8 w-8 shrink-0 rounded-control border border-border bg-surface-2" />
   }
@@ -195,11 +176,6 @@ export function PublicationsTable({
                   <td className="px-3 py-2 text-text-2">{item.platform ?? '—'}</td>
                   <td className="px-3 py-2">
                     <div className="flex items-center justify-end gap-3">
-                      {item.publishStatus === 'published' && item.igPermalink && (
-                        <a href={item.igPermalink} target="_blank" rel="noreferrer" className="font-medium text-green hover:text-green/80">
-                          Ver ↗
-                        </a>
-                      )}
                       {item.source === 'campana' ? (
                         <Link href={`/campaigns/${item.campaignId}`} className="font-medium text-text-2 transition-colors duration-200 ease-out hover:text-text">
                           Ver campaña
@@ -218,23 +194,14 @@ export function PublicationsTable({
                           >
                             Editar
                           </button>
-                          {/* Auditoría de cierre: borrar algo que está
-                              'publishing' no cancela la publicación real en
-                              Instagram (ya está en vuelo) — solo hace que
-                              Gotix pierda el registro una vez que termine de
-                              publicarse. Se oculta la acción en ese estado en
-                              vez de ofrecer un borrado que no hace lo que
-                              parece prometer. */}
-                          {item.publishStatus !== 'publishing' && (
-                            <form action={deletePostAction.bind(null, item.id)}>
-                              <ConfirmSubmitButton
-                                confirmMessage={`¿Estás seguro? Se va a borrar "${item.titulo}".`}
-                                className="font-medium text-text-3 transition-colors duration-200 ease-out hover:text-red"
-                              >
-                                Borrar
-                              </ConfirmSubmitButton>
-                            </form>
-                          )}
+                          <form action={deletePostAction.bind(null, item.id)}>
+                            <ConfirmSubmitButton
+                              confirmMessage={`¿Estás seguro? Se va a borrar "${item.titulo}".`}
+                              className="font-medium text-text-3 transition-colors duration-200 ease-out hover:text-red"
+                            >
+                              Borrar
+                            </ConfirmSubmitButton>
+                          </form>
                         </>
                       )}
                     </div>

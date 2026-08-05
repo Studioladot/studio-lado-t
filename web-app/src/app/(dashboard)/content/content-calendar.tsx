@@ -35,20 +35,6 @@ type Campaign = Database['public']['Tables']['content_campaigns']['Row']
 
 const WEEKDAYS = ['Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sa', 'Do']
 
-const STATUS_DOT: Record<string, string> = {
-  scheduled: 'bg-accent',
-  publishing: 'bg-amber',
-  published: 'bg-green',
-  failed: 'bg-red',
-}
-
-// Solo tiene sentido arrastrar algo que todavía puede moverse de fecha. Una
-// pieza publicada/publicando/fallida no debe poder arrastrarse — antes esto
-// igual desplazaba scheduled_at aunque ya no tuviera ningún efecto real
-// (instagram-publish-run solo mira filas 'scheduled'), lo cual era
-// confuso al auditar los datos.
-const DRAGGABLE_STATUSES = new Set(['none', 'scheduled'])
-
 const DRAG_THRESHOLD_PX = 6
 
 function toDateStr(d: Date) {
@@ -85,13 +71,10 @@ function Pill({
   onDragMove: (dateStr: string | null) => void
   onDragEnd: (dateStr: string | null) => void
 }) {
-  const dot = STATUS_DOT[item.publishStatus]
-  const isDraggable = DRAGGABLE_STATUSES.has(item.publishStatus)
   const [isDragging, setIsDragging] = useState(false)
   const dragState = useRef<{ startX: number; startY: number; moved: boolean } | null>(null)
 
   function handlePointerDown(e: React.PointerEvent<HTMLButtonElement>) {
-    if (!isDraggable) return
     e.currentTarget.setPointerCapture(e.pointerId)
     dragState.current = { startX: e.clientX, startY: e.clientY, moved: false }
   }
@@ -137,13 +120,12 @@ function Pill({
       onPointerUp={handlePointerUp}
       onPointerCancel={handlePointerCancel}
       onClick={(e) => e.stopPropagation()}
-      style={{ borderColor: item.source === 'campana' ? item.campaignColor : 'var(--border)', touchAction: isDraggable ? 'none' : undefined }}
+      style={{ borderColor: item.source === 'campana' ? item.campaignColor : 'var(--border)', touchAction: 'none' }}
       className={`flex w-full items-center gap-1 rounded-control border px-1 py-0.5 text-left text-[9px] font-medium transition-colors duration-150 ease-out hover:bg-surface-2 sm:px-1.5 sm:py-1 sm:text-[10px] ${
         isDragging ? 'opacity-40' : ''
       }`}
       title={item.titulo}
     >
-      {dot && <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${dot}`} />}
       <span className="truncate text-text">{item.titulo || 'Sin título'}</span>
     </button>
   )

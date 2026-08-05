@@ -16,7 +16,12 @@
 export type MediaKind = 'image' | 'video'
 
 const MAX_IMAGE_BYTES = 10 * 1024 * 1024 // 10MB
-const MAX_VIDEO_BYTES = 100 * 1024 * 1024 // 100MB
+// Bug real reportado (2026-08-05): "cuando subo un video largo, sube el
+// error" — 100MB se quedaba corto para cualquier clip de referencia de más
+// de unos pocos minutos en calidad de cámara de teléfono. 500MB cubre video
+// largo real sin abrir la puerta a archivos que Supabase Storage no maneja
+// bien de todos modos.
+const MAX_VIDEO_BYTES = 500 * 1024 * 1024 // 500MB
 
 function matchesSignature(head: Uint8Array, offset: number, bytes: number[]): boolean {
   return bytes.every((b, i) => head[offset + i] === b)

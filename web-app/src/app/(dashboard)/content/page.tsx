@@ -104,9 +104,11 @@ export default async function ContentPage() {
 
   // "¿esto nació en nuestro pipeline?" (pedido real, 2026-08-01): no existe
   // ningún flag dedicado tipo "reel_de_prueba" en el esquema — lo más
-  // cercano y honesto es ig_media_id, que posts/piezas ya guardan cuando
-  // instagram-publish-run publica con éxito. Si el ig_media_id de un ítem
-  // del catálogo zero-fricción aparece acá, es porque Gotix lo publicó.
+  // cercano y honesto es ig_media_id, que quedó guardado en posts/piezas que
+  // se publicaron alguna vez vía el auto-publish (retirado el 2026-08-05,
+  // ver 20260806130000_unschedule_instagram_publish_run.sql). Si el
+  // ig_media_id de un ítem del catálogo zero-fricción aparece acá, es
+  // porque Gotix lo publicó en su momento.
   const gotixMediaIds = new Set<string>(
     [...(posts ?? []), ...(pieces ?? [])].map((item) => item.ig_media_id).filter((id): id is string => !!id)
   )

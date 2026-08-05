@@ -17,29 +17,6 @@ const TURNO_COLOR: Record<string, string> = {
   Noche: 'text-[#8b5cf6]',
 }
 
-// Badges de estado real de auto-publicación — distinto del toggle manual
-// "pendiente/publicado" de más abajo (ese es un checklist del equipo, este
-// es lo que GOTIX efectivamente hizo contra la API de Instagram). Solo se
-// muestra cuando publish_status !== 'none' — una pieza nunca programada no
-// necesita este badge.
-const PUBLISH_STATUS_BADGE: Record<string, { label: string; className: string }> = {
-  scheduled: { label: 'Programado', className: 'border-accent/40 bg-accent/[8%] text-accent' },
-  publishing: { label: 'Publicando…', className: 'border-amber/40 bg-amber/[8%] text-amber animate-pulse' },
-  published: { label: 'Publicado', className: 'border-green/40 bg-green/[8%] text-green' },
-  failed: { label: 'Error', className: 'border-red/40 bg-red/[8%] text-red' },
-}
-
-function PublishStatusBadge({ piece }: { piece: Piece }) {
-  const badge = PUBLISH_STATUS_BADGE[piece.publish_status]
-  if (!badge) return null
-
-  return (
-    <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${badge.className}`}>
-      {badge.label}
-    </span>
-  )
-}
-
 function parseMediaUrls(value: unknown): MediaItem[] {
   if (!Array.isArray(value)) return []
   return value.filter(
@@ -66,7 +43,11 @@ export function PiecesList({
   const [editingId, setEditingId] = useState<string | null>(null)
 
   const piecesWithMedia = useMemo(() => {
-    const mediaLists = pieces.map((piece) => parseMediaUrls(piece.media_urls))
+    // Repuntado a reference_urls (limpieza estructural, 2026-08-05): con el
+    // Archivo Final eliminado del flujo, media_urls queda vacío para siempre
+    // en piezas nuevas — mostrar acá el moodboard/referencias evita una
+    // tira de miniaturas que nunca vuelve a tener contenido.
+    const mediaLists = pieces.map((piece) => parseMediaUrls(piece.reference_urls))
     return pieces.map((piece, i) => ({
       piece,
       media: mediaLists[i],
@@ -195,36 +176,18 @@ export function PiecesList({
                       {piece.turno}
                     </span>
                   )}
-                  <PublishStatusBadge piece={piece} />
                 </div>
                 {piece.protagonista && (
                   <p className="mt-1 text-xs text-text-2">Con {piece.protagonista}</p>
                 )}
                 {piece.notas && <p className="mt-1 text-xs text-text-2">{piece.notas}</p>}
-                <div className="mt-1 flex flex-wrap items-center gap-2 text-[11px] text-text-3">
-                  {piece.fecha_planificada && <span>{piece.fecha_planificada}</span>}
-                  {piece.publish_status === 'scheduled' && piece.scheduled_at && (
-                    <span className="tabular-nums text-accent">
-                      Auto-publica {new Date(piece.scheduled_at).toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short' })}
-                    </span>
-                  )}
-                  {piece.publish_status === 'published' && piece.ig_permalink && (
-                    <a
-                      href={piece.ig_permalink}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="font-medium text-green transition-colors duration-200 ease-out hover:text-green/80"
-                    >
-                      Ver en Instagram ↗
-                    </a>
-                  )}
-                  {piece.publish_status === 'failed' && piece.publish_error && (
-                    <span className="text-red">{piece.publish_error}</span>
-                  )}
-                </div>
+                {piece.fecha_planificada && (
+                  <div className="mt-1 flex flex-wrap items-center gap-2 text-[11px] text-text-3">
+                    <span>{piece.fecha_planificada}</span>
+                  </div>
+                )}
                 <div className="flex items-center gap-3">
-                  <AddPieceMediaForm pieceId={piece.id} campaignId={campaignId} kind="final" />
-                  <AddPieceMediaForm pieceId={piece.id} campaignId={campaignId} kind="reference" />
+                  <AddPieceMediaForm pieceId={piece.id} campaignId={campaignId} />
                 </div>
               </div>
 

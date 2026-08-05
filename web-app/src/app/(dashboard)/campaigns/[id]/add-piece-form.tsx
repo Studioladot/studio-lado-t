@@ -2,17 +2,18 @@
 
 import { useRef, useState, type FormEvent } from 'react'
 import { createPieceAction, type CreatePieceState } from './actions'
-import { ContentPreviewSimulator } from '../../content/content-preview-simulator'
 
 const FORMATOS = ['Reel', 'TikTok', 'Carrusel', 'Historia', 'Post', 'Video largo', 'Otro']
 const PLATAFORMAS = ['Instagram', 'TikTok', 'Ambas', 'YouTube']
 const TURNOS = ['Temprano', 'Tarde', 'Noche']
 // Ver post-form.tsx (Épica Omnicanal, 2026-08-04) — mismo pipeline de
-// producción, separado del `status` legacy que ya usan las rachas.
+// producción, separado del `status` legacy que ya usan las rachas. Punto
+// final del flujo de creación (decisión de producto, 2026-08-05): Gotix es
+// planificación, no un programador de posteos.
 const PRODUCTION_STATUSES = [
   { value: 'idea', label: 'Idea' },
   { value: 'por_grabar', label: 'Por grabar' },
-  { value: 'listo_para_programar', label: 'Listo para programar' },
+  { value: 'listo_para_programar', label: 'Listo para publicar' },
   { value: 'programado', label: 'Programado' },
   { value: 'publicado', label: 'Publicado' },
 ]
@@ -44,26 +45,12 @@ export function AddPieceForm({
   onDone?: () => void
 }) {
   const [isOpen, setIsOpen] = useState(startOpen)
-  const [scheduleOn, setScheduleOn] = useState(false)
-  const [tiktokScheduleOn, setTiktokScheduleOn] = useState(false)
   const [networkTab, setNetworkTab] = useState<'instagram' | 'tiktok'>('instagram')
-  // Object URL creado/revocado directo en el onChange (event handler, no
-  // efecto) — ver comentario en content-preview-simulator.tsx.
-  const [finalPreview, setFinalPreview] = useState<{ url: string; isVideo: boolean } | null>(null)
   const [justAdded, setJustAdded] = useState(false)
   const [pending, setPending] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const formRef = useRef<HTMLFormElement>(null)
   const justAddedTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
-
-  function handleFinalFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-    setFinalPreview((prev) => {
-      if (prev) URL.revokeObjectURL(prev.url)
-      const file = e.target.files?.[0]
-      if (!file) return null
-      return { url: URL.createObjectURL(file), isVideo: file.type.startsWith('video/') }
-    })
-  }
 
   // Submit manual (no useActionState) a propósito: necesitamos resetear el
   // form y mostrar "pieza agregada" dentro del mismo gesto de envío, sin
@@ -114,12 +101,6 @@ export function AddPieceForm({
     // resetea el formulario y lo deja abierto para la próxima pieza — antes
     // había que cerrar y volver a abrir "+ Nueva pieza" para cada una.
     formRef.current?.reset()
-    setScheduleOn(false)
-    setTiktokScheduleOn(false)
-    setFinalPreview((prev) => {
-      if (prev) URL.revokeObjectURL(prev.url)
-      return null
-    })
     setJustAdded(true)
     if (justAddedTimeout.current) clearTimeout(justAddedTimeout.current)
     justAddedTimeout.current = setTimeout(() => setJustAdded(false), 2500)
@@ -221,10 +202,8 @@ export function AddPieceForm({
         />
       </label>
 
-      {/* Referencias vs Archivo Final (Épica Omnicanal, 2026-08-04) — ver
-          mismo criterio en content/post-form.tsx. */}
       <label className={labelClass}>
-        Referencias (moodboard, tomas crudas — no se publican)
+        Referencias (moodboard, tomas crudas, guion visual)
         <input
           name="reference_files"
           type="file"
@@ -232,21 +211,10 @@ export function AddPieceForm({
           multiple
           className="text-[13px] font-normal normal-case tracking-normal text-text-2 file:mr-3 file:rounded-control file:border-0 file:bg-surface-2 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-text-2 file:transition-all file:duration-200 file:ease-out hover:file:bg-border-2"
         />
+        <span className="text-[11px] font-normal normal-case tracking-normal text-text-3">
+          Material de apoyo para grabar/editar — la pieza final se sube directo desde la app de cada red.
+        </span>
       </label>
-
-      <label className={labelClass}>
-        Archivo Final (MP4/MOV — el que se publica)
-        <input
-          name="media_files"
-          type="file"
-          accept="image/*,video/*"
-          onChange={handleFinalFileChange}
-          className="text-[13px] font-normal normal-case tracking-normal text-text-2 file:mr-3 file:rounded-control file:border-0 file:bg-surface-2 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-text-2 file:transition-all file:duration-200 file:ease-out hover:file:bg-border-2"
-        />
-        <span className="text-[11px] font-normal normal-case tracking-normal text-text-3">Un solo archivo — el que se sube a las redes.</span>
-      </label>
-
-      <ContentPreviewSimulator previewUrl={finalPreview?.url ?? null} isVideo={finalPreview?.isVideo ?? false} caption="" />
 
       <div className="flex gap-1 rounded-control border border-border bg-surface-2/40 p-1">
         <button
@@ -256,7 +224,7 @@ export function AddPieceForm({
             networkTab === 'instagram' ? 'bg-accent/[0.12] text-accent' : 'text-text-3 hover:text-text'
           }`}
         >
-          Configuración Instagram
+          Copy Instagram
         </button>
         <button
           type="button"
@@ -265,11 +233,11 @@ export function AddPieceForm({
             networkTab === 'tiktok' ? 'bg-accent/[0.12] text-accent' : 'text-text-3 hover:text-text'
           }`}
         >
-          Configuración TikTok
+          Copy TikTok
         </button>
       </div>
 
-      <div className={networkTab === 'instagram' ? 'flex flex-col gap-3' : 'hidden'}>
+      <div className={networkTab === 'instagram' ? 'flex flex-col gap-2' : 'hidden'}>
         <label className={labelClass}>
           Copy (texto que se publica en Instagram)
           <textarea
@@ -279,79 +247,23 @@ export function AddPieceForm({
             className={`resize-none normal-case tracking-normal ${fieldClass}`}
           />
         </label>
-
-        {/* Auto-publicación — puerto de la arquitectura de scheduling
-            (2026-07-30): solo tiene sentido si hay Instagram conectado. Sin
-            conexión, se muestra deshabilitado con el motivo en vez de
-            esconderlo — más honesto que un campo que aparece de la nada
-            cuando el usuario conecta la cuenta después. */}
-        <div className={`rounded-control border p-3 ${instagramConnected ? 'border-accent/30 bg-accent/[0.04]' : 'border-border bg-surface-2/40'}`}>
-          <label className="flex items-center gap-2 text-xs font-semibold text-text">
-            <input
-              type="checkbox"
-              name="schedule_enabled"
-              disabled={!instagramConnected}
-              checked={scheduleOn}
-              onChange={(e) => setScheduleOn(e.target.checked)}
-              className="disabled:cursor-not-allowed"
-            />
-            Programar auto-publicación en Instagram
-          </label>
-          {!instagramConnected ? (
-            <p className="mt-1.5 text-[11px] text-text-3">Conectá Instagram desde Ajustes → Integraciones para poder programar.</p>
-          ) : (
-            scheduleOn && (
-              <label className="mt-2.5 flex flex-col gap-1.5 text-[11px] font-semibold uppercase tracking-[.06em] text-text-2">
-                Fecha y hora de publicación
-                <input
-                  name="scheduled_at"
-                  type="datetime-local"
-                  required={scheduleOn}
-                  className={`normal-case tracking-normal ${fieldClass}`}
-                />
-                <span className="text-[11px] font-normal normal-case tracking-normal text-text-3">
-                  La publicación de video es asíncrona — puede salir unos minutos después de la hora elegida.
-                </span>
-              </label>
-            )
-          )}
-        </div>
+        {!instagramConnected && (
+          <p className="text-[11px] text-text-3">Conectá Instagram desde Ajustes → Integraciones para ver sus métricas acá más adelante.</p>
+        )}
       </div>
 
-      <div className={networkTab === 'tiktok' ? 'flex flex-col gap-3' : 'hidden'}>
-        {!tiktokConnected ? (
-          <div className="rounded-control border border-dashed border-border bg-surface-2/40 p-3 text-[11px] text-text-3">
-            Conectá TikTok primero — la publicación automática en TikTok todavía no está disponible.
-          </div>
-        ) : (
-          <>
-            <label className={labelClass}>
-              Copy (texto que se publica en TikTok)
-              <textarea
-                name="tiktok_caption"
-                rows={2}
-                placeholder="El texto que va a acompañar la publicación en TikTok."
-                className={`resize-none normal-case tracking-normal ${fieldClass}`}
-              />
-            </label>
-            <div className="rounded-control border border-accent/30 bg-accent/[0.04] p-3">
-              <label className="flex items-center gap-2 text-xs font-semibold text-text">
-                <input
-                  type="checkbox"
-                  name="tiktok_schedule_enabled"
-                  checked={tiktokScheduleOn}
-                  onChange={(e) => setTiktokScheduleOn(e.target.checked)}
-                />
-                Programar auto-publicación en TikTok
-              </label>
-              {tiktokScheduleOn && (
-                <label className="mt-2.5 flex flex-col gap-1.5 text-[11px] font-semibold uppercase tracking-[.06em] text-text-2">
-                  Fecha y hora de publicación
-                  <input name="tiktok_scheduled_at" type="datetime-local" required={tiktokScheduleOn} className={`normal-case tracking-normal ${fieldClass}`} />
-                </label>
-              )}
-            </div>
-          </>
+      <div className={networkTab === 'tiktok' ? 'flex flex-col gap-2' : 'hidden'}>
+        <label className={labelClass}>
+          Copy (texto que se publica en TikTok)
+          <textarea
+            name="tiktok_caption"
+            rows={2}
+            placeholder="El texto que va a acompañar la publicación en TikTok."
+            className={`resize-none normal-case tracking-normal ${fieldClass}`}
+          />
+        </label>
+        {!tiktokConnected && (
+          <p className="text-[11px] text-text-3">Conectá TikTok desde Ajustes → Integraciones para ver sus métricas acá más adelante.</p>
         )}
       </div>
 

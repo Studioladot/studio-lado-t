@@ -3,20 +3,13 @@
 import { deletePostAction } from './actions'
 import { deletePieceAction } from '../campaigns/[id]/actions'
 import { ConfirmSubmitButton } from '@/components/features/confirm-submit-button'
-import { isOverdueScheduled, type UnifiedItem } from './unified-items'
+import type { UnifiedItem } from './unified-items'
 
-// Modal de "qué hay programado este día" — antes, clickear un día del
+// Modal de "qué hay planificado este día" — antes, clickear un día del
 // Calendario abría directo el formulario de alta, sin forma de ver/editar/
 // borrar lo que ya estaba cargado ese día. Ahora el click en el día abre
 // esto; crear queda en un botón aparte (ver ContentCalendar) para no
 // mezclar "ver lo que hay" con "cargar algo nuevo".
-
-const STATUS_BADGE: Record<string, { label: string; className: string }> = {
-  scheduled: { label: 'Programado', className: 'border-accent/40 bg-accent/[8%] text-accent' },
-  publishing: { label: 'Publicando…', className: 'border-amber/40 bg-amber/[8%] text-amber' },
-  published: { label: 'Publicado', className: 'border-green/40 bg-green/[8%] text-green' },
-  failed: { label: 'Error', className: 'border-red/40 bg-red/[8%] text-red' },
-}
 
 export function DayDetailModal({
   date,
@@ -59,20 +52,10 @@ export function DayDetailModal({
           ) : (
             <div className="flex flex-col gap-2.5">
               {items.map((item) => {
-                const overdue = isOverdueScheduled(item)
-                const badge = STATUS_BADGE[item.publishStatus]
                 return (
                   <div key={`${item.sourceTable}-${item.id}`} className="rounded-control border border-border bg-surface-2/40 p-3">
                     <div className="flex flex-wrap items-center gap-1.5">
                       <p className="min-w-0 flex-1 truncate text-xs font-semibold text-text">{item.titulo || 'Sin título'}</p>
-                      {badge && (
-                        <span
-                          title={overdue ? 'Pasó la hora programada y todavía no se publicó — puede ser el límite diario de Instagram (25 posts/24h) u otro problema de conexión.' : undefined}
-                          className={`shrink-0 rounded-full border px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide ${overdue ? 'border-red/40 bg-red/[8%] text-red' : badge.className}`}
-                        >
-                          {overdue ? 'Demorado' : badge.label}
-                        </span>
-                      )}
                     </div>
                     {item.source === 'campana' && (
                       <p className="mt-0.5 text-[10px]" style={{ color: item.campaignColor }}>
@@ -81,26 +64,27 @@ export function DayDetailModal({
                     )}
                     <div className="mt-2 flex items-center gap-3 text-[11px]">
                       {/* "Ver" — vista de solo lectura (copy completo, notas
-                          internas, preview del archivo, métricas), pedida
+                          internas, preview de referencias), pedida
                           explícitamente por la PO para no arriesgar cambiar
-                          datos por accidente al querer solo revisar algo.
-                          Distinto del link "Ver en Instagram", que manda al
-                          post real y solo existe una vez publicado. */}
+                          datos por accidente al querer solo revisar algo. */}
                       <button type="button" onClick={() => onView(item)} className="font-medium text-text-2 transition-colors duration-200 ease-out hover:text-text">
                         Ver
                       </button>
-                      {item.igPermalink && (
-                        <a href={item.igPermalink} target="_blank" rel="noreferrer" className="font-medium text-green transition-colors duration-200 ease-out hover:text-green/80">
-                          Ver en Instagram ↗
-                        </a>
-                      )}
                       <button type="button" onClick={() => onEdit(item)} className="font-medium text-text-2 transition-colors duration-200 ease-out hover:text-text">
                         Editar
                       </button>
-                      {/* Auditoría de cierre: borrar algo 'publishing' no cancela la publicación real en Instagram, solo pierde el registro local. */}
-                      {item.publishStatus !== 'publishing' &&
-                        (item.sourceTable === 'content_posts' ? (
-                          <form action={deletePostAction.bind(null, item.id)} className="ml-auto">
+                      {item.sourceTable === 'content_posts' ? (
+                        <form action={deletePostAction.bind(null, item.id)} className="ml-auto">
+                          <ConfirmSubmitButton
+                            confirmMessage={`¿Estás seguro? Se va a borrar "${item.titulo}".`}
+                            className="font-medium text-text-3 transition-colors duration-200 ease-out hover:text-red"
+                          >
+                            Eliminar
+                          </ConfirmSubmitButton>
+                        </form>
+                      ) : (
+                        item.campaignId && (
+                          <form action={deletePieceAction.bind(null, item.id, item.campaignId)} className="ml-auto">
                             <ConfirmSubmitButton
                               confirmMessage={`¿Estás seguro? Se va a borrar "${item.titulo}".`}
                               className="font-medium text-text-3 transition-colors duration-200 ease-out hover:text-red"
@@ -108,18 +92,8 @@ export function DayDetailModal({
                               Eliminar
                             </ConfirmSubmitButton>
                           </form>
-                        ) : (
-                          item.campaignId && (
-                            <form action={deletePieceAction.bind(null, item.id, item.campaignId)} className="ml-auto">
-                              <ConfirmSubmitButton
-                                confirmMessage={`¿Estás seguro? Se va a borrar "${item.titulo}".`}
-                                className="font-medium text-text-3 transition-colors duration-200 ease-out hover:text-red"
-                              >
-                                Eliminar
-                              </ConfirmSubmitButton>
-                            </form>
-                          )
-                        ))}
+                        )
+                      )}
                     </div>
                   </div>
                 )

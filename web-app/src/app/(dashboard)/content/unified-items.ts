@@ -24,13 +24,7 @@ export type UnifiedItem = {
   internalNotes: string | null
   titulo: string
   turno: string
-  mediaUrl: string | null
-  mediaType: string | null
   mediaList: MediaItem[]
-  publishStatus: string
-  scheduledAt: string | null
-  igPermalink: string | null
-  publishError: string | null
 }
 
 function parseMediaList(value: unknown): MediaItem[] {
@@ -60,13 +54,10 @@ export function unifyContentItems(posts: Post[], pieces: Piece[], campaigns: Cam
     internalNotes: p.notes,
     titulo: p.title ?? '',
     turno: p.turno ?? '',
-    mediaUrl: p.media_url,
-    mediaType: p.media_type,
-    mediaList: parseMediaList(p.media_urls),
-    publishStatus: p.publish_status,
-    scheduledAt: p.scheduled_at,
-    igPermalink: p.ig_permalink,
-    publishError: p.publish_error,
+    // Referencias (moodboard/tomas crudas), no el "Archivo Final" — ese
+    // concepto se eliminó del flujo (decisión de producto, 2026-08-05):
+    // Gotix ya no sube ni gestiona la pieza publicable, solo planificación.
+    mediaList: parseMediaList(p.reference_urls),
   }))
 
   const fromPieces: UnifiedItem[] = pieces.map((p) => {
@@ -89,27 +80,9 @@ export function unifyContentItems(posts: Post[], pieces: Piece[], campaigns: Cam
       internalNotes: p.notas,
       titulo: p.titulo,
       turno: p.turno ?? '',
-      mediaUrl: p.media_url,
-      mediaType: p.media_type,
-      mediaList: parseMediaList(p.media_urls),
-      publishStatus: p.publish_status,
-      scheduledAt: p.scheduled_at,
-      igPermalink: p.ig_permalink,
-      publishError: p.publish_error,
+      mediaList: parseMediaList(p.reference_urls),
     }
   })
 
   return [...fromPosts, ...fromPieces]
-}
-
-// El cron de instagram-publish-run corre cada 5 min (ver migración
-// 20260730190000_instagram_cron_schedule.sql) — que un ítem 'scheduled'
-// siga así 20+ min después de su hora (4 corridas de cron perdidas) ya no es
-// jitter normal, es señal real de algo trabado: el límite diario de
-// Instagram (25 posts/24h) o un token vencido, entre otras causas.
-const OVERDUE_THRESHOLD_MS = 20 * 60 * 1000
-
-export function isOverdueScheduled(item: Pick<UnifiedItem, 'publishStatus' | 'scheduledAt'>): boolean {
-  if (item.publishStatus !== 'scheduled' || !item.scheduledAt) return false
-  return Date.now() - new Date(item.scheduledAt).getTime() > OVERDUE_THRESHOLD_MS
 }

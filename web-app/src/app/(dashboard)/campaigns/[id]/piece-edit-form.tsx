@@ -2,7 +2,7 @@
 
 import { useActionState, useEffect, useState } from 'react'
 import { useFormStatus } from 'react-dom'
-import { updatePieceAction, cancelScheduleAction, type UpdatePieceState } from './actions'
+import { updatePieceAction, type UpdatePieceState } from './actions'
 import type { Database } from '@/lib/types/database.types'
 
 type Piece = Database['public']['Tables']['content_piezas']['Row']
@@ -14,7 +14,7 @@ const TURNOS = ['Temprano', 'Tarde', 'Noche']
 const PRODUCTION_STATUSES = [
   { value: 'idea', label: 'Idea' },
   { value: 'por_grabar', label: 'Por grabar' },
-  { value: 'listo_para_programar', label: 'Listo para programar' },
+  { value: 'listo_para_programar', label: 'Listo para publicar' },
   { value: 'programado', label: 'Programado' },
   { value: 'publicado', label: 'Publicado' },
 ]
@@ -27,13 +27,6 @@ const fieldClass =
   'rounded-control border border-border bg-surface-2/60 px-3 py-2.5 text-sm text-text outline-none transition-all duration-200 ease-out placeholder:text-text-3 focus:border-accent focus-visible:ring-2 focus-visible:ring-accent'
 
 const labelClass = 'flex flex-col gap-1.5 text-[11px] font-semibold uppercase tracking-[.06em] text-text-2'
-
-function toDatetimeLocal(iso: string | null): string {
-  if (!iso) return ''
-  const d = new Date(iso)
-  const pad = (n: number) => String(n).padStart(2, '0')
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
-}
 
 function SaveButton() {
   const { pending } = useFormStatus()
@@ -64,15 +57,11 @@ export function PieceEditForm({
 }) {
   const boundAction = updatePieceAction.bind(null, piece.id, campaignId)
   const [state, formAction] = useActionState(boundAction, initialState)
-  const [scheduleOn, setScheduleOn] = useState(piece.publish_status === 'scheduled')
-  const [tiktokScheduleOn, setTiktokScheduleOn] = useState(piece.tiktok_publish_status === 'scheduled')
   const [networkTab, setNetworkTab] = useState<'instagram' | 'tiktok'>('instagram')
 
   useEffect(() => {
     if (state.success) onSaved()
   }, [state.success, onSaved])
-
-  const isLocked = piece.publish_status === 'publishing' || piece.publish_status === 'published'
 
   return (
     <form action={formAction} className="flex flex-1 flex-col gap-3">
@@ -176,7 +165,7 @@ export function PieceEditForm({
             networkTab === 'instagram' ? 'bg-accent/[0.12] text-accent' : 'text-text-3 hover:text-text'
           }`}
         >
-          Configuración Instagram
+          Copy Instagram
         </button>
         <button
           type="button"
@@ -185,11 +174,11 @@ export function PieceEditForm({
             networkTab === 'tiktok' ? 'bg-accent/[0.12] text-accent' : 'text-text-3 hover:text-text'
           }`}
         >
-          Configuración TikTok
+          Copy TikTok
         </button>
       </div>
 
-      <div className={networkTab === 'instagram' ? 'flex flex-col gap-3' : 'hidden'}>
+      <div className={networkTab === 'instagram' ? 'flex flex-col gap-2' : 'hidden'}>
         <label className={labelClass}>
           Copy (texto que se publica en Instagram)
           <textarea
@@ -199,92 +188,23 @@ export function PieceEditForm({
             className={`resize-none normal-case tracking-normal ${fieldClass}`}
           />
         </label>
-
-        {isLocked ? (
-          <div className="rounded-control border border-border bg-surface-2/40 p-3 text-[11px] text-text-3">
-            {piece.publish_status === 'published'
-              ? 'Ya se publicó en Instagram — no se puede reprogramar.'
-              : 'Se está publicando ahora mismo — no se puede editar la programación en este momento.'}
-          </div>
-        ) : (
-          <div className={`rounded-control border p-3 ${instagramConnected ? 'border-accent/30 bg-accent/[0.04]' : 'border-border bg-surface-2/40'}`}>
-            <label className="flex items-center gap-2 text-xs font-semibold text-text">
-              <input
-                type="checkbox"
-                name="schedule_enabled"
-                disabled={!instagramConnected}
-                checked={scheduleOn}
-                onChange={(e) => setScheduleOn(e.target.checked)}
-                className="disabled:cursor-not-allowed"
-              />
-              Programar auto-publicación en Instagram
-            </label>
-            {!instagramConnected ? (
-              <p className="mt-1.5 text-[11px] text-text-3">Conectá Instagram desde Ajustes → Integraciones para poder programar.</p>
-            ) : (
-              scheduleOn && (
-                <label className="mt-2.5 flex flex-col gap-1.5 text-[11px] font-semibold uppercase tracking-[.06em] text-text-2">
-                  Fecha y hora de publicación
-                  <input
-                    name="scheduled_at"
-                    type="datetime-local"
-                    required={scheduleOn}
-                    defaultValue={toDatetimeLocal(piece.scheduled_at)}
-                    className={`normal-case tracking-normal ${fieldClass}`}
-                  />
-                </label>
-              )
-            )}
-            {piece.publish_status === 'failed' && piece.publish_error && (
-              <p className="mt-2 text-[11px] text-red">No pudimos publicar este contenido. Revisá el archivo y volvé a intentarlo, o contactá a soporte si el problema persiste.</p>
-            )}
-          </div>
+        {!instagramConnected && (
+          <p className="text-[11px] text-text-3">Conectá Instagram desde Ajustes → Integraciones para ver sus métricas acá más adelante.</p>
         )}
       </div>
 
-      <div className={networkTab === 'tiktok' ? 'flex flex-col gap-3' : 'hidden'}>
-        {!tiktokConnected ? (
-          <div className="rounded-control border border-dashed border-border bg-surface-2/40 p-3 text-[11px] text-text-3">
-            Conectá TikTok primero — la publicación automática en TikTok todavía no está disponible.
-          </div>
-        ) : (
-          <>
-            <label className={labelClass}>
-              Copy (texto que se publica en TikTok)
-              <textarea
-                name="tiktok_caption"
-                rows={2}
-                defaultValue={piece.tiktok_caption ?? ''}
-                className={`resize-none normal-case tracking-normal ${fieldClass}`}
-              />
-            </label>
-            <div className="rounded-control border border-accent/30 bg-accent/[0.04] p-3">
-              <label className="flex items-center gap-2 text-xs font-semibold text-text">
-                <input
-                  type="checkbox"
-                  name="tiktok_schedule_enabled"
-                  checked={tiktokScheduleOn}
-                  onChange={(e) => setTiktokScheduleOn(e.target.checked)}
-                />
-                Programar auto-publicación en TikTok
-              </label>
-              {tiktokScheduleOn && (
-                <label className="mt-2.5 flex flex-col gap-1.5 text-[11px] font-semibold uppercase tracking-[.06em] text-text-2">
-                  Fecha y hora de publicación
-                  <input
-                    name="tiktok_scheduled_at"
-                    type="datetime-local"
-                    required={tiktokScheduleOn}
-                    defaultValue={toDatetimeLocal(piece.tiktok_scheduled_at)}
-                    className={`normal-case tracking-normal ${fieldClass}`}
-                  />
-                </label>
-              )}
-              {piece.tiktok_publish_status === 'failed' && piece.tiktok_publish_error && (
-                <p className="mt-2 text-[11px] text-red">No pudimos publicar este contenido. Revisá el archivo y volvé a intentarlo, o contactá a soporte si el problema persiste.</p>
-              )}
-            </div>
-          </>
+      <div className={networkTab === 'tiktok' ? 'flex flex-col gap-2' : 'hidden'}>
+        <label className={labelClass}>
+          Copy (texto que se publica en TikTok)
+          <textarea
+            name="tiktok_caption"
+            rows={2}
+            defaultValue={piece.tiktok_caption ?? ''}
+            className={`resize-none normal-case tracking-normal ${fieldClass}`}
+          />
+        </label>
+        {!tiktokConnected && (
+          <p className="text-[11px] text-text-3">Conectá TikTok desde Ajustes → Integraciones para ver sus métricas acá más adelante.</p>
         )}
       </div>
 
@@ -299,13 +219,6 @@ export function PieceEditForm({
         >
           Cancelar
         </button>
-        {piece.publish_status === 'scheduled' && (
-          <form action={cancelScheduleAction.bind(null, piece.id, campaignId)} className="ml-auto">
-            <button type="submit" className="text-xs font-medium text-text-3 transition-colors duration-200 ease-out hover:text-red">
-              Cancelar programación
-            </button>
-          </form>
-        )}
       </div>
     </form>
   )

@@ -5,7 +5,6 @@ import { redirect } from 'next/navigation'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/server'
 import { getDashboardContext } from '@/lib/organization/dashboard-context'
-import { parseScheduledAt } from '@/lib/instagram/scheduling'
 import { validateMediaFile } from '@/lib/media/validate-upload'
 
 type MediaItem = { url: string; type: 'image' | 'video' }
@@ -125,16 +124,6 @@ export async function createPieceAction(
     return { error: 'Ingresá un título para la pieza.', success: false }
   }
 
-  const { iso: scheduledAt, error: scheduleError } = parseScheduledAt(formData)
-  if (scheduleError) {
-    return { error: scheduleError, success: false }
-  }
-
-  const { iso: tiktokScheduledAt, error: tiktokScheduleError } = parseScheduledAt(formData, 'tiktok_')
-  if (tiktokScheduleError) {
-    return { error: tiktokScheduleError, success: false }
-  }
-
   const supabase = await createClient()
   const {
     data: { user },
@@ -150,23 +139,9 @@ export async function createPieceAction(
     return { error: 'No encontramos tu organización activa.', success: false }
   }
 
-  // Archivo Final — un solo archivo (Épica Omnicanal, 2026-08-04).
-  const finalFiles = formData
-    .getAll('media_files')
-    .filter((entry): entry is File => entry instanceof File && entry.size > 0)
-    .slice(0, 1)
-
-  if (scheduledAt && finalFiles.length === 0) {
-    return { error: 'Para programar la auto-publicación, subí el Archivo Final que se va a publicar.', success: false }
-  }
-
-  const { media: mediaUrls, error: uploadError } = await uploadPieceMediaFiles(supabase, user.id, finalFiles)
-
-  if (uploadError) {
-    return { error: uploadError, success: false }
-  }
-
-  // Referencias — multi-archivo, nunca las lee el pipeline de publicación.
+  // Referencias — multi-archivo, moodboard/tomas crudas para planificación.
+  // Gotix no sube nada a Instagram/TikTok directamente (decisión de
+  // producto, 2026-08-05): la pieza final se publica desde la app nativa.
   const referenceFiles = formData
     .getAll('reference_files')
     .filter((entry): entry is File => entry instanceof File && entry.size > 0)
@@ -194,14 +169,7 @@ export async function createPieceAction(
     production_status: PRODUCTION_STATUSES.includes(productionStatusRaw) ? productionStatusRaw : 'idea',
     user_id: user.id,
     organization_id: activeOrganizationId,
-    media_urls: mediaUrls.length > 0 ? mediaUrls : null,
-    media_url: mediaUrls[0]?.url ?? null,
-    media_type: mediaUrls[0]?.type ?? null,
     reference_urls: referenceUrls,
-    scheduled_at: scheduledAt,
-    publish_status: scheduledAt ? 'scheduled' : 'none',
-    tiktok_scheduled_at: tiktokScheduledAt,
-    tiktok_publish_status: tiktokScheduledAt ? 'scheduled' : 'none',
   })
 
   if (error) {
@@ -218,24 +186,20 @@ export type AddMediaState = {
 }
 
 /**
- * Sube más archivos a una pieza ya creada — piece-edit-form.tsx no tiene
+ * Sube más Referencias a una pieza ya creada — piece-edit-form.tsx no tiene
  * input de archivo propio, esto es lo único que agrega media después de la
- * creación (ver add-piece-media-form.tsx). `kind` distingue Archivo Final
- * (single, REEMPLAZA lo que había) de Referencias (multi, se acumula) —
- * mismo criterio que createPieceAction/content/actions.ts para publicaciones
- * sueltas (Épica Omnicanal, 2026-08-04).
+ * creación (ver add-piece-media-form.tsx). Se acumula (álbum), nunca
+ * reemplaza lo que ya había.
  */
 export async function addPieceMediaAction(
   pieceId: string,
   campaignId: string,
-  kind: 'final' | 'reference',
   _prevState: AddMediaState,
   formData: FormData
 ): Promise<AddMediaState> {
-  const rawFiles = formData
+  const files = formData
     .getAll('media_files')
     .filter((entry): entry is File => entry instanceof File && entry.size > 0)
-  const files = kind === 'final' ? rawFiles.slice(0, 1) : rawFiles
 
   if (files.length === 0) {
     return { error: 'Elegí al menos un archivo.' }
@@ -258,7 +222,7 @@ export async function addPieceMediaAction(
 
   const { data: existingPiece } = await supabase
     .from('content_piezas')
-    .select('media_urls, reference_urls')
+    .select('reference_urls')
     .eq('id', pieceId)
     .eq('organization_id', activeOrganizationId)
     .maybeSingle()
@@ -273,35 +237,19 @@ export async function addPieceMediaAction(
     return { error: uploadError }
   }
 
-  if (kind === 'final') {
-    const { error } = await supabase
-      .from('content_piezas')
-      .update({
-        media_urls: newMedia,
-        media_url: newMedia[0]?.url ?? null,
-        media_type: newMedia[0]?.type ?? null,
-      })
-      .eq('id', pieceId)
-      .eq('organization_id', activeOrganizationId)
+  const existingReference = Array.isArray(existingPiece.reference_urls)
+    ? (existingPiece.reference_urls as MediaItem[])
+    : []
+  const mergedReference = [...existingReference, ...newMedia]
 
-    if (error) {
-      return { error: 'No pudimos guardar el archivo. Probá de nuevo.' }
-    }
-  } else {
-    const existingReference = Array.isArray(existingPiece.reference_urls)
-      ? (existingPiece.reference_urls as MediaItem[])
-      : []
-    const mergedReference = [...existingReference, ...newMedia]
+  const { error } = await supabase
+    .from('content_piezas')
+    .update({ reference_urls: mergedReference })
+    .eq('id', pieceId)
+    .eq('organization_id', activeOrganizationId)
 
-    const { error } = await supabase
-      .from('content_piezas')
-      .update({ reference_urls: mergedReference })
-      .eq('id', pieceId)
-      .eq('organization_id', activeOrganizationId)
-
-    if (error) {
-      return { error: 'No pudimos guardar las referencias. Probá de nuevo.' }
-    }
+  if (error) {
+    return { error: 'No pudimos guardar las referencias. Probá de nuevo.' }
   }
 
   revalidatePath(`/campaigns/${campaignId}`)
@@ -355,32 +303,6 @@ export async function updatePieceAction(
 
   const supabase = await createClient()
 
-  const { iso: scheduledAt, error: scheduleError } = parseScheduledAt(formData)
-  if (scheduleError) {
-    return { error: scheduleError, success: false }
-  }
-
-  const { iso: tiktokScheduledAt, error: tiktokScheduleError } = parseScheduledAt(formData, 'tiktok_')
-  if (tiktokScheduleError) {
-    return { error: tiktokScheduleError, success: false }
-  }
-
-  if (scheduledAt) {
-    const { data: existingPiece } = await supabase
-      .from('content_piezas')
-      .select('media_url, publish_status')
-      .eq('id', pieceId)
-      .eq('organization_id', activeOrganizationId)
-      .maybeSingle()
-
-    if (existingPiece?.publish_status === 'publishing' || existingPiece?.publish_status === 'published') {
-      return { error: 'Esta pieza ya se está publicando o ya se publicó — no se puede reprogramar.', success: false }
-    }
-    if (!existingPiece?.media_url) {
-      return { error: 'Para programar la auto-publicación, primero subí el Archivo Final que se va a publicar.', success: false }
-    }
-  }
-
   const productionStatusRaw = String(formData.get('production_status') ?? 'idea')
 
   const { error } = await supabase
@@ -396,19 +318,6 @@ export async function updatePieceAction(
       caption: emptyToNull(formData.get('caption')),
       tiktok_caption: emptyToNull(formData.get('tiktok_caption')),
       production_status: PRODUCTION_STATUSES.includes(productionStatusRaw) ? productionStatusRaw : 'idea',
-      scheduled_at: scheduledAt,
-      publish_status: scheduledAt ? 'scheduled' : 'none',
-      // Reprogramar desde cero: si había un intento previo fallido, se
-      // limpian sus rastros para no arrastrar un error/contenedor viejo a
-      // la nueva corrida.
-      publish_error: scheduledAt ? null : undefined,
-      ig_container_id: scheduledAt ? null : undefined,
-      retry_count: scheduledAt ? 0 : undefined,
-      tiktok_scheduled_at: tiktokScheduledAt,
-      tiktok_publish_status: tiktokScheduledAt ? 'scheduled' : 'none',
-      tiktok_publish_error: tiktokScheduledAt ? null : undefined,
-      tiktok_container_id: tiktokScheduledAt ? null : undefined,
-      tiktok_retry_count: tiktokScheduledAt ? 0 : undefined,
     })
     .eq('id', pieceId)
     .eq('organization_id', activeOrganizationId)
@@ -421,23 +330,6 @@ export async function updatePieceAction(
   return { error: null, success: true }
 }
 
-/** Saca una pieza de la cola de auto-publicación sin borrarla — vuelve a publish_status='none', mismo estado que si nunca se hubiera programado. */
-export async function cancelScheduleAction(pieceId: string, campaignId: string) {
-  const { activeOrganizationId } = await getDashboardContext()
-  if (!activeOrganizationId) return
-
-  const supabase = await createClient()
-
-  await supabase
-    .from('content_piezas')
-    .update({ publish_status: 'none', scheduled_at: null, ig_container_id: null, publish_error: null, retry_count: 0 })
-    .eq('id', pieceId)
-    .eq('organization_id', activeOrganizationId)
-    .eq('publish_status', 'scheduled') // no cancela algo que ya está publicando/publicado
-
-  revalidatePath(`/campaigns/${campaignId}`)
-}
-
 export async function deletePieceAction(pieceId: string, campaignId: string) {
   const { activeOrganizationId } = await getDashboardContext()
 
@@ -447,17 +339,11 @@ export async function deletePieceAction(pieceId: string, campaignId: string) {
 
   const supabase = await createClient()
 
-  // Defensa en profundidad (auditoría de cierre, 2026-08-01): la UI ya
-  // oculta "Eliminar" mientras publish_status='publishing' — esto cubre el
-  // caso de una UI vieja en caché o un llamado directo. Borrar algo en
-  // vuelo no cancela la publicación real en Instagram, solo hace que Gotix
-  // pierda el registro cuando termine.
   await supabase
     .from('content_piezas')
     .delete()
     .eq('id', pieceId)
     .eq('organization_id', activeOrganizationId)
-    .neq('publish_status', 'publishing')
 
   revalidatePath(`/campaigns/${campaignId}`)
   revalidatePath('/content')

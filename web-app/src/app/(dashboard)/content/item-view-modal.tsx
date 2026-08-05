@@ -1,6 +1,6 @@
 'use client'
 
-import { isOverdueScheduled, type UnifiedItem } from './unified-items'
+import type { UnifiedItem } from './unified-items'
 import type { MediaInsight } from './content-tabs'
 
 // "Ver" — vista de solo lectura pedida explícitamente por la PO: antes el
@@ -10,13 +10,6 @@ import type { MediaInsight } from './content-tabs'
 // input). Las métricas se buscan en `mediaInsights` por id+tabla — mismo
 // dato ya cacheado que alimenta Rendimiento/Comparativa, nunca un fetch
 // nuevo acá.
-
-const STATUS_BADGE: Record<string, { label: string; className: string }> = {
-  scheduled: { label: 'Programado', className: 'border-accent/40 bg-accent/[8%] text-accent' },
-  publishing: { label: 'Publicando…', className: 'border-amber/40 bg-amber/[8%] text-amber' },
-  published: { label: 'Publicado', className: 'border-green/40 bg-green/[8%] text-green' },
-  failed: { label: 'Error', className: 'border-red/40 bg-red/[8%] text-red' },
-}
 
 function fmt(n: number | null | undefined): string {
   return n === null || n === undefined ? '—' : n.toLocaleString('es-AR')
@@ -32,9 +25,7 @@ export function ItemViewModal({
   onClose: () => void
 }) {
   const metrics = mediaInsights.find((m) => (item.sourceTable === 'content_piezas' ? m.piece_id === item.id : m.post_id === item.id))
-  const overdue = isOverdueScheduled(item)
-  const badge = STATUS_BADGE[item.publishStatus]
-  const media = item.mediaList[0] ?? (item.mediaUrl ? { url: item.mediaUrl, type: (item.mediaType as 'image' | 'video') ?? 'image' } : null)
+  const media = item.mediaList[0] ?? null
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={onClose}>
@@ -45,14 +36,6 @@ export function ItemViewModal({
         <div className="flex shrink-0 items-center justify-between border-b border-border px-5 py-4">
           <div className="flex min-w-0 items-center gap-2">
             <p className="min-w-0 truncate text-sm font-bold text-text">{item.titulo || 'Sin título'}</p>
-            {badge && (
-              <span
-                title={overdue ? 'Pasó la hora programada y todavía no se publicó — puede ser el límite diario de Instagram (25 posts/24h) u otro problema de conexión.' : undefined}
-                className={`shrink-0 rounded-full border px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide ${overdue ? 'border-red/40 bg-red/[8%] text-red' : badge.className}`}
-              >
-                {overdue ? 'Demorado' : badge.label}
-              </span>
-            )}
           </div>
           <button
             type="button"
@@ -96,21 +79,6 @@ export function ItemViewModal({
             <p className="text-[10px] font-bold uppercase tracking-wide text-text-3">Notas internas (no se publican)</p>
             <p className="mt-1 whitespace-pre-wrap text-sm text-text-2">{item.internalNotes || 'Sin notas.'}</p>
           </div>
-
-          {item.igPermalink && (
-            <a
-              href={item.igPermalink}
-              target="_blank"
-              rel="noreferrer"
-              className="mt-4 inline-block text-xs font-medium text-green transition-colors duration-200 ease-out hover:text-green/80"
-            >
-              Ver en Instagram ↗
-            </a>
-          )}
-
-          {item.publishStatus === 'failed' && item.publishError && (
-            <p className="mt-3 text-xs text-red">No pudimos publicar este contenido. Revisá el archivo y volvé a intentarlo, o contactá a soporte si el problema persiste.</p>
-          )}
 
           {metrics && (
             <div className="mt-5 border-t border-divider pt-4">
