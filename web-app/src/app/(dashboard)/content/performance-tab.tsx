@@ -10,13 +10,13 @@ import { InstagramOverviewKpis } from './instagram-overview-kpis'
 import { ReachImpressionsChart } from './reach-impressions-chart'
 import { ProfileGrowthChart } from './profile-growth-chart'
 import { InstagramDayOfWeekChart } from './instagram-day-of-week-chart'
-import { DateRangePicker } from './instagram-date-range-picker'
+import { DateRangePicker } from './date-range-picker'
 import type { AccountInsight } from './content-tabs'
 import type { WinningItem } from '@/lib/content/winners'
 import type { TiktokVideoRow } from '@/lib/tiktok/winners'
 import type { InstagramCatalogRow } from '@/lib/instagram/media-catalog-winners'
 import { computeAccountOverviewKpis, buildReachImpressionsSeries, buildProfileGrowthSeries } from '@/lib/instagram/account-overview'
-import { DATE_RANGE_OPTIONS, filterByDateRange, type DateRangeMode } from '@/lib/instagram/date-range'
+import { DATE_RANGE_OPTIONS, filterByDateRange, type DateRangeMode } from '@/lib/date-range'
 
 // "Rendimiento" — analítica orgánica de Instagram, alimentada por los
 // snapshots cacheados en instagram_account_insights/instagram_media_catalog.
@@ -41,6 +41,7 @@ export function PerformanceTab({
   accountInsights,
   winningItems,
   tiktokConnected,
+  tiktokUsername,
   tiktokVideos,
   instagramCatalog,
   gotixMediaIds,
@@ -50,6 +51,7 @@ export function PerformanceTab({
   accountInsights: AccountInsight[]
   winningItems: WinningItem[]
   tiktokConnected: boolean
+  tiktokUsername: string | null
   tiktokVideos: TiktokVideoRow[]
   instagramCatalog: InstagramCatalogRow[]
   gotixMediaIds: Set<string>
@@ -132,7 +134,9 @@ export function PerformanceTab({
         </div>
       )}
 
-      {tiktokConnected && (!showNetworkTabs || networkTab === 'tiktok') && <TiktokPerformanceSection videos={tiktokVideos} />}
+      {tiktokConnected && (!showNetworkTabs || networkTab === 'tiktok') && (
+        <TiktokPerformanceSection videos={tiktokVideos} tiktokUsername={tiktokUsername} />
+      )}
 
       {instagramConnected && (!showNetworkTabs || networkTab === 'meta') && (
         <>

@@ -1,5 +1,6 @@
 'use client'
 
+import { useEffect } from 'react'
 import { InstagramIcon } from '@/components/features/nav-icons'
 import { primaryMetric, formatLabel, type InstagramCatalogRow } from '@/lib/instagram/media-catalog-winners'
 
@@ -61,7 +62,7 @@ function SalesAttributionRow({
       </div>
       {!hasData && (
         <p className="mt-2 text-[10px] leading-relaxed text-text-3">
-          Todavía no hay conexión con Tiendanube/WhatsApp para atribuir ventas a este contenido — próxima fase.
+          Todavía no hay conexión con Tiendanube/WhatsApp para atribuir ventas a este contenido.
         </p>
       )}
     </div>
@@ -93,6 +94,14 @@ export function InstagramMediaDetailModal({
     engagementBase > 0
       ? (((item.like_count ?? 0) + (item.comments_count ?? 0) + (item.shares ?? 0) + (item.saved ?? 0)) / engagementBase) * 100
       : 0
+
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Escape') onClose()
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [onClose])
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={onClose}>

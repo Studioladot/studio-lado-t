@@ -1,4 +1,5 @@
 import type { Database } from '@/lib/types/database.types'
+import { sumOrNull } from './media-catalog-winners'
 
 type AccountInsight = Database['public']['Tables']['instagram_account_insights']['Row']
 
@@ -7,22 +8,15 @@ export type AccountOverviewKpis = {
   totalInteractions: number | null
   newFollowers: number | null
   engagementRate: number | null
-}
-
-function sumOrNull(values: Array<number | null>): number | null {
-  const present = values.filter((v): v is number => v !== null)
-  if (present.length === 0) return null
-  return present.reduce((a, b) => a + b, 0)
+  totalProfileVisits: number | null
 }
 
 /**
  * KPIs de Nivel 1 (Visión Global de la Cuenta) — se suman sobre toda la
- * ventana recibida (accountInsights ya viene acotada a los últimos 30 días
- * desde content/page.tsx). Si una métrica no tiene NINGÚN dato en la ventana
- * (por ejemplo total_interactions/profile_views antes de que corra el primer
- * sync después de la migración que las agregó) el KPI queda en null — nunca
- * se muestra un 0 falso, mismo criterio de honestidad de datos que ya usa
- * instagram-metrics-sync.
+ * ventana recibida (accountInsights ya viene acotada por el DateRangePicker
+ * de arriba). Si una métrica no tiene NINGÚN dato en la ventana el KPI
+ * queda en null — nunca se muestra un 0 falso, mismo criterio de
+ * honestidad de datos que ya usa instagram-metrics-sync.
  *
  * follower_count es el delta neto DIARIO que reporta la Graph API (no un
  * acumulado) — sumarlo da los seguidores netos ganados en el período, que es
@@ -32,17 +26,22 @@ function sumOrNull(values: Array<number | null>): number | null {
  * únicas reales, más representativo que impresiones (que puede contar la
  * misma persona varias veces) para un ratio de "cuánta gente que vio algo
  * interactuó con eso".
+ *
+ * totalProfileVisits (profile_views) se sincroniza desde 2026-08-06 pero
+ * nunca se mostraba en ningún lado — métrica huérfana real encontrada en
+ * la auditoría del mismo día, ahora sí sumada acá y mostrada como 5to KPI.
  */
 export function computeAccountOverviewKpis(data: AccountInsight[]): AccountOverviewKpis {
   const totalViews = sumOrNull(data.map((d) => d.impressions))
   const totalInteractions = sumOrNull(data.map((d) => d.total_interactions))
   const newFollowers = sumOrNull(data.map((d) => d.follower_count))
   const totalReach = sumOrNull(data.map((d) => d.reach))
+  const totalProfileVisits = sumOrNull(data.map((d) => d.profile_views))
 
   const engagementRate =
     totalInteractions !== null && totalReach !== null && totalReach > 0 ? (totalInteractions / totalReach) * 100 : null
 
-  return { totalViews, totalInteractions, newFollowers, engagementRate }
+  return { totalViews, totalInteractions, newFollowers, engagementRate, totalProfileVisits }
 }
 
 export type ReachImpressionsPoint = { date: string; reach: number | null; impressions: number | null }

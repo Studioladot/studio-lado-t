@@ -127,6 +127,7 @@ export default async function ContentPage() {
         instagramConnected={!!instagramConnection}
         igUsername={instagramConnection?.ig_username ?? null}
         tiktokConnected={!!tiktokConnection}
+        tiktokUsername={tiktokConnection?.tiktok_username ?? null}
         tiktokVideos={tiktokVideos ?? []}
         instagramCatalog={instagramCatalog ?? []}
         gotixMediaIds={gotixMediaIds}

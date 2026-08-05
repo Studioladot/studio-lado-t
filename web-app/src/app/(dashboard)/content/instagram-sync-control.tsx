@@ -24,10 +24,17 @@ import { syncInstagramAccountInsightsAction, syncInstagramMediaAction } from './
 export function InstagramSyncControl({ igUsername, hasAccountData }: { igUsername: string | null; hasAccountData: boolean }) {
   const [isSyncing, startSync] = useTransition()
   const [error, setError] = useState<string | null>(null)
+  // Feedback de éxito (2026-08-06, auditoría) — al consolidar los dos
+  // botones de sync en uno solo, este componente se quedó sin ningún
+  // mensaje visible cuando la sincronización SÍ funciona (antes el botón
+  // propio del Catálogo mostraba "Actualizamos N publicaciones..."). Un
+  // click que "no hace nada visible" lee como roto aunque haya andado.
+  const [message, setMessage] = useState<string | null>(null)
   const autoTriggered = useRef(false)
 
   function runSync() {
     setError(null)
+    setMessage(null)
     startSync(async () => {
       const [accountResult, catalogResult] = await Promise.all([syncInstagramAccountInsightsAction(), syncInstagramMediaAction()])
 
@@ -49,7 +56,15 @@ export function InstagramSyncControl({ igUsername, hasAccountData }: { igUsernam
       const failures: string[] = []
       if (!accountResult.ok) failures.push(accountResult.error)
       if (!catalogResult.ok) failures.push(catalogResult.error)
-      if (failures.length > 0) setError(failures[0])
+      if (failures.length > 0) {
+        setError(failures[0])
+        return
+      }
+
+      const parts: string[] = []
+      if (accountResult.ok && accountResult.daysSynced > 0) parts.push(`${accountResult.daysSynced} días de estadísticas`)
+      if (catalogResult.ok && catalogResult.count > 0) parts.push(`${catalogResult.count} publicaciones`)
+      setMessage(parts.length > 0 ? `Sincronizado: ${parts.join(' y ')}.` : 'Ya estabas al día — no había nada nuevo para traer.')
     })
   }
 
@@ -86,6 +101,7 @@ export function InstagramSyncControl({ igUsername, hasAccountData }: { igUsernam
         <span className="text-[10px] font-semibold">{isSyncing ? 'Sincronizando…' : 'Sincronizar'}</span>
       </button>
       {error && <span className="text-[10px] text-red">{error}</span>}
+      {message && <span className="text-[10px] text-green">{message}</span>}
     </div>
   )
 }

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { DATE_RANGE_OPTIONS, type DateRangeMode } from '@/lib/instagram/date-range'
+import { DATE_RANGE_OPTIONS, type DateRangeMode } from '@/lib/date-range'
 
 function CalendarIcon({ size = 11 }: { size?: number }) {
   return (
@@ -13,11 +13,13 @@ function CalendarIcon({ size = 11 }: { size?: number }) {
 }
 
 /**
- * Único selector de rango de fechas de toda la sección "Rendimiento
- * Instagram" (2026-08-06) — vive arriba de todo, en PerformanceTab, y
- * controla tanto los KPIs/gráficos de cuenta como la grilla de contenido.
- * Antes había una copia sin conectar adentro del Catálogo; se sacó de ahí
- * para no tener dos controles de fecha independientes en la misma página.
+ * Único selector de rango de fechas por sección de "Rendimiento" (2026-08-06)
+ * — vive arriba de todo (Instagram y, desde la paridad de plataformas, TikTok
+ * también) y controla tanto los KPIs/gráficos como la grilla de contenido de
+ * esa plataforma. Antes había una copia sin conectar adentro del Catálogo de
+ * Instagram; se sacó de ahí para no tener dos controles de fecha
+ * independientes en la misma pantalla. Componente genérico a propósito — no
+ * conoce Instagram ni TikTok, solo DateRangeMode.
  */
 export function DateRangePicker({ value, onChange }: { value: DateRangeMode; onChange: (mode: DateRangeMode) => void }) {
   const [open, setOpen] = useState(false)

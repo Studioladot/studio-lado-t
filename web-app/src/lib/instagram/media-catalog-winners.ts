@@ -16,10 +16,32 @@ export function primaryMetric(row: InstagramCatalogRow): number {
   return row.plays ?? row.reach ?? row.impressions ?? 0
 }
 
+/**
+ * Mismo fallback que primaryMetric, pero preservando null en vez de
+ * default a 0 — para MOSTRAR un número (grilla, modal, comparativa,
+ * resumen del conjunto) nunca hay que usar primaryMetric: un ítem sin
+ * ningún dato real mostraría "0" en vez de "—" (bug real encontrado y
+ * corregido dos veces: primero en la grilla 2026-08-06, después
+ * encontrado de nuevo en la comparativa en la auditoría del mismo día —
+ * quedó server centralizado acá para que no vuelva a pasar en un tercer
+ * lugar). primaryMetric() sigue siendo el correcto para ORDENAR/puntuar,
+ * donde un 0 de por defecto no rompe nada.
+ */
+export function viewsOf(row: InstagramCatalogRow): number | null {
+  return row.plays ?? row.reach ?? row.impressions ?? null
+}
+
 /** likes+comentarios+compartidos+guardados — null si NINGUNO de los 4 vino, nunca se suma como si un campo faltante fuera 0. */
 export function interactionsTotal(row: InstagramCatalogRow): number | null {
   const parts = [row.like_count, row.comments_count, row.shares, row.saved]
   const present = parts.filter((v): v is number => v !== null)
+  if (present.length === 0) return null
+  return present.reduce((a, b) => a + b, 0)
+}
+
+/** Suma genérica que honra "sin ningún dato" como null, nunca como 0 — compartida entre KPIs de cuenta y resumen del catálogo. */
+export function sumOrNull(values: Array<number | null>): number | null {
+  const present = values.filter((v): v is number => v !== null)
   if (present.length === 0) return null
   return present.reduce((a, b) => a + b, 0)
 }

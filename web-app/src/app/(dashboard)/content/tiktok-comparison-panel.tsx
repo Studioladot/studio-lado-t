@@ -1,43 +1,31 @@
 'use client'
 
 import { useEffect } from 'react'
-import { formatLabel, interactionsTotal, viewsOf, type InstagramCatalogRow } from '@/lib/instagram/media-catalog-winners'
-import { InstagramIcon } from '@/components/features/nav-icons'
+import { interactionsTotal, type TiktokVideoRow } from '@/lib/tiktok/winners'
+import { TiktokIcon } from '@/components/features/nav-icons'
 
-// Comparativa — panel frente a frente para 2 a 4 publicaciones del
-// Catálogo Instagram (2026-08-06: resurrección de la vieja comparativa de
-// la tabla de Rendimiento, ahora sobre InstagramCatalogRow en vez de
-// MediaInsight — la grilla premium ya no usa esa tabla). Resalta en verde
-// el valor más alto de cada fila — nunca un puntaje inventado, solo el
-// máximo real de las columnas que la API efectivamente devolvió (null se
-// trata como "sin dato", nunca como 0, para no hacerlo ganar por default).
+// Puerto directo de comparison-panel.tsx (Instagram) — Paridad de
+// Plataformas, 2026-08-06. TikTok no tiene reach/impressions/saved
+// separados, así que son menos filas (Vistas/Likes/Comentarios/
+// Compartidos/Interacciones), pero mismo mecanismo: primera columna
+// seleccionada = "Base", el resto muestra el delta % contra ella.
 
-type MetricRow = { key: 'views' | 'reach' | 'impressions' | 'likes' | 'comments' | 'shares' | 'saved' | 'interactions'; label: string }
+type MetricRow = { key: 'views' | 'likes' | 'comments' | 'shares' | 'interactions'; label: string }
 
 const METRIC_ROWS: MetricRow[] = [
   { key: 'views', label: 'Vistas' },
-  { key: 'reach', label: 'Alcance' },
-  { key: 'impressions', label: 'Impresiones' },
   { key: 'likes', label: 'Likes' },
   { key: 'comments', label: 'Comentarios' },
   { key: 'shares', label: 'Compartidos' },
-  { key: 'saved', label: 'Guardados' },
   { key: 'interactions', label: 'Interacciones' },
 ]
 
-function fmt(n: number | null): string {
-  return n === null ? '—' : n.toLocaleString('es-AR')
+function fmt(n: number): string {
+  return n.toLocaleString('es-AR')
 }
 
-/**
- * Diferencia porcentual contra la primera publicación seleccionada (la
- * "Base") — pedido explícito 2026-08-06: "+5% de likes", "-3% de
- * comentarios" comparando una pieza contra la otra. Null si no hay base
- * para comparar (falta el dato en la base, o la base es 0 — dividir por 0
- * no es un "-100%" real, es indefinido).
- */
-function deltaPct(value: number | null, baseline: number | null): number | null {
-  if (value === null || baseline === null || baseline === 0) return null
+function deltaPct(value: number, baseline: number): number | null {
+  if (baseline === 0) return null
   return ((value - baseline) / baseline) * 100
 }
 
@@ -52,33 +40,22 @@ function DeltaBadge({ delta }: { delta: number | null }) {
   )
 }
 
-function metricValue(item: InstagramCatalogRow, key: MetricRow['key']): number | null {
+function metricValue(video: TiktokVideoRow, key: MetricRow['key']): number {
   switch (key) {
     case 'views':
-      // viewsOf (no primaryMetric) — bug real encontrado en la auditoría
-      // 2026-08-06: primaryMetric devuelve 0 por diseño para no romper el
-      // sort/ranking, pero esta fila lo usaba para MOSTRAR el número, así
-      // que un ítem sin ningún dato de vistas imprimía "0" en vez de "—"
-      // (mismo bug ya corregido antes en la grilla, reintroducido acá).
-      return viewsOf(item)
-    case 'reach':
-      return item.reach
-    case 'impressions':
-      return item.impressions
+      return video.view_count
     case 'likes':
-      return item.like_count
+      return video.like_count
     case 'comments':
-      return item.comments_count
+      return video.comment_count
     case 'shares':
-      return item.shares
-    case 'saved':
-      return item.saved
+      return video.share_count
     case 'interactions':
-      return interactionsTotal(item)
+      return interactionsTotal(video)
   }
 }
 
-export function ComparisonPanel({ items, onClose }: { items: InstagramCatalogRow[]; onClose: () => void }) {
+export function TiktokComparisonPanel({ videos, onClose }: { videos: TiktokVideoRow[]; onClose: () => void }) {
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       if (e.key === 'Escape') onClose()
@@ -112,8 +89,8 @@ export function ComparisonPanel({ items, onClose }: { items: InstagramCatalogRow
             <thead>
               <tr className="text-left text-[10px] font-bold uppercase tracking-wide text-text-3">
                 <th className="w-24 px-2 py-2">Métrica</th>
-                {items.map((item, i) => (
-                  <th key={item.id} className="px-2 py-2">
+                {videos.map((video, i) => (
+                  <th key={video.id} className="px-2 py-2">
                     <div className="flex flex-col gap-1.5">
                       {i === 0 && (
                         <span className="w-fit rounded-full bg-surface-2 px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wide text-text-3">
@@ -121,27 +98,26 @@ export function ComparisonPanel({ items, onClose }: { items: InstagramCatalogRow
                         </span>
                       )}
                       <div className="h-14 w-14 shrink-0 overflow-hidden rounded-control bg-black">
-                        {item.thumbnail_url || item.media_url ? (
-                          // eslint-disable-next-line @next/next/no-img-element -- thumbnail remoto de Instagram, no un asset local.
-                          <img src={item.thumbnail_url ?? item.media_url ?? undefined} alt="" className="h-full w-full object-cover" />
+                        {video.cover_image_url ? (
+                          // eslint-disable-next-line @next/next/no-img-element -- thumbnail remoto de TikTok, no un asset local.
+                          <img src={video.cover_image_url} alt="" className="h-full w-full object-cover" />
                         ) : (
                           <div className="flex h-full w-full items-center justify-center text-text-3">
-                            <InstagramIcon size={16} />
+                            <TiktokIcon size={16} />
                           </div>
                         )}
                       </div>
-                      <span className="text-[9px] font-semibold uppercase tracking-wide text-text-3">{formatLabel(item)}</span>
-                      {item.permalink ? (
+                      {video.share_url ? (
                         <a
-                          href={item.permalink}
+                          href={video.share_url}
                           target="_blank"
                           rel="noreferrer"
                           className="line-clamp-2 max-w-[120px] font-medium normal-case text-text hover:text-accent"
                         >
-                          {item.caption || 'Sin descripción'}
+                          {video.description || 'Sin descripción'}
                         </a>
                       ) : (
-                        <span className="line-clamp-2 max-w-[120px] font-medium normal-case text-text">{item.caption || 'Sin descripción'}</span>
+                        <span className="line-clamp-2 max-w-[120px] font-medium normal-case text-text">{video.description || 'Sin descripción'}</span>
                       )}
                     </div>
                   </th>
@@ -150,14 +126,14 @@ export function ComparisonPanel({ items, onClose }: { items: InstagramCatalogRow
             </thead>
             <tbody>
               {METRIC_ROWS.map((row) => {
-                const values = items.map((item) => metricValue(item, row.key))
-                const max = values.every((v) => v === null) ? null : Math.max(...values.filter((v): v is number => v !== null))
+                const values = videos.map((video) => metricValue(video, row.key))
+                const max = Math.max(...values)
                 const baseline = values[0]
                 return (
                   <tr key={row.key} className="border-t border-divider">
                     <td className="px-2 py-2 font-medium text-text-2">{row.label}</td>
                     {values.map((v, i) => (
-                      <td key={i} className={`px-2 py-2 tabular-nums ${v !== null && v === max ? 'font-bold text-green' : 'text-text'}`}>
+                      <td key={i} className={`px-2 py-2 tabular-nums ${v === max ? 'font-bold text-green' : 'text-text'}`}>
                         <div className="flex items-center gap-1.5">
                           <span>{fmt(v)}</span>
                           {i > 0 && <DeltaBadge delta={deltaPct(v, baseline)} />}

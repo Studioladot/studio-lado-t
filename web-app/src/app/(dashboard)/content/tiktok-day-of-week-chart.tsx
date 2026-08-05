@@ -1,8 +1,8 @@
 'use client'
 
 import { PolarAngleAxis, PolarGrid, PolarRadiusAxis, Radar, RadarChart, ResponsiveContainer, Tooltip } from 'recharts'
-import { computeDayOfWeekPerformance, bestDayInsight, type DayOfWeekPoint } from '@/lib/instagram/day-of-week-performance'
-import type { InstagramCatalogRow } from '@/lib/instagram/media-catalog-winners'
+import { computeDayOfWeekPerformance, bestDayInsight, type DayOfWeekPoint } from '@/lib/tiktok/day-of-week-performance'
+import type { TiktokVideoRow } from '@/lib/tiktok/winners'
 
 function InsightIcon({ size = 12 }: { size?: number }) {
   return (
@@ -13,7 +13,7 @@ function InsightIcon({ size = 12 }: { size?: number }) {
   )
 }
 
-type ChartRow = { day: string; Interacciones: number; Alcance: number; rawInteractions: number | null; rawReach: number | null }
+type ChartRow = { day: string; Interacciones: number; Vistas: number; rawInteractions: number | null; rawViews: number | null }
 
 function CustomTooltip({ active, payload }: { active?: boolean; payload?: { payload: ChartRow }[] }) {
   if (!active || !payload?.length) return null
@@ -31,9 +31,9 @@ function CustomTooltip({ active, payload }: { active?: boolean; payload?: { payl
         </div>
         <div className="flex items-center gap-2">
           <span className="h-[2px] w-3 shrink-0 rounded-full bg-amber" />
-          <span className="text-text-2">Alcance</span>
+          <span className="text-text-2">Vistas</span>
           <span className="ml-auto font-semibold tabular-nums text-text">
-            {point.rawReach !== null ? Math.round(point.rawReach).toLocaleString('es-AR') : '—'}
+            {point.rawViews !== null ? Math.round(point.rawViews).toLocaleString('es-AR') : '—'}
           </span>
         </div>
       </div>
@@ -41,40 +41,34 @@ function CustomTooltip({ active, payload }: { active?: boolean; payload?: { payl
   )
 }
 
-// "Interacciones por Día de la Semana" (2026-08-06) — spider chart sobre el
-// promedio de interacciones/alcance por publicación, agrupado por día
-// calendario de publicación. Interacciones y alcance tienen magnitudes
-// muy distintas — graficarlas crudas en el mismo eje radial dejaría
-// "Interacciones" invisible pegado al centro. Se normaliza cada serie a %
-// de SU PROPIO máximo (0-100) antes de graficar, un solo eje radial
-// compartido (0-100%), mismo criterio de "un solo eje" que ya usa
-// ReachImpressionsChart — el tooltip muestra los valores crudos reales, la
-// normalización es solo para que las dos formas se puedan comparar
-// visualmente en el mismo radar.
-export function InstagramDayOfWeekChart({ items }: { items: InstagramCatalogRow[] }) {
-  const points = computeDayOfWeekPerformance(items)
-  const daysWithData = points.filter((p) => p.avgInteractions !== null || p.avgReach !== null).length
+// Puerto directo de instagram-day-of-week-chart.tsx (Paridad de
+// Plataformas, 2026-08-06) — mismo criterio de normalización a % del
+// propio máximo (interacciones y vistas tienen magnitudes muy distintas,
+// un solo eje radial compartido).
+export function TiktokDayOfWeekChart({ videos }: { videos: TiktokVideoRow[] }) {
+  const points = computeDayOfWeekPerformance(videos)
+  const daysWithData = points.filter((p) => p.avgInteractions !== null || p.avgViews !== null).length
 
   if (daysWithData < 3) {
     return (
       <div className="rounded-card border border-border bg-surface p-5">
         <p className="text-[10px] font-bold uppercase tracking-wide text-text-3">Interacciones por día de la semana</p>
         <p className="mt-6 text-center text-xs text-text-3">
-          Todavía no hay suficientes publicaciones repartidas en distintos días de la semana para graficar esto.
+          Todavía no hay suficientes videos repartidos en distintos días de la semana para graficar esto.
         </p>
       </div>
     )
   }
 
   const maxInteractions = Math.max(1, ...points.map((p) => p.avgInteractions ?? 0))
-  const maxReach = Math.max(1, ...points.map((p) => p.avgReach ?? 0))
+  const maxViews = Math.max(1, ...points.map((p) => p.avgViews ?? 0))
 
   const chartData: ChartRow[] = points.map((p: DayOfWeekPoint) => ({
     day: p.day,
     Interacciones: p.avgInteractions !== null ? Math.round((p.avgInteractions / maxInteractions) * 100) : 0,
-    Alcance: p.avgReach !== null ? Math.round((p.avgReach / maxReach) * 100) : 0,
+    Vistas: p.avgViews !== null ? Math.round((p.avgViews / maxViews) * 100) : 0,
     rawInteractions: p.avgInteractions,
-    rawReach: p.avgReach,
+    rawViews: p.avgViews,
   }))
 
   const insight = bestDayInsight(points)
@@ -88,7 +82,7 @@ export function InstagramDayOfWeekChart({ items }: { items: InstagramCatalogRow[
             <span className="h-2 w-2 rounded-full bg-accent" /> Interacciones
           </span>
           <span className="flex items-center gap-1.5">
-            <span className="h-2 w-2 rounded-full bg-amber" /> Alcance
+            <span className="h-2 w-2 rounded-full bg-amber" /> Vistas
           </span>
         </div>
       </div>
@@ -100,7 +94,7 @@ export function InstagramDayOfWeekChart({ items }: { items: InstagramCatalogRow[
             <PolarAngleAxis dataKey="day" tick={{ fill: 'var(--text-3)', fontSize: 10 }} />
             <PolarRadiusAxis domain={[0, 100]} tick={false} axisLine={false} />
             <Radar name="Interacciones" dataKey="Interacciones" stroke="var(--accent)" fill="var(--accent)" fillOpacity={0.25} strokeWidth={2} />
-            <Radar name="Alcance" dataKey="Alcance" stroke="var(--amber)" fill="var(--amber)" fillOpacity={0.12} strokeWidth={2} strokeDasharray="4 3" />
+            <Radar name="Vistas" dataKey="Vistas" stroke="var(--amber)" fill="var(--amber)" fillOpacity={0.12} strokeWidth={2} strokeDasharray="4 3" />
             <Tooltip content={<CustomTooltip />} />
           </RadarChart>
         </ResponsiveContainer>

@@ -11,7 +11,7 @@ import { interactionsTotal, type InstagramCatalogRow } from './media-catalog-win
 export type DayOfWeekPoint = {
   day: string
   avgInteractions: number | null
-  avgImpressions: number | null
+  avgReach: number | null
   postCount: number
 }
 
@@ -26,27 +26,31 @@ function average(values: number[]): number | null {
 }
 
 /**
- * Impresiones "honestas" por publicación: el mejor dato de vistas de
- * contenido disponible (impressions, o reach si esa publicación no tiene
- * impressions — mismo criterio de fallback que primaryMetric/viewsOf usan
- * en el resto del catálogo), nunca 0 inventado.
+ * Alcance "honesto" por publicación: reach, o impressions si esa
+ * publicación no tiene reach (respaldo para catálogo viejo). Auditoría
+ * 2026-08-06: originalmente era al revés (impressions primero) y se
+ * llamaba "Impresiones", pero Meta dejó de devolver esa métrica a nivel
+ * media (ver media-catalog.ts) — para contenido sincronizado de acá en
+ * adelante `impressions` va a ser siempre null, así que reach pasa a ser
+ * la fuente primaria y el gráfico se relabelea a "Alcance" para no seguir
+ * llamando "Impresiones" a un dato que en la práctica ya es otra cosa.
  */
-function impressionsOf(row: InstagramCatalogRow): number | null {
-  return row.impressions ?? row.reach
+function reachOf(row: InstagramCatalogRow): number | null {
+  return row.reach ?? row.impressions
 }
 
 export function computeDayOfWeekPerformance(items: InstagramCatalogRow[]): DayOfWeekPoint[] {
-  const buckets = new Map<number, { interactions: number[]; impressions: number[]; count: number }>()
+  const buckets = new Map<number, { interactions: number[]; reach: number[]; count: number }>()
 
   for (const item of items) {
     if (!item.posted_at) continue
     const dayIndex = new Date(item.posted_at).getDay()
-    const bucket = buckets.get(dayIndex) ?? { interactions: [], impressions: [], count: 0 }
+    const bucket = buckets.get(dayIndex) ?? { interactions: [], reach: [], count: 0 }
     bucket.count += 1
     const interactions = interactionsTotal(item)
     if (interactions !== null) bucket.interactions.push(interactions)
-    const impressions = impressionsOf(item)
-    if (impressions !== null) bucket.impressions.push(impressions)
+    const reach = reachOf(item)
+    if (reach !== null) bucket.reach.push(reach)
     buckets.set(dayIndex, bucket)
   }
 
@@ -55,7 +59,7 @@ export function computeDayOfWeekPerformance(items: InstagramCatalogRow[]): DayOf
     return {
       day: DAY_NAMES[dayIndex],
       avgInteractions: average(bucket?.interactions ?? []),
-      avgImpressions: average(bucket?.impressions ?? []),
+      avgReach: average(bucket?.reach ?? []),
       postCount: bucket?.count ?? 0,
     }
   })

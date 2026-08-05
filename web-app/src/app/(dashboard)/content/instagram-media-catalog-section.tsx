@@ -4,7 +4,7 @@ import { useId, useMemo, useState } from 'react'
 import { InstagramMediaDetailModal } from './instagram-media-detail-modal'
 import { ComparisonPanel } from './comparison-panel'
 import { Pagination } from '../meta-ads/campaigns/pagination'
-import { detectInstagramCatalogWinners, primaryMetric, interactionsTotal, type InstagramCatalogRow } from '@/lib/instagram/media-catalog-winners'
+import { detectInstagramCatalogWinners, primaryMetric, interactionsTotal, viewsOf, sumOrNull, type InstagramCatalogRow } from '@/lib/instagram/media-catalog-winners'
 import { InstagramIcon } from '@/components/features/nav-icons'
 import { fmtCompactCount } from '@/lib/format/number'
 
@@ -215,19 +215,6 @@ function formatPostedDate(iso: string): string {
   return new Date(iso).toLocaleDateString('es-AR', { day: 'numeric', month: 'short' })
 }
 
-// Mismo orden de fallback que primaryMetric (plays ?? reach ?? impressions)
-// — reusa null (no 0) para que sumOrNull no cuente un ítem sin ningún dato
-// como si valiera cero.
-function viewsOf(item: InstagramCatalogRow): number | null {
-  return item.plays ?? item.reach ?? item.impressions ?? null
-}
-
-function sumOrNull(values: (number | null)[]): number | null {
-  const present = values.filter((v): v is number => v !== null)
-  if (present.length === 0) return null
-  return present.reduce((a, b) => a + b, 0)
-}
-
 // Mini gráfico de evolución — puerto reducido del mismo trazo que
 // operations/sales/sparkline.tsx (línea + área con gradiente), pero SIN
 // posicionamiento absoluto (ese vive suelto dentro de una metric-card; acá
@@ -237,7 +224,7 @@ function EvolutionSparkline({ series }: { series: number[] }) {
   const width = 148
   const height = 34
   if (series.length < 2) {
-    return <p className="text-[10px] text-text-3">Necesitamos al menos 2 publicaciones con fecha para graficar la evolución.</p>
+    return <p className="text-[10px] text-text-3">Todavía no hay suficientes publicaciones con fecha para graficar la evolución.</p>
   }
 
   const pad = 2

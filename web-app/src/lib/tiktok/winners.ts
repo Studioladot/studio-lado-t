@@ -23,3 +23,20 @@ export function detectTiktokWinners(videos: TiktokVideoRow[]): Set<string> {
   }
   return winners
 }
+
+// A diferencia del catálogo de Instagram, la Display API de TikTok siempre
+// devuelve estos 3 contadores como número (nunca null/undefined en el
+// esquema — ver database.types.ts) — no hace falta una versión "honesta
+// con null" de esto, la suma directa ya es real (Paridad de Plataformas,
+// 2026-08-06).
+export function interactionsTotal(video: TiktokVideoRow): number {
+  return video.like_count + video.comment_count + video.share_count
+}
+
+/** "0:32" a partir de segundos — badge de duración en la grilla (duration_seconds era una métrica huérfana: se sincroniza pero nunca se mostraba). */
+export function formatDuration(seconds: number | null): string | null {
+  if (seconds === null || seconds < 0) return null
+  const m = Math.floor(seconds / 60)
+  const s = Math.round(seconds % 60)
+  return `${m}:${s.toString().padStart(2, '0')}`
+}

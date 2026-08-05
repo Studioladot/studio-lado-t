@@ -1,5 +1,6 @@
 'use client'
 
+import { useEffect } from 'react'
 import Link from 'next/link'
 import { TiktokIcon } from '@/components/features/nav-icons'
 import type { TiktokVideoRow } from '@/lib/tiktok/winners'
@@ -67,7 +68,7 @@ function SalesAttributionRow({
       </div>
       {!hasData && (
         <p className="mt-2 text-[10px] leading-relaxed text-text-3">
-          Todavía no hay conexión con Tiendanube/WhatsApp para atribuir ventas a este contenido — próxima fase.
+          Todavía no hay conexión con Tiendanube/WhatsApp para atribuir ventas a este contenido.
         </p>
       )}
     </div>
@@ -111,6 +112,14 @@ export function TiktokVideoDetailModal({
 }) {
   const viewCount = video.view_count ?? 0
   const engagementRate = viewCount > 0 ? (((video.like_count ?? 0) + (video.comment_count ?? 0) + (video.share_count ?? 0)) / viewCount) * 100 : 0
+
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Escape') onClose()
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [onClose])
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={onClose}>

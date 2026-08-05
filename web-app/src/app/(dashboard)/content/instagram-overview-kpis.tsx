@@ -22,14 +22,17 @@ function KpiCard({ label, value, sub }: { label: string; value: string; sub?: st
 }
 
 // Nivel 1 del panel de Analítica Avanzada — Visión Global de la Cuenta
-// (2026-08-06). Los 4 KPI pedidos, en el mismo orden en que aparecen acá.
+// (2026-08-06). Los 4 KPI originales + "Visitas al perfil" (2026-08-06,
+// auditoría: profile_views se sincroniza desde el primer día pero nunca se
+// mostraba en ningún lado — métrica real huérfana, no un dato nuevo).
 export function InstagramOverviewKpis({ kpis, periodLabel }: { kpis: AccountOverviewKpis; periodLabel: string }) {
   return (
-    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
       <KpiCard label="Vistas totales" value={fmtCount(kpis.totalViews)} sub={periodLabel} />
       <KpiCard label="Interacciones totales" value={fmtCount(kpis.totalInteractions)} sub={periodLabel} />
       <KpiCard label="Nuevos seguidores" value={fmtSigned(kpis.newFollowers)} sub={periodLabel} />
       <KpiCard label="Tasa de engagement" value={fmtPercent(kpis.engagementRate)} sub="interacciones / alcance" />
+      <KpiCard label="Visitas al perfil" value={fmtCount(kpis.totalProfileVisits)} sub={periodLabel} />
     </div>
   )
 }
