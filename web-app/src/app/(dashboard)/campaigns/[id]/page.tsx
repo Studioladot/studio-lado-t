@@ -8,6 +8,7 @@ import { PiecesList } from './pieces-list'
 import { deleteCampaignAction } from './actions'
 import { ConfirmSubmitButton } from '@/components/features/confirm-submit-button'
 import { DiagnosticErrorPanel } from '@/components/features/diagnostic-error-panel'
+import { isNextInternalControlFlow } from '@/lib/next-internal-error'
 
 const STATUS_LABEL: Record<string, string> = {
   planificacion: 'En planificación',
@@ -38,9 +39,7 @@ export default async function CampaignDetailPage({
     // notFound() tira una excepción especial con digest "NEXT_NOT_FOUND"
     // (redirect() usa "NEXT_REDIRECT") — hay que dejarlas pasar para que
     // el framework haga lo suyo, nunca tratarlas como un error nuestro.
-    if (err && typeof err === 'object' && 'digest' in err && typeof err.digest === 'string' && err.digest.startsWith('NEXT_')) {
-      throw err
-    }
+    if (isNextInternalControlFlow(err)) throw err
     console.error('[CampaignDetailPage] excepción real:', err)
     return <DiagnosticErrorPanel error={err} context="/campaigns/[id]" />
   }

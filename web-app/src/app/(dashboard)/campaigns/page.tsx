@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { getDashboardContext } from '@/lib/organization/dashboard-context'
 import { DropdownMenu, FilterTrigger } from '@/components/features/dropdown-menu'
 import { DiagnosticErrorPanel } from '@/components/features/diagnostic-error-panel'
+import { isNextInternalControlFlow } from '@/lib/next-internal-error'
 
 const STATUS_LABEL: Record<string, string> = {
   planificacion: 'En planificación',
@@ -35,6 +36,7 @@ export default async function CampaignsPage({
     ;({ estado } = await searchParams)
     ;({ activeOrganizationId } = await getDashboardContext())
   } catch (err) {
+    if (isNextInternalControlFlow(err)) throw err
     console.error('[CampaignsPage] excepción real (contexto):', err)
     return <DiagnosticErrorPanel error={err} context="/campaigns — getDashboardContext" />
   }
@@ -50,6 +52,7 @@ export default async function CampaignsPage({
   try {
     return await renderCampaignsList(activeOrganizationId, estado)
   } catch (err) {
+    if (isNextInternalControlFlow(err)) throw err
     console.error('[CampaignsPage] excepción real:', err)
     return <DiagnosticErrorPanel error={err} context="/campaigns — renderCampaignsList" />
   }
