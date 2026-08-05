@@ -2,8 +2,8 @@
 
 import { useCallback, useSyncExternalStore } from 'react'
 import { SunIcon, MoonIcon } from './nav-icons'
+import { THEME_STORAGE_KEY } from '@/lib/theme-storage-key'
 
-export const THEME_STORAGE_KEY = 'gotix_theme'
 const THEME_CHANGE_EVENT = 'gotix-theme-change'
 
 function subscribe(callback: () => void) {
