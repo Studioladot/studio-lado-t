@@ -126,7 +126,10 @@ async function renderCampaignsList(activeOrganizationId: string, estado: string 
                 <div className="flex flex-wrap items-start justify-between gap-3 border-b border-border px-5 py-4">
                   <div>
                     {camp.periodo && <p className="mb-0.5 text-xs text-text-2">{camp.periodo}</p>}
-                    <h2 className="text-lg font-extrabold tracking-[-0.02em] text-text">{camp.nombre}</h2>
+                    <h2 className="flex items-center gap-2 text-lg font-extrabold tracking-[-0.02em] text-text">
+                      <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: camp.color ?? '#4C7EFF' }} aria-hidden="true" />
+                      {camp.nombre}
+                    </h2>
                     {stats && stats.total > 0 && (
                       <p className="mt-1 text-xs text-text-2">
                         {stats.done}/{stats.total} piezas publicadas
@@ -155,6 +158,10 @@ async function renderCampaignsList(activeOrganizationId: string, estado: string 
                     <p className="text-[13px] leading-relaxed text-text">{camp.objetivo}</p>
                   </div>
                 )}
+
+                <div className="flex items-center justify-end border-t border-divider px-5 py-2.5">
+                  <span className="text-[11px] font-semibold text-accent">Ver detalles de campaña →</span>
+                </div>
               </Link>
             )
           })}

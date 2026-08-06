@@ -43,41 +43,6 @@ const PLATFORM_FORMAT_FILTERS = [
   { value: 'Carrusel', label: 'Carruseles' },
 ] as const
 
-function ThumbPlaceholderIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="3" y="4" width="18" height="16" rx="2" />
-      <circle cx="9" cy="10" r="1.5" />
-      <path d="m21 16-5.5-5.5a1.5 1.5 0 0 0-2.12 0L4 19" />
-    </svg>
-  )
-}
-
-// Fix real reportado (2026-08-06): sin fallback, la caja quedaba vacía/rota
-// a simple vista — daba la impresión de que la página falló al cargar. Un
-// ícono minimalista + fondo tenue deja claro que "no hay imagen" es un
-// estado válido, no un error.
-function Thumb({ item }: { item: UnifiedItem }) {
-  const thumb = item.mediaList[0] ?? null
-  if (!thumb) {
-    return (
-      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-control border border-dashed border-border bg-surface-2/40 text-text-3">
-        <ThumbPlaceholderIcon />
-      </div>
-    )
-  }
-  return (
-    <div className="h-8 w-8 shrink-0 overflow-hidden rounded-control border border-border bg-surface-2">
-      {thumb.type === 'video' ? (
-        <video src={thumb.url} className="h-full w-full object-cover" muted />
-      ) : (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={thumb.url} alt="" className="h-full w-full object-cover" />
-      )}
-    </div>
-  )
-}
-
 export function PublicationsTable({
   posts,
   pieces,
@@ -216,7 +181,6 @@ export function PublicationsTable({
           <table className="w-full text-xs">
             <thead className="bg-surface-2">
               <tr className="text-left text-[10px] font-bold uppercase tracking-wide text-text-3">
-                <th className="px-3 py-2"></th>
                 <th className="px-3 py-2">Título</th>
                 <th className="px-3 py-2">Estado</th>
                 <th className="px-3 py-2">Fecha</th>
@@ -227,9 +191,6 @@ export function PublicationsTable({
             <tbody>
               {paged.map((item) => (
                 <tr key={`${item.sourceTable}-${item.id}`} className="border-t border-divider transition-colors duration-150 ease-out hover:bg-surface-2/40">
-                  <td className="px-3 py-2">
-                    <Thumb item={item} />
-                  </td>
                   <td className="max-w-[260px] px-3 py-2">
                     <p className="truncate text-xs font-semibold text-text">{item.titulo || 'Sin título'}</p>
                     {item.source === 'campana' && (

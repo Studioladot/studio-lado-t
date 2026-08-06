@@ -1,7 +1,11 @@
 'use client'
 
-import { useCallback, useMemo, useSyncExternalStore } from 'react'
+import { useCallback, useMemo, useState, useSyncExternalStore } from 'react'
 import { unifyContentItems } from './unified-items'
+import { DayBreakdownModal } from './day-breakdown-modal'
+import { InspirationWidget } from './inspiration-widget'
+import { computeWeeklyWinner } from '@/lib/content/weekly-winner'
+import type { InstagramCatalogRow } from '@/lib/instagram/media-catalog-winners'
 import type { Database } from '@/lib/types/database.types'
 
 type Post = Database['public']['Tables']['content_posts']['Row']
@@ -48,16 +52,76 @@ const FORMAT_COLOR: Record<string, string> = {
   Otro: 'bg-text-2',
 }
 
-export function ControlPanel({ posts, pieces, campaigns }: { posts: Post[]; pieces: Piece[]; campaigns: Campaign[] }) {
+/**
+ * Gauge circular vía stroke-dasharray/dashoffset — sin librería, un solo
+ * uso. Rotado -90° para que el trazo arranque arriba (12 en punto) en vez
+ * de a la derecha (comportamiento default de SVG).
+ */
+function RadialGauge({ score, color }: { score: number; color: string }) {
+  const r = 40
+  const circumference = 2 * Math.PI * r
+  const offset = circumference * (1 - Math.min(100, Math.max(0, score)) / 100)
+  return (
+    <svg width="96" height="96" viewBox="0 0 96 96" className="-rotate-90">
+      <circle cx="48" cy="48" r={r} fill="none" stroke="rgba(255,255,255,0.12)" strokeWidth="8" />
+      <circle
+        cx="48"
+        cy="48"
+        r={r}
+        fill="none"
+        stroke={color}
+        strokeWidth="8"
+        strokeLinecap="round"
+        strokeDasharray={circumference}
+        strokeDashoffset={offset}
+        style={{ transition: 'stroke-dashoffset 0.6s ease' }}
+      />
+    </svg>
+  )
+}
+
+function healthTier(score: number) {
+  if (score >= 80) return { label: 'Excelente', color: 'var(--green)', msg: 'Tu constancia está en su mejor momento — seguí así.' }
+  if (score >= 55) return { label: 'Buena', color: 'var(--accent)', msg: 'Vas bien, pero todavía hay margen para ser más constante.' }
+  if (score >= 30) return { label: 'Floja', color: 'var(--amber)', msg: 'Tu constancia bajó esta última semana — retomá el ritmo.' }
+  return { label: 'Crítica', color: 'var(--red)', msg: 'Hace tiempo que no publicás con regularidad. Es momento de retomar.' }
+}
+
+export function ControlPanel({
+  posts,
+  pieces,
+  campaigns,
+  instagramCatalog,
+  onGoToPerformance,
+}: {
+  posts: Post[]
+  pieces: Piece[]
+  campaigns: Campaign[]
+  instagramCatalog: InstagramCatalogRow[]
+  onGoToPerformance: () => void
+}) {
   const meta = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot)
+  const [viewingDay, setViewingDay] = useState<string | null>(null)
 
   const setMeta = useCallback((value: number) => {
     window.localStorage.setItem(META_STORAGE_KEY, String(value))
     window.dispatchEvent(new Event(META_CHANGE_EVENT))
   }, [])
 
+  const items = useMemo(() => unifyContentItems(posts, pieces, campaigns), [posts, pieces, campaigns])
+
+  const itemsByDate = useMemo(() => {
+    const map = new Map<string, typeof items>()
+    for (const item of items) {
+      if (!item.date) continue
+      const list = map.get(item.date) ?? []
+      list.push(item)
+      map.set(item.date, list)
+    }
+    return map
+  }, [items])
+
   const stats = useMemo(() => {
-    const items = unifyContentItems(posts, pieces, campaigns)
     const publicadas = items.filter((i) => i.status === 'publicado' && i.date)
 
     const hoy = new Date()
@@ -82,6 +146,23 @@ export function ControlPanel({ posts, pieces, campaigns }: { posts: Post[]; piec
         checkDate.setDate(checkDate.getDate() - 1)
       } else break
     }
+
+    // Health Score / "medidor de consistencia" (2026-08-05): combina qué
+    // tan viva está la racha actual (35%, tope en 14 días seguidos = full
+    // marks) con el cumplimiento real de la meta semanal en las últimas 4
+    // semanas (65%, más peso porque una sola racha rota no debería hundir
+    // todo el puntaje si el resto del mes viene sólido).
+    const weeklyPctLast4 = Array.from({ length: 4 }, (_, i) => {
+      const weekStart = new Date(lunes)
+      weekStart.setDate(lunes.getDate() - 7 * i)
+      const weekEnd = new Date(weekStart)
+      weekEnd.setDate(weekStart.getDate() + 6)
+      const count = publicadas.filter((p) => p.date! >= toDateStr(weekStart) && p.date! <= toDateStr(weekEnd)).length
+      return meta > 0 ? Math.min(100, (count / meta) * 100) : 0
+    })
+    const avgWeeklyPct = weeklyPctLast4.reduce((a, b) => a + b, 0) / weeklyPctLast4.length
+    const streakPct = Math.min(100, (racha / 14) * 100)
+    const healthScore = Math.round(streakPct * 0.35 + avgWeeklyPct * 0.65)
 
     const last30Start = new Date(hoy)
     last30Start.setMonth(hoy.getMonth() - 1)
@@ -110,106 +191,137 @@ export function ControlPanel({ posts, pieces, campaigns }: { posts: Post[]; piec
     })
     const semanaLabel = `${lunes.toLocaleDateString('es-AR', { day: 'numeric', month: 'short' })} – ${domingo.toLocaleDateString('es-AR', { day: 'numeric', month: 'short' })}`
 
-    return { postsSem, pct, mesPosts, racha, topFmt, topPlat, sortedFmt, maxF, dias7, semanaLabel }
-  }, [posts, pieces, campaigns, meta])
+    return { postsSem, pct, mesPosts, racha, healthScore, topFmt, topPlat, sortedFmt, maxF, dias7, semanaLabel }
+  }, [items, meta])
 
-  const stateKey = stats.postsSem === 0 ? 0 : stats.pct < 50 ? 'low' : stats.pct < 100 ? 'mid' : 'ok'
-  const STATE = {
-    0: { grad: 'linear-gradient(135deg,#3a1220 0%,#1a0a10 100%)', bar: '#F04438', msg: `Solo subiste 0 esta semana. ¡Hoy es el día para arrancar!` },
-    low: { grad: 'linear-gradient(135deg,#3d2a0a 0%,#221703 100%)', bar: '#F79009', msg: `Solo subiste ${stats.postsSem} esta semana. Podés dar más, apuntá a ${meta}` },
-    mid: { grad: 'linear-gradient(135deg,#0a2540 0%,#051222 100%)', bar: '#2E90FA', msg: `Vas bien con ${stats.postsSem} posts. ¡Seguí que falta poco para la meta!` },
-    ok: { grad: 'linear-gradient(135deg,#03301f 0%,#031a11 100%)', bar: '#12B76A', msg: `✅ Meta cumplida esta semana! ${stats.postsSem}/${meta} ¡Sos una máquina!` },
-  } as const
-  const st = STATE[stateKey]
+  const tier = healthTier(stats.healthScore)
+  const weeklyWinner = useMemo(() => computeWeeklyWinner(instagramCatalog), [instagramCatalog])
 
   return (
     <div>
-      <div
-        className="mb-4 overflow-hidden rounded-card p-6 text-white shadow-[0_8px_24px_-8px_rgba(0,0,0,.35)]"
-        style={{ background: st.grad }}
-      >
-        <div className="mb-2 text-[10.5px] font-bold uppercase tracking-[.12em] opacity-55">
-          Esta semana · {stats.semanaLabel.toUpperCase()}
+      <div className="content-health-hero mb-4 rounded-card p-6 text-white">
+        <div className="flex flex-wrap items-center gap-6">
+          <div className="relative flex h-24 w-24 shrink-0 items-center justify-center">
+            <RadialGauge score={stats.healthScore} color={tier.color} />
+            <div className="absolute flex flex-col items-center">
+              <span className="text-2xl font-extrabold leading-none">{stats.healthScore}</span>
+              <span className="mt-0.5 text-[9px] font-semibold uppercase tracking-wide text-white/50">score</span>
+            </div>
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-[10.5px] font-bold uppercase tracking-[.12em] text-white/50">Salud de tu cuenta de contenido</p>
+            <p className="mt-0.5 text-2xl font-extrabold tracking-tight" style={{ color: tier.color }}>
+              {tier.label}
+            </p>
+            <p className="mt-1 text-[13px] text-white/70">{tier.msg}</p>
+          </div>
         </div>
-        <div className="mb-4 flex items-end gap-4">
-          <div className="text-[44px] font-extrabold leading-none tracking-tight">{stats.postsSem}</div>
-          <div className="mb-1 text-xs opacity-65">
-            de{' '}
+
+        <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-white/10 pt-4 text-xs text-white/70">
+          <span>
+            Esta semana: <strong className="text-white">{stats.postsSem}</strong> de{' '}
             <input
               type="number"
               min={1}
               max={30}
               value={meta}
               onChange={(e) => setMeta(Number(e.target.value) || DEFAULT_META)}
-              className="w-12 rounded border-none bg-white/10 px-1 py-0.5 text-center text-base font-bold text-white outline-none"
+              className="w-10 rounded border-none bg-white/10 px-1 py-0.5 text-center font-bold text-white outline-none"
             />{' '}
-            que te propusiste
-          </div>
-        </div>
-        <div className="mb-3 h-2 overflow-hidden rounded-full bg-white/[0.14]">
-          <div
-            className="h-full rounded-full transition-all duration-500"
-            style={{ width: `${stats.pct}%`, background: st.bar }}
-          />
-        </div>
-        <div className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 text-[13.5px] font-semibold">
-          {st.msg}
+            publicaciones
+          </span>
+          <span>
+            Racha: <strong className="text-white">{stats.racha || 0}</strong> días seguidos
+          </span>
         </div>
       </div>
 
-      <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
         <StatCard label="Este mes" value={stats.mesPosts.length} sub="publicaciones" />
-        <StatCard label="Racha actual" value={stats.racha || '—'} sub="días seguidos" />
         <StatCard label="Formato top" value={stats.topFmt?.[0] ?? '—'} sub="más publicado" />
         <StatCard label="Plataforma top" value={stats.topPlat?.[0] ?? '—'} sub="más activa" />
       </div>
 
-      <div className="mb-4 rounded-card border border-border bg-surface p-4">
-        <p className="mb-3 text-sm font-semibold text-text">Ranking de formatos (últimos 30 días)</p>
-        {stats.sortedFmt.length === 0 ? (
-          <p className="text-sm text-text-2">Sin publicaciones en los últimos 30 días</p>
-        ) : (
-          <div className="flex flex-col gap-2">
-            {stats.sortedFmt.map(([fmt, count]) => (
-              <div key={fmt} className="flex items-center gap-2.5">
-                <span className="w-20 text-xs font-semibold text-text-2">{fmt}</span>
-                <div className="h-5 flex-1 overflow-hidden rounded bg-surface-2">
-                  <div
-                    className={`flex h-full items-center rounded pl-2 transition-all duration-300 ${FORMAT_COLOR[fmt] ?? 'bg-text-2'}`}
-                    style={{ width: `${Math.round((count / stats.maxF) * 100)}%` }}
-                  >
-                    <span className="text-[11px] font-bold text-white">{count}</span>
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_320px]">
+        <div className="flex flex-col gap-4">
+          <div className="rounded-card border border-border bg-surface p-4">
+            <p className="mb-3 text-sm font-semibold text-text">Ranking de formatos (últimos 30 días)</p>
+            {stats.sortedFmt.length === 0 ? (
+              <p className="text-sm text-text-2">Sin publicaciones en los últimos 30 días</p>
+            ) : (
+              <div className="flex flex-col gap-2">
+                {stats.sortedFmt.map(([fmt, count]) => (
+                  <div key={fmt} className="flex items-center gap-2.5">
+                    <span className="w-20 text-xs font-semibold text-text-2">{fmt}</span>
+                    <div className="h-5 flex-1 overflow-hidden rounded bg-surface-2">
+                      <div
+                        className={`flex h-full items-center rounded pl-2 transition-all duration-300 ${FORMAT_COLOR[fmt] ?? 'bg-text-2'}`}
+                        style={{ width: `${Math.round((count / stats.maxF) * 100)}%` }}
+                      >
+                        <span className="text-[11px] font-bold text-white">{count}</span>
+                      </div>
+                    </div>
                   </div>
-                </div>
+                ))}
               </div>
-            ))}
+            )}
           </div>
-        )}
-      </div>
 
-      <div className="rounded-card border border-border bg-surface p-4">
-        <p className="mb-3 text-sm font-semibold text-text">Últimos 7 días</p>
-        <div className="grid grid-cols-7 gap-1.5">
-          {stats.dias7.map(({ date: d, count }) => {
-            const fd = toDateStr(d)
-            const esHoy = fd === toDateStr(new Date())
-            return (
-              <div
-                key={fd}
-                className={`rounded-control px-1 py-2 text-center ${
-                  count > 0 ? 'bg-accent text-white' : 'border border-border bg-surface-2 text-text-3'
-                } ${esHoy ? 'ring-2 ring-accent' : ''}`}
-              >
-                <div className="text-[10px] font-semibold uppercase">
-                  {d.toLocaleDateString('es-AR', { weekday: 'short' })}
-                </div>
-                <div className="text-lg font-extrabold">{count || ''}</div>
-                <div className="text-[10px] opacity-70">{d.getDate()}</div>
-              </div>
-            )
-          })}
+          <div className="rounded-card border border-border bg-surface p-4">
+            <p className="mb-3 text-sm font-semibold text-text">Últimos 7 días</p>
+            <div className="grid grid-cols-7 gap-1.5">
+              {stats.dias7.map(({ date: d, count }) => {
+                const fd = toDateStr(d)
+                const esHoy = fd === toDateStr(new Date())
+                return (
+                  <button
+                    key={fd}
+                    type="button"
+                    onClick={() => setViewingDay(fd)}
+                    className={`rounded-control px-1 py-2 text-center transition-transform duration-150 ease-out hover:scale-[1.04] ${
+                      count > 0 ? 'bg-accent text-white' : 'border border-border bg-surface-2 text-text-3'
+                    } ${esHoy ? 'ring-2 ring-accent' : ''}`}
+                  >
+                    <div className="text-[10px] font-semibold uppercase">
+                      {d.toLocaleDateString('es-AR', { weekday: 'short' })}
+                    </div>
+                    <div className="text-lg font-extrabold">{count || ''}</div>
+                    <div className="text-[10px] opacity-70">{d.getDate()}</div>
+                  </button>
+                )
+              })}
+            </div>
+            <p className="mt-2 text-[10px] text-text-3">Tocá un día para ver qué se subió y qué faltó subir.</p>
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-4">
+          <div className="rounded-card border border-accent/25 bg-accent/4 p-4">
+            <p className="mb-2 text-[10px] font-bold uppercase tracking-wide text-accent">Ganador de la semana</p>
+            {weeklyWinner ? (
+              <>
+                <p className="text-sm font-semibold text-text">{weeklyWinner.spoiler}</p>
+                <p className="mt-2 text-[11px] text-text-3">{weeklyWinner.views.toLocaleString('es-AR')} reproducciones · {weeklyWinner.format}</p>
+                <button
+                  type="button"
+                  onClick={onGoToPerformance}
+                  className="mt-3 rounded-control border border-accent/30 bg-accent/8 px-3 py-1.5 text-[11px] font-semibold text-accent transition-all duration-200 ease-out hover:bg-accent/14"
+                >
+                  Ver análisis completo →
+                </button>
+              </>
+            ) : (
+              <p className="text-xs text-text-2">Todavía no hay suficientes datos de esta semana para elegir un ganador.</p>
+            )}
+          </div>
+
+          <InspirationWidget />
         </div>
       </div>
+
+      {viewingDay && (
+        <DayBreakdownModal date={viewingDay} items={itemsByDate.get(viewingDay) ?? []} onClose={() => setViewingDay(null)} />
+      )}
     </div>
   )
 }

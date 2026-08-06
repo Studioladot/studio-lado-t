@@ -3,6 +3,7 @@
 import { useMemo, useRef, useState } from 'react'
 import { unifyContentItems, type UnifiedItem } from './unified-items'
 import { rescheduleItemDateAction } from './actions'
+import { getFechasComercialesAR } from '@/lib/content/efemerides'
 import { QuickAddModal } from './quick-add-modal'
 import { DayDetailModal } from './day-detail-modal'
 import { ItemViewModal } from './item-view-modal'
@@ -170,6 +171,15 @@ export function ContentCalendar({
   }, [items])
 
   const cells = useMemo(() => buildMonthGrid(monthStart), [monthStart])
+
+  // Efemérides comerciales (2026-08-05) — estáticas, sin tocar la base
+  // (ver src/lib/content/efemerides.ts). Solo depende del año del mes que
+  // se está mirando, cada celda del grid ya pertenece a ese mes/año.
+  const efemeridesByDate = useMemo(() => {
+    const map = new Map<string, string>()
+    for (const f of getFechasComercialesAR(monthStart.getFullYear())) map.set(f.date, f.nombre)
+    return map
+  }, [monthStart])
   const monthLabelRaw = monthStart.toLocaleDateString('es-AR', { month: 'long', year: 'numeric' })
   const monthLabel = monthLabelRaw.charAt(0).toUpperCase() + monthLabelRaw.slice(1)
   const todayStr = toDateStr(new Date())
@@ -244,6 +254,7 @@ export function ContentCalendar({
             const dayItems = itemsByDate.get(dateStr) ?? []
             const isToday = dateStr === todayStr
             const isDragOver = dragOverDate === dateStr
+            const efemeride = efemeridesByDate.get(dateStr)
 
             return (
               <div
@@ -251,12 +262,26 @@ export function ContentCalendar({
                 data-date={dateStr}
                 onClick={() => setViewingDate(dateStr)}
                 className={`flex min-h-[70px] cursor-pointer flex-col gap-1 border-b border-r border-divider p-1 transition-colors duration-150 ease-out last:border-r-0 hover:bg-surface-2/40 sm:min-h-[96px] sm:p-1.5 ${
-                  isDragOver ? 'bg-accent/[0.08]' : ''
+                  isDragOver ? 'bg-accent/8' : ''
                 }`}
               >
-                <span className={`w-fit rounded-full px-1.5 text-[9px] font-bold tabular-nums sm:text-[10px] ${isToday ? 'bg-accent text-white' : 'text-text-3'}`}>
-                  {date.getDate()}
-                </span>
+                <div className="flex items-center justify-between gap-1">
+                  <span className={`w-fit rounded-full px-1.5 text-[9px] font-bold tabular-nums sm:text-[10px] ${isToday ? 'bg-accent text-white' : 'text-text-3'}`}>
+                    {date.getDate()}
+                  </span>
+                  {efemeride && (
+                    <span
+                      title={efemeride}
+                      className="h-1.5 w-1.5 shrink-0 rounded-full bg-amber"
+                      aria-label={efemeride}
+                    />
+                  )}
+                </div>
+                {efemeride && (
+                  <span className="truncate text-[8px] font-medium leading-none text-amber sm:text-[9px]" title={efemeride}>
+                    {efemeride}
+                  </span>
+                )}
                 <div className="flex flex-col gap-1">
                   {dayItems.slice(0, 2).map((item) => (
                     <Pill

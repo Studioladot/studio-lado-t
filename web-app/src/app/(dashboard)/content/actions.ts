@@ -4,6 +4,9 @@ import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { getDashboardContext } from '@/lib/organization/dashboard-context'
 import { clamp, TITLE_MAX_LENGTH, TEXT_MAX_LENGTH } from '@/lib/text-limits'
+import { buildSystemPrompt } from '@/lib/ia/context'
+import { askAI } from '@/lib/ia/client'
+import { checkIaUsage, incrementIaUsage } from '@/lib/ia/usage'
 
 type MediaItem = { url: string; type: 'image' | 'video' }
 
@@ -219,4 +222,37 @@ export async function togglePostStatusAction(postId: string, nextStatus: string)
     .eq('organization_id', activeOrganizationId)
 
   revalidatePath('/content')
+}
+
+// "Desbloqueo Creativo" — Generar Idea (reestructuración de Contenido,
+// 2026-08-05). El tope real de costo (protección de verdad, no solo
+// visual) es el mismo checkIaUsage/incrementIaUsage que ya frena IA
+// Estratégica/Diario de Marca — es el mismo gasto de tokens de OpenAI, así
+// que comparte el mismo cupo mensual por organización en vez de abrir un
+// contador nuevo. El límite de "3 por día" que pide el botón en pantalla
+// es una capa de UX aparte, del lado del cliente (ver inspiration-widget.tsx).
+export async function generateContentIdeaAction(): Promise<{ ok: true; idea: string } | { ok: false; error: string }> {
+  const { activeOrganizationId } = await getDashboardContext()
+  if (!activeOrganizationId) return { ok: false, error: 'No encontramos tu organización activa.' }
+
+  const supabase = await createClient()
+
+  const usage = await checkIaUsage(supabase, activeOrganizationId)
+  if (!usage.allowed) {
+    return { ok: false, error: `Llegaste al límite de ${usage.limit} consultas de IA este mes en tu plan actual.` }
+  }
+
+  const systemPrompt = await buildSystemPrompt(supabase, activeOrganizationId, null)
+  const result = await askAI(systemPrompt, [
+    {
+      role: 'user',
+      content:
+        'Dame UNA sola idea de contenido orgánico para Instagram/TikTok, concreta y accionable, en 1-2 frases cortas. No uses viñetas ni numeración, solo el texto de la idea. Pensala específica a la marca y su rubro, no genérica.',
+    },
+  ])
+  if (!result.ok) return result
+
+  await incrementIaUsage(supabase, activeOrganizationId)
+
+  return { ok: true, idea: result.reply.trim() }
 }

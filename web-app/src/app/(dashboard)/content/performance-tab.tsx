@@ -16,6 +16,7 @@ import type { WinningItem } from '@/lib/content/winners'
 import type { TiktokVideoRow } from '@/lib/tiktok/winners'
 import type { InstagramCatalogRow } from '@/lib/instagram/media-catalog-winners'
 import { computeAccountOverviewKpis, buildReachImpressionsSeries, buildProfileGrowthSeries } from '@/lib/instagram/account-overview'
+import { computeFormatInsight } from '@/lib/instagram/format-insight'
 import { DATE_RANGE_OPTIONS, filterByDateRange, type DateRangeMode } from '@/lib/date-range'
 
 // "Rendimiento" — analítica orgánica de Instagram, alimentada por los
@@ -109,6 +110,13 @@ export function PerformanceTab({
   // distinguirlos para mostrar el mensaje correcto.
   const filteredInstagramCatalog = filterByDateRange(instagramCatalog, dateRange, (c) => c.posted_at)
 
+  // "Insight Inteligente" (2026-08-05) — diagnóstico condicional sobre el
+  // mismo rango ya filtrado, no un cálculo aparte con su propia ventana de
+  // tiempo. null cuando no hay al menos 2 formatos con ≥2 publicaciones
+  // cada uno — con menos que eso, cualquier "promedio" sería ruido, no un
+  // insight real (ver computeFormatInsight).
+  const formatInsight = computeFormatInsight(filteredInstagramCatalog)
+
   return (
     <div className="flex flex-col gap-4">
       {showNetworkTabs && (
@@ -149,6 +157,20 @@ export function PerformanceTab({
               vacío (KPI en "—", gráfico con su mensaje), ocultar el bloque
               entero detrás de un solo gate dejaba el panel en blanco para
               cualquier cuenta recién conectada (bug reportado 2026-08-06). */}
+          {formatInsight && (
+            <div className="flex items-start gap-3 rounded-card border border-accent/25 bg-accent/4 p-4">
+              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-accent/12 text-accent">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-4 10.5c.6.55 1 1.3 1 2.1V16h6v-.4c0-.8.4-1.55 1-2.1A6 6 0 0 0 12 3Z" />
+                </svg>
+              </span>
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-wide text-accent">Insight inteligente</p>
+                <p className="mt-0.5 text-sm font-medium text-text">{formatInsight.message}</p>
+              </div>
+            </div>
+          )}
+
           <div className="flex items-center justify-between gap-2">
             <InstagramSyncControl igUsername={igUsername} hasAccountData={accountInsights.length > 0} />
             <DateRangePicker value={dateRange} onChange={setDateRange} />

@@ -155,3 +155,24 @@ body {
 :root[data-theme="dark"] .metric-card:hover {
   border-color: rgba(255, 255, 255, 0.14);
 }
+
+/*
+ * Hero de "Salud de contenido" (Control, reestructuración 2026-08-05) —
+ * reemplaza el gradiente bordó/amarillo hardcodeado que flipeaba de color
+ * según el estado semanal (nunca estuvo en el legado ni en los tokens, era
+ * una decisión aislada de ese componente). Un solo grafito elegante,
+ * constante sin importar el estado — la semántica de estado ahora la lleva
+ * el color del gauge/acento (--red/--amber/--accent/--green, ya definidos
+ * arriba), no el fondo entero de la tarjeta.
+ */
+.content-health-hero {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(135deg, #262a33 0%, #14161c 100%);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow: 0 8px 24px -8px rgba(0, 0, 0, 0.35);
+}
+:root[data-theme="dark"] .content-health-hero {
+  background: linear-gradient(135deg, #1c1f26 0%, #0c0d10 100%);
+  border-color: rgba(255, 255, 255, 0.08);
+}

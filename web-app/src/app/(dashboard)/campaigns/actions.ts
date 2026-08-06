@@ -18,6 +18,8 @@ export async function createCampaignAction(
   const objetivo = clamp(String(formData.get('objetivo') ?? '').trim(), TEXT_MAX_LENGTH)
   const fechaInicio = String(formData.get('fecha_inicio') ?? '').trim()
   const fechaFin = String(formData.get('fecha_fin') ?? '').trim()
+  const colorRaw = String(formData.get('color') ?? '').trim()
+  const color = /^#[0-9a-fA-F]{6}$/.test(colorRaw) ? colorRaw : null
 
   if (!nombre) {
     return { error: 'Ingresá un nombre para la campaña.' }
@@ -44,6 +46,7 @@ export async function createCampaignAction(
     objetivo: objetivo || null,
     fecha_inicio: fechaInicio || null,
     fecha_fin: fechaFin || null,
+    color,
     status: 'planificacion',
     user_id: user.id,
     organization_id: activeOrganizationId,

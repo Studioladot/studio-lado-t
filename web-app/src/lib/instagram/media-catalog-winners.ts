@@ -71,3 +71,16 @@ export function formatLabel(row: InstagramCatalogRow): string {
   if (row.media_type === 'IMAGE') return 'Imagen'
   return 'Publicación'
 }
+
+const FORMAT_PLURAL: Record<string, string> = {
+  Reel: 'Reels',
+  Carrusel: 'Carruseles',
+  Video: 'Videos',
+  Imagen: 'Imágenes',
+  Publicación: 'Publicaciones',
+}
+
+/** Plural correcto de formatLabel() — "Carrusel"+"s" da "Carrusels", mal en español. */
+export function pluralizeFormat(format: string): string {
+  return FORMAT_PLURAL[format] ?? `${format}s`
+}
