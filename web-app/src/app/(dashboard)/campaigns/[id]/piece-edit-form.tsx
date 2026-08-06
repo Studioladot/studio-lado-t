@@ -6,31 +6,13 @@ import { useFormStatusToast } from '@/components/features/use-form-status-toast'
 import { MiniSpinner } from '@/components/features/action-pill'
 import { useToast } from '@/components/features/toast'
 import { CharCounterTextarea } from '@/components/features/char-counter-textarea'
+import { FORMATOS, PLATAFORMAS, ProductionStatusSelect, TurnoSelect, NetworkCopyTabs, fieldClass, labelClass } from '../../content/piece-form-shared'
 import { TITLE_MAX_LENGTH, TEXT_MAX_LENGTH } from '@/lib/text-limits'
 import type { Database } from '@/lib/types/database.types'
 
 type Piece = Database['public']['Tables']['content_piezas']['Row']
 
-const FORMATOS = ['Reel', 'TikTok', 'Carrusel', 'Historia', 'Post', 'Video largo', 'Otro']
-const PLATAFORMAS = ['Instagram', 'TikTok', 'Ambas', 'YouTube']
-const TURNOS = ['Temprano', 'Tarde', 'Noche']
-// Ver post-form.tsx (Épica Omnicanal, 2026-08-04).
-const PRODUCTION_STATUSES = [
-  { value: 'idea', label: 'Idea' },
-  { value: 'por_grabar', label: 'Por grabar' },
-  { value: 'listo_para_programar', label: 'Listo para publicar' },
-  { value: 'programado', label: 'Programado' },
-  { value: 'publicado', label: 'Publicado' },
-]
-
 const initialState: UpdatePieceState = { error: null, success: false }
-
-// Mismo fix que add-piece-form.tsx: colores theme-aware, antes hardcodeados
-// a hex claro (se rompía en dark mode).
-const fieldClass =
-  'rounded-control border border-border bg-surface-2/60 px-3 py-2.5 text-sm text-text outline-none transition-all duration-200 ease-out placeholder:text-text-3 focus:border-accent focus-visible:ring-2 focus-visible:ring-accent'
-
-const labelClass = 'flex flex-col gap-1.5 text-[11px] font-semibold uppercase tracking-[.06em] text-text-2'
 
 function SaveButton() {
   // No dispara el toast de éxito acá — updatePieceAction no redirige y
@@ -93,13 +75,7 @@ export function PieceEditForm({
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <label className={labelClass}>
           Estado de Producción
-          <select name="production_status" defaultValue={piece.production_status ?? 'idea'} className={`normal-case tracking-normal ${fieldClass}`}>
-            {PRODUCTION_STATUSES.map((s) => (
-              <option key={s.value} value={s.value}>
-                {s.label}
-              </option>
-            ))}
-          </select>
+          <ProductionStatusSelect defaultValue={piece.production_status ?? 'idea'} />
         </label>
         <label className={labelClass}>
           Formato
@@ -139,15 +115,7 @@ export function PieceEditForm({
         </label>
         <label className={labelClass}>
           Turno
-          <select
-            name="turno"
-            defaultValue={piece.turno ?? 'Temprano'}
-            className={`normal-case tracking-normal ${fieldClass}`}
-          >
-            {TURNOS.map((t) => (
-              <option key={t}>{t}</option>
-            ))}
-          </select>
+          <TurnoSelect defaultValue={piece.turno ?? 'Temprano'} />
         </label>
       </div>
 
@@ -173,58 +141,14 @@ export function PieceEditForm({
         />
       </label>
 
-      <div className="flex gap-1 rounded-control border border-border bg-surface-2/40 p-1">
-        <button
-          type="button"
-          onClick={() => setNetworkTab('instagram')}
-          className={`flex-1 rounded-control px-3 py-1.5 text-xs font-semibold transition-colors duration-200 ease-out ${
-            networkTab === 'instagram' ? 'bg-accent/[0.12] text-accent' : 'text-text-3 hover:text-text'
-          }`}
-        >
-          Copy Instagram
-        </button>
-        <button
-          type="button"
-          onClick={() => setNetworkTab('tiktok')}
-          className={`flex-1 rounded-control px-3 py-1.5 text-xs font-semibold transition-colors duration-200 ease-out ${
-            networkTab === 'tiktok' ? 'bg-accent/[0.12] text-accent' : 'text-text-3 hover:text-text'
-          }`}
-        >
-          Copy TikTok
-        </button>
-      </div>
-
-      <div className={networkTab === 'instagram' ? 'flex flex-col gap-2' : 'hidden'}>
-        <label className={labelClass}>
-          Copy (texto que se publica en Instagram)
-          <CharCounterTextarea
-            name="caption"
-            rows={2}
-            maxLength={TEXT_MAX_LENGTH}
-            defaultValue={piece.caption}
-            className={`resize-none normal-case tracking-normal ${fieldClass}`}
-          />
-        </label>
-        {!instagramConnected && (
-          <p className="text-[11px] text-text-3">Conectá Instagram desde Ajustes → Integraciones para ver sus métricas acá más adelante.</p>
-        )}
-      </div>
-
-      <div className={networkTab === 'tiktok' ? 'flex flex-col gap-2' : 'hidden'}>
-        <label className={labelClass}>
-          Copy (texto que se publica en TikTok)
-          <CharCounterTextarea
-            name="tiktok_caption"
-            rows={2}
-            maxLength={TEXT_MAX_LENGTH}
-            defaultValue={piece.tiktok_caption}
-            className={`resize-none normal-case tracking-normal ${fieldClass}`}
-          />
-        </label>
-        {!tiktokConnected && (
-          <p className="text-[11px] text-text-3">Conectá TikTok desde Ajustes → Integraciones para ver sus métricas acá más adelante.</p>
-        )}
-      </div>
+      <NetworkCopyTabs
+        networkTab={networkTab}
+        onNetworkTabChange={setNetworkTab}
+        captionDefault={piece.caption}
+        tiktokCaptionDefault={piece.tiktok_caption}
+        instagramConnected={instagramConnected}
+        tiktokConnected={tiktokConnected}
+      />
 
       {state.error && <p className="text-xs text-red">{state.error}</p>}
 

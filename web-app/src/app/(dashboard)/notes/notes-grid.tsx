@@ -12,7 +12,7 @@ type Note = Database['public']['Tables']['notes']['Row']
 
 const FILTERS: Array<{ value: string; label: string }> = [{ value: 'all', label: 'Todas' }, ...NOTE_CATEGORIES]
 
-export function NotesGrid({ notes }: { notes: Note[] }) {
+export function NotesGrid({ notes, campaignId }: { notes: Note[]; campaignId?: string }) {
   const [filter, setFilter] = useState('all')
   const [creating, setCreating] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -56,7 +56,7 @@ export function NotesGrid({ notes }: { notes: Note[] }) {
 
       {creating && (
         <div className="mb-4">
-          <NoteForm onDone={() => setCreating(false)} />
+          <NoteForm campaignId={campaignId} onDone={() => setCreating(false)} />
         </div>
       )}
 
@@ -122,7 +122,7 @@ export function NotesGrid({ notes }: { notes: Note[] }) {
                     >
                       Editar
                     </button>
-                    <form action={deleteNoteAction.bind(null, note.id)}>
+                    <form action={deleteNoteAction.bind(null, note.id, note.campaign_id)}>
                       <ConfirmSubmitButton
                         confirmMessage="¿Borrar esta nota?"
                         className="text-xs font-medium text-text-3 transition-colors duration-200 ease-out hover:text-red"

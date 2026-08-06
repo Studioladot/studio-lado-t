@@ -72,6 +72,10 @@ export async function createNoteAction(
   const color = NOTE_COLORS.includes(String(formData.get('color')))
     ? String(formData.get('color'))
     : NOTE_COLORS[0]
+  // Opcional (killer feature de cierre de Fase 1, 2026-08-06) — atar una
+  // nota a una campaña real. String vacío (nota general, no viene de
+  // campaigns/[id]/) se guarda como null, nunca como "".
+  const campaignId = String(formData.get('campaign_id') ?? '').trim() || null
 
   const supabase = await createClient()
 
@@ -93,6 +97,7 @@ export async function createNoteAction(
     categoria,
     color,
     media_url: mediaUrl,
+    campaign_id: campaignId,
   })
 
   if (error) {
@@ -100,6 +105,7 @@ export async function createNoteAction(
   }
 
   revalidatePath('/notes')
+  if (campaignId) revalidatePath(`/campaigns/${campaignId}`)
   return { error: null, success: true }
 }
 
@@ -128,6 +134,9 @@ export async function updateNoteAction(
     ? String(formData.get('color'))
     : NOTE_COLORS[0]
   const removeMedia = formData.get('remove_media') === 'true'
+  // Solo para saber qué path revalidar — el campaign_id de una nota no se
+  // reasigna al editar, viaja acá de solo lectura (ver note-form.tsx).
+  const campaignId = String(formData.get('campaign_id') ?? '').trim() || null
 
   const supabase = await createClient()
 
@@ -160,10 +169,11 @@ export async function updateNoteAction(
   }
 
   revalidatePath('/notes')
+  if (campaignId) revalidatePath(`/campaigns/${campaignId}`)
   return { error: null, success: true }
 }
 
-export async function deleteNoteAction(noteId: string) {
+export async function deleteNoteAction(noteId: string, campaignId: string | null) {
   const { activeOrganizationId } = await getDashboardContext()
 
   if (!activeOrganizationId) {
@@ -175,4 +185,5 @@ export async function deleteNoteAction(noteId: string) {
   await supabase.from('notes').delete().eq('id', noteId).eq('organization_id', activeOrganizationId)
 
   revalidatePath('/notes')
+  if (campaignId) revalidatePath(`/campaigns/${campaignId}`)
 }

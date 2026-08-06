@@ -2220,6 +2220,7 @@ export type Database = {
       }
       notes: {
         Row: {
+          campaign_id: string | null
           categoria: string | null
           color: string | null
           contenido: string
@@ -2231,6 +2232,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          campaign_id?: string | null
           categoria?: string | null
           color?: string | null
           contenido: string
@@ -2242,6 +2244,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          campaign_id?: string | null
           categoria?: string | null
           color?: string | null
           contenido?: string
@@ -2253,6 +2256,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "notes_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "content_campaigns"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "notes_organization_id_fkey"
             columns: ["organization_id"]

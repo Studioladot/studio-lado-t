@@ -6,6 +6,7 @@ import { CampaignDetailsForm } from './campaign-details-form'
 import { AddPieceForm } from './add-piece-form'
 import { PiecesList } from './pieces-list'
 import { deleteCampaignAction } from './actions'
+import { NotesGrid } from '../../notes/notes-grid'
 import { ConfirmSubmitButton } from '@/components/features/confirm-submit-button'
 import { DiagnosticErrorPanel } from '@/components/features/diagnostic-error-panel'
 import { isNextInternalControlFlow } from '@/lib/next-internal-error'
@@ -60,7 +61,7 @@ async function renderCampaignDetail(id: string, activeOrganizationId: string) {
     notFound()
   }
 
-  const [{ data: pieces }, { data: instagramConnection }, { data: tiktokConnection }] = await Promise.all([
+  const [{ data: pieces }, { data: instagramConnection }, { data: tiktokConnection }, { data: notes }] = await Promise.all([
     supabase
       .from('content_piezas')
       .select('*')
@@ -69,6 +70,14 @@ async function renderCampaignDetail(id: string, activeOrganizationId: string) {
       .order('fecha_planificada', { ascending: true }),
     supabase.from('instagram_connections').select('id').eq('organization_id', activeOrganizationId).maybeSingle(),
     supabase.from('tiktok_connections').select('id').eq('organization_id', activeOrganizationId).maybeSingle(),
+    // Killer feature de cierre de Fase 1 (2026-08-06) — Notas era el único
+    // módulo hermano sin ninguna relación con Campañas.
+    supabase
+      .from('notes')
+      .select('*')
+      .eq('campaign_id', campaign.id)
+      .eq('organization_id', activeOrganizationId)
+      .order('created_at', { ascending: false }),
   ])
   const instagramConnected = !!instagramConnection
   const tiktokConnected = !!tiktokConnection
@@ -131,6 +140,11 @@ async function renderCampaignDetail(id: string, activeOrganizationId: string) {
         </div>
 
         <PiecesList pieces={pieces ?? []} campaignId={campaign.id} instagramConnected={instagramConnected} tiktokConnected={tiktokConnected} />
+      </section>
+
+      <section className="mt-8">
+        <h2 className="mb-4 text-sm font-bold text-text">Notas de esta campaña</h2>
+        <NotesGrid notes={notes ?? []} campaignId={campaign.id} />
       </section>
     </div>
   )

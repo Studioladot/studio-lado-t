@@ -5,42 +5,22 @@ import { createPostAction, updatePostAction, type PostState } from './actions'
 import { uploadReferenceFilesClient } from '@/lib/media/upload-client'
 import { useToast } from '@/components/features/toast'
 import { MiniSpinner } from '@/components/features/action-pill'
-import { CharCounterTextarea } from '@/components/features/char-counter-textarea'
-import { TITLE_MAX_LENGTH, TEXT_MAX_LENGTH } from '@/lib/text-limits'
+import { FORMATOS, PLATAFORMAS, ProductionStatusSelect, TurnoSelect, NetworkCopyTabs, fieldClass, labelClass } from './piece-form-shared'
+import { TITLE_MAX_LENGTH } from '@/lib/text-limits'
 import type { Database } from '@/lib/types/database.types'
 
 type Post = Database['public']['Tables']['content_posts']['Row']
 
-const PLATFORMS = ['Instagram', 'TikTok', 'Ambas', 'YouTube']
-const FORMATOS = ['Reel', 'TikTok', 'Carrusel', 'Historia', 'Post', 'Video largo', 'Otro']
-const TURNOS = ['Temprano', 'Tarde', 'Noche']
+// `status` — flag legacy propio de content_posts, del que dependen las
+// rachas de control-panel.tsx. Distinto de production_status (compartido,
+// ver piece-form-shared.tsx) — este selector es exclusivo de Publicaciones
+// sueltas, las piezas de campaña no lo tienen en su form (se cambia con un
+// toggle aparte en pieces-list.tsx).
 const STATUSES = [
   { value: 'pendiente', label: 'Pendiente' },
   { value: 'borrador', label: 'Borrador' },
   { value: 'publicado', label: 'Publicado' },
 ]
-// Pipeline de producción (Épica Omnicanal, 2026-08-04) — separado a
-// propósito de `status` arriba: `status` es el flag legacy del que
-// dependen las rachas de control-panel.tsx, este es el estado real del
-// flujo de trabajo (Idea → Grabación → Edición → Listo para publicar).
-// Gotix es una herramienta de planificación, no un programador de
-// posteos (decisión de producto, 2026-08-05) — este pipeline es el punto
-// final del flujo, no un paso intermedio hacia un auto-publish.
-const PRODUCTION_STATUSES = [
-  { value: 'idea', label: 'Idea' },
-  { value: 'por_grabar', label: 'Por grabar' },
-  { value: 'listo_para_programar', label: 'Listo para publicar' },
-  { value: 'programado', label: 'Programado' },
-  { value: 'publicado', label: 'Publicado' },
-]
-
-// Mismo fix que add-piece-form.tsx/piece-edit-form.tsx (2026-07-30):
-// colores theme-aware en vez de hex hardcodeado (#D0D5DD/#F9FAFB/#101828),
-// que rompía en dark mode.
-const fieldClass =
-  'rounded-control border border-border bg-surface-2/60 px-3 py-2.5 text-sm text-text outline-none transition-all duration-200 ease-out placeholder:text-text-3 focus:border-accent focus-visible:ring-2 focus-visible:ring-accent'
-
-const labelClass = 'flex flex-col gap-1.5 text-[11px] font-semibold uppercase tracking-[.06em] text-text-2'
 
 export function PostForm({
   post,
@@ -141,13 +121,7 @@ export function PostForm({
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <label className={labelClass}>
           Estado de Producción
-          <select name="production_status" defaultValue={post?.production_status ?? 'idea'} className={`normal-case tracking-normal ${fieldClass}`}>
-            {PRODUCTION_STATUSES.map((s) => (
-              <option key={s.value} value={s.value}>
-                {s.label}
-              </option>
-            ))}
-          </select>
+          <ProductionStatusSelect defaultValue={post?.production_status ?? 'idea'} />
         </label>
         <label className={labelClass}>
           Formato
@@ -163,7 +137,7 @@ export function PostForm({
         <label className={labelClass}>
           Plataforma
           <select name="platform" defaultValue={post?.platform ?? 'Instagram'} className={`normal-case tracking-normal ${fieldClass}`}>
-            {PLATFORMS.map((p) => (
+            {PLATAFORMAS.map((p) => (
               <option key={p}>{p}</option>
             ))}
           </select>
@@ -179,11 +153,7 @@ export function PostForm({
         </label>
         <label className={labelClass}>
           Turno
-          <select name="turno" defaultValue={post?.turno ?? 'Temprano'} className={`normal-case tracking-normal ${fieldClass}`}>
-            {TURNOS.map((t) => (
-              <option key={t}>{t}</option>
-            ))}
-          </select>
+          <TurnoSelect defaultValue={post?.turno ?? 'Temprano'} />
         </label>
       </div>
 
@@ -222,60 +192,14 @@ export function PostForm({
           publicar manualmente desde la app nativa de cada red (decisión de
           producto, 2026-08-05: Gotix es planificación, no un programador de
           posteos). */}
-      <div className="flex gap-1 rounded-control border border-border bg-surface-2/40 p-1">
-        <button
-          type="button"
-          onClick={() => setNetworkTab('instagram')}
-          className={`flex-1 rounded-control px-3 py-1.5 text-xs font-semibold transition-colors duration-200 ease-out ${
-            networkTab === 'instagram' ? 'bg-accent/[0.12] text-accent' : 'text-text-3 hover:text-text'
-          }`}
-        >
-          Copy Instagram
-        </button>
-        <button
-          type="button"
-          onClick={() => setNetworkTab('tiktok')}
-          className={`flex-1 rounded-control px-3 py-1.5 text-xs font-semibold transition-colors duration-200 ease-out ${
-            networkTab === 'tiktok' ? 'bg-accent/[0.12] text-accent' : 'text-text-3 hover:text-text'
-          }`}
-        >
-          Copy TikTok
-        </button>
-      </div>
-
-      <div className={networkTab === 'instagram' ? 'flex flex-col gap-2' : 'hidden'}>
-        <label className={labelClass}>
-          Texto / Caption (Instagram)
-          <CharCounterTextarea
-            name="caption"
-            rows={3}
-            maxLength={TEXT_MAX_LENGTH}
-            defaultValue={post?.caption}
-            placeholder="Texto de la publicación..."
-            className={`resize-none normal-case tracking-normal ${fieldClass}`}
-          />
-        </label>
-        {!instagramConnected && (
-          <p className="text-[11px] text-text-3">Conectá Instagram desde Ajustes → Integraciones para ver sus métricas acá más adelante.</p>
-        )}
-      </div>
-
-      <div className={networkTab === 'tiktok' ? 'flex flex-col gap-2' : 'hidden'}>
-        <label className={labelClass}>
-          Texto / Caption (TikTok)
-          <CharCounterTextarea
-            name="tiktok_caption"
-            rows={3}
-            maxLength={TEXT_MAX_LENGTH}
-            defaultValue={post?.tiktok_caption}
-            placeholder="Texto de la publicación..."
-            className={`resize-none normal-case tracking-normal ${fieldClass}`}
-          />
-        </label>
-        {!tiktokConnected && (
-          <p className="text-[11px] text-text-3">Conectá TikTok desde Ajustes → Integraciones para ver sus métricas acá más adelante.</p>
-        )}
-      </div>
+      <NetworkCopyTabs
+        networkTab={networkTab}
+        onNetworkTabChange={setNetworkTab}
+        captionDefault={post?.caption}
+        tiktokCaptionDefault={post?.tiktok_caption}
+        instagramConnected={instagramConnected}
+        tiktokConnected={tiktokConnected}
+      />
 
       {error && <p className="text-xs text-red">{error}</p>}
 

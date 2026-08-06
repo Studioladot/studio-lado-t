@@ -26,7 +26,16 @@ function SubmitButton({ label, pendingLabel }: { label: string; pendingLabel: st
   )
 }
 
-export function NoteForm({ note, onDone }: { note?: Note; onDone: () => void }) {
+export function NoteForm({
+  note,
+  campaignId,
+  onDone,
+}: {
+  note?: Note
+  /** Preselecciona la campaña al crear una nota desde campaigns/[id]/ — al editar, se ignora: el campaign_id de una nota ya creada no se reasigna desde este form (ver note.campaign_id abajo). */
+  campaignId?: string
+  onDone: () => void
+}) {
   const [color, setColor] = useState(note?.color ?? NOTE_COLORS[0])
   const [removeMedia, setRemoveMedia] = useState(false)
 
@@ -40,6 +49,7 @@ export function NoteForm({ note, onDone }: { note?: Note; onDone: () => void }) 
   return (
     <form action={formAction} className="flex flex-col gap-3 rounded-card border border-border bg-surface p-4">
       <input type="hidden" name="color" value={color} />
+      <input type="hidden" name="campaign_id" value={(note ? note.campaign_id : campaignId) ?? ''} />
       {removeMedia && <input type="hidden" name="remove_media" value="true" />}
 
       <TextInput

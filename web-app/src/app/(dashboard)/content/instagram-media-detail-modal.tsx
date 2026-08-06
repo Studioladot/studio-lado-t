@@ -1,8 +1,10 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
+import Link from 'next/link'
 import { InstagramIcon } from '@/components/features/nav-icons'
 import { primaryMetric, formatLabel, type InstagramCatalogRow } from '@/lib/instagram/media-catalog-winners'
+import { createLibraryCreativeRecordAction } from '../meta-ads/library/actions'
 
 // Mismo fix que tiktok-video-detail-modal.tsx (bug real reportado,
 // 2026-08-01): columnas nuevas sin migrar vienen `undefined`, no `null` —
@@ -65,6 +67,87 @@ function SalesAttributionRow({
           Todavía no hay conexión con Tiendanube/WhatsApp para atribuir ventas a este contenido.
         </p>
       )}
+    </div>
+  )
+}
+
+function truncate(text: string, maxChars: number): string {
+  const trimmed = text.trim()
+  return trimmed.length > maxChars ? `${trimmed.slice(0, maxChars - 1)}…` : trimmed
+}
+
+/**
+ * "Convertir en Campaña de Meta Ads" (killer feature de cierre de Fase 1,
+ * 2026-08-06) — cierra el loop entre lo orgánico y lo pago: en vez de
+ * re-armar un anuncio desde cero, agrega este ganador directo a la
+ * Biblioteca de Ads (reusa createLibraryCreativeRecordAction, YA
+ * construido y funcionando — cero código nuevo de integración con la
+ * Graph API). Desde ahí, "Lanzar Testeo" en Meta Ads ya sabe re-subir
+ * cualquier fileUrl de la Biblioteca al crear el anuncio real (ver
+ * createSingleAd, meta-ads/campaigns/actions.ts) — no hace falta que el
+ * archivo esté en el bucket propio de Gotix, la URL de Instagram alcanza.
+ *
+ * Deliberadamente NO se intenta reusar el post original vía
+ * object_story_id/source_instagram_media_id de la Graph API — sin poder
+ * verificar ese comportamiento contra la documentación real de Meta en
+ * esta sesión, ir por la Biblioteca (un camino ya construido y probado)
+ * es la opción segura, no una apuesta a una API que no se confirmó.
+ */
+function ConvertToCampaignAction({ item }: { item: InstagramCatalogRow }) {
+  const [state, setState] = useState<'idle' | 'loading' | 'done' | 'error'>('idle')
+  const [error, setError] = useState<string | null>(null)
+
+  // Un carrusel no tiene un único archivo representativo — media_url de la
+  // API de Instagram para CAROUSEL_ALBUM no es un asset reusable como
+  // creativo. Mejor no ofrecer la acción que ofrecerla y que falle.
+  if (item.media_type === 'CAROUSEL_ALBUM' || !item.media_url) return null
+
+  async function handleConvert() {
+    setState('loading')
+    setError(null)
+    const result = await createLibraryCreativeRecordAction({
+      fileUrl: item.media_url as string,
+      assetType: item.media_type === 'VIDEO' ? 'video' : 'image',
+      name: item.caption ? truncate(item.caption, 60) : `Ganador orgánico — ${formatLabel(item)}`,
+      primaryText: item.caption,
+      headline: null,
+      cta: 'SHOP_NOW',
+    })
+    if (!result.ok) {
+      setState('error')
+      setError(result.error)
+      return
+    }
+    setState('done')
+  }
+
+  if (state === 'done') {
+    return (
+      <div className="rounded-control border border-green/30 bg-green/6 px-3 py-2.5">
+        <p className="flex items-center gap-1.5 text-xs font-semibold text-green">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M20 6 9 17l-5-5" />
+          </svg>
+          Agregado a tu Biblioteca de Ads
+        </p>
+        <Link href="/meta-ads/campaigns" className="mt-1 inline-block text-[11px] font-semibold text-accent hover:text-accent/80">
+          Ir a Meta Ads → Lanzar Testeo →
+        </Link>
+      </div>
+    )
+  }
+
+  return (
+    <div>
+      <button
+        type="button"
+        onClick={handleConvert}
+        disabled={state === 'loading'}
+        className="w-full rounded-control border border-accent/30 bg-accent/6 px-3 py-2.5 text-xs font-semibold text-accent transition-all duration-200 ease-out hover:bg-accent/12 disabled:cursor-wait disabled:opacity-70"
+      >
+        {state === 'loading' ? 'Agregando…' : 'Convertir en Campaña de Meta Ads'}
+      </button>
+      {error && <p className="mt-1.5 text-[11px] text-red">{error}</p>}
     </div>
   )
 }
@@ -173,6 +256,8 @@ export function InstagramMediaDetailModal({
           </div>
 
           <SalesAttributionRow attributedSales={item.attributed_sales} roasOrganic={item.roas_organic} linkClicks={item.link_clicks} />
+
+          <ConvertToCampaignAction item={item} />
 
           {item.permalink && (
             <a href={item.permalink} target="_blank" rel="noreferrer" className="text-xs font-semibold text-accent transition-colors duration-200 ease-out hover:text-accent/80">
