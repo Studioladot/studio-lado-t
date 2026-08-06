@@ -16,7 +16,7 @@ import type { WinningItem } from '@/lib/content/winners'
 import type { TiktokVideoRow } from '@/lib/tiktok/winners'
 import type { InstagramCatalogRow } from '@/lib/instagram/media-catalog-winners'
 import { computeAccountOverviewKpis, buildReachImpressionsSeries, buildProfileGrowthSeries } from '@/lib/instagram/account-overview'
-import { computeFormatInsight } from '@/lib/instagram/format-insight'
+import { computeDirectorTip } from '@/lib/instagram/director-tip'
 import { DATE_RANGE_OPTIONS, filterByDateRange, type DateRangeMode } from '@/lib/date-range'
 
 // "Rendimiento" — analítica orgánica de Instagram, alimentada por los
@@ -110,12 +110,12 @@ export function PerformanceTab({
   // distinguirlos para mostrar el mensaje correcto.
   const filteredInstagramCatalog = filterByDateRange(instagramCatalog, dateRange, (c) => c.posted_at)
 
-  // "Insight Inteligente" (2026-08-05) — diagnóstico condicional sobre el
-  // mismo rango ya filtrado, no un cálculo aparte con su propia ventana de
-  // tiempo. null cuando no hay al menos 2 formatos con ≥2 publicaciones
-  // cada uno — con menos que eso, cualquier "promedio" sería ruido, no un
-  // insight real (ver computeFormatInsight).
-  const formatInsight = computeFormatInsight(filteredInstagramCatalog)
+  // "Diagnóstico Inteligente" / Tip del Director (2026-08-05) — a
+  // propósito NO usa filteredInstagramCatalog: es siempre "cómo viene esta
+  // semana" con su propia ventana fija de 7/14 días, sin importar qué
+  // rango tenga elegido el DateRangePicker de más abajo (ver
+  // lib/instagram/director-tip.ts).
+  const directorTip = computeDirectorTip(instagramCatalog)
 
   return (
     <div className="flex flex-col gap-4">
@@ -157,16 +157,32 @@ export function PerformanceTab({
               vacío (KPI en "—", gráfico con su mensaje), ocultar el bloque
               entero detrás de un solo gate dejaba el panel en blanco para
               cualquier cuenta recién conectada (bug reportado 2026-08-06). */}
-          {formatInsight && (
-            <div className="flex items-start gap-3 rounded-card border border-accent/25 bg-accent/4 p-4">
-              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-accent/12 text-accent">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-4 10.5c.6.55 1 1.3 1 2.1V16h6v-.4c0-.8.4-1.55 1-2.1A6 6 0 0 0 12 3Z" />
-                </svg>
+          {directorTip && (
+            <div
+              className={`flex items-start gap-3 rounded-card border p-4 ${
+                directorTip.kind === 'decline' ? 'border-amber/25 bg-amber/4' : 'border-accent/25 bg-accent/4'
+              }`}
+            >
+              <span
+                className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full ${
+                  directorTip.kind === 'decline' ? 'bg-amber/12 text-amber' : 'bg-accent/12 text-accent'
+                }`}
+              >
+                {directorTip.kind === 'decline' ? (
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M12 9v4M12 17h.01M10.29 3.86 1.82 18a1 1 0 0 0 .86 1.5h18.64a1 1 0 0 0 .86-1.5L13.71 3.86a1 1 0 0 0-1.72 0Z" />
+                  </svg>
+                ) : (
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-4 10.5c.6.55 1 1.3 1 2.1V16h6v-.4c0-.8.4-1.55 1-2.1A6 6 0 0 0 12 3Z" />
+                  </svg>
+                )}
               </span>
               <div>
-                <p className="text-[10px] font-bold uppercase tracking-wide text-accent">Insight inteligente</p>
-                <p className="mt-0.5 text-sm font-medium text-text">{formatInsight.message}</p>
+                <p className={`text-[10px] font-bold uppercase tracking-wide ${directorTip.kind === 'decline' ? 'text-amber' : 'text-accent'}`}>
+                  Diagnóstico inteligente
+                </p>
+                <p className="mt-0.5 text-sm font-medium text-text">{directorTip.message}</p>
               </div>
             </div>
           )}
