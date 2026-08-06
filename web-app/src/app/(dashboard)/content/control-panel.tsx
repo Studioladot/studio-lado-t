@@ -104,16 +104,18 @@ function pastWeekVerdict(pct: number): { label: string; color: string } {
 }
 
 /**
- * Copy de la semana EN CURSO — estrictamente neutro/alentador, nunca un
- * juicio negativo (mismo ajuste de arriba). Todavía queda tiempo
- * calendario para llegar a la meta, así que "vas 2/5" es progreso, no una
- * falla.
+ * Copy de la semana EN CURSO — exactamente 3 estados, ninguno negativo
+ * (pedido explícito, 2026-08-06: "bajo ningún punto de vista" un juicio
+ * tipo "Floja" mientras la semana no cerró — ni siquiera a mitad de
+ * camino, 2 o 3 de 5 es un estado perfecto porque todavía es martes).
+ * Puramente visual/alentador: 0% arranca la semana, 1-99% es progreso en
+ * curso (un solo mensaje para todo el rango, sin sub-tramos), 100% es
+ * logro cumplido.
  */
 function currentWeekMotivation(pct: number): string {
   if (pct >= 100) return '¡Objetivo semanal cumplido!'
-  if (pct >= 50) return 'A mitad de tu meta semanal — ¡seguí así!'
   if (pct > 0) return '¡Vas por buen camino!'
-  return 'Arrancá la semana con tu primera publicación.'
+  return '¡Semana nueva, a crear!'
 }
 
 export function ControlPanel({
