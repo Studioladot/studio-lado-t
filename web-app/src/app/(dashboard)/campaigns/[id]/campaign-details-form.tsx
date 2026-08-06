@@ -1,8 +1,10 @@
 'use client'
 
-import { useActionState } from 'react'
+import { useActionState, useState } from 'react'
 import { updateCampaignDetailsAction, type SaveState } from './actions'
 import { SaveDetailsButton } from './save-details-button'
+import { CampaignColorPicker } from '../campaign-color-picker'
+import { DEFAULT_CAMPAIGN_COLOR } from '../campaign-colors'
 import { CharCounterTextarea } from '@/components/features/char-counter-textarea'
 import { TITLE_MAX_LENGTH, TEXT_MAX_LENGTH } from '@/lib/text-limits'
 import type { Database } from '@/lib/types/database.types'
@@ -30,6 +32,7 @@ const labelClass = 'flex flex-col gap-1 text-[11px] font-semibold uppercase trac
 
 export function CampaignDetailsForm({ campaign }: { campaign: Campaign }) {
   const [state, formAction] = useActionState(updateCampaignDetailsAction, initialState)
+  const [color, setColor] = useState(campaign.color ?? DEFAULT_CAMPAIGN_COLOR)
 
   const currentFormatos = Array.isArray(campaign.formatos) ? (campaign.formatos as string[]) : []
 
@@ -95,6 +98,12 @@ export function CampaignDetailsForm({ campaign }: { campaign: Campaign }) {
             className={`normal-case tracking-normal ${fieldClass}`}
           />
         </label>
+      </div>
+
+      <div className="flex flex-col gap-1.5">
+        <span className={labelClass}>Color</span>
+        <CampaignColorPicker value={color} onChange={setColor} />
+        <input type="hidden" name="color" value={color} />
       </div>
 
       <label className={labelClass}>

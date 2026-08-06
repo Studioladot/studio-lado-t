@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { getDashboardContext } from '@/lib/organization/dashboard-context'
 import { clamp, TITLE_MAX_LENGTH, TEXT_MAX_LENGTH } from '@/lib/text-limits'
+import { CAMPAIGN_COLORS } from '../campaign-colors'
 
 type MediaItem = { url: string; type: 'image' | 'video' }
 
@@ -76,6 +77,9 @@ export async function updateCampaignDetailsAction(
 
   const supabase = await createClient()
 
+  const colorRaw = String(formData.get('color') ?? '')
+  const color = CAMPAIGN_COLORS.includes(colorRaw) ? colorRaw : undefined
+
   const { error } = await supabase
     .from('content_campaigns')
     .update({
@@ -84,6 +88,7 @@ export async function updateCampaignDetailsAction(
       fecha_inicio: emptyToNull(formData.get('fecha_inicio')),
       fecha_fin: emptyToNull(formData.get('fecha_fin')),
       status: String(formData.get('status') ?? 'planificacion'),
+      ...(color ? { color } : {}),
       objetivo: clampText(formData.get('objetivo')),
       concepto_estrategico: clampText(formData.get('concepto_estrategico')),
       concepto_creativo: clampText(formData.get('concepto_creativo')),

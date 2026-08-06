@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Link from 'next/link'
 import { generateContentIdeaAction, getIdeaGenUsageAction } from './actions'
 
 // "Inspiración / Desbloqueo Creativo" (reestructuración de Contenido,
@@ -36,6 +37,7 @@ export function InspirationWidget() {
   // del primer render del cliente.
   const [tipIndex, setTipIndex] = useState(() => new Date().getDate() % STRATEGIC_TIPS.length)
   const [aiIdea, setAiIdea] = useState<string | null>(null)
+  const [savedToNotes, setSavedToNotes] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [remaining, setRemaining] = useState<number | null>(null)
@@ -51,6 +53,7 @@ export function InspirationWidget() {
 
   function nextTip() {
     setAiIdea(null)
+    setSavedToNotes(false)
     setError(null)
     setTipIndex((i) => (i + 1) % STRATEGIC_TIPS.length)
   }
@@ -67,6 +70,7 @@ export function InspirationWidget() {
       return
     }
     setAiIdea(result.idea)
+    setSavedToNotes(result.savedToNotes)
   }
 
   return (
@@ -87,6 +91,17 @@ export function InspirationWidget() {
           <>
             <p className="mb-1 text-[9px] font-bold uppercase tracking-wide text-accent">Idea generada</p>
             <p className="text-xs leading-relaxed text-text">{aiIdea}</p>
+            {savedToNotes && (
+              <Link
+                href="/notes"
+                className="mt-1.5 inline-flex items-center gap-1 text-[10px] font-semibold text-green transition-colors duration-200 ease-out hover:text-green/80"
+              >
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M20 6 9 17l-5-5" />
+                </svg>
+                Guardada en Notas
+              </Link>
+            )}
           </>
         ) : (
           <>

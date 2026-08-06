@@ -9,6 +9,7 @@ import { deleteCampaignAction } from './actions'
 import { ConfirmSubmitButton } from '@/components/features/confirm-submit-button'
 import { DiagnosticErrorPanel } from '@/components/features/diagnostic-error-panel'
 import { isNextInternalControlFlow } from '@/lib/next-internal-error'
+import { DEFAULT_CAMPAIGN_COLOR } from '../campaign-colors'
 
 const STATUS_LABEL: Record<string, string> = {
   planificacion: 'En planificación',
@@ -71,6 +72,7 @@ async function renderCampaignDetail(id: string, activeOrganizationId: string) {
   ])
   const instagramConnected = !!instagramConnection
   const tiktokConnected = !!tiktokConnection
+  const campaignColor = campaign.color ?? DEFAULT_CAMPAIGN_COLOR
 
   return (
     <div className="mx-auto max-w-[840px]">
@@ -84,7 +86,10 @@ async function renderCampaignDetail(id: string, activeOrganizationId: string) {
       <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
         <div>
           {campaign.periodo && <p className="mb-0.5 text-xs text-text-2">{campaign.periodo}</p>}
-          <h1 className="text-[22px] font-extrabold tracking-[-0.03em] text-text">{campaign.nombre}</h1>
+          <h1 className="flex items-center gap-2.5 text-[22px] font-extrabold tracking-[-0.03em] text-text">
+            <span className="h-3 w-3 shrink-0 rounded-full" style={{ backgroundColor: campaignColor }} aria-hidden="true" />
+            {campaign.nombre}
+          </h1>
           {(campaign.fecha_inicio || campaign.fecha_fin) && (
             <p className="mt-1 text-xs text-text-2">
               {campaign.fecha_inicio ?? '—'} → {campaign.fecha_fin ?? '—'}
@@ -106,7 +111,10 @@ async function renderCampaignDetail(id: string, activeOrganizationId: string) {
         </div>
       </div>
 
-      <section className="mb-8 rounded-card border border-border bg-surface p-6">
+      <section
+        className="mb-8 rounded-card border border-border bg-surface p-6"
+        style={{ borderLeftWidth: '3px', borderLeftColor: campaignColor }}
+      >
         <h2 className="mb-4 text-sm font-bold text-text">Detalles de la campaña</h2>
         <CampaignDetailsForm campaign={campaign} />
       </section>

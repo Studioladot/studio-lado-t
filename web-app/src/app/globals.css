@@ -29,6 +29,11 @@
   --red: #ad342b;
   --green: #297353;
   --amber: #a3690f;
+  /* Sin fuente en app.html/frontend-taste.md — agregado en la limpieza de
+     cierre de Fase 1 (2026-08-06) para reemplazar un #8b5cf6 hardcodeado
+     (turno "Noche" en campaigns/[id]/pieces-list.tsx) que no reaccionaba a
+     dark mode. Mismo violeta que ya usa la paleta de colores de campaña. */
+  --violet: #7c5cfc;
   --radius-control: 8px;
   --radius-card: 14px;
 }
@@ -50,6 +55,7 @@
   --color-red: var(--red);
   --color-green: var(--green);
   --color-amber: var(--amber);
+  --color-violet: var(--violet);
   --radius-control: var(--radius-control);
   --radius-card: var(--radius-card);
   --font-sans: var(--font-inter);
@@ -79,6 +85,7 @@
   --red: #e5645a;
   --green: #3eba85;
   --amber: #e0a030;
+  --violet: #a78bfa;
 }
 
 body {

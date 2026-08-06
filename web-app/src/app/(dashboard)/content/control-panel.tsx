@@ -46,7 +46,7 @@ function startOfWeek(d: Date) {
 const FORMAT_COLOR: Record<string, string> = {
   Reel: 'bg-accent',
   TikTok: 'bg-red',
-  Carrusel: 'bg-[#2E90FA]',
+  Carrusel: 'bg-violet',
   Historia: 'bg-amber',
   Post: 'bg-green',
   Otro: 'bg-text-2',

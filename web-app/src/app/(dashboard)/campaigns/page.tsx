@@ -4,6 +4,7 @@ import { getDashboardContext } from '@/lib/organization/dashboard-context'
 import { DiagnosticErrorPanel } from '@/components/features/diagnostic-error-panel'
 import { isNextInternalControlFlow } from '@/lib/next-internal-error'
 import { CampaignsFilterDropdown } from './campaigns-filter-dropdown'
+import { DEFAULT_CAMPAIGN_COLOR } from './campaign-colors'
 
 const STATUS_LABEL: Record<string, string> = {
   planificacion: 'En planificación',
@@ -127,7 +128,7 @@ async function renderCampaignsList(activeOrganizationId: string, estado: string 
                   <div>
                     {camp.periodo && <p className="mb-0.5 text-xs text-text-2">{camp.periodo}</p>}
                     <h2 className="flex items-center gap-2 text-lg font-extrabold tracking-[-0.02em] text-text">
-                      <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: camp.color ?? '#4C7EFF' }} aria-hidden="true" />
+                      <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: camp.color ?? DEFAULT_CAMPAIGN_COLOR }} aria-hidden="true" />
                       {camp.nombre}
                     </h2>
                     {stats && stats.total > 0 && (

@@ -17,7 +17,7 @@ type FlatMedia = MediaItem & { pieceTitle: string }
 const TURNO_COLOR: Record<string, string> = {
   Temprano: 'text-amber',
   Tarde: 'text-accent',
-  Noche: 'text-[#8b5cf6]',
+  Noche: 'text-violet',
 }
 
 function parseMediaUrls(value: unknown): MediaItem[] {
@@ -219,18 +219,15 @@ export function PiecesList({
                   <button type="button" onClick={() => setEditingId(piece.id)} className={pillClass('neutral')}>
                     Editar
                   </button>
-                  {/* Auditoría de cierre: borrar algo 'publishing' no cancela la publicación real en Instagram, solo pierde el registro local. */}
-                  {piece.publish_status !== 'publishing' && (
-                    <form action={deletePieceAction.bind(null, piece.id, campaignId)}>
-                      <ConfirmSubmitButton
-                        confirmMessage={`¿Estás seguro? Se va a borrar "${piece.titulo}".`}
-                        toastPending="Borrando…"
-                        toastSuccess="Eliminado con éxito"
-                      >
-                        Borrar
-                      </ConfirmSubmitButton>
-                    </form>
-                  )}
+                  <form action={deletePieceAction.bind(null, piece.id, campaignId)}>
+                    <ConfirmSubmitButton
+                      confirmMessage={`¿Estás seguro? Se va a borrar "${piece.titulo}".`}
+                      toastPending="Borrando…"
+                      toastSuccess="Eliminado con éxito"
+                    >
+                      Borrar
+                    </ConfirmSubmitButton>
+                  </form>
                 </div>
               </div>
             </div>

@@ -3,33 +3,14 @@
 import { useMemo, useState } from 'react'
 import { NoteForm } from './note-form'
 import { deleteNoteAction } from './actions'
+import { NOTE_CATEGORIES, NOTE_CATEGORY_LABEL, NOTE_COLOR_ACCENT } from './note-constants'
 import { ConfirmSubmitButton } from '@/components/features/confirm-submit-button'
 import { ExpandableText } from '@/components/features/expandable-text'
 import type { Database } from '@/lib/types/database.types'
 
 type Note = Database['public']['Tables']['notes']['Row']
 
-const FILTERS: Array<{ value: string; label: string }> = [
-  { value: 'all', label: 'Todas' },
-  { value: 'fechas', label: 'Fechas importantes' },
-  { value: 'conceptos', label: 'Conceptos claves' },
-  { value: 'varios', label: 'Varios' },
-]
-
-const CATEGORY_LABEL: Record<string, string> = {
-  fechas: 'Fechas importantes',
-  conceptos: 'Conceptos claves',
-  varios: 'Varios',
-}
-
-const BORDER_COLOR: Record<string, string> = {
-  '#fef3d8': '#c9a227',
-  '#fbe8e3': '#b03311',
-  '#e8f2f0': '#6fa398',
-  '#e4f0fb': '#1a5fa5',
-  '#e4f5e7': '#2d7a3a',
-  '#f0efec': '#c8c6c0',
-}
+const FILTERS: Array<{ value: string; label: string }> = [{ value: 'all', label: 'Todas' }, ...NOTE_CATEGORIES]
 
 export function NotesGrid({ notes }: { notes: Note[] }) {
   const [filter, setFilter] = useState('all')
@@ -95,7 +76,7 @@ export function NotesGrid({ notes }: { notes: Note[] }) {
               )
             }
 
-            const accent = BORDER_COLOR[note.color ?? ''] ?? '#c8c6c0'
+            const accent = NOTE_COLOR_ACCENT[note.color ?? ''] ?? '#c8c6c0'
             const fecha = note.created_at
               ? new Date(note.created_at).toLocaleDateString('es-AR', {
                   day: 'numeric',
@@ -112,7 +93,7 @@ export function NotesGrid({ notes }: { notes: Note[] }) {
                 style={{ borderTopWidth: '3px', borderTopColor: accent }}
               >
                 <span className="text-[10px] font-bold uppercase tracking-[.06em] text-text-3">
-                  {CATEGORY_LABEL[note.categoria ?? 'varios'] ?? 'Varios'}
+                  {NOTE_CATEGORY_LABEL[note.categoria ?? 'varios'] ?? 'Varios'}
                 </span>
 
                 {note.media_url && (

@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/server'
 import { getDashboardContext } from '@/lib/organization/dashboard-context'
 import { validateMediaFile } from '@/lib/media/validate-upload'
 import { clamp, TITLE_MAX_LENGTH, TEXT_MAX_LENGTH } from '@/lib/text-limits'
+import { NOTE_COLORS, NOTE_CATEGORY_VALUES } from './note-constants'
 import type { Database } from '@/lib/types/database.types'
 
 type NoteUpdate = Database['public']['Tables']['notes']['Update']
@@ -13,9 +14,6 @@ export type NoteState = {
   error: string | null
   success: boolean
 }
-
-const NOTE_COLORS = ['#fef3d8', '#fbe8e3', '#e8f2f0', '#e4f0fb', '#e4f5e7', '#f0efec']
-const NOTE_CATEGORIES = ['fechas', 'conceptos', 'varios']
 
 // Bucket "piezas-media" (público), mismo helper de subida que Campañas —
 // path {user_id}/{timestamp}-{random}.{ext}.
@@ -68,7 +66,7 @@ export async function createNoteAction(
   }
 
   const titulo = clamp(String(formData.get('titulo') ?? '').trim(), TITLE_MAX_LENGTH)
-  const categoria = NOTE_CATEGORIES.includes(String(formData.get('categoria')))
+  const categoria = NOTE_CATEGORY_VALUES.includes(String(formData.get('categoria')))
     ? String(formData.get('categoria'))
     : 'varios'
   const color = NOTE_COLORS.includes(String(formData.get('color')))
@@ -123,7 +121,7 @@ export async function updateNoteAction(
   }
 
   const titulo = clamp(String(formData.get('titulo') ?? '').trim(), TITLE_MAX_LENGTH)
-  const categoria = NOTE_CATEGORIES.includes(String(formData.get('categoria')))
+  const categoria = NOTE_CATEGORY_VALUES.includes(String(formData.get('categoria')))
     ? String(formData.get('categoria'))
     : 'varios'
   const color = NOTE_COLORS.includes(String(formData.get('color')))

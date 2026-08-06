@@ -1,3 +1,4 @@
+import { DEFAULT_CAMPAIGN_COLOR } from '../campaigns/campaign-colors'
 import type { Database } from '@/lib/types/database.types'
 
 type Post = Database['public']['Tables']['content_posts']['Row']
@@ -68,7 +69,7 @@ export function unifyContentItems(posts: Post[], pieces: Piece[], campaigns: Cam
       source: 'campana',
       campaignId: p.campaign_id,
       campaignName: camp?.nombre ?? 'Campaña orgánica',
-      campaignColor: camp?.color ?? '#4C7EFF',
+      campaignColor: camp?.color ?? DEFAULT_CAMPAIGN_COLOR,
       status: p.status === 'publicado' || p.status === 'publicada' ? 'publicado' : 'pendiente',
       date: p.fecha_planificada,
       platform: p.plataforma,

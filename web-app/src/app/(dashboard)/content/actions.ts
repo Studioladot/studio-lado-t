@@ -6,6 +6,7 @@ import { getDashboardContext } from '@/lib/organization/dashboard-context'
 import { clamp, TITLE_MAX_LENGTH, TEXT_MAX_LENGTH } from '@/lib/text-limits'
 import { askAI } from '@/lib/ia/client'
 import { checkIaUsage, incrementIaUsage, checkIdeaGenDailyUsage, incrementIdeaGenDailyUsage } from '@/lib/ia/usage'
+import { NOTE_COLORS } from '../notes/note-constants'
 
 type MediaItem = { url: string; type: 'image' | 'video' }
 
@@ -239,7 +240,9 @@ const IDEA_GENERATOR_SYSTEM_PROMPT = `Sos un estratega de marketing de contenido
 
 Cuando te piden una idea de contenido, das UNA sola — nunca una lista, nunca un párrafo largo. Siempre incluye tres cosas concretas: el formato (Reel, Carrusel, Historia, etc.), el ángulo o gancho del video, y el llamado a la acción. Directo al grano, en 2-3 frases como máximo, en español rioplatense. Nada de texto genérico ni robótico — pensalo específico a la marca y su rubro cuando te los den.`
 
-export type IdeaGenState = { ok: true; idea: string; remaining: number } | { ok: false; error: string; remaining: number }
+export type IdeaGenState =
+  | { ok: true; idea: string; remaining: number; savedToNotes: boolean }
+  | { ok: false; error: string; remaining: number }
 
 /** Cuánto le queda hoy al usuario — se llama al montar el widget para que el botón nazca deshabilitado si ya gastó las 3 antes de refrescar la página. */
 export async function getIdeaGenUsageAction(): Promise<{ remaining: number }> {
@@ -289,5 +292,24 @@ export async function generateContentIdeaAction(): Promise<IdeaGenState> {
   await incrementIaUsage(supabase, activeOrganizationId)
   const remaining = await incrementIdeaGenDailyUsage(supabase, activeOrganizationId, userId)
 
-  return { ok: true, idea: result.reply.trim(), remaining }
+  const idea = result.reply.trim()
+
+  // Killer feature de cierre de Fase 1 (2026-08-06): la idea generada no se
+  // pierde apenas se cierra el widget — queda guardada en Notas (categoría
+  // "Conceptos claves") automáticamente, sin acción extra del usuario. Si
+  // el insert falla no rompe la respuesta al usuario — ya generó y gastó su
+  // cupo de la idea, negársela por un problema de guardado sería peor que
+  // simplemente no guardarla.
+  const { error: noteError } = await supabase.from('notes').insert({
+    organization_id: activeOrganizationId,
+    user_id: userId,
+    titulo: 'Idea generada por IA',
+    contenido: idea,
+    categoria: 'conceptos',
+    color: NOTE_COLORS[3],
+  })
+  if (noteError) console.error('[generateContentIdeaAction] no se pudo guardar la idea en Notas:', noteError)
+
+  revalidatePath('/notes')
+  return { ok: true, idea, remaining, savedToNotes: !noteError }
 }

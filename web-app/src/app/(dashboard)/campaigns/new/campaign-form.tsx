@@ -3,6 +3,8 @@
 import { useActionState, useState } from 'react'
 import { createCampaignAction, type CreateCampaignState } from '../actions'
 import { CreateCampaignButton } from './create-campaign-button'
+import { CampaignColorPicker } from '../campaign-color-picker'
+import { DEFAULT_CAMPAIGN_COLOR } from '../campaign-colors'
 import { TextInput, TextArea } from '@/components/features/form-field'
 import { TITLE_MAX_LENGTH, TEXT_MAX_LENGTH } from '@/lib/text-limits'
 
@@ -10,16 +12,9 @@ const initialState: CreateCampaignState = { error: null }
 
 const labelClass = 'text-[11px] font-semibold uppercase tracking-[.06em] text-text-2'
 
-// Paleta acotada (no color picker libre) — así toda campaña queda
-// distinguible en el Calendario general sin que dos usuarios elijan tonos
-// casi idénticos entre sí. #4C7EFF es el mismo azul que unified-items.ts ya
-// usa como fallback para campañas sin color propio — se incluye acá para
-// que "no elegir nada distinto" siga dando el mismo resultado de siempre.
-const CAMPAIGN_COLORS = ['#4C7EFF', '#7C5CFC', '#E0637D', '#E08A3C', '#3EBA85', '#34B3C2', '#8B93A3'] as const
-
 export function CampaignForm() {
   const [state, formAction] = useActionState(createCampaignAction, initialState)
-  const [color, setColor] = useState<string>(CAMPAIGN_COLORS[0])
+  const [color, setColor] = useState<string>(DEFAULT_CAMPAIGN_COLOR)
 
   return (
     <form action={formAction} className="flex flex-col gap-3.5">
@@ -69,21 +64,7 @@ export function CampaignForm() {
 
       <div className="flex flex-col gap-1.5">
         <span className={labelClass}>Color</span>
-        <div className="flex items-center gap-2">
-          {CAMPAIGN_COLORS.map((c) => (
-            <button
-              key={c}
-              type="button"
-              onClick={() => setColor(c)}
-              aria-label={`Elegir color ${c}`}
-              aria-pressed={color === c}
-              className={`h-7 w-7 shrink-0 rounded-full transition-transform duration-150 ease-out ${
-                color === c ? 'scale-110 ring-2 ring-offset-2 ring-offset-surface' : 'hover:scale-105'
-              }`}
-              style={{ backgroundColor: c, ...(color === c ? ({ '--tw-ring-color': c } as React.CSSProperties) : {}) }}
-            />
-          ))}
-        </div>
+        <CampaignColorPicker value={color} onChange={setColor} />
         <input type="hidden" name="color" value={color} />
       </div>
 

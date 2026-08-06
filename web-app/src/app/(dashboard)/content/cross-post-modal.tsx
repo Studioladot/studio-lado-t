@@ -6,10 +6,12 @@ import { crossPostAction, type CrossPostResult } from './cross-post-actions'
 import type { WinningItem } from '@/lib/content/winners'
 
 // "Resubir a [Otra Plataforma]" (Épica Omnicanal, 2026-08-04) — clona el
-// Archivo Final del ganador en una publicación suelta nueva para la red
-// contraria, lista en 'listo_para_programar'. No publica nada directo: el
-// usuario termina de ajustar copy/horario en Publicaciones antes de
-// guardarla de verdad.
+// material de referencia del ganador en una publicación suelta nueva para
+// la red contraria, lista en 'listo_para_programar'. No publica nada
+// directo: el usuario termina de ajustar copy/horario en Publicaciones
+// antes de guardarla de verdad. (Copy actualizado 2026-08-06: "Archivo
+// Final" era un concepto del producto de antes del pivot — Gotix ya no
+// gestiona el archivo publicable, solo referencias.)
 
 const PLATFORM_LABEL: Record<string, string> = { instagram: 'Instagram', tiktok: 'TikTok' }
 
@@ -68,7 +70,7 @@ export function CrossPostModal({ item, onClose }: { item: WinningItem; onClose: 
         {done ? (
           <div className="flex flex-col gap-3">
             <p className="text-xs text-text-2">
-              Listo — se creó un borrador para {PLATFORM_LABEL[target]} con el mismo Archivo Final de &ldquo;{item.title}&rdquo;. Terminá de ajustar el
+              Listo — se creó un borrador para {PLATFORM_LABEL[target]} con el mismo material de &ldquo;{item.title}&rdquo;. Terminá de ajustar el
               copy y el horario en Publicaciones antes de programarla.
             </p>
             <Link
@@ -82,7 +84,7 @@ export function CrossPostModal({ item, onClose }: { item: WinningItem; onClose: 
           <div className="flex flex-col gap-3">
             <p className="text-xs text-text-2">
               &ldquo;{item.title}&rdquo; viene creciendo fuerte en {PLATFORM_LABEL[item.platform] ?? item.platform} (+
-              {item.growthPct.toFixed(0)}% vs. la captura anterior). Cloná el mismo Archivo Final para la otra red.
+              {item.growthPct.toFixed(0)}% vs. la captura anterior). Cloná el mismo material para la otra red.
             </p>
             <label className="flex flex-col gap-1.5 text-[11px] font-semibold uppercase tracking-[.06em] text-text-2">
               Resubir a

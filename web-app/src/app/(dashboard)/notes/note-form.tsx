@@ -3,21 +3,12 @@
 import { useActionState, useEffect, useState } from 'react'
 import { useFormStatus } from 'react-dom'
 import { createNoteAction, updateNoteAction, type NoteState } from './actions'
+import { NOTE_COLORS, NOTE_CATEGORIES } from './note-constants'
 import { TextInput, TextArea, Select } from '@/components/features/form-field'
 import { TITLE_MAX_LENGTH, TEXT_MAX_LENGTH } from '@/lib/text-limits'
 import type { Database } from '@/lib/types/database.types'
 
 type Note = Database['public']['Tables']['notes']['Row']
-
-const CATEGORIES: Array<{ value: string; label: string }> = [
-  { value: 'varios', label: 'Varios' },
-  { value: 'fechas', label: 'Fechas importantes' },
-  { value: 'conceptos', label: 'Conceptos claves' },
-]
-
-// Paleta fija de app.html (no son tokens del tema — las notas
-// siempre usan estos 6 pasteles claros, en claro y en oscuro).
-const COLORS = ['#fef3d8', '#fbe8e3', '#e8f2f0', '#e4f0fb', '#e4f5e7', '#f0efec']
 
 const initialState: NoteState = { error: null, success: false }
 
@@ -36,7 +27,7 @@ function SubmitButton({ label, pendingLabel }: { label: string; pendingLabel: st
 }
 
 export function NoteForm({ note, onDone }: { note?: Note; onDone: () => void }) {
-  const [color, setColor] = useState(note?.color ?? COLORS[0])
+  const [color, setColor] = useState(note?.color ?? NOTE_COLORS[0])
   const [removeMedia, setRemoveMedia] = useState(false)
 
   const action = note ? updateNoteAction.bind(null, note.id) : createNoteAction
@@ -70,7 +61,7 @@ export function NoteForm({ note, onDone }: { note?: Note; onDone: () => void }) 
 
       <div className="flex flex-wrap items-center gap-4">
         <Select name="categoria" defaultValue={note?.categoria ?? 'varios'}>
-          {CATEGORIES.map((c) => (
+          {NOTE_CATEGORIES.map((c) => (
             <option key={c.value} value={c.value}>
               {c.label}
             </option>
@@ -78,7 +69,7 @@ export function NoteForm({ note, onDone }: { note?: Note; onDone: () => void }) 
         </Select>
 
         <div className="flex items-center gap-1.5">
-          {COLORS.map((c) => (
+          {NOTE_COLORS.map((c) => (
             <button
               key={c}
               type="button"
