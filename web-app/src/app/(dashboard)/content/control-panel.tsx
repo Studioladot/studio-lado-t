@@ -83,8 +83,37 @@ function RadialGauge({ score, color }: { score: number; color: string }) {
 function healthTier(score: number) {
   if (score >= 80) return { label: 'Excelente', color: 'var(--green)', msg: 'Tu constancia está en su mejor momento — seguí así.' }
   if (score >= 55) return { label: 'Buena', color: 'var(--accent)', msg: 'Vas bien, pero todavía hay margen para ser más constante.' }
-  if (score >= 30) return { label: 'Floja', color: 'var(--amber)', msg: 'Tu constancia bajó esta última semana — retomá el ritmo.' }
+  if (score >= 30) return { label: 'Floja', color: 'var(--amber)', msg: 'Tu constancia bajó en las últimas semanas — retomá el ritmo.' }
   return { label: 'Crítica', color: 'var(--red)', msg: 'Hace tiempo que no publicás con regularidad. Es momento de retomar.' }
+}
+
+/**
+ * Veredicto de la semana ANTERIOR (ya cerrada, Lunes a Domingo) — el único
+ * lugar del panel donde corresponde un juicio tipo "Floja": ya no hay
+ * tiempo calendario para cambiarlo. Nunca se aplica a la semana en curso
+ * (ver currentWeekMotivation) — ajuste conceptual pedido explícitamente
+ * (2026-08-06): evaluar negativamente una semana que todavía no terminó
+ * desmotiva al usuario y da mala imagen frente a un cliente que mira el
+ * panel de la agencia.
+ */
+function pastWeekVerdict(pct: number): { label: string; color: string } {
+  if (pct >= 100) return { label: 'Objetivo cumplido', color: 'var(--green)' }
+  if (pct >= 50) return { label: 'Buena semana', color: 'var(--accent)' }
+  if (pct > 0) return { label: 'Floja', color: 'var(--amber)' }
+  return { label: 'Sin actividad', color: 'var(--red)' }
+}
+
+/**
+ * Copy de la semana EN CURSO — estrictamente neutro/alentador, nunca un
+ * juicio negativo (mismo ajuste de arriba). Todavía queda tiempo
+ * calendario para llegar a la meta, así que "vas 2/5" es progreso, no una
+ * falla.
+ */
+function currentWeekMotivation(pct: number): string {
+  if (pct >= 100) return '¡Objetivo semanal cumplido!'
+  if (pct >= 50) return 'A mitad de tu meta semanal — ¡seguí así!'
+  if (pct > 0) return '¡Vas por buen camino!'
+  return 'Arrancá la semana con tu primera publicación.'
 }
 
 export function ControlPanel({
@@ -147,22 +176,35 @@ export function ControlPanel({
       } else break
     }
 
-    // Health Score / "medidor de consistencia" (2026-08-05): combina qué
-    // tan viva está la racha actual (35%, tope en 14 días seguidos = full
-    // marks) con el cumplimiento real de la meta semanal en las últimas 4
-    // semanas (65%, más peso porque una sola racha rota no debería hundir
-    // todo el puntaje si el resto del mes viene sólido).
-    const weeklyPctLast4 = Array.from({ length: 4 }, (_, i) => {
+    // Health Score / "medidor de consistencia" (2026-08-05, corregido
+    // 2026-08-06): combina qué tan viva está la racha actual (35%, tope en
+    // 14 días seguidos = full marks) con el cumplimiento real de la meta
+    // semanal en las últimas 4 semanas YA CERRADAS (65%) — a propósito
+    // arranca en `i=1`, nunca `i=0` (la semana en curso): incluirla acá
+    // era el bug real reportado, el score bajaba y mostraba "Floja" solo
+    // porque todavía no habían pasado los 7 días para llegar a la meta.
+    const weeklyPctLast4Complete = Array.from({ length: 4 }, (_, i) => {
       const weekStart = new Date(lunes)
-      weekStart.setDate(lunes.getDate() - 7 * i)
+      weekStart.setDate(lunes.getDate() - 7 * (i + 1))
       const weekEnd = new Date(weekStart)
       weekEnd.setDate(weekStart.getDate() + 6)
       const count = publicadas.filter((p) => p.date! >= toDateStr(weekStart) && p.date! <= toDateStr(weekEnd)).length
       return meta > 0 ? Math.min(100, (count / meta) * 100) : 0
     })
-    const avgWeeklyPct = weeklyPctLast4.reduce((a, b) => a + b, 0) / weeklyPctLast4.length
+    const avgWeeklyPct = weeklyPctLast4Complete.reduce((a, b) => a + b, 0) / weeklyPctLast4Complete.length
     const streakPct = Math.min(100, (racha / 14) * 100)
     const healthScore = Math.round(streakPct * 0.35 + avgWeeklyPct * 0.65)
+
+    // Semana pasada (Lunes a Domingo inmediatamente anterior a la actual) —
+    // la única semana sobre la que el panel emite un veredicto tipo
+    // "Floja"/"Objetivo cumplido": ya cerró, no hay más tiempo calendario
+    // para cambiarla.
+    const lastWeekStart = new Date(lunes)
+    lastWeekStart.setDate(lunes.getDate() - 7)
+    const lastWeekEnd = new Date(lastWeekStart)
+    lastWeekEnd.setDate(lastWeekStart.getDate() + 6)
+    const lastWeekCount = publicadas.filter((p) => p.date! >= toDateStr(lastWeekStart) && p.date! <= toDateStr(lastWeekEnd)).length
+    const lastWeekPct = meta > 0 ? Math.round((lastWeekCount / meta) * 100) : 0
 
     const last30Start = new Date(hoy)
     last30Start.setMonth(hoy.getMonth() - 1)
@@ -191,10 +233,11 @@ export function ControlPanel({
     })
     const semanaLabel = `${lunes.toLocaleDateString('es-AR', { day: 'numeric', month: 'short' })} – ${domingo.toLocaleDateString('es-AR', { day: 'numeric', month: 'short' })}`
 
-    return { postsSem, pct, mesPosts, racha, healthScore, topFmt, topPlat, sortedFmt, maxF, dias7, semanaLabel }
+    return { postsSem, pct, mesPosts, racha, healthScore, lastWeekPct, topFmt, topPlat, sortedFmt, maxF, dias7, semanaLabel }
   }, [items, meta])
 
   const tier = healthTier(stats.healthScore)
+  const pastWeek = pastWeekVerdict(stats.lastWeekPct)
   const weeklyWinner = useMemo(() => computeWeeklyWinner(instagramCatalog), [instagramCatalog])
 
   return (
@@ -214,25 +257,43 @@ export function ControlPanel({
               {tier.label}
             </p>
             <p className="mt-1 text-[13px] text-white/70">{tier.msg}</p>
+            <span
+              className="mt-2 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10.5px] font-semibold"
+              style={{ backgroundColor: `${pastWeek.color}26`, color: pastWeek.color }}
+            >
+              Semana pasada: {pastWeek.label}
+            </span>
           </div>
         </div>
 
-        <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-white/10 pt-4 text-xs text-white/70">
-          <span>
-            Esta semana: <strong className="text-white">{stats.postsSem}</strong> de{' '}
-            <input
-              type="number"
-              min={1}
-              max={30}
-              value={meta}
-              onChange={(e) => setMeta(Number(e.target.value) || DEFAULT_META)}
-              className="w-10 rounded border-none bg-white/10 px-1 py-0.5 text-center font-bold text-white outline-none"
-            />{' '}
-            publicaciones
-          </span>
-          <span>
-            Racha: <strong className="text-white">{stats.racha || 0}</strong> días seguidos
-          </span>
+        {/* Semana en curso — a propósito nunca un veredicto (ver
+            currentWeekMotivation): mientras queden días de calendario para
+            llegar a la meta, esto es progreso, no una nota. */}
+        <div className="mt-5 border-t border-white/10 pt-4">
+          <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-white/70">
+            <span>
+              Objetivo semanal: <strong className="text-white">{stats.postsSem}</strong>/
+              <input
+                type="number"
+                min={1}
+                max={30}
+                value={meta}
+                onChange={(e) => setMeta(Number(e.target.value) || DEFAULT_META)}
+                className="mx-0.5 w-9 rounded border-none bg-white/10 px-1 py-0.5 text-center font-bold text-white outline-none"
+              />
+              completados
+            </span>
+            <span>
+              Racha: <strong className="text-white">{stats.racha || 0}</strong> días seguidos
+            </span>
+          </div>
+          <div className="mt-2.5 h-1.5 overflow-hidden rounded-full bg-white/10">
+            <div
+              className="h-full rounded-full bg-white/80 transition-all duration-500"
+              style={{ width: `${Math.min(100, stats.pct)}%` }}
+            />
+          </div>
+          <p className="mt-2 text-[11px] text-white/60">{currentWeekMotivation(stats.pct)}</p>
         </div>
       </div>
 
