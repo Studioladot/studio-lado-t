@@ -84,22 +84,24 @@ function healthTier(score: number) {
   if (score >= 80) return { label: 'Excelente', color: 'var(--green)', msg: 'Tu constancia está en su mejor momento — seguí así.' }
   if (score >= 55) return { label: 'Buena', color: 'var(--accent)', msg: 'Vas bien, pero todavía hay margen para ser más constante.' }
   if (score >= 30) return { label: 'Irregular', color: 'var(--amber)', msg: 'Tu constancia varía de semana en semana — hay margen para afianzar el ritmo.' }
-  return { label: 'Crítica', color: 'var(--red)', msg: 'Hace tiempo que no publicás con regularidad. Es momento de retomar.' }
+  return { label: 'Necesita atención', color: 'var(--red)', msg: 'Es un buen momento para retomar una cadencia más regular de publicaciones.' }
 }
 
 /**
  * Veredicto de la semana ANTERIOR (ya cerrada, Lunes a Domingo) — el único
- * lugar del panel donde corresponde un juicio tipo "Floja": ya no hay
- * tiempo calendario para cambiarlo. Nunca se aplica a la semana en curso
- * (ver currentWeekMotivation) — ajuste conceptual pedido explícitamente
- * (2026-08-06): evaluar negativamente una semana que todavía no terminó
- * desmotiva al usuario y da mala imagen frente a un cliente que mira el
- * panel de la agencia.
+ * lugar del panel donde corresponde evaluar un resultado ya cerrado: no
+ * hay más tiempo calendario para cambiarlo. Nunca se aplica a la semana en
+ * curso (ver currentWeekMotivation) — ajuste conceptual pedido
+ * explícitamente (2026-08-06): evaluar negativamente una semana que
+ * todavía no terminó desmotiva al usuario y da mala imagen frente a un
+ * cliente que mira el panel de la agencia. Vocabulario profesional, sin
+ * palabras como "floja"/"crítica" — describe el resultado, no juzga al
+ * usuario (mismo criterio 2026-08-06, segunda ronda).
  */
 function pastWeekVerdict(pct: number): { label: string; color: string } {
   if (pct >= 100) return { label: 'Objetivo cumplido', color: 'var(--green)' }
   if (pct >= 50) return { label: 'Buena semana', color: 'var(--accent)' }
-  if (pct > 0) return { label: 'Floja', color: 'var(--amber)' }
+  if (pct > 0) return { label: 'Por debajo del objetivo', color: 'var(--amber)' }
   return { label: 'Sin actividad', color: 'var(--red)' }
 }
 
