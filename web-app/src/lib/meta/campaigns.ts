@@ -454,6 +454,42 @@ export async function getMetaCampaignAds(token: string, campaignId: string, days
 }
 
 // ---------------------------------------------------------------------------
+// Nombres livianos, sin insights (2026-08-06) — para selectores donde solo
+// hace falta poblar un <select> con id+nombre (Snapshots), no las 17
+// métricas completas que traen getMetaCampaigns/getMetaCampaignAdSets/
+// getMetaCampaignAds. Pedir insights.time_range(...) por cada campaña/
+// conjunto/anuncio solo para descartarlos es el tipo de llamado redundante
+// que infla la carga inicial sin aportar nada a la pantalla.
+// ---------------------------------------------------------------------------
+
+export type MetaEntityName = { id: string; name: string }
+export type MetaEntityNamesResult = { ok: true; entities: MetaEntityName[] } | { ok: false; error: string }
+
+export async function getMetaCampaignNames(token: string, accountId: string): Promise<MetaEntityNamesResult> {
+  const cleanAccountId = accountId.replace(/^act_/, '')
+  const result = await metaGraphGet<{ data?: Array<{ id: string; name?: string }> }>(
+    `/act_${cleanAccountId}/campaigns?fields=id,name&limit=200`,
+    token
+  )
+  if (!result.ok) return result
+  return { ok: true, entities: (result.data.data ?? []).map((c) => ({ id: c.id, name: c.name ?? 'Sin nombre' })) }
+}
+
+export async function getMetaCampaignEntityNames(
+  token: string,
+  campaignId: string,
+  level: 'adset' | 'ad'
+): Promise<MetaEntityNamesResult> {
+  const edge = level === 'adset' ? 'adsets' : 'ads'
+  const result = await metaGraphGet<{ data?: Array<{ id: string; name?: string }> }>(
+    `/${campaignId}/${edge}?fields=id,name&limit=200`,
+    token
+  )
+  if (!result.ok) return result
+  return { ok: true, entities: (result.data.data ?? []).map((a) => ({ id: a.id, name: a.name ?? 'Sin nombre' })) }
+}
+
+// ---------------------------------------------------------------------------
 // Cuenta completa — Biblioteca de Ads, pestaña "Activos en Meta" (2026-07-25).
 // Mismo mapGraphAd/AD_FIELDS que getMetaCampaignAds, a nivel /act_{id}/ads
 // en vez de acotado a una campaña, más el nombre de campaña (que a nivel

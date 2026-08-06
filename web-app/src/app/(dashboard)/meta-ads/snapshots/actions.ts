@@ -3,8 +3,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { getDashboardContext } from '@/lib/organization/dashboard-context'
 import {
-  getMetaCampaignAdSets,
-  getMetaCampaignAds,
+  getMetaCampaignEntityNames,
   getMetaEntityDailyInsights,
   type MetaEntityDailyInsightsResult,
 } from '@/lib/meta/campaigns'
@@ -22,7 +21,7 @@ async function getMetaToken(activeOrganizationId: string): Promise<string | null
 export type SnapshotEntityOption = { id: string; name: string }
 export type SnapshotEntitiesResult = { ok: true; entities: SnapshotEntityOption[] } | { ok: false; error: string }
 
-/** Lista conjuntos o anuncios de UNA campaña para el selector — reusa getMetaCampaignAdSets/getMetaCampaignAds (traen más métricas de las que hacen falta acá, pero evita duplicar el fetch). */
+/** Lista conjuntos o anuncios de UNA campaña para el selector — solo id/nombre, sin insights (ver getMetaCampaignEntityNames). */
 export async function listSnapshotEntitiesAction(campaignId: string, level: 'adset' | 'ad'): Promise<SnapshotEntitiesResult> {
   const { activeOrganizationId } = await getDashboardContext()
   if (!activeOrganizationId) return { ok: false, error: 'No encontramos tu organización activa.' }
@@ -30,15 +29,7 @@ export async function listSnapshotEntitiesAction(campaignId: string, level: 'ads
   const token = await getMetaToken(activeOrganizationId)
   if (!token) return { ok: false, error: 'Conectá Meta Ads primero.' }
 
-  if (level === 'adset') {
-    const result = await getMetaCampaignAdSets(token, campaignId)
-    if (!result.ok) return result
-    return { ok: true, entities: result.adSets.map((a) => ({ id: a.id, name: a.name })) }
-  }
-
-  const result = await getMetaCampaignAds(token, campaignId)
-  if (!result.ok) return result
-  return { ok: true, entities: result.ads.map((a) => ({ id: a.id, name: a.name })) }
+  return getMetaCampaignEntityNames(token, campaignId, level)
 }
 
 const MAX_RANGE_DAYS = 90

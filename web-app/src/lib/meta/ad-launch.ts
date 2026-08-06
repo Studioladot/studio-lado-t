@@ -464,6 +464,37 @@ export async function createTestAdCreativeFromExisting(
   })
 }
 
+// ---------------------------------------------------------------------------
+// "Publicitar un posteo orgánico" (2026-08-06) — a diferencia de
+// createTestAdCreativeFromExisting (arriba, reusa un ANUNCIO que ya existe
+// vía effective_object_story_id), esto arranca de una publicación orgánica
+// real de Instagram que NUNCA se publicitó — el dato sale de
+// instagram_media_catalog (ya sincronizado, cero llamados nuevos a la
+// Graph API para listar el feed). El campo real de la Marketing API para
+// este caso es `source_instagram_media_id` + `instagram_actor_id` dentro
+// de object_story_spec — NO `object_story_id` (ese es para posts de
+// Facebook Page) ni `link_data`/`video_data` (esos arman una pieza nueva
+// desde cero). El anuncio resultante muestra la publicación tal cual está
+// en Instagram — por eso no acepta headline/body/link propios, a
+// diferencia de los otros modos de creativo.
+// ---------------------------------------------------------------------------
+
+export async function createTestAdCreativeFromInstagramPost(
+  token: string,
+  accountId: string,
+  params: { name: string; igActorId: string; igMediaId: string }
+): Promise<MetaCreateResult> {
+  const cleanAccountId = accountId.replace(/^act_/, '')
+  const objectStorySpec = {
+    instagram_actor_id: params.igActorId,
+    source_instagram_media_id: params.igMediaId,
+  }
+  return metaGraphPostRaw(`/act_${cleanAccountId}/adcreatives`, token, {
+    name: params.name,
+    object_story_spec: JSON.stringify(objectStorySpec),
+  })
+}
+
 export async function createTestAd(
   token: string,
   accountId: string,

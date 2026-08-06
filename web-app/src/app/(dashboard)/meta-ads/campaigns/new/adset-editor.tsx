@@ -6,6 +6,7 @@ import { AudienceSelector } from './audience-selector'
 import { fieldClass } from './wizard-styles'
 import type { MetaAudience, MetaExistingPost } from '@/lib/meta/ad-launch'
 import type { LibraryCreative } from '@/lib/meta/library'
+import type { InstagramPostOption } from './data-actions'
 
 type ScriptOption = { id: string; title: string | null; hook: string | null; body: string | null; copy_feed: string | null }
 
@@ -16,6 +17,8 @@ export function AdSetEditor({
   scripts,
   existingPosts,
   libraryCreatives,
+  instagramPosts,
+  igActorId,
   removable,
   onRemove,
 }: {
@@ -25,6 +28,8 @@ export function AdSetEditor({
   scripts: ScriptOption[]
   existingPosts: MetaExistingPost[]
   libraryCreatives: LibraryCreative[]
+  instagramPosts: InstagramPostOption[]
+  igActorId: string | null
   removable: boolean
   onRemove: () => void
 }) {
@@ -134,6 +139,8 @@ export function AdSetEditor({
                 scripts={scripts}
                 existingPosts={existingPosts}
                 libraryCreatives={libraryCreatives}
+                instagramPosts={instagramPosts}
+                igActorId={igActorId}
                 removable={adIds.length > 1}
                 onRemove={() => removeAd(adId)}
               />

@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import type { MetaAdSet } from '@/lib/meta/campaigns'
 import { bulkToggleAdSetStatusAction, toggleAdSetStatusAction, duplicateAdSetForCreativeTestAction } from '../actions'
 import { STATUS_LABEL, STATUS_COLOR, TOGGLEABLE, matchesStatusFilter, formatBudget } from '../status'
-import { buildMetricColumns, METRIC_LABELS, DEFAULT_COLUMN_IDS, COLUMNS_STORAGE_KEY, type MetricColumnId } from '../metric-defs'
+import { buildMetricColumns, METRIC_LABELS, METRIC_CELL_CLASS, DEFAULT_COLUMN_IDS, COLUMNS_STORAGE_KEY, type MetricColumnId } from '../metric-defs'
 import { SortableTh, type SortDirection } from '../sortable-th'
 import { ColumnsPopover } from '../columns-popover'
 import { Pagination } from '../pagination'
@@ -382,7 +382,7 @@ export function AdSetsWorkspace({
                       {adSet.createdAt ? new Date(adSet.createdAt).toLocaleDateString('es-AR') : '—'}
                     </td>
                     {visibleColumns.map((column) => (
-                      <td key={column.id} className="whitespace-nowrap px-5 py-1.5 text-center text-sm font-semibold">
+                      <td key={column.id} className={METRIC_CELL_CLASS[column.tier]}>
                         {column.render(adSet, targets)}
                       </td>
                     ))}

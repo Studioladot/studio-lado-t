@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { launchTestCampaignAction, type LaunchTestCampaignState } from '../actions'
 import type { MetaPixel, MetaPage, MetaAudience, MetaExistingPost } from '@/lib/meta/ad-launch'
 import type { LibraryCreative } from '@/lib/meta/library'
+import type { InstagramPostOption } from './data-actions'
 import { ADV_CONTROLS, ADV_CONTROLS_DEFAULT, type AdvControlKey, type AdvControls } from '@/lib/meta/ad-launch'
 import { AdSetEditor } from './adset-editor'
 import { PresetsMenu } from './presets-menu'
@@ -70,6 +71,8 @@ export function TestCampaignWizard({
   existingCampaigns,
   scripts,
   libraryCreatives,
+  instagramPosts,
+  igActorId,
   onClose,
 }: {
   pixels: MetaPixel[]
@@ -79,6 +82,8 @@ export function TestCampaignWizard({
   existingCampaigns: { id: string; name: string; status: string }[]
   scripts: ScriptOption[]
   libraryCreatives: LibraryCreative[]
+  instagramPosts: InstagramPostOption[]
+  igActorId: string | null
   onClose: () => void
 }) {
   const { accountCurrency } = useCurrency()
@@ -782,6 +787,8 @@ export function TestCampaignWizard({
                         scripts={scripts}
                         existingPosts={existingPosts}
                         libraryCreatives={libraryCreatives}
+                        instagramPosts={instagramPosts}
+                        igActorId={igActorId}
                         removable={adSetIds.length > 1}
                         onRemove={() => removeAdSet(adSetId)}
                       />

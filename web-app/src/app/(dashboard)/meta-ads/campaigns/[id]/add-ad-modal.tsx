@@ -111,6 +111,8 @@ export function AddAdModal({
             existingPosts={data.existingPosts}
             scripts={data.scripts}
             libraryCreatives={data.libraryCreatives}
+            instagramPosts={data.instagramPosts}
+            igActorId={data.igActorId}
             onDone={() => {
               toast.show('Anuncio agregado con éxito', 'success')
               router.refresh()
@@ -131,6 +133,8 @@ function AddAdFormBody({
   existingPosts,
   scripts,
   libraryCreatives,
+  instagramPosts,
+  igActorId,
   onDone,
 }: {
   action: (state: AddAdToAdSetState, formData: FormData) => Promise<AddAdToAdSetState>
@@ -140,6 +144,8 @@ function AddAdFormBody({
   existingPosts: Extract<AddAdModalData, { ok: true }>['existingPosts']
   scripts: Extract<AddAdModalData, { ok: true }>['scripts']
   libraryCreatives: Extract<AddAdModalData, { ok: true }>['libraryCreatives']
+  instagramPosts: Extract<AddAdModalData, { ok: true }>['instagramPosts']
+  igActorId: Extract<AddAdModalData, { ok: true }>['igActorId']
   onDone: () => void
 }) {
   const [state, formAction] = useActionState(action, initialState)
@@ -186,6 +192,8 @@ function AddAdFormBody({
           scripts={scripts}
           existingPosts={existingPosts}
           libraryCreatives={libraryCreatives}
+          instagramPosts={instagramPosts}
+          igActorId={igActorId}
           removable={false}
           onRemove={() => {}}
         />

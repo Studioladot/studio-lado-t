@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { getDashboardContext } from '@/lib/organization/dashboard-context'
-import { getMetaCampaigns, getMetaCampaignAds, getMetaEntityDailyInsights } from '@/lib/meta/campaigns'
+import { getMetaCampaignNames, getMetaCampaignEntityNames, getMetaEntityDailyInsights } from '@/lib/meta/campaigns'
 import Link from 'next/link'
 import { SnapshotsWorkspace } from './snapshots-workspace'
 
@@ -44,13 +44,13 @@ export default async function MetaAdsSnapshotsPage() {
   const tokenExpired = metaConnection?.expires_at ? new Date(metaConnection.expires_at) < new Date() : false
   const metaUsable = !!metaConnection && !tokenExpired
 
-  const campaignsResult = metaUsable ? await getMetaCampaigns(metaConnection.token, metaConnection.account_id, 90) : null
-  const campaigns = campaignsResult?.ok ? campaignsResult.campaigns.map((c) => ({ id: c.id, name: c.name })) : []
+  const campaignsResult = metaUsable ? await getMetaCampaignNames(metaConnection.token, metaConnection.account_id) : null
+  const campaigns = campaignsResult?.ok ? campaignsResult.entities : []
   const firstCampaignId = campaigns[0]?.id ?? null
 
   const initialEntitiesResult =
-    metaUsable && firstCampaignId ? await getMetaCampaignAds(metaConnection.token, firstCampaignId) : null
-  const initialEntities = initialEntitiesResult?.ok ? initialEntitiesResult.ads.map((a) => ({ id: a.id, name: a.name })) : []
+    metaUsable && firstCampaignId ? await getMetaCampaignEntityNames(metaConnection.token, firstCampaignId, 'ad') : null
+  const initialEntities = initialEntitiesResult?.ok ? initialEntitiesResult.entities : []
   const firstEntityId = initialEntities[0]?.id ?? null
 
   const untilDate = new Date()

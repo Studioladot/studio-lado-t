@@ -3,6 +3,9 @@
 import { useRef, useState } from 'react'
 import type { MetaExistingPost } from '@/lib/meta/ad-launch'
 import type { LibraryCreative } from '@/lib/meta/library'
+import type { InstagramPostOption } from './data-actions'
+import { viewsOf, formatLabel } from '@/lib/instagram/media-catalog-winners'
+import { fmtCompactCount } from '@/lib/format/number'
 import { fieldClass, labelClass, toggleBase } from './wizard-styles'
 import { FileDropzone } from './file-dropzone'
 import { TITLE_MAX_LENGTH, TEXT_MAX_LENGTH } from '@/lib/text-limits'
@@ -16,6 +19,8 @@ export function AdEditor({
   scripts,
   existingPosts,
   libraryCreatives,
+  instagramPosts,
+  igActorId,
   removable,
   onRemove,
 }: {
@@ -25,12 +30,16 @@ export function AdEditor({
   scripts: ScriptOption[]
   existingPosts: MetaExistingPost[]
   libraryCreatives: LibraryCreative[]
+  instagramPosts: InstagramPostOption[]
+  igActorId: string | null
   removable: boolean
   onRemove: () => void
 }) {
   const [scriptId, setScriptId] = useState('')
-  const [mode, setMode] = useState<'new' | 'existing' | 'library'>('new')
+  const [mode, setMode] = useState<'new' | 'existing' | 'library' | 'instagram_post'>('new')
   const [libraryAssetId, setLibraryAssetId] = useState<string | null>(null)
+  const [igMediaId, setIgMediaId] = useState<string | null>(null)
+  const canPublicizePost = igActorId && instagramPosts.length > 0
   const [mediaType, setMediaType] = useState<'image' | 'video'>('image')
   const [imageFileName, setImageFileName] = useState<string | null>(null)
   const headlineRef = useRef<HTMLInputElement>(null)
@@ -126,10 +135,20 @@ export function AdEditor({
           <input id={`ad_name_${prefix}`} name={`ad_name_${prefix}`} type="text" maxLength={TITLE_MAX_LENGTH} placeholder="Opcional" className={fieldClass} />
         </div>
 
-        {(existingPosts.length > 0 || libraryCreatives.length > 0) && (
+        {(existingPosts.length > 0 || libraryCreatives.length > 0 || canPublicizePost) && (
           <div>
             <p className={`mb-1.5 ${labelClass}`}>Creativo</p>
             <div className="inline-flex flex-wrap rounded-control border border-border p-0.5">
+              {canPublicizePost && (
+                <button
+                  type="button"
+                  aria-pressed={mode === 'instagram_post'}
+                  onClick={() => setMode('instagram_post')}
+                  className={`${toggleBase} ${mode === 'instagram_post' ? 'bg-primary text-white' : 'text-text-2 hover:text-text'}`}
+                >
+                  Publicitar un posteo
+                </button>
+              )}
               <button
                 type="button"
                 aria-pressed={mode === 'new'}
@@ -161,10 +180,49 @@ export function AdEditor({
             </div>
             <input type="hidden" name={`ad_mode_${prefix}`} value={mode} />
             <input type="hidden" name={`ad_library_id_${prefix}`} value={libraryAssetId ?? ''} />
+            <input type="hidden" name={`ad_ig_media_id_${prefix}`} value={igMediaId ?? ''} />
           </div>
         )}
 
-        {mode === 'existing' ? (
+        {mode === 'instagram_post' ? (
+          <div className="flex flex-col gap-2">
+            <p className={`mb-1.5 ${labelClass}`}>Elegí qué publicación anunciar</p>
+            <div className="grid max-h-70 grid-cols-3 gap-2 overflow-y-auto sm:grid-cols-4">
+              {instagramPosts.map((post) => {
+                const views = viewsOf(post)
+                return (
+                  <button
+                    key={post.id}
+                    type="button"
+                    onClick={() => setIgMediaId(post.ig_media_id)}
+                    className={`flex flex-col overflow-hidden rounded-control border text-left transition-colors duration-200 ease-out ${
+                      igMediaId === post.ig_media_id ? 'border-accent ring-2 ring-accent' : 'border-border hover:border-accent/40'
+                    }`}
+                  >
+                    <div className="relative aspect-square w-full overflow-hidden bg-surface-2">
+                      {post.thumbnail_url || post.media_url ? (
+                        // eslint-disable-next-line @next/next/no-img-element -- imagen remota de Instagram, no un asset local.
+                        <img src={post.thumbnail_url ?? post.media_url ?? undefined} alt="" className="h-full w-full object-cover" />
+                      ) : null}
+                      {views !== null && (
+                        <span className="absolute bottom-0.5 right-0.5 rounded bg-black/60 px-1 py-0.5 text-[9px] font-semibold text-white">
+                          {fmtCompactCount(views)}
+                        </span>
+                      )}
+                    </div>
+                    <p className="truncate px-1 py-1 text-[9px] text-text-3" title={post.caption ?? undefined}>
+                      {formatLabel(post)}
+                    </p>
+                  </button>
+                )
+              })}
+            </div>
+            <p className="text-xs text-text-3">
+              El anuncio muestra esta publicación tal cual está en Instagram — likes, comentarios y el copy original se
+              mantienen, no hay campos para editar acá.
+            </p>
+          </div>
+        ) : mode === 'existing' ? (
           <div className="flex flex-col gap-1.5">
             <label htmlFor={`ad_existing_post_${prefix}`} className={labelClass}>
               Publicación a reusar

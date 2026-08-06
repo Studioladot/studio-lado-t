@@ -44,6 +44,18 @@ export type MetricColumn = {
   // mejor), no un umbral inventado.
   value: (metrics: MetaMetrics) => number
   higherIsBetter: boolean | null
+  // Jerarquía visual (Pilar 3, 2026-08-06) — Gasto/ROAS/CPA son las 3 métricas
+  // que definen si una campaña funciona; el resto (CTR, CPM, impresiones, IC,
+  // ATC, etc.) es diagnóstico de apoyo. Antes las 17 columnas activas
+  // compartían exactamente el mismo tamaño/peso de fuente en la tabla —
+  // "primary" respira más grande y en negrita, "secondary" achica y atenúa
+  // para que la vista no compita consigo misma. Ver METRIC_CELL_CLASS abajo.
+  tier: 'primary' | 'secondary'
+}
+
+export const METRIC_CELL_CLASS: Record<MetricColumn['tier'], string> = {
+  primary: 'whitespace-nowrap px-5 py-1.5 text-center text-[15px] font-bold',
+  secondary: 'whitespace-nowrap px-5 py-1.5 text-center text-[12.5px] font-medium text-text-2',
 }
 
 // Mismo set y mismo orden por defecto que META_METRIC_ORDER en app.html:6619
@@ -73,6 +85,7 @@ export function buildMetricColumns(currency: {
       render: (c) => (c.spend > 0 ? <span className="font-semibold text-text">{money(c.spend)}</span> : '—'),
       value: (c) => c.spend,
       higherIsBetter: null,
+      tier: 'primary',
     },
     {
       id: 'roas',
@@ -85,6 +98,7 @@ export function buildMetricColumns(currency: {
         ),
       value: (c) => c.roas,
       higherIsBetter: true,
+      tier: 'primary',
     },
     {
       id: 'purchases',
@@ -92,6 +106,7 @@ export function buildMetricColumns(currency: {
       render: (c) => c.purchases || '—',
       value: (c) => c.purchases,
       higherIsBetter: true,
+      tier: 'secondary',
     },
     {
       id: 'cpa',
@@ -100,6 +115,7 @@ export function buildMetricColumns(currency: {
         c.cpa > 0 ? <span className={targets ? cpaColorByTargets(c.cpa, targets) : 'text-text'}>{money(c.cpa)}</span> : '—',
       value: (c) => c.cpa,
       higherIsBetter: false,
+      tier: 'primary',
     },
     {
       id: 'ctr',
@@ -107,6 +123,7 @@ export function buildMetricColumns(currency: {
       render: (c) => (c.ctr > 0 ? <span className={ctrColor(c.ctr)}>{c.ctr.toFixed(2)}%</span> : '—'),
       value: (c) => c.ctr,
       higherIsBetter: true,
+      tier: 'secondary',
     },
     {
       id: 'cpm',
@@ -114,6 +131,7 @@ export function buildMetricColumns(currency: {
       render: (c) => (c.cpm > 0 ? <span className={cpmColor(c.cpm)}>{money(c.cpm)}</span> : '—'),
       value: (c) => c.cpm,
       higherIsBetter: false,
+      tier: 'secondary',
     },
     {
       id: 'impressions',
@@ -121,6 +139,7 @@ export function buildMetricColumns(currency: {
       render: (c) => (c.impressions > 0 ? c.impressions.toLocaleString('es-AR') : '—'),
       value: (c) => c.impressions,
       higherIsBetter: null,
+      tier: 'secondary',
     },
     {
       id: 'hookRate',
@@ -128,6 +147,7 @@ export function buildMetricColumns(currency: {
       render: (c) => (c.hookRate > 0 ? <span className={hookRateColor(c.hookRate)}>{c.hookRate.toFixed(1)}%</span> : '—'),
       value: (c) => c.hookRate,
       higherIsBetter: true,
+      tier: 'secondary',
     },
     {
       id: 'linkClicks',
@@ -135,6 +155,7 @@ export function buildMetricColumns(currency: {
       render: (c) => (c.linkClicks > 0 ? c.linkClicks.toLocaleString('es-AR') : '—'),
       value: (c) => c.linkClicks,
       higherIsBetter: null,
+      tier: 'secondary',
     },
     {
       id: 'cpc',
@@ -142,6 +163,7 @@ export function buildMetricColumns(currency: {
       render: (c) => (c.cpc > 0 ? <span className={cpcColor(c.cpc)}>{money(c.cpc)}</span> : '—'),
       value: (c) => c.cpc,
       higherIsBetter: false,
+      tier: 'secondary',
     },
     {
       id: 'frequency',
@@ -149,6 +171,7 @@ export function buildMetricColumns(currency: {
       render: (c) => (c.frequency > 0 ? <span className={frequencyColor(c.frequency)}>{c.frequency.toFixed(2)}</span> : '—'),
       value: (c) => c.frequency,
       higherIsBetter: false,
+      tier: 'secondary',
     },
     {
       id: 'initiateCheckout',
@@ -156,6 +179,7 @@ export function buildMetricColumns(currency: {
       render: (c) => c.initiateCheckout || '—',
       value: (c) => c.initiateCheckout,
       higherIsBetter: true,
+      tier: 'secondary',
     },
     {
       id: 'costPerIC',
@@ -163,6 +187,7 @@ export function buildMetricColumns(currency: {
       render: (c) => (c.costPerIC > 0 ? money(c.costPerIC) : '—'),
       value: (c) => c.costPerIC,
       higherIsBetter: false,
+      tier: 'secondary',
     },
     {
       id: 'addToCart',
@@ -170,6 +195,7 @@ export function buildMetricColumns(currency: {
       render: (c) => c.addToCart || '—',
       value: (c) => c.addToCart,
       higherIsBetter: true,
+      tier: 'secondary',
     },
     {
       id: 'costPerATC',
@@ -177,6 +203,7 @@ export function buildMetricColumns(currency: {
       render: (c) => (c.costPerATC > 0 ? money(c.costPerATC) : '—'),
       value: (c) => c.costPerATC,
       higherIsBetter: false,
+      tier: 'secondary',
     },
     {
       id: 'conversionValue',
@@ -184,6 +211,7 @@ export function buildMetricColumns(currency: {
       render: (c) => (c.revenue > 0 ? <span className="font-semibold text-text">{money(c.revenue)}</span> : '—'),
       value: (c) => c.revenue,
       higherIsBetter: true,
+      tier: 'secondary',
     },
     {
       id: 'aov',
@@ -191,6 +219,7 @@ export function buildMetricColumns(currency: {
       render: (c) => (c.aov > 0 ? money(c.aov) : '—'),
       value: (c) => c.aov,
       higherIsBetter: null,
+      tier: 'secondary',
     },
   ]
 }

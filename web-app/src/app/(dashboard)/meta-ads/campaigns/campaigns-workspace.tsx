@@ -6,7 +6,7 @@ import Link from 'next/link'
 import type { MetaCampaign } from '@/lib/meta/campaigns'
 import { bulkToggleCampaignStatusAction } from './actions'
 import { STATUS_LABEL, STATUS_COLOR, TOGGLEABLE, formatObjective } from './status'
-import { buildMetricColumns, METRIC_LABELS, DEFAULT_COLUMN_IDS, COLUMNS_STORAGE_KEY, type MetricColumnId } from './metric-defs'
+import { buildMetricColumns, METRIC_LABELS, METRIC_CELL_CLASS, DEFAULT_COLUMN_IDS, COLUMNS_STORAGE_KEY, type MetricColumnId } from './metric-defs'
 import { SortableTh, type SortDirection } from './sortable-th'
 import { CampaignsFilters } from './campaigns-filters'
 import { CampaignsHeaderMenu } from './campaigns-header-menu'
@@ -320,7 +320,7 @@ export function CampaignsWorkspace({
                       {campaign.createdAt ? new Date(campaign.createdAt).toLocaleDateString('es-AR') : '—'}
                     </td>
                     {visibleColumns.map((column) => (
-                      <td key={column.id} className="whitespace-nowrap px-5 py-1.5 text-center text-sm font-semibold">
+                      <td key={column.id} className={METRIC_CELL_CLASS[column.tier]}>
                         {column.render(campaign, resolveCampaignTargets(campaign.id, targetsBulk))}
                       </td>
                     ))}

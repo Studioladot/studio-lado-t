@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { getDashboardContext } from '@/lib/organization/dashboard-context'
+import type { Database } from '@/lib/types/database.types'
 import {
   updateMetaCampaignStatus,
   updateMetaCampaignBudget,
@@ -21,6 +22,7 @@ import {
   getObjectiveAdSetDefaults,
   createTestAdCreativeVideo,
   createTestAdCreativeFromExisting,
+  createTestAdCreativeFromInstagramPost,
   buildAdvantagePayload,
   ADV_CONTROLS,
   ADV_CONTROLS_DEFAULT,
@@ -54,6 +56,17 @@ async function getMetaConnectionInfo(activeOrganizationId: string) {
     .eq('organization_id', activeOrganizationId)
     .maybeSingle()
   return data ?? null
+}
+
+/** instagram_actor_id real para "Publicitar un posteo orgánico" — null si Instagram no está conectado (tabla/flujo separados de meta_connections, ver instagram_connections). */
+async function getInstagramActorId(activeOrganizationId: string): Promise<string | null> {
+  const supabase = await createClient()
+  const { data } = await supabase
+    .from('instagram_connections')
+    .select('ig_user_id')
+    .eq('organization_id', activeOrganizationId)
+    .maybeSingle()
+  return data?.ig_user_id ?? null
 }
 
 function withError(returnTo: string, message: string) {
@@ -301,7 +314,7 @@ function parseAdvControls(formData: FormData): AdvControls {
 
 type AdInput = {
   name: string
-  mode: 'new' | 'existing' | 'library'
+  mode: 'new' | 'existing' | 'library' | 'instagram_post'
   link: string
   headline: string
   body: string
@@ -311,6 +324,8 @@ type AdInput = {
   videoThumbnailUrl?: string
   existingPostObjectStoryId?: string
   libraryAssetId?: string
+  /** Solo en modo 'instagram_post' — ig_media_id real de instagram_media_catalog. */
+  igMediaId?: string
 }
 type AdSetInput = { name: string; audience: AudienceSpec; duplicateCount: number; ads: AdInput[] }
 
@@ -366,7 +381,8 @@ function parseAdSets(formData: FormData, campaignName: string, productUrl: strin
     const ads: AdInput[] = []
     for (let j = 0; j < adCount; j++) {
       const modeRaw = String(formData.get(`ad_mode_${i}_${j}`) ?? 'new')
-      const mode = modeRaw === 'existing' || modeRaw === 'library' ? modeRaw : 'new'
+      const mode =
+        modeRaw === 'existing' || modeRaw === 'library' || modeRaw === 'instagram_post' ? modeRaw : 'new'
       const mediaType = String(formData.get(`ad_media_type_${i}_${j}`) ?? 'image') === 'video' ? 'video' : 'image'
       ads.push({
         name: String(formData.get(`ad_name_${i}_${j}`) ?? '').trim(),
@@ -380,6 +396,7 @@ function parseAdSets(formData: FormData, campaignName: string, productUrl: strin
         videoThumbnailUrl: String(formData.get(`ad_video_thumbnail_${i}_${j}`) ?? '').trim() || undefined,
         existingPostObjectStoryId: String(formData.get(`ad_existing_post_${i}_${j}`) ?? '').trim() || undefined,
         libraryAssetId: String(formData.get(`ad_library_id_${i}_${j}`) ?? '').trim() || undefined,
+        igMediaId: String(formData.get(`ad_ig_media_id_${i}_${j}`) ?? '').trim() || undefined,
       })
     }
     adSets.push({
@@ -413,8 +430,10 @@ export async function createSingleAd(params: {
   advPayload: ReturnType<typeof buildAdvantagePayload>
   supabase: Awaited<ReturnType<typeof createClient>>
   activeOrganizationId: string
+  /** Solo hace falta si algún ad viene en modo 'instagram_post' — ver ad.mode abajo. */
+  igActorId?: string | null
 }): Promise<{ ok: boolean; steps: LaunchStep[]; adId?: string }> {
-  const { token, accountId, pageId, adSetId, ad, adLabel, status, advPayload, supabase, activeOrganizationId } = params
+  const { token, accountId, pageId, adSetId, ad, adLabel, status, advPayload, supabase, activeOrganizationId, igActorId } = params
   const steps: LaunchStep[] = []
   let creativeResult: Awaited<ReturnType<typeof createTestAdCreative>> | null = null
   // Solo se llena en modo 'library' — si el anuncio termina de crearse bien,
@@ -511,6 +530,25 @@ export async function createSingleAd(params: {
     })
     if (!creativeResult.ok) {
       steps.push({ label: `Creativo (publicación existente) — ${adLabel}`, ok: false, detail: creativeResult.error })
+      return { ok: false, steps }
+    }
+  } else if (ad.mode === 'instagram_post') {
+    // "Publicitar un posteo orgánico" (2026-08-06) — el caller ya validó
+    // que igMediaId está presente. igActorId siempre debería venir seteado
+    // acá (el modo no se ofrece en la UI si no hay Instagram conectado),
+    // pero se valida igual por las dudas de que el form llegue armado a
+    // mano o con datos viejos.
+    if (!igActorId) {
+      steps.push({ label: `Publicación de Instagram — ${adLabel}`, ok: false, detail: 'Instagram no está conectado.' })
+      return { ok: false, steps }
+    }
+    creativeResult = await createTestAdCreativeFromInstagramPost(token, accountId, {
+      name: `${adLabel} — Creativo`,
+      igActorId,
+      igMediaId: ad.igMediaId as string,
+    })
+    if (!creativeResult.ok) {
+      steps.push({ label: `Publicación de Instagram — ${adLabel}`, ok: false, detail: creativeResult.error })
       return { ok: false, steps }
     }
   } else if (ad.mediaType === 'video') {
@@ -638,6 +676,12 @@ export async function launchTestCampaignAction(
         }
         continue
       }
+      if (ad.mode === 'instagram_post') {
+        if (!ad.igMediaId) {
+          return { error: `Elegí qué publicación de Instagram publicitar en "${adSet.name}".`, steps: empty, campaignId: null }
+        }
+        continue
+      }
       if (!ad.body) return { error: `Falta el copy de un anuncio en "${adSet.name}".`, steps: empty, campaignId: null }
       if (!ad.link) return { error: `Falta el link de destino de un anuncio en "${adSet.name}".`, steps: empty, campaignId: null }
       if (ad.mediaType === 'image' && (!ad.image || ad.image.size === 0)) {
@@ -663,6 +707,8 @@ export async function launchTestCampaignAction(
 
   const connection = await getMetaConnectionInfo(activeOrganizationId)
   if (!connection) return { error: 'Meta Ads no está conectado.', steps: empty, campaignId: null }
+
+  const igActorId = await getInstagramActorId(activeOrganizationId)
 
   const supabase = await createClient()
 
@@ -750,6 +796,7 @@ export async function launchTestCampaignAction(
           advPayload,
           supabase,
           activeOrganizationId,
+          igActorId,
         })
         steps.push(...adResult.steps)
         if (!adResult.ok) anyFailure = true
@@ -857,10 +904,19 @@ export async function duplicateAdSetForCreativeTestAction(
 }
 
 export type AddAdModalData =
-  | { ok: true; pages: MetaPage[]; existingPosts: MetaExistingPost[]; scripts: ScriptOptionRow[]; libraryCreatives: LibraryCreative[] }
+  | {
+      ok: true
+      pages: MetaPage[]
+      existingPosts: MetaExistingPost[]
+      scripts: ScriptOptionRow[]
+      libraryCreatives: LibraryCreative[]
+      instagramPosts: InstagramPostRow[]
+      igActorId: string | null
+    }
   | { ok: false; error: string }
 
 type ScriptOptionRow = { id: string; title: string | null; hook: string | null; body: string | null; copy_feed: string | null }
+type InstagramPostRow = Database['public']['Tables']['instagram_media_catalog']['Row']
 
 /** Mismos datos que el wizard completo necesita para AdEditor, sin lo que ya no hace falta (pixels, audiencias, campañas existentes) — el conjunto y su targeting ya están fijados por la duplicación. */
 export async function getAddAdModalDataAction(): Promise<AddAdModalData> {
@@ -871,7 +927,7 @@ export async function getAddAdModalDataAction(): Promise<AddAdModalData> {
   if (!connection) return { ok: false, error: 'Meta Ads no está conectado.' }
 
   const supabase = await createClient()
-  const [pagesResult, existingPostsResult, scriptsResult, libraryResult] = await Promise.all([
+  const [pagesResult, existingPostsResult, scriptsResult, libraryResult, instagramConnectionResult, instagramPostsResult] = await Promise.all([
     getMetaPages(connection.token),
     getMetaExistingPosts(connection.token, connection.account_id),
     supabase
@@ -880,6 +936,13 @@ export async function getAddAdModalDataAction(): Promise<AddAdModalData> {
       .eq('organization_id', activeOrganizationId)
       .order('updated_at', { ascending: false }),
     getLibraryCreatives(supabase, activeOrganizationId),
+    supabase.from('instagram_connections').select('ig_user_id').eq('organization_id', activeOrganizationId).maybeSingle(),
+    supabase
+      .from('instagram_media_catalog')
+      .select('*')
+      .eq('organization_id', activeOrganizationId)
+      .order('posted_at', { ascending: false, nullsFirst: false })
+      .limit(30),
   ])
 
   if (!pagesResult.ok) return { ok: false, error: pagesResult.error }
@@ -889,6 +952,8 @@ export async function getAddAdModalDataAction(): Promise<AddAdModalData> {
     pages: pagesResult.pages,
     existingPosts: existingPostsResult.ok ? existingPostsResult.posts : [],
     scripts: scriptsResult.data ?? [],
+    instagramPosts: (instagramPostsResult.data ?? []).filter((p) => p.media_url && p.media_type !== 'CAROUSEL_ALBUM'),
+    igActorId: instagramConnectionResult.data?.ig_user_id ?? null,
     libraryCreatives: libraryResult.filter((c) => c.status === 'active'),
   }
 }
@@ -914,7 +979,8 @@ export async function addAdToAdSetAction(
   if (!pageId) return { error: 'Elegí con qué Página de Facebook vas a publicar el anuncio.', success: false }
 
   const modeRaw = String(formData.get('ad_mode_0_0') ?? 'new')
-  const mode = modeRaw === 'existing' || modeRaw === 'library' ? modeRaw : 'new'
+  const mode =
+    modeRaw === 'existing' || modeRaw === 'library' || modeRaw === 'instagram_post' ? modeRaw : 'new'
   const mediaType = String(formData.get('ad_media_type_0_0') ?? 'image') === 'video' ? 'video' : 'image'
   const ad: AdInput = {
     name: String(formData.get('ad_name_0_0') ?? '').trim(),
@@ -928,12 +994,15 @@ export async function addAdToAdSetAction(
     videoThumbnailUrl: String(formData.get('ad_video_thumbnail_0_0') ?? '').trim() || undefined,
     existingPostObjectStoryId: String(formData.get('ad_existing_post_0_0') ?? '').trim() || undefined,
     libraryAssetId: String(formData.get('ad_library_id_0_0') ?? '').trim() || undefined,
+    igMediaId: String(formData.get('ad_ig_media_id_0_0') ?? '').trim() || undefined,
   }
 
   if (ad.mode === 'existing') {
     if (!ad.existingPostObjectStoryId) return { error: 'Elegí qué publicación reusar.', success: false }
   } else if (ad.mode === 'library') {
     if (!ad.libraryAssetId) return { error: 'Elegí qué creativo de la Biblioteca usar.', success: false }
+  } else if (ad.mode === 'instagram_post') {
+    if (!ad.igMediaId) return { error: 'Elegí qué publicación de Instagram publicitar.', success: false }
   } else {
     if (!ad.body) return { error: 'Falta el copy del anuncio.', success: false }
     if (!ad.link) return { error: 'Falta el link de destino del anuncio.', success: false }
@@ -951,6 +1020,8 @@ export async function addAdToAdSetAction(
   const connection = await getMetaConnectionInfo(activeOrganizationId)
   if (!connection) return { error: 'Meta Ads no está conectado.', success: false }
 
+  const igActorId = await getInstagramActorId(activeOrganizationId)
+
   const supabase = await createClient()
   const advPayload = buildAdvantagePayload(ADV_CONTROLS_DEFAULT)
 
@@ -965,6 +1036,7 @@ export async function addAdToAdSetAction(
     advPayload,
     supabase,
     activeOrganizationId,
+    igActorId,
   })
 
   if (!result.ok) {
