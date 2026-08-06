@@ -4,9 +4,8 @@ import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { getDashboardContext } from '@/lib/organization/dashboard-context'
 import { clamp, TITLE_MAX_LENGTH, TEXT_MAX_LENGTH } from '@/lib/text-limits'
-import { buildSystemPrompt } from '@/lib/ia/context'
 import { askAI } from '@/lib/ia/client'
-import { checkIaUsage, incrementIaUsage } from '@/lib/ia/usage'
+import { checkIaUsage, incrementIaUsage, checkIdeaGenDailyUsage, incrementIdeaGenDailyUsage } from '@/lib/ia/usage'
 
 type MediaItem = { url: string; type: 'image' | 'video' }
 
@@ -225,34 +224,70 @@ export async function togglePostStatusAction(postId: string, nextStatus: string)
 }
 
 // "Desbloqueo Creativo" — Generar Idea (reestructuración de Contenido,
-// 2026-08-05). El tope real de costo (protección de verdad, no solo
-// visual) es el mismo checkIaUsage/incrementIaUsage que ya frena IA
-// Estratégica/Diario de Marca — es el mismo gasto de tokens de OpenAI, así
-// que comparte el mismo cupo mensual por organización en vez de abrir un
-// contador nuevo. El límite de "3 por día" que pide el botón en pantalla
-// es una capa de UX aparte, del lado del cliente (ver inspiration-widget.tsx).
-export async function generateContentIdeaAction(): Promise<{ ok: true; idea: string } | { ok: false; error: string }> {
-  const { activeOrganizationId } = await getDashboardContext()
-  if (!activeOrganizationId) return { ok: false, error: 'No encontramos tu organización activa.' }
+// 2026-08-05; migrado a DeepSeek 2026-08-05, pedido explícito de la PO —
+// ver lib/ia/client.ts). Dos capas de protección real, no solo visual:
+// - checkIdeaGenDailyUsage: 3 por USUARIO por día (lib/ia/usage.ts) — se
+//   chequea primero porque es gratis (no toca la IA).
+// - checkIaUsage: el mismo cupo mensual por ORGANIZACIÓN que ya comparten
+//   IA Estratégica/Diario de Marca — mismo gasto real de tokens, un solo
+//   cupo, no uno nuevo por feature.
+// El prompt de sistema es exclusivo de esta función (no reusa
+// buildSystemPrompt de IA Estratégica, que arma un contexto de negocio
+// mucho más pesado — campañas de Meta, objetivos, guiones — innecesario
+// para pedir una sola idea corta).
+const IDEA_GENERATOR_SYSTEM_PROMPT = `Sos un estratega de marketing de contenidos experto en e-commerce, especializado en Instagram y TikTok orgánico.
+
+Cuando te piden una idea de contenido, das UNA sola — nunca una lista, nunca un párrafo largo. Siempre incluye tres cosas concretas: el formato (Reel, Carrusel, Historia, etc.), el ángulo o gancho del video, y el llamado a la acción. Directo al grano, en 2-3 frases como máximo, en español rioplatense. Nada de texto genérico ni robótico — pensalo específico a la marca y su rubro cuando te los den.`
+
+export type IdeaGenState = { ok: true; idea: string; remaining: number } | { ok: false; error: string; remaining: number }
+
+/** Cuánto le queda hoy al usuario — se llama al montar el widget para que el botón nazca deshabilitado si ya gastó las 3 antes de refrescar la página. */
+export async function getIdeaGenUsageAction(): Promise<{ remaining: number }> {
+  const { userId, activeOrganizationId } = await getDashboardContext()
+  if (!activeOrganizationId) return { remaining: 0 }
+
+  const supabase = await createClient()
+  const usage = await checkIdeaGenDailyUsage(supabase, activeOrganizationId, userId)
+  return { remaining: usage.remaining }
+}
+
+export async function generateContentIdeaAction(): Promise<IdeaGenState> {
+  const { userId, activeOrganizationId } = await getDashboardContext()
+  if (!activeOrganizationId) return { ok: false, error: 'No encontramos tu organización activa.', remaining: 0 }
 
   const supabase = await createClient()
 
-  const usage = await checkIaUsage(supabase, activeOrganizationId)
-  if (!usage.allowed) {
-    return { ok: false, error: `Llegaste al límite de ${usage.limit} consultas de IA este mes en tu plan actual.` }
+  const dailyUsage = await checkIdeaGenDailyUsage(supabase, activeOrganizationId, userId)
+  if (!dailyUsage.allowed) {
+    return { ok: false, error: 'Límite diario alcanzado, ¡a crear!', remaining: 0 }
   }
 
-  const systemPrompt = await buildSystemPrompt(supabase, activeOrganizationId, null)
-  const result = await askAI(systemPrompt, [
-    {
-      role: 'user',
-      content:
-        'Dame UNA sola idea de contenido orgánico para Instagram/TikTok, concreta y accionable, en 1-2 frases cortas. No uses viñetas ni numeración, solo el texto de la idea. Pensala específica a la marca y su rubro, no genérica.',
-    },
+  const monthlyUsage = await checkIaUsage(supabase, activeOrganizationId)
+  if (!monthlyUsage.allowed) {
+    return {
+      ok: false,
+      error: `Llegaste al límite de ${monthlyUsage.limit} consultas de IA este mes en tu plan actual.`,
+      remaining: dailyUsage.remaining,
+    }
+  }
+
+  const { data: profile } = await supabase
+    .from('business_profile')
+    .select('brand_name, rubro')
+    .eq('organization_id', activeOrganizationId)
+    .maybeSingle()
+
+  const contextLine = profile?.brand_name
+    ? `La marca es "${profile.brand_name}"${profile.rubro ? ` (rubro: ${profile.rubro})` : ''}. `
+    : ''
+
+  const result = await askAI(IDEA_GENERATOR_SYSTEM_PROMPT, [
+    { role: 'user', content: `${contextLine}Dame una idea de contenido para esta semana.` },
   ])
-  if (!result.ok) return result
+  if (!result.ok) return { ok: false, error: result.error, remaining: dailyUsage.remaining }
 
   await incrementIaUsage(supabase, activeOrganizationId)
+  const remaining = await incrementIdeaGenDailyUsage(supabase, activeOrganizationId, userId)
 
-  return { ok: true, idea: result.reply.trim() }
+  return { ok: true, idea: result.reply.trim(), remaining }
 }
