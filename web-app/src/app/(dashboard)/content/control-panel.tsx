@@ -83,7 +83,7 @@ function RadialGauge({ score, color }: { score: number; color: string }) {
 function healthTier(score: number) {
   if (score >= 80) return { label: 'Excelente', color: 'var(--green)', msg: 'Tu constancia está en su mejor momento — seguí así.' }
   if (score >= 55) return { label: 'Buena', color: 'var(--accent)', msg: 'Vas bien, pero todavía hay margen para ser más constante.' }
-  if (score >= 30) return { label: 'Floja', color: 'var(--amber)', msg: 'Tu constancia bajó en las últimas semanas — retomá el ritmo.' }
+  if (score >= 30) return { label: 'Irregular', color: 'var(--amber)', msg: 'Tu constancia varía de semana en semana — hay margen para afianzar el ritmo.' }
   return { label: 'Crítica', color: 'var(--red)', msg: 'Hace tiempo que no publicás con regularidad. Es momento de retomar.' }
 }
 
