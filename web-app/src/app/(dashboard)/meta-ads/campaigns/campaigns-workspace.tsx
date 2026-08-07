@@ -14,7 +14,8 @@ import { ColumnsPopover } from './columns-popover'
 import { CampaignStatusToggle } from './campaign-status-toggle'
 import { StrategicStatusDot } from './strategic-status-dot'
 import { InlineBudgetCell } from './inline-budget-cell'
-import { resolveCampaignTargets, type CampaignTargets } from '@/lib/meta/autopilot'
+import { ScaleCampaignButton } from './scale-campaign-button'
+import { resolveCampaignTargets, getStrategicStatus, type CampaignTargets } from '@/lib/meta/autopilot'
 import { useCurrency } from '@/lib/context/currency-context'
 import { FocusCards } from './focus-cards'
 import { Pagination } from './pagination'
@@ -249,6 +250,8 @@ export function CampaignsWorkspace({
                 {pagedCampaigns.map((campaign) => {
                   const rowHighlighted = campaign.id === autopilotOpenId
                   const stickyBg = rowHighlighted ? 'bg-accent/[0.06]' : 'bg-surface'
+                  const campaignTargets = resolveCampaignTargets(campaign.id, targetsBulk)
+                  const canScale = campaign.effectiveStatus === 'ACTIVE' && getStrategicStatus(campaign, campaignTargets)?.label === 'escalar'
                   return (
                   <tr
                     key={campaign.id}
@@ -288,7 +291,7 @@ export function CampaignsWorkspace({
                     </td>
                     <td className="px-5 py-1.5 text-center">
                       <div className="flex items-center justify-center gap-2">
-                        <StrategicStatusDot metrics={campaign} targets={resolveCampaignTargets(campaign.id, targetsBulk)} />
+                        <StrategicStatusDot metrics={campaign} targets={campaignTargets} />
                         {TOGGLEABLE.has(campaign.effectiveStatus) ? (
                           <CampaignStatusToggle
                             campaignId={campaign.id}
@@ -306,6 +309,14 @@ export function CampaignsWorkspace({
                             {STATUS_LABEL[campaign.effectiveStatus] ?? campaign.effectiveStatus}
                           </span>
                         )}
+                        {canScale && (
+                          <ScaleCampaignButton
+                            campaignId={campaign.id}
+                            dailyBudget={campaign.dailyBudget}
+                            lifetimeBudget={campaign.lifetimeBudget}
+                            returnTo={returnTo}
+                          />
+                        )}
                       </div>
                     </td>
                     <td className="whitespace-nowrap px-5 py-1.5 text-center text-sm font-semibold text-text-2">
@@ -321,7 +332,7 @@ export function CampaignsWorkspace({
                     </td>
                     {visibleColumns.map((column) => (
                       <td key={column.id} className={METRIC_CELL_CLASS[column.tier]}>
-                        {column.render(campaign, resolveCampaignTargets(campaign.id, targetsBulk))}
+                        {column.render(campaign, campaignTargets)}
                       </td>
                     ))}
                   </tr>

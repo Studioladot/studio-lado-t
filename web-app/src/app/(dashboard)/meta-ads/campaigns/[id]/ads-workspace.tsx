@@ -11,6 +11,7 @@ import { ColumnsPopover } from '../columns-popover'
 import { Pagination } from '../pagination'
 import { Switch } from '../switch'
 import { StrategicStatusDot } from '../strategic-status-dot'
+import { FatigueBadge } from './fatigue-badge'
 import type { CampaignTargets } from '@/lib/meta/autopilot'
 import { useCurrency } from '@/lib/context/currency-context'
 import { ConfirmSubmitButton } from '@/components/features/confirm-submit-button'
@@ -301,6 +302,7 @@ export function AdsWorkspace({
                     <td className="px-5 py-1.5 text-center">
                       <div className="flex items-center justify-center gap-2">
                         <StrategicStatusDot metrics={ad} targets={targets} />
+                        <FatigueBadge adId={ad.id} effectiveStatus={ad.effectiveStatus} spend={ad.spend} />
                         {TOGGLEABLE.has(ad.effectiveStatus) ? (
                           <AdStatusToggle
                             adId={ad.id}

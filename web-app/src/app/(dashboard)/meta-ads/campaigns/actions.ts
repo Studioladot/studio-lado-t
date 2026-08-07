@@ -11,7 +11,9 @@ import {
   createMetaCampaign,
   updateMetaAdSetStatus,
   updateMetaAdStatus,
+  getMetaEntityDailyInsights,
 } from '@/lib/meta/campaigns'
+import { computeFatigueSignal, type FatigueSignal } from '@/lib/meta/fatigue'
 import {
   createTestAdSet,
   uploadMetaAdImage,
@@ -868,6 +870,85 @@ export async function updateCampaignBudgetAction(formData: FormData) {
   }
 
   redirect(`${returnTo}${returnTo.includes('?') ? '&' : '?'}campaign_success=1`)
+}
+
+// ---------------------------------------------------------------------------
+// "Escalabilidad a un Clic" (2026-08-07, Innovación Radical #2) — un botón
+// directo sobre la fila de una campaña que ya viene ganando (mismo criterio
+// 'escalar' que ya calcula getStrategicStatus/StrategicStatusDot, ver
+// autopilot.ts — no se inventa un umbral nuevo acá) para subirle presupuesto
+// +20% sin abrir el editor inline ni calcular el monto a mano. Reusa
+// updateMetaCampaignBudget, el mismo mutator que ya usa
+// updateCampaignBudgetAction — mismo contrato ok/error, mismo patrón de
+// redirect con campaign_success/campaign_error.
+// ---------------------------------------------------------------------------
+
+const SCALE_UP_FACTOR = 1.2
+
+export async function scaleCampaignBudgetAction(formData: FormData) {
+  const campaignId = String(formData.get('campaign_id') ?? '')
+  const budgetType = String(formData.get('budget_type') ?? '')
+  const currentAmount = Number(formData.get('current_amount'))
+  const returnTo = String(formData.get('return_to') ?? `/meta-ads/campaigns/${campaignId}`)
+
+  if (!campaignId || (budgetType !== 'daily' && budgetType !== 'lifetime') || !Number.isFinite(currentAmount) || currentAmount <= 0) {
+    redirect(withError(returnTo, 'No pudimos calcular el nuevo presupuesto.'))
+  }
+
+  const { activeOrganizationId } = await getDashboardContext()
+  if (!activeOrganizationId) {
+    redirect(withError(returnTo, 'No encontramos tu organización activa.'))
+  }
+
+  const token = await getMetaToken(activeOrganizationId)
+  if (!token) {
+    redirect(withError(returnTo, 'Meta Ads no está conectado.'))
+  }
+
+  const newAmount = Math.round(currentAmount * SCALE_UP_FACTOR)
+  const result = await updateMetaCampaignBudget(
+    token,
+    campaignId,
+    budgetType === 'lifetime' ? { lifetimeBudget: newAmount } : { dailyBudget: newAmount }
+  )
+
+  revalidatePath(`/meta-ads/campaigns/${campaignId}`)
+  revalidatePath('/meta-ads/campaigns')
+
+  if (!result.ok) {
+    redirect(withError(returnTo, result.error))
+  }
+
+  redirect(`${returnTo}${returnTo.includes('?') ? '&' : '?'}campaign_success=1`)
+}
+
+// ---------------------------------------------------------------------------
+// "Predicción de Fatiga" (2026-08-07, Innovación Radical #3) — bajo pedido,
+// no automático para toda la tabla: FatigueBadge la dispara solo para
+// anuncios ACTIVE con gasto real (ver ads-workspace.tsx), así que en la
+// práctica es como mucho una llamada por fila visible, nunca una barrida de
+// la cuenta entera. Reusa getMetaEntityDailyInsights (ya existe, Snapshots
+// la usa igual) en vez de inventar un fetch nuevo — ver computeFatigueSignal
+// (fatigue.ts) para el criterio de detección.
+// ---------------------------------------------------------------------------
+
+const FATIGUE_LOOKBACK_DAYS = 14
+
+export type AdFatigueActionResult = { ok: true; signal: FatigueSignal | null } | { ok: false; error: string }
+
+export async function getAdFatigueSignalAction(adId: string): Promise<AdFatigueActionResult> {
+  const { activeOrganizationId } = await getDashboardContext()
+  if (!activeOrganizationId) return { ok: false, error: 'No encontramos tu organización activa.' }
+
+  const token = await getMetaToken(activeOrganizationId)
+  if (!token) return { ok: false, error: 'Meta Ads no está conectado.' }
+
+  const until = new Date()
+  const since = new Date(until.getTime() - FATIGUE_LOOKBACK_DAYS * 86400000)
+  const result = await getMetaEntityDailyInsights(token, adId, { since, until })
+  if (!result.ok) return result
+
+  return { ok: true, signal: computeFatigueSignal(result.days) }
 }
 
 // ---------------------------------------------------------------------------
