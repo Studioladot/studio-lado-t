@@ -140,6 +140,38 @@ export type Database = {
         }
         Relationships: []
       }
+      ad_creative_origins: {
+        Row: {
+          ad_id: string
+          created_at: string
+          id: string
+          ig_media_id: string
+          organization_id: string
+        }
+        Insert: {
+          ad_id: string
+          created_at?: string
+          id?: string
+          ig_media_id: string
+          organization_id: string
+        }
+        Update: {
+          ad_id?: string
+          created_at?: string
+          id?: string
+          ig_media_id?: string
+          organization_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ad_creative_origins_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ad_product_links: {
         Row: {
           ad_id: string

@@ -12,7 +12,8 @@ import { Pagination } from '../pagination'
 import { Switch } from '../switch'
 import { StrategicStatusDot } from '../strategic-status-dot'
 import { FatigueBadge } from './fatigue-badge'
-import type { CampaignTargets } from '@/lib/meta/autopilot'
+import { MarkWinnerButton } from './mark-winner-button'
+import { getStrategicStatus, type CampaignTargets } from '@/lib/meta/autopilot'
 import { useCurrency } from '@/lib/context/currency-context'
 import { ConfirmSubmitButton } from '@/components/features/confirm-submit-button'
 import { EntityStatusFilter } from './entity-status-filter'
@@ -65,15 +66,20 @@ function AdStatusToggle({
 export function AdsWorkspace({
   ads,
   campaignId,
+  campaignName,
   returnTo,
   targets,
+  originAdIds,
 }: {
   ads: MetaCampaignAd[]
   campaignId: string
+  campaignName: string
   returnTo: string
   targets: CampaignTargets
+  originAdIds: string[]
 }) {
   const router = useRouter()
+  const originSet = useMemo(() => new Set(originAdIds), [originAdIds])
   const [query, setQuery] = useState('')
   const [status, setStatus] = useState('')
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
@@ -303,6 +309,9 @@ export function AdsWorkspace({
                       <div className="flex items-center justify-center gap-2">
                         <StrategicStatusDot metrics={ad} targets={targets} />
                         <FatigueBadge adId={ad.id} effectiveStatus={ad.effectiveStatus} spend={ad.spend} />
+                        {originSet.has(ad.id) && getStrategicStatus(ad, targets)?.label === 'escalar' && (
+                          <MarkWinnerButton adId={ad.id} adName={ad.name} campaignName={campaignName} roas={ad.roas} cpa={ad.cpa} />
+                        )}
                         {TOGGLEABLE.has(ad.effectiveStatus) ? (
                           <AdStatusToggle
                             adId={ad.id}

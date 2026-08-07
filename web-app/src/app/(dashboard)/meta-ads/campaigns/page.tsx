@@ -1,10 +1,12 @@
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { getDashboardContext } from '@/lib/organization/dashboard-context'
-import { getMetaCampaigns } from '@/lib/meta/campaigns'
+import { getMetaCampaigns, getMetaAccountAds } from '@/lib/meta/campaigns'
 import { getAllCampaignTargets } from '@/lib/meta/autopilot'
+import { computeCreativePatternInsight } from '@/lib/meta/creative-patterns'
 import { PAUSED_LIKE } from './status'
 import { CampaignsWorkspace } from './campaigns-workspace'
+import { CreativePatternBanner } from './creative-pattern-banner'
 
 export default async function MetaAdsCampaignsPage({
   searchParams,
@@ -44,12 +46,14 @@ export default async function MetaAdsCampaignsPage({
   // página) para recién ahí pedirle a Supabase algo que podía haber
   // arrancado en paralelo desde el principio (auditoría de performance,
   // 2026-08-01).
-  const [result, targetsBulk] = await Promise.all([
+  const [result, targetsBulk, accountAdsResult] = await Promise.all([
     connection && !tokenExpired ? getMetaCampaigns(connection.token, connection.account_id, days) : Promise.resolve(null),
     getAllCampaignTargets(supabase, activeOrganizationId),
+    connection && !tokenExpired ? getMetaAccountAds(connection.token, connection.account_id, 30) : Promise.resolve(null),
   ])
 
   let campaigns = result && result.ok ? result.campaigns : []
+  const creativePatternInsight = accountAdsResult?.ok ? computeCreativePatternInsight(accountAdsResult.ads) : null
 
   if (q.trim()) {
     const needle = q.trim().toLowerCase()
@@ -124,14 +128,17 @@ export default async function MetaAdsCampaignsPage({
           <div className="rounded-card border border-red/30 bg-red/[8%] px-4 py-3 text-sm text-red">{result.error}</div>
         </>
       ) : (
-        <CampaignsWorkspace
-          campaigns={campaigns}
-          returnTo="/meta-ads/campaigns"
-          defaultQuery={q}
-          defaultStatus={statusFilter}
-          defaultRange={String(days)}
-          targetsBulk={targetsBulk}
-        />
+        <>
+          {creativePatternInsight && <CreativePatternBanner insight={creativePatternInsight} />}
+          <CampaignsWorkspace
+            campaigns={campaigns}
+            returnTo="/meta-ads/campaigns"
+            defaultQuery={q}
+            defaultStatus={statusFilter}
+            defaultRange={String(days)}
+            targetsBulk={targetsBulk}
+          />
+        </>
       )}
     </div>
   )

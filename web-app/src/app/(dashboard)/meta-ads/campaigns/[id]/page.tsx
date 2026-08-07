@@ -58,6 +58,17 @@ export default async function MetaAdsCampaignDetailPage({
   const campaign = header.campaign
   const returnTo = `/meta-ads/campaigns/${id}`
 
+  // "Ranking de Ganadores Cross-Cuenta" — qué anuncios de esta campaña
+  // nacieron de un posteo orgánico (ver ad_creative_origins), para ofrecer
+  // "Avisar a Contenido" solo en esas filas. Una sola query acotada a los
+  // anuncios que ya trajimos, no una barrida de toda la cuenta.
+  const adIds = adsResult.ok ? adsResult.ads.map((a) => a.id) : []
+  const { data: origins } =
+    adIds.length > 0
+      ? await supabase.from('ad_creative_origins').select('ad_id').eq('organization_id', activeOrganizationId).in('ad_id', adIds)
+      : { data: [] }
+  const originAdIds = (origins ?? []).map((o) => o.ad_id)
+
   return (
     <div>
       <Link
@@ -172,7 +183,14 @@ export default async function MetaAdsCampaignDetailPage({
             </div>
           </>
         ) : (
-          <AdsWorkspace ads={adsResult.ads} campaignId={id} returnTo={returnTo} targets={targets} />
+          <AdsWorkspace
+            ads={adsResult.ads}
+            campaignId={id}
+            campaignName={campaign.name}
+            returnTo={returnTo}
+            targets={targets}
+            originAdIds={originAdIds}
+          />
         )}
       </div>
     </div>

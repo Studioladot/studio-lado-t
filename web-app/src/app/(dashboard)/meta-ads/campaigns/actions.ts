@@ -39,6 +39,7 @@ import {
 import { getLibraryCreativeById, markLibraryCreativeDeployed, getLibraryCreatives, type LibraryCreative } from '@/lib/meta/library'
 import { insertLaunchActivityLog } from '@/lib/meta/history'
 import { duplicateMetaAdSetForCreativeTest } from '@/lib/meta/adset-duplicate'
+import { NOTE_COLORS } from '../../notes/note-constants'
 
 async function getMetaToken(activeOrganizationId: string) {
   const supabase = await createClient()
@@ -608,6 +609,20 @@ export async function createSingleAd(params: {
       metaVideoId: libraryDeploy.metaVideoId,
     })
   }
+  // "Ranking de Ganadores Cross-Cuenta" (2026-08-07, Innovación Radical #4)
+  // — para poder cerrar el círculo Contenido→Ads más adelante (ver
+  // markAdAsContentWinnerAction) hace falta saber de qué publicación
+  // orgánica nació este anuncio DESPUÉS de creado, cuando ya está en la
+  // tabla de Anuncios — Meta no expone ese dato de vuelta en una lectura
+  // simple, así que se guarda acá mismo, en el único momento en que
+  // tenemos los dos IDs juntos. Falla silenciosa a propósito: no vale la
+  // pena romper el lanzamiento del anuncio (que ya salió bien en Meta) por
+  // un insert de trazabilidad que no es crítico.
+  if (adResult.ok && ad.mode === 'instagram_post' && ad.igMediaId) {
+    await supabase
+      .from('ad_creative_origins')
+      .insert({ organization_id: activeOrganizationId, ad_id: adResult.id, ig_media_id: ad.igMediaId })
+  }
   return { ok: adResult.ok, steps, adId: adResult.ok ? adResult.id : undefined }
 }
 
@@ -949,6 +964,70 @@ export async function getAdFatigueSignalAction(adId: string): Promise<AdFatigueA
   if (!result.ok) return result
 
   return { ok: true, signal: computeFatigueSignal(result.days) }
+}
+
+// ---------------------------------------------------------------------------
+// "Ranking de Ganadores Cross-Cuenta" (2026-08-07, Innovación Radical #4) —
+// cierra el círculo Contenido→Ads: cuando un anuncio nacido de un posteo
+// orgánico (ver ad_creative_origins, poblada en createSingleAd) resulta
+// ganador, esto lo avisa de vuelta al equipo de Contenido como una Nota
+// (categoría "Conceptos claves") — mismo mecanismo ya probado en
+// content/actions.ts (generateContentIdeaAction guarda ideas de IA en
+// Notas). roas/cpa/adName/campaignName vienen del caller (ya están en la
+// fila de la tabla de Anuncios) para no pedirle a Meta un dato que ya
+// tenemos.
+// ---------------------------------------------------------------------------
+
+export type MarkAdWinnerActionResult = { ok: true } | { ok: false; error: string }
+
+export async function markAdAsContentWinnerAction(params: {
+  adId: string
+  adName: string
+  campaignName: string
+  roas: number
+  cpa: number
+}): Promise<MarkAdWinnerActionResult> {
+  const { userId, activeOrganizationId } = await getDashboardContext()
+  if (!activeOrganizationId) return { ok: false, error: 'No encontramos tu organización activa.' }
+
+  const supabase = await createClient()
+
+  const { data: origin } = await supabase
+    .from('ad_creative_origins')
+    .select('ig_media_id')
+    .eq('organization_id', activeOrganizationId)
+    .eq('ad_id', params.adId)
+    .maybeSingle()
+
+  if (!origin) return { ok: false, error: 'Este anuncio no tiene un posteo orgánico de origen registrado.' }
+
+  const { data: post } = await supabase
+    .from('instagram_media_catalog')
+    .select('caption, permalink')
+    .eq('organization_id', activeOrganizationId)
+    .eq('ig_media_id', origin.ig_media_id)
+    .maybeSingle()
+
+  const captionSnippet = post?.caption
+    ? `"${post.caption.length > 80 ? `${post.caption.slice(0, 80)}…` : post.caption}"`
+    : 'este posteo'
+  const linkLine = post?.permalink ? ` (${post.permalink})` : ''
+
+  const contenido = `El posteo orgánico ${captionSnippet}${linkLine} funcionó tan bien que lo publicitamos en "${params.campaignName}" (anuncio "${params.adName}") y da ROAS ${params.roas.toFixed(2)}x / CPA $${params.cpa.toFixed(0)} — repetí este tipo de contenido.`
+
+  const { error } = await supabase.from('notes').insert({
+    organization_id: activeOrganizationId,
+    user_id: userId,
+    titulo: 'Post ganador en pauta',
+    contenido,
+    categoria: 'conceptos',
+    color: NOTE_COLORS[4],
+  })
+
+  if (error) return { ok: false, error: 'No pudimos guardar la nota. Probá de nuevo.' }
+
+  revalidatePath('/notes')
+  return { ok: true }
 }
 
 // ---------------------------------------------------------------------------
