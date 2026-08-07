@@ -85,10 +85,10 @@ export function LibraryGrid({ creatives }: { creatives: LibraryCreative[] }) {
             <div key={creative.id} className="flex flex-col overflow-hidden rounded-card border border-border bg-surface">
               <div className="h-[140px] w-full overflow-hidden bg-surface-2">
                 {creative.assetType === 'video' ? (
-                  <video src={creative.fileUrl} className="h-full w-full object-cover" muted />
+                  <video src={creative.fileUrl} preload="metadata" className="h-full w-full object-cover" muted />
                 ) : (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={creative.fileUrl} alt="" className="h-full w-full object-cover" />
+                  <img src={creative.fileUrl} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" />
                 )}
               </div>
 

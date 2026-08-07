@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
-import { METRIC_LABELS, type MetricColumnId } from './metric-defs'
+import { METRIC_LABELS, COLUMN_PRESETS, type MetricColumnId } from './metric-defs'
 
 export function ColumnsPopover({
   activeColumns,
@@ -42,6 +42,25 @@ export function ColumnsPopover({
         <p className="text-[10px] font-bold uppercase tracking-wide text-text-3">Columnas visibles</p>
         <span className="text-[10px] text-text-3">{activeColumns.length}/{METRIC_LABELS.length}</span>
       </div>
+
+      <div className="mb-2.5 flex flex-col gap-1 border-b border-border pb-2.5">
+        <p className="mb-0.5 text-[9px] font-bold uppercase tracking-wide text-text-3">Vistas pre-armadas</p>
+        {COLUMN_PRESETS.map((preset) => (
+          <button
+            key={preset.id}
+            type="button"
+            title={preset.description}
+            onClick={() => {
+              onChange(preset.columns)
+              onClose()
+            }}
+            className="rounded-md px-1.5 py-1 text-left text-[12px] font-medium text-accent transition-colors duration-150 ease-out hover:bg-accent/[0.08]"
+          >
+            {preset.label}
+          </button>
+        ))}
+      </div>
+
       <div className="flex max-h-[360px] flex-col gap-1.5 overflow-y-auto pr-1">
         {METRIC_LABELS.map((column) => (
           <label

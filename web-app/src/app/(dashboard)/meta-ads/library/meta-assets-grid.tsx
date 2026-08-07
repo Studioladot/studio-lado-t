@@ -39,7 +39,7 @@ export function MetaAssetsGrid({
             <div className="flex h-[140px] w-full items-center justify-center overflow-hidden bg-surface-2">
               {ad.thumbnailUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={ad.thumbnailUrl} alt="" className="h-full w-full object-cover" />
+                <img src={ad.thumbnailUrl} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" />
               ) : (
                 <p className="text-[10px] text-text-3">Sin miniatura</p>
               )}

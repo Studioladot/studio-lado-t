@@ -230,6 +230,33 @@ export function buildMetricColumns(currency: {
 export const DEFAULT_COLUMN_IDS: MetricColumnId[] = ['spend', 'roas', 'purchases', 'cpa', 'ctr', 'cpm', 'impressions', 'hookRate']
 export const COLUMNS_STORAGE_KEY = 'gotix_meta_cols_v1'
 
+// "Vistas de Tabla Inteligentes" (2026-08-07, Innovación Radical #2) — en vez
+// de armar las columnas a mano, un clic escribe un array ya curado a la
+// MISMA clave de localStorage que ya usa el selector manual (COLUMNS_STORAGE_KEY)
+// — cero mecanismo nuevo, es el sistema de columnas existente con 3 atajos.
+export type ColumnPreset = { id: string; label: string; description: string; columns: MetricColumnId[] }
+
+export const COLUMN_PRESETS: ColumnPreset[] = [
+  {
+    id: 'escalamiento',
+    label: 'Vista de Escalamiento',
+    description: 'Gasto, ROAS, CPA y Frecuencia — para decidir qué subir de presupuesto',
+    columns: ['spend', 'roas', 'cpa', 'frequency'],
+  },
+  {
+    id: 'rentabilidad',
+    label: 'Vista de Rentabilidad',
+    description: 'Gasto, ROAS, CPA, Valor Conv. y AOV — el margen real de cada fila',
+    columns: ['spend', 'roas', 'cpa', 'conversionValue', 'aov'],
+  },
+  {
+    id: 'retargeting',
+    label: 'Vista de Retargeting',
+    description: 'CTR, CPM, Frecuencia y Hook Rate — fatiga y calidad del creativo',
+    columns: ['ctr', 'cpm', 'frequency', 'hookRate'],
+  },
+]
+
 // Para el selector de columnas (ColumnsPopover) — solo necesita id+label,
 // no le importa la moneda. Se deriva de la fábrica con valores neutros en
 // vez de duplicar los 17 labels a mano en otro lado.

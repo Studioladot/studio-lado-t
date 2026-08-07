@@ -1,42 +1,142 @@
 'use client'
 
 import Link from 'next/link'
-import { useActionState, useState } from 'react'
-import { useFormStatus } from 'react-dom'
+import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { updateScriptAction, deleteScriptAction, type UpdateScriptState } from '../actions'
+import { updateScriptAction, deleteScriptAction, generateHookVariantsAction } from '../actions'
 import { ConfirmSubmitButton } from '@/components/features/confirm-submit-button'
-import { TextInput, TextArea, Select, FORM_LABEL_CLASS } from '@/components/features/form-field'
-import { TITLE_MAX_LENGTH, TEXT_MAX_LENGTH } from '@/lib/text-limits'
+import { useToast } from '@/components/features/toast'
 import { ConvertToAdModal } from './convert-to-ad-modal'
-import { ANGLES, STATUSES, STATUS_LABEL } from '../constants'
+import { WinnerBadge } from '../winner-badge'
+import { ANGLES, STATUSES, STATUS_LABEL, STATUS_COLOR } from '../constants'
+import { TITLE_MAX_LENGTH, TEXT_MAX_LENGTH } from '@/lib/text-limits'
 import type { Database } from '@/lib/types/database.types'
 
 type Script = Database['public']['Tables']['scripts']['Row']
 
-const initialState: UpdateScriptState = { error: null, success: false }
+const SAVE_DEBOUNCE_MS = 900
 
-const labelClass = FORM_LABEL_CLASS
+// Bloque de texto sin borde ni caja — la promesa del rediseño ("editor tipo
+// Notion") era justamente sacar el aspecto de formulario con casilleros.
+// Autocrece con el contenido (sin scrollbar interno) y mantiene el mismo
+// contador de caracteres que ya tenía TextArea (form-field.tsx) para no
+// perder esa protección, solo que sin la caja alrededor.
+function FlowingTextarea({
+  name,
+  defaultValue,
+  placeholder,
+  maxLength,
+  minRows = 2,
+  className = '',
+}: {
+  name: string
+  defaultValue: string
+  placeholder: string
+  maxLength: number
+  minRows?: number
+  className?: string
+}) {
+  const ref = useRef<HTMLTextAreaElement>(null)
+  const [length, setLength] = useState(defaultValue.length)
 
-function SaveButton() {
-  const { pending } = useFormStatus()
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    el.style.height = 'auto'
+    el.style.height = `${el.scrollHeight}px`
+  }, [])
 
   return (
-    <button
-      type="submit"
-      disabled={pending}
-      className="rounded-control bg-primary px-4 py-2.5 text-sm font-semibold text-white transition-all duration-200 ease-out hover:bg-primary-hover active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-70"
-    >
-      {pending ? 'Guardando…' : 'Guardar'}
-    </button>
+    <div className="flex flex-col gap-1">
+      <textarea
+        ref={ref}
+        name={name}
+        defaultValue={defaultValue}
+        placeholder={placeholder}
+        maxLength={maxLength}
+        rows={minRows}
+        onInput={(e) => {
+          const el = e.currentTarget
+          el.style.height = 'auto'
+          el.style.height = `${el.scrollHeight}px`
+          setLength(el.value.length)
+        }}
+        className={`w-full resize-none border-0 bg-transparent leading-relaxed text-text outline-none placeholder:text-text-3 ${className}`}
+      />
+      <span className="self-end text-[10px] tabular-nums text-text-3">
+        {length} / {maxLength}
+      </span>
+    </div>
   )
 }
 
-export function ScriptEditForm({ script }: { script: Script }) {
-  const boundAction = updateScriptAction.bind(null, script.id)
-  const [state, formAction] = useActionState(boundAction, initialState)
+function SaveStatus({ state }: { state: 'idle' | 'saving' | 'saved' | 'error' }) {
+  if (state === 'idle') return null
+  return (
+    <span className={`text-[11px] font-medium ${state === 'error' ? 'text-red' : 'text-text-3'}`}>
+      {state === 'saving' ? 'Guardando…' : state === 'error' ? 'No se pudo guardar' : 'Guardado'}
+    </span>
+  )
+}
+
+export function ScriptEditForm({
+  script,
+  isWinner,
+  variants,
+  parentScript,
+}: {
+  script: Script
+  isWinner: boolean
+  variants: Script[]
+  parentScript: { id: string; title: string | null } | null
+}) {
+  const formRef = useRef<HTMLFormElement>(null)
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
   const [convertOpen, setConvertOpen] = useState(false)
+  const [generating, setGenerating] = useState(false)
   const router = useRouter()
+  const toast = useToast()
+
+  async function saveNow() {
+    if (!formRef.current) return
+    const formData = new FormData(formRef.current)
+    const result = await updateScriptAction(script.id, { error: null, success: false }, formData)
+    setSaveState(result.error ? 'error' : 'saved')
+  }
+
+  function scheduleSave() {
+    if (debounceRef.current) clearTimeout(debounceRef.current)
+    setSaveState('saving')
+    debounceRef.current = setTimeout(saveNow, SAVE_DEBOUNCE_MS)
+  }
+
+  // Guarda de inmediato al salir del formulario entero (click afuera,
+  // navegar a "← Guiones") — sin esto, un cambio que quedó dentro de la
+  // ventana de debounce se podía perder si el usuario se iba rápido.
+  function flushOnBlur(e: React.FocusEvent<HTMLFormElement>) {
+    if (e.currentTarget.contains(e.relatedTarget as Node)) return
+    if (debounceRef.current) clearTimeout(debounceRef.current)
+    saveNow()
+  }
+
+  useEffect(() => {
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current)
+    }
+  }, [])
+
+  async function handleGenerateHooks() {
+    setGenerating(true)
+    const result = await generateHookVariantsAction(script.id)
+    setGenerating(false)
+    if (!result.ok) {
+      toast.show(result.error, 'error')
+      return
+    }
+    toast.show(`${result.count} variantes del gancho generadas.`, 'success')
+    router.refresh()
+  }
 
   return (
     <div>
@@ -45,6 +145,7 @@ export function ScriptEditForm({ script }: { script: Script }) {
           ← Guiones
         </Link>
         <div className="flex items-center gap-4">
+          <SaveStatus state={saveState} />
           <button
             type="button"
             onClick={() => setConvertOpen(true)}
@@ -63,118 +164,149 @@ export function ScriptEditForm({ script }: { script: Script }) {
         </div>
       </div>
 
-      <form action={formAction} className="flex flex-col gap-4 rounded-card border border-border bg-surface p-5">
-        <label className={labelClass}>
-          Título
-          <TextInput
-            name="title"
-            type="text"
-            required
-            maxLength={TITLE_MAX_LENGTH}
-            defaultValue={script.title ?? ''}
-            className="text-base normal-case tracking-normal"
-          />
-        </label>
+      {isWinner && <WinnerBadge />}
 
-        <div className="grid gap-4 sm:grid-cols-3">
-          <label className={labelClass}>
-            Ángulo
-            <Select name="angle" defaultValue={script.angle ?? ANGLES[0]} className="normal-case tracking-normal">
-              {ANGLES.map((a) => (
-                <option key={a}>{a}</option>
-              ))}
-            </Select>
-          </label>
-          <label className={labelClass}>
-            Producto
-            <TextInput
-              name="product"
-              type="text"
-              maxLength={TITLE_MAX_LENGTH}
-              defaultValue={script.product ?? ''}
-              placeholder="Ej: Campera Eme…"
-              className="normal-case tracking-normal"
-            />
-          </label>
-          <label className={labelClass}>
-            Estado
-            <Select name="status" defaultValue={script.status ?? 'borrador'} className="normal-case tracking-normal">
-              {STATUSES.map((s) => (
-                <option key={s} value={s}>
-                  {STATUS_LABEL[s]}
-                </option>
-              ))}
-            </Select>
-          </label>
+      {parentScript && (
+        <p className="mb-3 text-xs text-text-2">
+          Variante del hook de{' '}
+          <Link href={`/scripts/${parentScript.id}`} className="font-medium text-accent hover:text-primary-hover">
+            {parentScript.title || 'Sin título'}
+          </Link>
+        </p>
+      )}
+
+      <form ref={formRef} onChange={scheduleSave} onBlur={flushOnBlur} onSubmit={(e) => e.preventDefault()} className="flex flex-col gap-6 rounded-card border border-border bg-surface p-6">
+        <input
+          name="title"
+          type="text"
+          required
+          maxLength={TITLE_MAX_LENGTH}
+          defaultValue={script.title ?? ''}
+          placeholder="Sin título"
+          className="border-0 bg-transparent text-2xl font-bold tracking-[-0.02em] text-text outline-none placeholder:text-text-3"
+        />
+
+        <div className="flex flex-wrap items-center gap-2">
+          <select
+            name="angle"
+            defaultValue={script.angle ?? ANGLES[0]}
+            className="rounded-full border border-border bg-surface-2/60 px-2.5 py-1 text-[11px] font-medium text-text-2 outline-none transition-colors duration-150 ease-out focus:border-accent"
+          >
+            {ANGLES.map((a) => (
+              <option key={a}>{a}</option>
+            ))}
+          </select>
+          <input
+            name="product"
+            type="text"
+            maxLength={TITLE_MAX_LENGTH}
+            defaultValue={script.product ?? ''}
+            placeholder="Producto"
+            className="min-w-[120px] max-w-[220px] flex-1 rounded-full border border-border bg-surface-2/60 px-2.5 py-1 text-[11px] font-medium text-text-2 outline-none transition-colors duration-150 ease-out placeholder:text-text-3 focus:border-accent"
+          />
+          <select
+            name="status"
+            defaultValue={script.status ?? 'borrador'}
+            className={`rounded-full border border-border bg-surface-2/60 px-2.5 py-1 text-[11px] font-bold outline-none transition-colors duration-150 ease-out focus:border-accent ${STATUS_COLOR[script.status ?? ''] ?? 'text-text-2'}`}
+          >
+            {STATUSES.map((s) => (
+              <option key={s} value={s}>
+                {STATUS_LABEL[s]}
+              </option>
+            ))}
+          </select>
         </div>
 
-        <label className={labelClass}>
-          Hook (primeros 3 segundos)
-          <TextArea
-            maxLength={TEXT_MAX_LENGTH}
+        <div className="flex flex-col gap-1.5">
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-[10px] font-bold uppercase tracking-wide text-text-3">Hook (primeros 3 segundos)</p>
+            <button
+              type="button"
+              onClick={handleGenerateHooks}
+              disabled={generating}
+              className="shrink-0 text-[11px] font-semibold text-accent transition-colors duration-200 ease-out hover:text-primary-hover disabled:cursor-wait disabled:opacity-50"
+            >
+              {generating ? 'Generando…' : 'Generar 3 variantes'}
+            </button>
+          </div>
+          <FlowingTextarea
             name="hook"
-            rows={2}
             defaultValue={script.hook ?? ''}
             placeholder="Qué dice o muestra en el primer momento…"
-            className="normal-case tracking-normal"
-          />
-        </label>
-
-        <label className={labelClass}>
-          Desarrollo (cuerpo del video)
-          <TextArea
             maxLength={TEXT_MAX_LENGTH}
+            minRows={2}
+            className="text-[15px] font-medium"
+          />
+        </div>
+
+        <div className="flex flex-col gap-1.5">
+          <p className="text-[10px] font-bold uppercase tracking-wide text-text-3">Desarrollo (cuerpo del video)</p>
+          <FlowingTextarea
             name="body"
-            rows={8}
             defaultValue={script.body ?? ''}
             placeholder="El video completo, escena a escena…"
-            className="normal-case tracking-normal"
-          />
-        </label>
-
-        <label className={labelClass}>
-          CTA (cierre)
-          <TextArea
             maxLength={TEXT_MAX_LENGTH}
+            minRows={7}
+            className="text-[15px]"
+          />
+        </div>
+
+        <div className="flex flex-col gap-1.5">
+          <p className="text-[10px] font-bold uppercase tracking-wide text-text-3">CTA (cierre)</p>
+          <FlowingTextarea
             name="cta"
-            rows={2}
             defaultValue={script.cta ?? ''}
             placeholder="Cómo termina — qué hace el espectador…"
-            className="normal-case tracking-normal"
-          />
-        </label>
-
-        <label className={labelClass}>
-          Copy del feed (texto del anuncio)
-          <TextArea
             maxLength={TEXT_MAX_LENGTH}
+            minRows={2}
+            className="text-[15px]"
+          />
+        </div>
+
+        <div className="flex flex-col gap-1.5 border-t border-border pt-5">
+          <p className="text-[10px] font-bold uppercase tracking-wide text-text-3">Copy del feed (texto del anuncio)</p>
+          <FlowingTextarea
             name="copy_feed"
-            rows={3}
             defaultValue={script.copy_feed ?? ''}
             placeholder="Texto que va en el feed de Instagram/TikTok…"
-            className="normal-case tracking-normal"
-          />
-        </label>
-
-        <label className={labelClass}>
-          Notas y resultados
-          <TextArea
             maxLength={TEXT_MAX_LENGTH}
+            minRows={3}
+            className="text-[13px] text-text-2"
+          />
+        </div>
+
+        <div className="flex flex-col gap-1.5">
+          <p className="text-[10px] font-bold uppercase tracking-wide text-text-3">Notas y resultados</p>
+          <FlowingTextarea
             name="notes"
-            rows={3}
             defaultValue={script.notes ?? ''}
             placeholder="ROAS logrado, qué funcionó, qué cambiarías…"
-            className="normal-case tracking-normal"
+            maxLength={TEXT_MAX_LENGTH}
+            minRows={2}
+            className="text-[13px] text-text-2"
           />
-        </label>
-
-        {state.error && <p className="text-xs text-red">{state.error}</p>}
-        {state.success && <p className="text-xs text-green">Guardado correctamente.</p>}
-
-        <div>
-          <SaveButton />
         </div>
       </form>
+
+      {variants.length > 0 && (
+        <div className="mt-4 rounded-card border border-border bg-surface p-5">
+          <p className="mb-3 text-[10px] font-bold uppercase tracking-wide text-text-3">
+            Variantes del gancho ({variants.length})
+          </p>
+          <ul className="flex flex-col gap-2">
+            {variants.map((v) => (
+              <li key={v.id}>
+                <Link
+                  href={`/scripts/${v.id}`}
+                  className="block truncate rounded-control border border-border bg-surface-2/60 px-3 py-2 text-xs text-text transition-colors duration-200 ease-out hover:border-accent/40"
+                >
+                  {v.hook || v.title || 'Sin título'}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       <ConvertToAdModal
         open={convertOpen}
