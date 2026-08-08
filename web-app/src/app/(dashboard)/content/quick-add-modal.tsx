@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { PostForm } from './post-form'
 import { AddPieceForm } from '../campaigns/[id]/add-piece-form'
 import type { Database } from '@/lib/types/database.types'
+import type { ContentPillar } from '@/lib/content/pillars'
 
 type Campaign = Database['public']['Tables']['content_campaigns']['Row']
 
@@ -16,12 +17,14 @@ const fieldClass =
 export function QuickAddModal({
   date,
   campaigns,
+  pillars,
   instagramConnected,
   tiktokConnected,
   onClose,
 }: {
   date: string
   campaigns: Campaign[]
+  pillars: ContentPillar[]
   instagramConnected: boolean
   tiktokConnected: boolean
   onClose: () => void
@@ -69,7 +72,7 @@ export function QuickAddModal({
         </div>
 
         {mode === 'suelta' && (
-          <PostForm instagramConnected={instagramConnected} tiktokConnected={tiktokConnected} defaultDate={date} onDone={onClose} />
+          <PostForm pillars={pillars} instagramConnected={instagramConnected} tiktokConnected={tiktokConnected} defaultDate={date} onDone={onClose} />
         )}
 
         {mode === 'campana' &&

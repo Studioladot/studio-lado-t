@@ -11,6 +11,7 @@ import { PostForm } from './post-form'
 import { PieceEditForm } from '../campaigns/[id]/piece-edit-form'
 import type { Database } from '@/lib/types/database.types'
 import type { MediaInsight } from './content-tabs'
+import type { ContentPillar } from '@/lib/content/pillars'
 
 type Post = Database['public']['Tables']['content_posts']['Row']
 type Piece = Database['public']['Tables']['content_piezas']['Row']
@@ -125,8 +126,9 @@ function Pill({
       className={`flex w-full items-center gap-1 rounded-control border px-1 py-0.5 text-left text-[9px] font-medium transition-colors duration-150 ease-out hover:bg-surface-2 sm:px-1.5 sm:py-1 sm:text-[10px] ${
         isDragging ? 'opacity-40' : ''
       }`}
-      title={item.titulo}
+      title={item.pillar ? `${item.pillar} — ${item.titulo}` : item.titulo}
     >
+      {item.pillar && <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-accent" aria-hidden="true" />}
       <span className="truncate text-text">{item.titulo || 'Sin título'}</span>
     </button>
   )
@@ -139,6 +141,7 @@ export function ContentCalendar({
   instagramConnected,
   tiktokConnected,
   mediaInsights,
+  pillars,
 }: {
   posts: Post[]
   pieces: Piece[]
@@ -146,6 +149,7 @@ export function ContentCalendar({
   instagramConnected: boolean
   tiktokConnected: boolean
   mediaInsights: MediaInsight[]
+  pillars: ContentPillar[]
 }) {
   const [monthStart, setMonthStart] = useState(() => {
     const now = new Date()
@@ -326,6 +330,7 @@ export function ContentCalendar({
         <QuickAddModal
           date={addDate}
           campaigns={campaigns}
+          pillars={pillars}
           instagramConnected={instagramConnected}
           tiktokConnected={tiktokConnected}
           onClose={() => setAddDate(null)}
@@ -336,7 +341,13 @@ export function ContentCalendar({
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={() => setEditingItem(null)}>
           <div className="max-h-[85vh] w-full max-w-[480px] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             {editingPost && (
-              <PostForm post={editingPost} instagramConnected={instagramConnected} tiktokConnected={tiktokConnected} onDone={() => setEditingItem(null)} />
+              <PostForm
+                post={editingPost}
+                pillars={pillars}
+                instagramConnected={instagramConnected}
+                tiktokConnected={tiktokConnected}
+                onDone={() => setEditingItem(null)}
+              />
             )}
             {editingPiece && (
               <div className="rounded-card border border-border bg-surface p-4">

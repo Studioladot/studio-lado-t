@@ -7,6 +7,7 @@ import { clamp, TITLE_MAX_LENGTH, TEXT_MAX_LENGTH } from '@/lib/text-limits'
 import { askAI } from '@/lib/ia/client'
 import { checkIaUsage, incrementIaUsage, checkIdeaGenDailyUsage, incrementIdeaGenDailyUsage } from '@/lib/ia/usage'
 import { NOTE_COLORS } from '../notes/note-constants'
+import type { ContentPillar } from '@/lib/content/pillars'
 
 type MediaItem = { url: string; type: 'image' | 'video' }
 
@@ -59,6 +60,7 @@ type BuiltPost =
         status: string
         production_status: string
         protagonista: string | null
+        pillar: string | null
       }
     }
 
@@ -94,6 +96,7 @@ async function buildPostRecord(formData: FormData): Promise<BuiltPost> {
       status: String(formData.get('status') ?? 'pendiente'),
       production_status: PRODUCTION_STATUSES.includes(productionStatus) ? productionStatus : 'idea',
       protagonista: emptyToNull(formData.get('protagonista')) ? clampTitle(String(formData.get('protagonista'))) : null,
+      pillar: emptyToNull(formData.get('pillar')),
     },
   }
 }
@@ -312,4 +315,39 @@ export async function generateContentIdeaAction(): Promise<IdeaGenState> {
 
   revalidatePath('/notes')
   return { ok: true, idea, remaining, savedToNotes: !noteError }
+}
+
+// ---------------------------------------------------------------------------
+// "Pilares de Contenido" (2026-08-07) — gestión desde el modal del selector
+// (pillar-field.tsx). Guarda la lista COMPLETA de una — más simple y seguro
+// que endpoints separados de agregar/renombrar/borrar/reordenar para una
+// lista chica. Texto libre en content_posts.pillar (no FK), así que borrar
+// y reinsertar acá nunca rompe publicaciones existentes — ver la migración
+// para el razonamiento completo.
+// ---------------------------------------------------------------------------
+
+export type SavePillarsResult = { ok: true; pillars: ContentPillar[] } | { ok: false; error: string }
+
+export async function savePillarsAction(names: string[]): Promise<SavePillarsResult> {
+  const { activeOrganizationId } = await getDashboardContext()
+  if (!activeOrganizationId) return { ok: false, error: 'No encontramos tu organización activa.' }
+
+  const cleaned = names.map((n) => clampTitle(n.trim())).filter(Boolean)
+  if (cleaned.length === 0) return { ok: false, error: 'Agregá al menos un pilar.' }
+
+  const supabase = await createClient()
+
+  await supabase.from('content_pillars').delete().eq('organization_id', activeOrganizationId)
+  const { data: inserted, error } = await supabase
+    .from('content_pillars')
+    .insert(cleaned.map((name, i) => ({ organization_id: activeOrganizationId, name, sort_order: i })))
+    .select('id, name, sort_order')
+
+  if (error || !inserted) return { ok: false, error: 'No pudimos guardar los pilares. Probá de nuevo.' }
+
+  revalidatePath('/content')
+  return {
+    ok: true,
+    pillars: inserted.map((row) => ({ id: row.id, name: row.name, sortOrder: row.sort_order })).sort((a, b) => a.sortOrder - b.sortOrder),
+  }
 }

@@ -918,6 +918,38 @@ export type Database = {
           },
         ]
       }
+      content_pillars: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          organization_id: string
+          sort_order: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          organization_id: string
+          sort_order?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          organization_id?: string
+          sort_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "content_pillars_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       content_piezas: {
         Row: {
           campaign_id: string
@@ -1065,6 +1097,7 @@ export type Database = {
           media_urls: Json | null
           notes: string | null
           organization_id: string | null
+          pillar: string | null
           platform: string | null
           production_status: string
           protagonista: string | null
@@ -1102,6 +1135,7 @@ export type Database = {
           media_urls?: Json | null
           notes?: string | null
           organization_id?: string | null
+          pillar?: string | null
           platform?: string | null
           production_status?: string
           protagonista?: string | null
@@ -1139,6 +1173,7 @@ export type Database = {
           media_urls?: Json | null
           notes?: string | null
           organization_id?: string | null
+          pillar?: string | null
           platform?: string | null
           production_status?: string
           protagonista?: string | null

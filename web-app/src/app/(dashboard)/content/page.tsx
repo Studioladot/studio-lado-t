@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { getDashboardContext } from '@/lib/organization/dashboard-context'
 import { ContentTabs } from './content-tabs'
 import { detectWinningItems } from '@/lib/content/winners'
+import { getContentPillars } from '@/lib/content/pillars'
 
 export default async function ContentPage() {
   const { activeOrganizationId } = await getDashboardContext()
@@ -16,25 +17,29 @@ export default async function ContentPage() {
 
   const supabase = await createClient()
 
-  const [{ data: posts }, { data: pieces }, { data: campaigns }, { data: instagramConnection }, { data: tiktokConnection }] = await Promise.all([
-    supabase
-      .from('content_posts')
-      .select('*')
-      .eq('organization_id', activeOrganizationId)
-      .order('date', { ascending: false }),
-    supabase
-      .from('content_piezas')
-      .select('*')
-      .eq('organization_id', activeOrganizationId)
-      .order('fecha_planificada', { ascending: true }),
-    supabase
-      .from('content_campaigns')
-      .select('*')
-      .eq('organization_id', activeOrganizationId),
-    supabase.from('instagram_connections').select('ig_username, profile_picture_url').eq('organization_id', activeOrganizationId).maybeSingle(),
-    // OAuth de TikTok real desde 2026-08-01 (src/app/api/auth/tiktok/callback) — gatea la pestaña "Configuración TikTok" y la sección de Rendimiento.
-    supabase.from('tiktok_connections').select('tiktok_username, avatar_url').eq('organization_id', activeOrganizationId).maybeSingle(),
-  ])
+  const [{ data: posts }, { data: pieces }, { data: campaigns }, { data: instagramConnection }, { data: tiktokConnection }, pillars] =
+    await Promise.all([
+      supabase
+        .from('content_posts')
+        .select('*')
+        .eq('organization_id', activeOrganizationId)
+        .order('date', { ascending: false }),
+      supabase
+        .from('content_piezas')
+        .select('*')
+        .eq('organization_id', activeOrganizationId)
+        .order('fecha_planificada', { ascending: true }),
+      supabase
+        .from('content_campaigns')
+        .select('*')
+        .eq('organization_id', activeOrganizationId),
+      supabase.from('instagram_connections').select('ig_username, profile_picture_url').eq('organization_id', activeOrganizationId).maybeSingle(),
+      // OAuth de TikTok real desde 2026-08-01 (src/app/api/auth/tiktok/callback) — gatea la pestaña "Configuración TikTok" y la sección de Rendimiento.
+      supabase.from('tiktok_connections').select('tiktok_username, avatar_url').eq('organization_id', activeOrganizationId).maybeSingle(),
+      // "Pilares de Contenido" (2026-08-07) — siembra los 3 default (Atracción/
+      // Nutrición/Venta) la primera vez que la organización los pide.
+      getContentPillars(supabase, activeOrganizationId),
+    ])
 
   // Rendimiento y Comparativa — solo se piden si la red correspondiente
   // está conectada, no tiene sentido pegarle a estas tablas para una
@@ -136,6 +141,7 @@ export default async function ContentPage() {
         accountInsights={accountInsights ?? []}
         mediaInsights={[...latestByItem.values()]}
         winningItems={winningItems}
+        pillars={pillars}
       />
     </div>
   )

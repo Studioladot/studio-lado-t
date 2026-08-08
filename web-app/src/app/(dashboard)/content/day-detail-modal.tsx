@@ -56,6 +56,11 @@ export function DayDetailModal({
                 return (
                   <div key={`${item.sourceTable}-${item.id}`} className="rounded-control border border-border bg-surface-2/40 p-3">
                     <div className="flex flex-wrap items-center gap-1.5">
+                      {item.pillar && (
+                        <span className="shrink-0 rounded-full border border-accent/25 bg-accent/[0.06] px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-accent">
+                          {item.pillar}
+                        </span>
+                      )}
                       <p className="min-w-0 flex-1 truncate text-xs font-semibold text-text">{item.titulo || 'Sin título'}</p>
                     </div>
                     {item.source === 'campana' && (

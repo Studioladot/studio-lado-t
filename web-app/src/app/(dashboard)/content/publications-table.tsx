@@ -11,6 +11,7 @@ import { DropdownMenu, DropdownItem, FilterTrigger } from '@/components/features
 import { pillClass } from '@/components/features/action-pill'
 import { Pagination } from '../meta-ads/campaigns/pagination'
 import type { Database } from '@/lib/types/database.types'
+import type { ContentPillar } from '@/lib/content/pillars'
 
 const PAGE_SIZE = 15
 
@@ -47,12 +48,14 @@ export function PublicationsTable({
   posts,
   pieces,
   campaigns,
+  pillars,
   instagramConnected,
   tiktokConnected,
 }: {
   posts: Post[]
   pieces: Piece[]
   campaigns: Campaign[]
+  pillars: ContentPillar[]
   instagramConnected: boolean
   tiktokConnected: boolean
 }) {
@@ -167,7 +170,7 @@ export function PublicationsTable({
 
       {creating && (
         <div className="mb-4">
-          <PostForm instagramConnected={instagramConnected} tiktokConnected={tiktokConnected} onDone={() => setCreating(false)} />
+          <PostForm pillars={pillars} instagramConnected={instagramConnected} tiktokConnected={tiktokConnected} onDone={() => setCreating(false)} />
         </div>
       )}
 
@@ -239,7 +242,13 @@ export function PublicationsTable({
       {editingItem && editingPost && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={() => setEditingItem(null)}>
           <div className="max-h-[85vh] w-full max-w-[480px] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-            <PostForm post={editingPost} instagramConnected={instagramConnected} tiktokConnected={tiktokConnected} onDone={() => setEditingItem(null)} />
+            <PostForm
+              post={editingPost}
+              pillars={pillars}
+              instagramConnected={instagramConnected}
+              tiktokConnected={tiktokConnected}
+              onDone={() => setEditingItem(null)}
+            />
           </div>
         </div>
       )}

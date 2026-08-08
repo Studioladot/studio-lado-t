@@ -26,6 +26,8 @@ export type UnifiedItem = {
   titulo: string
   turno: string
   mediaList: MediaItem[]
+  /** "Pilares de Contenido" (2026-08-07) — solo content_posts lo tiene hoy; las piezas de campaña quedan en null (nunca se inventa un valor). */
+  pillar: string | null
 }
 
 function parseMediaList(value: unknown): MediaItem[] {
@@ -59,6 +61,7 @@ export function unifyContentItems(posts: Post[], pieces: Piece[], campaigns: Cam
     // concepto se eliminó del flujo (decisión de producto, 2026-08-05):
     // Gotix ya no sube ni gestiona la pieza publicable, solo planificación.
     mediaList: parseMediaList(p.reference_urls),
+    pillar: p.pillar,
   }))
 
   const fromPieces: UnifiedItem[] = pieces.map((p) => {
@@ -82,6 +85,7 @@ export function unifyContentItems(posts: Post[], pieces: Piece[], campaigns: Cam
       titulo: p.titulo,
       turno: p.turno ?? '',
       mediaList: parseMediaList(p.reference_urls),
+      pillar: null,
     }
   })
 

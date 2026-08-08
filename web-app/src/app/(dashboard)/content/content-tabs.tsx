@@ -10,6 +10,7 @@ import type { WinningItem } from '@/lib/content/winners'
 import type { TiktokVideoRow } from '@/lib/tiktok/winners'
 import type { InstagramCatalogRow } from '@/lib/instagram/media-catalog-winners'
 import type { Database } from '@/lib/types/database.types'
+import type { ContentPillar } from '@/lib/content/pillars'
 
 type Post = Database['public']['Tables']['content_posts']['Row']
 type Piece = Database['public']['Tables']['content_piezas']['Row']
@@ -41,6 +42,7 @@ export function ContentTabs({
   accountInsights,
   mediaInsights,
   winningItems,
+  pillars,
 }: {
   posts: Post[]
   pieces: Piece[]
@@ -55,6 +57,7 @@ export function ContentTabs({
   accountInsights: AccountInsight[]
   mediaInsights: MediaInsight[]
   winningItems: WinningItem[]
+  pillars: ContentPillar[]
 }) {
   const [tab, setTab] = useState<(typeof TABS)[number]['value']>('control')
 
@@ -128,6 +131,7 @@ export function ContentTabs({
           instagramConnected={instagramConnected}
           tiktokConnected={tiktokConnected}
           mediaInsights={mediaInsights}
+          pillars={pillars}
         />
       )}
       {tab === 'publicaciones' && (
@@ -135,6 +139,7 @@ export function ContentTabs({
           posts={posts}
           pieces={pieces}
           campaigns={campaigns}
+          pillars={pillars}
           instagramConnected={instagramConnected}
           tiktokConnected={tiktokConnected}
         />
