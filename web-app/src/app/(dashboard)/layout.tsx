@@ -4,6 +4,7 @@ import { CurrencyProvider } from '@/lib/context/currency-context'
 import { getDashboardContext } from '@/lib/organization/dashboard-context'
 import { createClient } from '@/lib/supabase/server'
 import { getUsdArsRate, type Currency } from '@/lib/currency'
+import { getSubscriptionStatus } from '@/lib/billing/subscription'
 import { OrganizationSwitcher } from '@/components/features/organization-switcher'
 import { SignOutButton } from '@/components/features/sign-out-button'
 import { DashboardShell } from '@/components/features/dashboard-shell'
@@ -18,6 +19,16 @@ export default async function DashboardLayout({
 
   if (organizations.length === 0) {
     redirect('/onboarding')
+  }
+
+  // Muro de Pago (2026-08-08) — /paywall vive fuera de este layout (mismo
+  // criterio que /onboarding) para no crear un loop de redirect cuando el
+  // usuario ya está parado ahí. Se bloquea TODO el shell del dashboard, no
+  // solo la creación de datos puntual — es la forma más simple de
+  // garantizar que ninguna pantalla se cuele sin pasar por acá.
+  const activeOrg = organizations.find((org) => org.id === activeOrganizationId)
+  if (activeOrg && getSubscriptionStatus(activeOrg).kind === 'trial_expired') {
+    redirect('/paywall')
   }
 
   // Se resuelven acá (server) para que el primer render del cliente ya

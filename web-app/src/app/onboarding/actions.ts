@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { setActiveOrganizationCookie } from '@/lib/organization/active-organization'
 import { clamp, TITLE_MAX_LENGTH } from '@/lib/text-limits'
+import { trialEndsAtFromNow } from '@/lib/billing/subscription'
 
 export type OnboardingState = {
   error: string | null
@@ -41,6 +42,14 @@ export async function createOrganizationAction(
   if (error || !organizationId) {
     return { error: 'No pudimos crear tu organización. Probá de nuevo.' }
   }
+
+  // Trial de 7 días — arranca acá, explícito, en vez de confiar en un
+  // default de columna que no está documentado en ningún archivo de
+  // migración de este repo (create_organization_with_owner tampoco lo
+  // fija). Si esto falla, no bloquea el alta: la organización ya se creó
+  // bien, y getSubscriptionStatus trata un trial_ends_at nulo como "recién
+  // empezado" en vez de bloquear a alguien por un dato faltante.
+  await supabase.from('organizations').update({ plan: 'trial', trial_ends_at: trialEndsAtFromNow() }).eq('id', organizationId)
 
   await setActiveOrganizationCookie(organizationId)
 

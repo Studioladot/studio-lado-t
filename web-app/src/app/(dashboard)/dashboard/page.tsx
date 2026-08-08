@@ -11,7 +11,7 @@ import { getTiendaNubeOrders, summarizeOrders } from '@/lib/tiendanube/orders'
 import { getOrganizationRunLog, type OrgRunLogEntry } from '@/lib/meta/autopilot'
 import { formatMoney, type Currency } from '@/lib/currency'
 import { ConfirmSubmitButton } from '@/components/features/confirm-submit-button'
-import { OnboardingChecklist } from './onboarding-checklist'
+import { StartChecklist } from './start-checklist'
 
 // Command Center real (bloque de corrección, 2026-08-03) — reemplaza el
 // hero de video decorativo (sin reproducción real, "Onboarding · 3:42" era
@@ -116,8 +116,9 @@ export default async function DashboardPage({
     { count: pendingPosts },
     { data: metaConnection },
     { data: tiendaNubeConnection },
-    { data: igConnection },
     autopilotAlerts,
+    { count: totalPosts },
+    { count: totalScripts },
   ] = await Promise.all([
     supabase
       .from('content_campaigns')
@@ -149,12 +150,12 @@ export default async function DashboardPage({
       .select('store_name, store_url, access_token, store_id')
       .eq('organization_id', activeOrganizationId)
       .maybeSingle(),
-    supabase
-      .from('instagram_connections')
-      .select('ig_username')
-      .eq('organization_id', activeOrganizationId)
-      .maybeSingle(),
     getOrganizationRunLog(supabase, activeOrganizationId, 5),
+    // "Checklist de Inicio" (2026-08-08) — mismos 3 pasos que reemplazan el
+    // modal viejo: Conectar Meta ya se resuelve arriba con metaConnection,
+    // estos 2 counts son los que faltaban.
+    supabase.from('content_posts').select('*', { count: 'exact', head: true }).eq('organization_id', activeOrganizationId),
+    supabase.from('scripts').select('*', { count: 'exact', head: true }).eq('organization_id', activeOrganizationId),
   ])
 
   const tokenExpired = metaConnection?.expires_at
@@ -193,9 +194,15 @@ export default async function DashboardPage({
       ? { tone: 'error' as const, message: tnError }
       : null
 
+  const startChecklistItems = [
+    { label: 'Conectar Meta', done: !!metaConnection },
+    { label: 'Crear tu primera publicación', done: (totalPosts ?? 0) > 0 },
+    { label: 'Armar un guion', done: (totalScripts ?? 0) > 0 },
+  ]
+
   return (
     <div>
-      <OnboardingChecklist metaConnected={!!metaConnection} igConnected={!!igConnection} />
+      <StartChecklist items={startChecklistItems} />
 
       {banner && (
         <div
@@ -215,7 +222,7 @@ export default async function DashboardPage({
       <div className="mb-3.5">
         <p className="mb-2 text-[11px] font-bold uppercase tracking-[.08em] text-text-3">Ventas de hoy</p>
         {!tiendaNubeConnection ? (
-          <EmptyStateCard title="Conectá Tienda Nube" subtitle="Para ver tus ventas del día acá necesitás vincular tu tienda." />
+          <EmptyStateCard title="Tu facturación empieza acá" subtitle="Conectá Tienda Nube para ver tus ventas de hoy en tiempo real, sin entrar a otro panel." />
         ) : tiendaNubeError ? (
           <div className="rounded-card border border-red/30 bg-red/[8%] px-4 py-3 text-sm text-red">{tiendaNubeError}</div>
         ) : todaySummary ? (
@@ -232,7 +239,7 @@ export default async function DashboardPage({
         <div className="rounded-card border border-border bg-surface p-5">
           <p className="mb-3 text-[10px] font-bold uppercase tracking-wide text-text-3">Top anuncios activos (7 días)</p>
           {!metaConnection ? (
-            <EmptyStateCard title="Conectá Meta Ads" subtitle="Para ver qué anuncios están corriendo y cómo les va." />
+            <EmptyStateCard title="Tu estrategia empieza acá" subtitle="Conectá tu cuenta de Meta para ver tu primera métrica de anuncios en este mismo panel." />
           ) : tokenExpired ? (
             <div className="rounded-control border border-amber/30 bg-amber/[8%] px-4 py-3 text-sm text-amber">
               Tu conexión con Meta Ads venció — reconectá para ver métricas actualizadas.

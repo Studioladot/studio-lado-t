@@ -26,6 +26,7 @@ import {
 } from './nav-icons'
 import { ThemeToggle } from './theme-toggle'
 import { CurrencyToggle } from './currency-toggle'
+import { TrialBanner } from './trial-banner'
 
 type NavItem = { href: string; label: string; icon: ReactNode }
 // Sub-encabezado puramente visual dentro de un grupo ya desplegable (ej. "Integraciones"
@@ -205,8 +206,19 @@ export function SidebarNav({
       </div>
 
       <nav className="flex-1 overflow-y-auto px-0 py-3">
+        <TrialBanner collapsed={collapsed} />
+
         <div className="mb-3">
           <NavLink item={DASHBOARD_ITEM} active={isItemActive(pathname, DASHBOARD_ITEM.href)} collapsed={collapsed} />
+          <Link
+            href="/guia-rapida"
+            title={collapsed ? 'Guía rápida' : undefined}
+            className={`mx-2 my-0.5 flex items-center rounded-md py-2 text-[12px] font-medium text-white/45 outline-none transition-colors duration-200 ease-out hover:bg-white/[0.04] hover:text-white/80 focus-visible:bg-white/[0.06] focus-visible:text-white focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-accent/50 ${
+              collapsed ? 'justify-center px-0' : 'px-3'
+            } ${isItemActive(pathname, '/guia-rapida') ? 'text-white/80' : ''}`}
+          >
+            {collapsed ? 'GR' : 'Guía rápida'}
+          </Link>
         </div>
 
         {GROUPS.map((group, groupIndex) => {

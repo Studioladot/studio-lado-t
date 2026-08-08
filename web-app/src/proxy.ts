@@ -17,6 +17,11 @@ import { NextResponse, type NextRequest } from 'next/server'
 // como googleaa655e68170c8d27.html (verificación de dominio de Google
 // Search Console, en public/) igual pasa por acá y necesita su propia
 // entrada, o el proxy lo manda a /login antes de que Google pueda leerlo.
+// /api/mercadopago/webhook: mismo motivo que /api/meta/data-deletion —
+// Mercado Pago llama esta ruta server-to-server, sin cookie de sesión de
+// Gotix. La autenticación real de esa ruta es el re-consultado del pago
+// contra la API de MP con nuestro propio access token (ver
+// src/lib/billing/mercadopago.ts), no una sesión.
 const PUBLIC_PATHS = [
   '/login',
   '/auth',
@@ -24,6 +29,7 @@ const PUBLIC_PATHS = [
   '/terms',
   '/data-deletion-status',
   '/api/meta/data-deletion',
+  '/api/mercadopago/webhook',
   '/googleaa655e68170c8d27.html',
 ]
 

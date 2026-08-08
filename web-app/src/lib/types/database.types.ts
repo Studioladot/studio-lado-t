@@ -553,6 +553,50 @@ export type Database = {
           },
         ]
       }
+      billing_events: {
+        Row: {
+          amount: number | null
+          created_at: string
+          id: string
+          mp_payment_id: string
+          mp_preference_id: string | null
+          organization_id: string | null
+          plan: string | null
+          raw_payload: Json | null
+          status: string
+        }
+        Insert: {
+          amount?: number | null
+          created_at?: string
+          id?: string
+          mp_payment_id: string
+          mp_preference_id?: string | null
+          organization_id?: string | null
+          plan?: string | null
+          raw_payload?: Json | null
+          status: string
+        }
+        Update: {
+          amount?: number | null
+          created_at?: string
+          id?: string
+          mp_payment_id?: string
+          mp_preference_id?: string | null
+          organization_id?: string | null
+          plan?: string | null
+          raw_payload?: Json | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "billing_events_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       brand_journal_entries: {
         Row: {
           created_at: string
