@@ -4,8 +4,11 @@ import { createClient } from '@/lib/supabase/server'
 import { getDashboardContext } from '@/lib/organization/dashboard-context'
 import { getMetaCampaignHeader, getMetaCampaignAdSets, getMetaCampaignAds } from '@/lib/meta/campaigns'
 import { getCampaignTargets } from '@/lib/meta/autopilot'
+import { getCampaignPillar } from '@/lib/meta/campaign-pillars'
+import { getContentPillars } from '@/lib/pillars'
 import { toggleCampaignStatusAction } from '../actions'
 import { BudgetEditor } from './budget-editor'
+import { CampaignPillarEditor } from './campaign-pillar-editor'
 import { AdSetsWorkspace } from './adsets-workspace'
 import { AdsWorkspace } from './ads-workspace'
 import { AutopilotPanel } from '../autopilot-panel'
@@ -44,11 +47,13 @@ export default async function MetaAdsCampaignDetailPage({
     notFound()
   }
 
-  const [header, adSetsResult, adsResult, targets] = await Promise.all([
+  const [header, adSetsResult, adsResult, targets, pillars, currentPillar] = await Promise.all([
     getMetaCampaignHeader(connection.token, id),
     getMetaCampaignAdSets(connection.token, id),
     getMetaCampaignAds(connection.token, id),
     getCampaignTargets(supabase, activeOrganizationId, id),
+    getContentPillars(supabase, activeOrganizationId),
+    getCampaignPillar(supabase, activeOrganizationId, id),
   ])
 
   if (!header.ok) {
@@ -132,14 +137,17 @@ export default async function MetaAdsCampaignDetailPage({
           )}
         </div>
 
-        <div className="mt-4 border-t border-border pt-4">
-          <p className="mb-2 text-[10px] font-bold uppercase tracking-wide text-text-3">Presupuesto</p>
-          <BudgetEditor
-            campaignId={campaign.id}
-            dailyBudget={campaign.dailyBudget}
-            lifetimeBudget={campaign.lifetimeBudget}
-            returnTo={returnTo}
-          />
+        <div className="mt-4 grid grid-cols-1 gap-4 border-t border-border pt-4 sm:grid-cols-[1fr_260px]">
+          <div>
+            <p className="mb-2 text-[10px] font-bold uppercase tracking-wide text-text-3">Presupuesto</p>
+            <BudgetEditor
+              campaignId={campaign.id}
+              dailyBudget={campaign.dailyBudget}
+              lifetimeBudget={campaign.lifetimeBudget}
+              returnTo={returnTo}
+            />
+          </div>
+          <CampaignPillarEditor campaignId={campaign.id} pillars={pillars} currentPillar={currentPillar} />
         </div>
       </div>
 

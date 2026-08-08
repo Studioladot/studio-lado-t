@@ -76,6 +76,10 @@ export async function createNoteAction(
   // nota a una campaña real. String vacío (nota general, no viene de
   // campaigns/[id]/) se guarda como null, nunca como "".
   const campaignId = String(formData.get('campaign_id') ?? '').trim() || null
+  // "Pilares Estratégicos" — arquitectura global (2026-08-07): toda nota
+  // nueva ya puede nacer atada a un pilar, mismo criterio que Publicaciones
+  // y Campañas.
+  const pilar = String(formData.get('pilar') ?? '').trim() || null
 
   const supabase = await createClient()
 
@@ -98,6 +102,7 @@ export async function createNoteAction(
     color,
     media_url: mediaUrl,
     campaign_id: campaignId,
+    pilar,
   })
 
   if (error) {
@@ -137,6 +142,7 @@ export async function updateNoteAction(
   // Solo para saber qué path revalidar — el campaign_id de una nota no se
   // reasigna al editar, viaja acá de solo lectura (ver note-form.tsx).
   const campaignId = String(formData.get('campaign_id') ?? '').trim() || null
+  const pilar = String(formData.get('pilar') ?? '').trim() || null
 
   const supabase = await createClient()
 
@@ -145,6 +151,7 @@ export async function updateNoteAction(
     contenido,
     categoria,
     color,
+    pilar,
   }
 
   const file = formData.get('media') as File | null

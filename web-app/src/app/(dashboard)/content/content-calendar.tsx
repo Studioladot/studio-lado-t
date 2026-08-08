@@ -11,7 +11,7 @@ import { PostForm } from './post-form'
 import { PieceEditForm } from '../campaigns/[id]/piece-edit-form'
 import type { Database } from '@/lib/types/database.types'
 import type { MediaInsight } from './content-tabs'
-import type { ContentPillar } from '@/lib/content/pillars'
+import type { ContentPillar } from '@/lib/pillars'
 
 type Post = Database['public']['Tables']['content_posts']['Row']
 type Piece = Database['public']['Tables']['content_piezas']['Row']
@@ -128,7 +128,7 @@ function Pill({
       }`}
       title={item.pillar ? `${item.pillar} — ${item.titulo}` : item.titulo}
     >
-      {item.pillar && <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-accent" aria-hidden="true" />}
+      {item.pillar && <span className="h-1.5 w-1.5 shrink-0 rounded-full border border-text-3 bg-surface-2" aria-hidden="true" />}
       <span className="truncate text-text">{item.titulo || 'Sin título'}</span>
     </button>
   )

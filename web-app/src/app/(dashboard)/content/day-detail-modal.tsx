@@ -4,6 +4,7 @@ import { deletePostAction } from './actions'
 import { deletePieceAction } from '../campaigns/[id]/actions'
 import { ConfirmSubmitButton } from '@/components/features/confirm-submit-button'
 import { pillClass } from '@/components/features/action-pill'
+import { PillarBadge } from '@/components/features/pillar-badge'
 import type { UnifiedItem } from './unified-items'
 
 // Modal de "qué hay planificado este día" — antes, clickear un día del
@@ -56,11 +57,7 @@ export function DayDetailModal({
                 return (
                   <div key={`${item.sourceTable}-${item.id}`} className="rounded-control border border-border bg-surface-2/40 p-3">
                     <div className="flex flex-wrap items-center gap-1.5">
-                      {item.pillar && (
-                        <span className="shrink-0 rounded-full border border-accent/25 bg-accent/[0.06] px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-accent">
-                          {item.pillar}
-                        </span>
-                      )}
+                      {item.pillar && <PillarBadge pillar={item.pillar} />}
                       <p className="min-w-0 flex-1 truncate text-xs font-semibold text-text">{item.titulo || 'Sin título'}</p>
                     </div>
                     {item.source === 'campana' && (

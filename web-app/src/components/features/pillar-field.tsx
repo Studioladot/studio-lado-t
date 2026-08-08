@@ -1,45 +1,59 @@
 'use client'
 
 import { useState } from 'react'
-import { savePillarsAction } from './actions'
-import { fieldClass, labelClass } from './piece-form-shared'
-import { useToast } from '@/components/features/toast'
-import type { ContentPillar } from '@/lib/content/pillars'
+import { savePillarsAction } from '@/lib/pillars-actions'
+import { useToast } from './toast'
+import { FORM_LABEL_CLASS, Select, TextInput } from './form-field'
+import type { ContentPillar } from '@/lib/pillars'
 
-// "Pilares de Contenido" (2026-08-07) — select + gestión inline. El estado
-// de la lista vive acá (no en el padre): tras editar desde el modal, el
-// <select> tiene que reflejar los pilares nuevos al toque, sin esperar un
-// refresh de la página entera.
-export function PillarField({ pillars: initialPillars, defaultValue }: { pillars: ContentPillar[]; defaultValue: string }) {
+// "Pilares Estratégicos" — selector compartido (2026-08-07). Vive en
+// components/features/ (no en ningún módulo puntual) porque Publicaciones,
+// Campañas de Meta Ads y Notas lo usan por igual — mismo criterio que
+// ConfirmSubmitButton/DropdownMenu. El lápiz de edición abre un modal
+// minimalista para agregar/renombrar/quitar pilares; el cambio se refleja
+// al toque en el <select> de ESTE formulario (estado local) y, vía
+// revalidatePath en savePillarsAction, en el resto de la plataforma en la
+// próxima carga de cada módulo.
+export function PillarField({
+  pillars: initialPillars,
+  defaultValue,
+  name = 'pillar',
+  label = 'Pilar Estratégico',
+}: {
+  pillars: ContentPillar[]
+  defaultValue: string
+  name?: string
+  label?: string
+}) {
   const [pillars, setPillars] = useState(initialPillars)
   const [managing, setManaging] = useState(false)
 
-  // Si el valor actual de la publicación ya no está entre los pilares
-  // vigentes (se borró o se renombró desde el modal), se agrega como opción
-  // extra — perder silenciosamente el dato histórico del <select> sería
-  // peor que mostrar una opción que ya no es "oficial".
+  // Si el valor actual ya no está entre los pilares vigentes (se borró o se
+  // renombró desde el modal), se agrega como opción extra — perder
+  // silenciosamente el dato histórico del <select> sería peor que mostrar
+  // una opción que ya no es "oficial".
   const options = defaultValue && !pillars.some((p) => p.name === defaultValue) ? [...pillars, { id: '__legacy__', name: defaultValue, sortOrder: -1 }] : pillars
 
   return (
-    <label className={labelClass}>
-      Pilar Estratégico
+    <label className={FORM_LABEL_CLASS}>
+      {label}
       <div className="flex items-center gap-1.5">
-        <select name="pillar" defaultValue={defaultValue} className={`min-w-0 flex-1 normal-case tracking-normal ${fieldClass}`}>
+        <Select name={name} defaultValue={defaultValue} className="min-w-0 flex-1 normal-case tracking-normal">
           {options.length === 0 && <option value="">Sin pilares</option>}
           {options.map((p) => (
             <option key={p.id} value={p.name}>
               {p.name}
             </option>
           ))}
-        </select>
+        </Select>
         <button
           type="button"
           onClick={(e) => {
             e.preventDefault()
             setManaging(true)
           }}
-          aria-label="Editar pilares de contenido"
-          title="Editar pilares de contenido"
+          aria-label="Editar pilares estratégicos"
+          title="Editar pilares estratégicos"
           className="flex h-[38px] w-[30px] shrink-0 items-center justify-center rounded-control border border-border text-text-3 transition-colors duration-200 ease-out hover:border-accent/40 hover:text-accent"
         >
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -105,21 +119,21 @@ function ManagePillarsModal({
   return (
     <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/60 p-4" onClick={onClose}>
       <div className="w-full max-w-[380px] rounded-card border border-border bg-surface p-5" onClick={(e) => e.stopPropagation()}>
-        <p className="mb-1 text-sm font-bold normal-case tracking-normal text-text">Pilares de contenido</p>
+        <p className="mb-1 text-sm font-bold normal-case tracking-normal text-text">Pilares estratégicos</p>
         <p className="mb-4 text-xs font-normal normal-case tracking-normal text-text-2">
-          Editá, agregá o quitá los pilares estratégicos de tu cuenta.
+          Editá, agregá o quitá los pilares de tu cuenta — el cambio se aplica en Publicaciones, Campañas y Notas por igual.
         </p>
 
         <div className="flex flex-col gap-2">
           {names.map((name, i) => (
             <div key={i} className="flex items-center gap-2">
-              <input
+              <TextInput
                 type="text"
                 value={name}
                 onChange={(e) => updateName(i, e.target.value)}
                 placeholder="Nombre del pilar"
                 maxLength={40}
-                className={`flex-1 normal-case tracking-normal ${fieldClass}`}
+                className="flex-1 normal-case tracking-normal"
               />
               <button
                 type="button"

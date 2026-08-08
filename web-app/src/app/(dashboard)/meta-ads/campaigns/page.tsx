@@ -4,6 +4,7 @@ import { getDashboardContext } from '@/lib/organization/dashboard-context'
 import { getMetaCampaigns, getMetaAccountAds } from '@/lib/meta/campaigns'
 import { getAllCampaignTargets } from '@/lib/meta/autopilot'
 import { computeCreativePatternInsight } from '@/lib/meta/creative-patterns'
+import { getCampaignPillars } from '@/lib/meta/campaign-pillars'
 import { PAUSED_LIKE } from './status'
 import { CampaignsWorkspace } from './campaigns-workspace'
 import { CreativePatternBanner } from './creative-pattern-banner'
@@ -54,6 +55,7 @@ export default async function MetaAdsCampaignsPage({
 
   let campaigns = result && result.ok ? result.campaigns : []
   const creativePatternInsight = accountAdsResult?.ok ? computeCreativePatternInsight(accountAdsResult.ads) : null
+  const campaignPillars = await getCampaignPillars(supabase, activeOrganizationId, campaigns.map((c) => c.id))
 
   if (q.trim()) {
     const needle = q.trim().toLowerCase()
@@ -137,6 +139,7 @@ export default async function MetaAdsCampaignsPage({
             defaultStatus={statusFilter}
             defaultRange={String(days)}
             targetsBulk={targetsBulk}
+            campaignPillars={campaignPillars}
           />
         </>
       )}

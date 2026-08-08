@@ -15,6 +15,8 @@ import { STATUS_LABEL } from '../status'
 import { fieldClass, labelClass } from './wizard-styles'
 import { useCurrency } from '@/lib/context/currency-context'
 import { formatMoney } from '@/lib/currency'
+import { PillarField } from '@/components/features/pillar-field'
+import type { ContentPillar } from '@/lib/pillars'
 
 type ScriptOption = { id: string; title: string | null; hook: string | null; body: string | null; copy_feed: string | null }
 
@@ -73,6 +75,7 @@ export function TestCampaignWizard({
   libraryCreatives,
   instagramPosts,
   igActorId,
+  pillars,
   onClose,
 }: {
   pixels: MetaPixel[]
@@ -84,6 +87,7 @@ export function TestCampaignWizard({
   libraryCreatives: LibraryCreative[]
   instagramPosts: InstagramPostOption[]
   igActorId: string | null
+  pillars: ContentPillar[]
   onClose: () => void
 }) {
   const { accountCurrency } = useCurrency()
@@ -373,6 +377,8 @@ export function TestCampaignWizard({
                     </select>
                   </div>
                 </div>
+
+                <PillarField pillars={pillars} defaultValue="" />
 
                 {existingCampaigns.length > 0 && (
                   <div>

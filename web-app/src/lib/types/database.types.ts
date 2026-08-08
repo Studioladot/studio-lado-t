@@ -647,6 +647,38 @@ export type Database = {
           },
         ]
       }
+      campaign_pillars: {
+        Row: {
+          campaign_id: string
+          id: string
+          organization_id: string
+          pillar: string
+          updated_at: string
+        }
+        Insert: {
+          campaign_id: string
+          id?: string
+          organization_id: string
+          pillar: string
+          updated_at?: string
+        }
+        Update: {
+          campaign_id?: string
+          id?: string
+          organization_id?: string
+          pillar?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_pillars_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       campaign_presets: {
         Row: {
           advantage_controls: Json
@@ -2295,6 +2327,7 @@ export type Database = {
           id: string
           media_url: string | null
           organization_id: string | null
+          pilar: string | null
           titulo: string | null
           user_id: string
         }
@@ -2307,6 +2340,7 @@ export type Database = {
           id?: string
           media_url?: string | null
           organization_id?: string | null
+          pilar?: string | null
           titulo?: string | null
           user_id: string
         }
@@ -2319,6 +2353,7 @@ export type Database = {
           id?: string
           media_url?: string | null
           organization_id?: string | null
+          pilar?: string | null
           titulo?: string | null
           user_id?: string
         }

@@ -10,7 +10,7 @@ import type { WinningItem } from '@/lib/content/winners'
 import type { TiktokVideoRow } from '@/lib/tiktok/winners'
 import type { InstagramCatalogRow } from '@/lib/instagram/media-catalog-winners'
 import type { Database } from '@/lib/types/database.types'
-import type { ContentPillar } from '@/lib/content/pillars'
+import type { ContentPillar } from '@/lib/pillars'
 
 type Post = Database['public']['Tables']['content_posts']['Row']
 type Piece = Database['public']['Tables']['content_piezas']['Row']

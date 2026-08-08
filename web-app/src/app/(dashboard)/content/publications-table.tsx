@@ -11,7 +11,7 @@ import { DropdownMenu, DropdownItem, FilterTrigger } from '@/components/features
 import { pillClass } from '@/components/features/action-pill'
 import { Pagination } from '../meta-ads/campaigns/pagination'
 import type { Database } from '@/lib/types/database.types'
-import type { ContentPillar } from '@/lib/content/pillars'
+import type { ContentPillar } from '@/lib/pillars'
 
 const PAGE_SIZE = 15
 

@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { getDashboardContext } from '@/lib/organization/dashboard-context'
+import { getContentPillars } from '@/lib/pillars'
 import { NotesGrid } from './notes-grid'
 
 export default async function NotesPage() {
@@ -14,11 +15,10 @@ export default async function NotesPage() {
   }
 
   const supabase = await createClient()
-  const { data } = await supabase
-    .from('notes')
-    .select('*')
-    .eq('organization_id', activeOrganizationId)
-    .order('created_at', { ascending: false })
+  const [{ data }, pillars] = await Promise.all([
+    supabase.from('notes').select('*').eq('organization_id', activeOrganizationId).order('created_at', { ascending: false }),
+    getContentPillars(supabase, activeOrganizationId),
+  ])
 
   return (
     <div>
@@ -27,7 +27,7 @@ export default async function NotesPage() {
         <p className="mt-0.5 text-[13px] text-text-2">Ideas sueltas, pensamientos, lo que se te ocurra</p>
       </div>
 
-      <NotesGrid notes={data ?? []} />
+      <NotesGrid notes={data ?? []} pillars={pillars} />
     </div>
   )
 }

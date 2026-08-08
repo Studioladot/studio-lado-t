@@ -2,7 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { getDashboardContext } from '@/lib/organization/dashboard-context'
 import { ContentTabs } from './content-tabs'
 import { detectWinningItems } from '@/lib/content/winners'
-import { getContentPillars } from '@/lib/content/pillars'
+import { getContentPillars } from '@/lib/pillars'
 
 export default async function ContentPage() {
   const { activeOrganizationId } = await getDashboardContext()

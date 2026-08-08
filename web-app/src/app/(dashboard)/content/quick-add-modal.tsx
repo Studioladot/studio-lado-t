@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { PostForm } from './post-form'
 import { AddPieceForm } from '../campaigns/[id]/add-piece-form'
 import type { Database } from '@/lib/types/database.types'
-import type { ContentPillar } from '@/lib/content/pillars'
+import type { ContentPillar } from '@/lib/pillars'
 
 type Campaign = Database['public']['Tables']['content_campaigns']['Row']
 

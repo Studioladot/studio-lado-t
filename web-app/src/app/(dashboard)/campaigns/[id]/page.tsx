@@ -7,6 +7,7 @@ import { AddPieceForm } from './add-piece-form'
 import { PiecesList } from './pieces-list'
 import { deleteCampaignAction } from './actions'
 import { NotesGrid } from '../../notes/notes-grid'
+import { getContentPillars } from '@/lib/pillars'
 import { ConfirmSubmitButton } from '@/components/features/confirm-submit-button'
 import { DiagnosticErrorPanel } from '@/components/features/diagnostic-error-panel'
 import { isNextInternalControlFlow } from '@/lib/next-internal-error'
@@ -61,7 +62,7 @@ async function renderCampaignDetail(id: string, activeOrganizationId: string) {
     notFound()
   }
 
-  const [{ data: pieces }, { data: instagramConnection }, { data: tiktokConnection }, { data: notes }] = await Promise.all([
+  const [{ data: pieces }, { data: instagramConnection }, { data: tiktokConnection }, { data: notes }, pillars] = await Promise.all([
     supabase
       .from('content_piezas')
       .select('*')
@@ -78,6 +79,7 @@ async function renderCampaignDetail(id: string, activeOrganizationId: string) {
       .eq('campaign_id', campaign.id)
       .eq('organization_id', activeOrganizationId)
       .order('created_at', { ascending: false }),
+    getContentPillars(supabase, activeOrganizationId),
   ])
   const instagramConnected = !!instagramConnection
   const tiktokConnected = !!tiktokConnection
@@ -144,7 +146,7 @@ async function renderCampaignDetail(id: string, activeOrganizationId: string) {
 
       <section className="mt-8">
         <h2 className="mb-4 text-sm font-bold text-text">Notas de esta campaña</h2>
-        <NotesGrid notes={notes ?? []} campaignId={campaign.id} />
+        <NotesGrid notes={notes ?? []} campaignId={campaign.id} pillars={pillars} />
       </section>
     </div>
   )

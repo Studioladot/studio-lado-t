@@ -39,6 +39,7 @@ import {
 import { getLibraryCreativeById, markLibraryCreativeDeployed, getLibraryCreatives, type LibraryCreative } from '@/lib/meta/library'
 import { insertLaunchActivityLog } from '@/lib/meta/history'
 import { duplicateMetaAdSetForCreativeTest } from '@/lib/meta/adset-duplicate'
+import { upsertCampaignPillar } from '@/lib/meta/campaign-pillars'
 import { NOTE_COLORS } from '../../notes/note-constants'
 
 async function getMetaToken(activeOrganizationId: string) {
@@ -635,6 +636,7 @@ export async function launchTestCampaignAction(
   const productUrl = String(formData.get('product_url') ?? '').trim()
   const campaignMode = String(formData.get('campaign_mode') ?? 'new') === 'existing' ? 'existing' : 'new'
   const existingCampaignId = String(formData.get('existing_campaign_id') ?? '').trim()
+  const pillar = String(formData.get('pillar') ?? '').trim()
 
   const scheduleDatetime = String(formData.get('schedule_datetime') ?? '').trim()
   const publishActive = formData.get('publish_active') === '1'
@@ -771,6 +773,16 @@ export async function launchTestCampaignAction(
     }
     campaignId = campaignResult.id
   }
+
+  // "Pilares Estratégicos" (2026-08-07) — se guarda tanto si la campaña es
+  // nueva como si se está sumando a una existente (en ese caso, reasigna el
+  // pilar de la campaña elegida). Sin bloquear el lanzamiento si falla: ya
+  // se creó/identificó bien la campaña real en Meta, perder esa creación por
+  // un problema de trazabilidad sería peor que no guardar el pilar.
+  if (pillar) {
+    await upsertCampaignPillar(supabase, activeOrganizationId, campaignId, pillar)
+  }
+
   revalidatePath('/meta-ads/campaigns')
 
   // 2. Conjuntos + anuncios — tolerante a fallas parciales: si un conjunto o
@@ -885,6 +897,29 @@ export async function updateCampaignBudgetAction(formData: FormData) {
   }
 
   redirect(`${returnTo}${returnTo.includes('?') ? '&' : '?'}campaign_success=1`)
+}
+
+// ---------------------------------------------------------------------------
+// "Pilares Estratégicos" — edición inline desde el detalle de una campaña
+// (2026-08-07). Mismo mecanismo que el wizard (upsertCampaignPillar), acá
+// disparado por el editor inline de campaign-pillar-editor.tsx en vez de un
+// submit de formulario completo.
+// ---------------------------------------------------------------------------
+
+export type SaveCampaignPillarResult = { ok: true } | { ok: false; error: string }
+
+export async function saveCampaignPillarAction(campaignId: string, pillar: string): Promise<SaveCampaignPillarResult> {
+  const { activeOrganizationId } = await getDashboardContext()
+  if (!activeOrganizationId) return { ok: false, error: 'No encontramos tu organización activa.' }
+  if (!pillar.trim()) return { ok: false, error: 'Elegí un pilar.' }
+
+  const supabase = await createClient()
+  const success = await upsertCampaignPillar(supabase, activeOrganizationId, campaignId, pillar.trim())
+  if (!success) return { ok: false, error: 'No pudimos guardar el pilar. Probá de nuevo.' }
+
+  revalidatePath(`/meta-ads/campaigns/${campaignId}`)
+  revalidatePath('/meta-ads/campaigns')
+  return { ok: true }
 }
 
 // ---------------------------------------------------------------------------

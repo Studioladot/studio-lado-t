@@ -2,9 +2,13 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 
 export type ContentPillar = { id: string; name: string; sortOrder: number }
 
-// "Pilares de Contenido" (2026-08-07) — Atracción/Nutrición/Venta son el
-// default de arranque, no una lista fija: el usuario los edita/borra/agrega
-// libremente desde el modal de gestión (ver pillar-field.tsx).
+// "Pilares Estratégicos" — arquitectura global (2026-08-07): Atracción/
+// Nutrición/Venta son el default de arranque, no una lista fija. Este
+// archivo vive en `lib/` (no en `content/`) a propósito — la lista de
+// pilares es transversal a Publicaciones, Campañas de Meta Ads y Notas por
+// igual, ninguna de las tres es "dueña" de ella. `content_pillars` sigue
+// siendo el nombre de la tabla (nació ahí primero) pero ya es la fuente
+// única de verdad para toda la plataforma.
 const DEFAULT_PILLAR_NAMES = ['Atracción', 'Nutrición', 'Venta']
 
 /**

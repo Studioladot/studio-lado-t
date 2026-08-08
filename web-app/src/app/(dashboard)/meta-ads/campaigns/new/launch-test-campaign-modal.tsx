@@ -81,6 +81,7 @@ export function LaunchTestCampaignModal() {
               libraryCreatives={data.libraryCreatives}
               instagramPosts={data.instagramPosts}
               igActorId={data.igActorId}
+              pillars={data.pillars}
               onClose={handleClose}
             />
           ) : (

@@ -5,6 +5,7 @@ import { getDashboardContext } from '@/lib/organization/dashboard-context'
 import { getMetaPixels, getMetaPages, getMetaAudiences, getMetaExistingPosts } from '@/lib/meta/ad-launch'
 import { getMetaCampaigns } from '@/lib/meta/campaigns'
 import { getLibraryCreatives, type LibraryCreative } from '@/lib/meta/library'
+import { getContentPillars, type ContentPillar } from '@/lib/pillars'
 import type { MetaPixel, MetaPage, MetaAudience, MetaExistingPost } from '@/lib/meta/ad-launch'
 import type { Database } from '@/lib/types/database.types'
 
@@ -32,6 +33,7 @@ export type LaunchWizardData =
       // modo simplemente no se ofrece (ver ad-editor.tsx).
       instagramPosts: InstagramPostOption[]
       igActorId: string | null
+      pillars: ContentPillar[]
     }
 
 /**
@@ -66,6 +68,7 @@ export async function getLaunchWizardDataAction(): Promise<LaunchWizardData> {
     libraryResult,
     instagramConnectionResult,
     instagramPostsResult,
+    pillars,
   ] = await Promise.all([
     getMetaPixels(connection.token, connection.account_id),
     getMetaPages(connection.token),
@@ -88,6 +91,7 @@ export async function getLaunchWizardDataAction(): Promise<LaunchWizardData> {
       .eq('organization_id', activeOrganizationId)
       .order('posted_at', { ascending: false, nullsFirst: false })
       .limit(30),
+    getContentPillars(supabase, activeOrganizationId),
   ])
 
   const pixels = pixelsResult.ok ? pixelsResult.pixels : []
@@ -121,5 +125,6 @@ export async function getLaunchWizardDataAction(): Promise<LaunchWizardData> {
     libraryCreatives,
     instagramPosts,
     igActorId,
+    pillars,
   }
 }

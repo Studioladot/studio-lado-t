@@ -5,8 +5,10 @@ import { useFormStatus } from 'react-dom'
 import { createNoteAction, updateNoteAction, type NoteState } from './actions'
 import { NOTE_COLORS, NOTE_CATEGORIES } from './note-constants'
 import { TextInput, TextArea, Select } from '@/components/features/form-field'
+import { PillarField } from '@/components/features/pillar-field'
 import { TITLE_MAX_LENGTH, TEXT_MAX_LENGTH } from '@/lib/text-limits'
 import type { Database } from '@/lib/types/database.types'
+import type { ContentPillar } from '@/lib/pillars'
 
 type Note = Database['public']['Tables']['notes']['Row']
 
@@ -29,11 +31,13 @@ function SubmitButton({ label, pendingLabel }: { label: string; pendingLabel: st
 export function NoteForm({
   note,
   campaignId,
+  pillars,
   onDone,
 }: {
   note?: Note
   /** Preselecciona la campaña al crear una nota desde campaigns/[id]/ — al editar, se ignora: el campaign_id de una nota ya creada no se reasigna desde este form (ver note.campaign_id abajo). */
   campaignId?: string
+  pillars: ContentPillar[]
   onDone: () => void
 }) {
   const [color, setColor] = useState(note?.color ?? NOTE_COLORS[0])
@@ -69,7 +73,7 @@ export function NoteForm({
         defaultValue={note?.contenido ?? ''}
       />
 
-      <div className="flex flex-wrap items-center gap-4">
+      <div className="flex flex-wrap items-end gap-4">
         <Select name="categoria" defaultValue={note?.categoria ?? 'varios'}>
           {NOTE_CATEGORIES.map((c) => (
             <option key={c.value} value={c.value}>
@@ -78,7 +82,11 @@ export function NoteForm({
           ))}
         </Select>
 
-        <div className="flex items-center gap-1.5">
+        <div className="w-55">
+          <PillarField pillars={pillars} defaultValue={note?.pilar ?? ''} />
+        </div>
+
+        <div className="flex items-center gap-1.5 pb-2.5">
           {NOTE_COLORS.map((c) => (
             <button
               key={c}

@@ -15,6 +15,7 @@ import { CampaignStatusToggle } from './campaign-status-toggle'
 import { StrategicStatusDot } from './strategic-status-dot'
 import { InlineBudgetCell } from './inline-budget-cell'
 import { ScaleCampaignButton } from './scale-campaign-button'
+import { PillarBadge } from '@/components/features/pillar-badge'
 import { resolveCampaignTargets, getStrategicStatus, type CampaignTargets } from '@/lib/meta/autopilot'
 import { useCurrency } from '@/lib/context/currency-context'
 import { FocusCards } from './focus-cards'
@@ -42,6 +43,7 @@ export function CampaignsWorkspace({
   defaultStatus,
   defaultRange,
   targetsBulk,
+  campaignPillars,
 }: {
   campaigns: MetaCampaign[]
   returnTo: string
@@ -49,6 +51,7 @@ export function CampaignsWorkspace({
   defaultStatus: string
   defaultRange: string
   targetsBulk: { accountDefault: CampaignTargets; overrides: Record<string, CampaignTargets> }
+  campaignPillars: Record<string, string>
 }) {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [activeColumns, setActiveColumns] = useState<MetricColumnId[]>(DEFAULT_COLUMN_IDS)
@@ -287,7 +290,10 @@ export function CampaignsWorkspace({
                           onOpenChange={(isOpen) => setAutopilotOpenId(isOpen ? campaign.id : null)}
                         />
                       </div>
-                      <div className="mt-0.5 truncate text-[11px] text-text-3">{formatObjective(campaign.objective)}</div>
+                      <div className="mt-0.5 flex items-center gap-1.5">
+                        <span className="truncate text-[11px] text-text-3">{formatObjective(campaign.objective)}</span>
+                        {campaignPillars[campaign.id] && <PillarBadge pillar={campaignPillars[campaign.id]} />}
+                      </div>
                     </td>
                     <td className="px-5 py-1.5 text-center">
                       <div className="flex items-center justify-center gap-2">

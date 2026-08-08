@@ -6,13 +6,15 @@ import { deleteNoteAction } from './actions'
 import { NOTE_CATEGORIES, NOTE_CATEGORY_LABEL, NOTE_COLOR_ACCENT } from './note-constants'
 import { ConfirmSubmitButton } from '@/components/features/confirm-submit-button'
 import { ExpandableText } from '@/components/features/expandable-text'
+import { PillarBadge } from '@/components/features/pillar-badge'
 import type { Database } from '@/lib/types/database.types'
+import type { ContentPillar } from '@/lib/pillars'
 
 type Note = Database['public']['Tables']['notes']['Row']
 
 const FILTERS: Array<{ value: string; label: string }> = [{ value: 'all', label: 'Todas' }, ...NOTE_CATEGORIES]
 
-export function NotesGrid({ notes, campaignId }: { notes: Note[]; campaignId?: string }) {
+export function NotesGrid({ notes, campaignId, pillars }: { notes: Note[]; campaignId?: string; pillars: ContentPillar[] }) {
   const [filter, setFilter] = useState('all')
   const [creating, setCreating] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -56,7 +58,7 @@ export function NotesGrid({ notes, campaignId }: { notes: Note[]; campaignId?: s
 
       {creating && (
         <div className="mb-4">
-          <NoteForm campaignId={campaignId} onDone={() => setCreating(false)} />
+          <NoteForm campaignId={campaignId} pillars={pillars} onDone={() => setCreating(false)} />
         </div>
       )}
 
@@ -71,7 +73,7 @@ export function NotesGrid({ notes, campaignId }: { notes: Note[]; campaignId?: s
             if (editingId === note.id) {
               return (
                 <div key={note.id} className="sm:col-span-2 lg:col-span-3">
-                  <NoteForm note={note} onDone={() => setEditingId(null)} />
+                  <NoteForm note={note} pillars={pillars} onDone={() => setEditingId(null)} />
                 </div>
               )
             }
@@ -92,9 +94,12 @@ export function NotesGrid({ notes, campaignId }: { notes: Note[]; campaignId?: s
                 className="flex min-h-[130px] flex-col gap-2 rounded-card border border-border bg-surface p-4"
                 style={{ borderTopWidth: '3px', borderTopColor: accent }}
               >
-                <span className="text-[10px] font-bold uppercase tracking-[.06em] text-text-3">
-                  {NOTE_CATEGORY_LABEL[note.categoria ?? 'varios'] ?? 'Varios'}
-                </span>
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <span className="text-[10px] font-bold uppercase tracking-[.06em] text-text-3">
+                    {NOTE_CATEGORY_LABEL[note.categoria ?? 'varios'] ?? 'Varios'}
+                  </span>
+                  {note.pilar && <PillarBadge pillar={note.pilar} />}
+                </div>
 
                 {note.media_url && (
                   // eslint-disable-next-line @next/next/no-img-element

@@ -6,10 +6,10 @@ import { uploadReferenceFilesClient } from '@/lib/media/upload-client'
 import { useToast } from '@/components/features/toast'
 import { MiniSpinner } from '@/components/features/action-pill'
 import { FORMATOS, PLATAFORMAS, ProductionStatusSelect, TurnoSelect, NetworkCopyTabs, fieldClass, labelClass } from './piece-form-shared'
-import { PillarField } from './pillar-field'
+import { PillarField } from '@/components/features/pillar-field'
 import { TITLE_MAX_LENGTH } from '@/lib/text-limits'
 import type { Database } from '@/lib/types/database.types'
-import type { ContentPillar } from '@/lib/content/pillars'
+import type { ContentPillar } from '@/lib/pillars'
 
 type Post = Database['public']['Tables']['content_posts']['Row']
 
