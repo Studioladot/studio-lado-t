@@ -16,11 +16,27 @@ type Script = Database['public']['Tables']['scripts']['Row']
 
 const SAVE_DEBOUNCE_MS = 900
 
-// Bloque de texto sin borde ni caja — la promesa del rediseño ("editor tipo
-// Notion") era justamente sacar el aspecto de formulario con casilleros.
+// Pulido UX/UI (2026-08-07): la primera versión del editor tipo Notion sacó
+// TODA caja/borde de los campos y quedó demasiado plano — sin affordance,
+// parecía un documento de solo lectura en vez de un formulario editable.
+// Ahora los bloques de texto vuelven a tener una caja sutil (bg tenue +
+// borde fino, mismo lenguaje que fieldClass en piece-form-shared.tsx, pero
+// definido acá aparte porque cada instancia pisa tamaño/color de texto —
+// mezclar eso con la utilidad compartida arriesga colisiones de
+// especificidad de Tailwind entre `text-sm` y los `text-[15px]`/`text-[13px]`
+// puntuales de cada campo). Regla del pedido: cero íconos/emojis, todo se
+// resuelve con tipografía + espaciado + color.
+const flowingFieldClass =
+  'rounded-control border border-border bg-surface-2/40 px-3 py-2.5 outline-none transition-all duration-200 ease-out focus:border-accent focus-visible:ring-2 focus-visible:ring-accent'
+
+// Labels un poco más oscuros y pesados que antes (text-text-3 → text-text-2,
+// font-bold → font-extrabold) — tienen que separar cada sección del
+// formulario por sí solos, sin apoyarse en ningún ícono ni línea divisoria.
+const sectionLabelClass = 'text-[10px] font-extrabold uppercase tracking-wide text-text-2'
+
 // Autocrece con el contenido (sin scrollbar interno) y mantiene el mismo
 // contador de caracteres que ya tenía TextArea (form-field.tsx) para no
-// perder esa protección, solo que sin la caja alrededor.
+// perder esa protección.
 function FlowingTextarea({
   name,
   defaultValue,
@@ -61,7 +77,7 @@ function FlowingTextarea({
           el.style.height = `${el.scrollHeight}px`
           setLength(el.value.length)
         }}
-        className={`w-full resize-none border-0 bg-transparent leading-relaxed text-text outline-none placeholder:text-text-3 ${className}`}
+        className={`w-full resize-none leading-relaxed text-text placeholder:text-text-3 ${flowingFieldClass} ${className}`}
       />
       <span className="self-end text-[10px] tabular-nums text-text-3">
         {length} / {maxLength}
@@ -219,12 +235,12 @@ export function ScriptEditForm({
 
         <div className="flex flex-col gap-1.5">
           <div className="flex items-center justify-between gap-3">
-            <p className="text-[10px] font-bold uppercase tracking-wide text-text-3">Hook (primeros 3 segundos)</p>
+            <p className={sectionLabelClass}>Hook (primeros 3 segundos)</p>
             <button
               type="button"
               onClick={handleGenerateHooks}
               disabled={generating}
-              className="shrink-0 text-[11px] font-semibold text-accent transition-colors duration-200 ease-out hover:text-primary-hover disabled:cursor-wait disabled:opacity-50"
+              className="shrink-0 rounded-control px-2.5 py-1 text-[11px] font-semibold text-accent transition-colors duration-150 ease-out hover:bg-surface-2 disabled:cursor-wait disabled:opacity-50"
             >
               {generating ? 'Generando…' : 'Generar 3 variantes'}
             </button>
@@ -240,7 +256,7 @@ export function ScriptEditForm({
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <p className="text-[10px] font-bold uppercase tracking-wide text-text-3">Desarrollo (cuerpo del video)</p>
+          <p className={sectionLabelClass}>Desarrollo (cuerpo del video)</p>
           <FlowingTextarea
             name="body"
             defaultValue={script.body ?? ''}
@@ -252,7 +268,7 @@ export function ScriptEditForm({
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <p className="text-[10px] font-bold uppercase tracking-wide text-text-3">CTA (cierre)</p>
+          <p className={sectionLabelClass}>CTA (cierre)</p>
           <FlowingTextarea
             name="cta"
             defaultValue={script.cta ?? ''}
@@ -264,7 +280,7 @@ export function ScriptEditForm({
         </div>
 
         <div className="flex flex-col gap-1.5 border-t border-border pt-5">
-          <p className="text-[10px] font-bold uppercase tracking-wide text-text-3">Copy del feed (texto del anuncio)</p>
+          <p className={sectionLabelClass}>Copy del feed (texto del anuncio)</p>
           <FlowingTextarea
             name="copy_feed"
             defaultValue={script.copy_feed ?? ''}
@@ -276,7 +292,7 @@ export function ScriptEditForm({
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <p className="text-[10px] font-bold uppercase tracking-wide text-text-3">Notas y resultados</p>
+          <p className={sectionLabelClass}>Notas y resultados</p>
           <FlowingTextarea
             name="notes"
             defaultValue={script.notes ?? ''}
@@ -290,9 +306,7 @@ export function ScriptEditForm({
 
       {variants.length > 0 && (
         <div className="mt-4 rounded-card border border-border bg-surface p-5">
-          <p className="mb-3 text-[10px] font-bold uppercase tracking-wide text-text-3">
-            Variantes del gancho ({variants.length})
-          </p>
+          <p className={`mb-3 ${sectionLabelClass}`}>Variantes del gancho ({variants.length})</p>
           <ul className="flex flex-col gap-2">
             {variants.map((v) => (
               <li key={v.id}>
