@@ -5,9 +5,10 @@ import { createPostAction, updatePostAction, type PostState } from './actions'
 import { uploadReferenceFilesClient } from '@/lib/media/upload-client'
 import { useToast } from '@/components/features/toast'
 import { MiniSpinner } from '@/components/features/action-pill'
+import { CharCounterTextarea } from '@/components/features/char-counter-textarea'
 import { FORMATOS, PLATAFORMAS, ProductionStatusSelect, TurnoSelect, NetworkCopyTabs, fieldClass, labelClass } from './piece-form-shared'
 import { PillarField } from '@/components/features/pillar-field'
-import { TITLE_MAX_LENGTH } from '@/lib/text-limits'
+import { TITLE_MAX_LENGTH, TEXT_MAX_LENGTH } from '@/lib/text-limits'
 import type { Database } from '@/lib/types/database.types'
 import type { ContentPillar } from '@/lib/pillars'
 
@@ -183,6 +184,18 @@ export function PostForm({
           defaultValue={post?.protagonista ?? ''}
           placeholder="Quién actúa en el video..."
           className={`normal-case tracking-normal ${fieldClass}`}
+        />
+      </label>
+
+      <label className={labelClass}>
+        Notas internas (no se publican)
+        <CharCounterTextarea
+          name="notes"
+          rows={2}
+          maxLength={TEXT_MAX_LENGTH}
+          defaultValue={post?.notes ?? ''}
+          placeholder="Hook, guion, referencia, idea…"
+          className={`resize-none normal-case tracking-normal ${fieldClass}`}
         />
       </label>
 

@@ -60,6 +60,7 @@ type BuiltPost =
         production_status: string
         protagonista: string | null
         pillar: string | null
+        notes: string | null
       }
     }
 
@@ -96,6 +97,7 @@ async function buildPostRecord(formData: FormData): Promise<BuiltPost> {
       production_status: PRODUCTION_STATUSES.includes(productionStatus) ? productionStatus : 'idea',
       protagonista: emptyToNull(formData.get('protagonista')) ? clampTitle(String(formData.get('protagonista'))) : null,
       pillar: emptyToNull(formData.get('pillar')),
+      notes: clampText(formData.get('notes')),
     },
   }
 }
