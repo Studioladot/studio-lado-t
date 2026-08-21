@@ -24,6 +24,21 @@ export type TiendaNubeOrderDetail = {
   discount: number
   shippingCost: number
   lineItems: TiendaNubeOrderLineItem[]
+  /**
+   * Identificador de cliente para agrupar órdenes de la misma persona
+   * (Economía por Cliente, ver computeCustomerEconomics más abajo) — el id
+   * numérico de Tienda Nube si vino, si no el email normalizado. `null`
+   * cuando la orden no trae ninguno de los dos (checkout de invitado sin
+   * cuenta, o el campo no vino en la respuesta) — esas órdenes quedan
+   * afuera de las métricas por cliente en vez de agruparse mal bajo una
+   * clave falsa. El campo `customer` de la API de Tienda Nube no se pudo
+   * verificar contra documentación en vivo en esta sesión (sin acceso a
+   * internet) — si el shape real difiere, esto simplemente deja
+   * customerKey en null para todas las órdenes y las métricas por cliente
+   * se muestran vacías con el aviso correspondiente, nunca con un número
+   * inventado.
+   */
+  customerKey: string | null
 }
 
 /** `truncated: true` = se llegó al tope de 20 páginas (4000 órdenes) con la tienda todavía teniendo más — el período pedido tiene más volumen del que se trajo, y todo lo derivado (Cascada, Ledger, ranking) queda incompleto para ese rango. */
@@ -48,6 +63,17 @@ type RawOrder = {
   discount?: string
   shipping_cost_customer?: string
   products?: RawLineItem[]
+  customer?: { id?: number | string; email?: string } | null
+}
+
+function extractCustomerKey(customer: RawOrder['customer']): string | null {
+  if (!customer) return null
+  if (customer.id !== undefined && customer.id !== null && customer.id !== '') return `id:${customer.id}`
+  if (customer.email) {
+    const normalized = customer.email.trim().toLowerCase()
+    return normalized ? `email:${normalized}` : null
+  }
+  return null
 }
 
 /**
@@ -118,6 +144,7 @@ export async function getTiendaNubeOrders(
         quantity: Number(p.quantity ?? 0),
         price: parseFloat(p.price || '0'),
       })),
+      customerKey: extractCustomerKey(order.customer),
     }))
 
     // hasMore sigue true solo si la última página vino llena (200) Y el
@@ -346,4 +373,91 @@ export function buildOrderLedger(
       }
     })
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+}
+
+// ---------------------------------------------------------------------------
+// Economía por Cliente (2026-08-12) — Tasa de Recompra, Frecuencia de
+// Compra, CAC y LTV, mismo espíritu que Palanca. Todo esto se calcula
+// DENTRO del período elegido en el selector de fechas — no es historial de
+// por vida del cliente (para eso Tienda Nube expondría /customers/{id},
+// un fetch aparte por cliente que no se hace acá por costo). Por eso
+// "recompra"/"frecuencia"/"ingreso promedio por cliente" significan
+// "dentro de este rango de fechas", no "en toda la relación con el
+// cliente" — la UI lo aclara en cada tooltip para no hacerse pasar por un
+// LTV real de por vida.
+// ---------------------------------------------------------------------------
+
+export function sumUnitsSold(orders: TiendaNubeOrderDetail[]): number {
+  return orders.reduce((sum, order) => sum + order.lineItems.reduce((s, item) => s + item.quantity, 0), 0)
+}
+
+export type CustomerEconomics = {
+  totalCustomers: number
+  repeatCustomers: number
+  /** null si no hay ningún cliente identificado en el período. */
+  repeatRatePct: number | null
+  avgOrdersPerCustomer: number | null
+  avgRevenuePerCustomer: number | null
+  /** Promedio de días entre compras consecutivas — solo entre clientes con 2+ compras en el período. null si nadie recompró todavía. */
+  avgDaysBetweenPurchases: number | null
+  /** Órdenes sin customerKey (Tienda Nube no informó id ni email) — se excluyen del cálculo, nunca se les inventa un cliente. */
+  unidentifiedOrders: number
+}
+
+export function computeCustomerEconomics(orders: TiendaNubeOrderDetail[]): CustomerEconomics {
+  const byCustomer = new Map<string, { orders: number; revenue: number; dates: number[] }>()
+  let unidentifiedOrders = 0
+
+  for (const order of orders) {
+    if (!order.customerKey) {
+      unidentifiedOrders += 1
+      continue
+    }
+    const revenue = order.subtotal - order.discount + order.shippingCost
+    const bucket = byCustomer.get(order.customerKey) ?? { orders: 0, revenue: 0, dates: [] }
+    bucket.orders += 1
+    bucket.revenue += revenue
+    bucket.dates.push(new Date(order.createdAt).getTime())
+    byCustomer.set(order.customerKey, bucket)
+  }
+
+  const totalCustomers = byCustomer.size
+  if (totalCustomers === 0) {
+    return {
+      totalCustomers: 0,
+      repeatCustomers: 0,
+      repeatRatePct: null,
+      avgOrdersPerCustomer: null,
+      avgRevenuePerCustomer: null,
+      avgDaysBetweenPurchases: null,
+      unidentifiedOrders,
+    }
+  }
+
+  const buckets = Array.from(byCustomer.values())
+  const repeatBuckets = buckets.filter((c) => c.orders >= 2)
+  const repeatCustomers = repeatBuckets.length
+  const totalOrdersIdentified = buckets.reduce((sum, c) => sum + c.orders, 0)
+  const totalRevenueIdentified = buckets.reduce((sum, c) => sum + c.revenue, 0)
+
+  // Promedio del intervalo entre primera y última compra de cada cliente
+  // repetido, dividido por sus huecos reales (N compras = N-1 huecos) —
+  // mismo criterio que "frecuencia de compra" de herramientas de e-commerce
+  // como Palanca: cada cuántos días vuelve a comprar alguien que ya recompró.
+  const gapsDays = repeatBuckets.map((c) => {
+    const sorted = [...c.dates].sort((a, b) => a - b)
+    const spanMs = sorted[sorted.length - 1] - sorted[0]
+    return spanMs / 86400000 / (c.orders - 1)
+  })
+  const avgDaysBetweenPurchases = gapsDays.length > 0 ? gapsDays.reduce((a, b) => a + b, 0) / gapsDays.length : null
+
+  return {
+    totalCustomers,
+    repeatCustomers,
+    repeatRatePct: (repeatCustomers / totalCustomers) * 100,
+    avgOrdersPerCustomer: totalOrdersIdentified / totalCustomers,
+    avgRevenuePerCustomer: totalRevenueIdentified / totalCustomers,
+    avgDaysBetweenPurchases,
+    unidentifiedOrders,
+  }
 }

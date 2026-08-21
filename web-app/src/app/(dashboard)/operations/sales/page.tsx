@@ -1,6 +1,14 @@
 import { createClient } from '@/lib/supabase/server'
 import { getDashboardContext } from '@/lib/organization/dashboard-context'
-import { getTiendaNubeOrders, summarizeOrders, groupOrdersByDay, rankProducts, buildOrderLedger } from '@/lib/tiendanube/orders'
+import {
+  getTiendaNubeOrders,
+  summarizeOrders,
+  groupOrdersByDay,
+  rankProducts,
+  buildOrderLedger,
+  sumUnitsSold,
+  computeCustomerEconomics,
+} from '@/lib/tiendanube/orders'
 import { getTiendaNubeProducts } from '@/lib/tiendanube/products'
 import { getTiendaNubeCheckouts, summarizeCheckouts, getRecentAbandonedCheckouts } from '@/lib/tiendanube/checkouts'
 import { getTiendaNubeCoupons } from '@/lib/tiendanube/coupons'
@@ -299,6 +307,44 @@ export default async function OperationsSalesPage({
 
   const manualTotal = manualSales.reduce((sum, s) => sum + (s.monto ?? 0), 0)
 
+  // Economía Unitaria (2026-08-12) — CAC/LTV/Recompra/Frecuencia, en la
+  // misma línea de "cruzar Tienda Nube + Meta Ads" que ya hace el resto de
+  // esta página. Cero fetch nuevo: currentOrders/waterfall/metaSpendArs/
+  // opexProrated ya estaban calculados arriba para la Cascada y el Ledger.
+  const customerEconomics = computeCustomerEconomics(currentOrders)
+  const unidadesVendidas = sumUnitsSold(currentOrders)
+  const margenBrutoPct = summary.bruto > 0 ? ((summary.bruto - ranking.totalCogs) / summary.bruto) * 100 : 0
+  const costoPromedioPorPedido =
+    summary.ordenes > 0 ? (ranking.totalCogs + envioReal + waterfall.comisionTn + waterfall.comisionPasarela + waterfall.impuestos) / summary.ordenes : 0
+
+  // CAC acá es "gasto de Meta del período / clientes distintos identificados
+  // en el período" — no distingue clientes nuevos de recurrentes (Tienda
+  // Nube no expone antigüedad de cliente en /orders, ver
+  // computeCustomerEconomics), así que es más bien "costo por cliente
+  // activo" que CAC estricto. Se etiqueta así en la UI para no prometer más
+  // precisión de la que el dato permite.
+  const cac = metaSpendArs > 0 && customerEconomics.totalCustomers > 0 ? metaSpendArs / customerEconomics.totalCustomers : null
+  const cacBlended =
+    customerEconomics.totalCustomers > 0 ? (metaSpendArs + opexProrated) / customerEconomics.totalCustomers : null
+  const avgGrossMarginPerCustomer =
+    customerEconomics.avgRevenuePerCustomer !== null ? customerEconomics.avgRevenuePerCustomer * (margenBrutoPct / 100) : null
+  const ratioMargenBrutoCac = cac !== null && cac > 0 && avgGrossMarginPerCustomer !== null ? avgGrossMarginPerCustomer / cac : null
+  const ratioLtvCac = cac !== null && cac > 0 && customerEconomics.avgRevenuePerCustomer !== null ? customerEconomics.avgRevenuePerCustomer / cac : null
+
+  const unitEconomics = {
+    impuestosPct: finConfig.impuestosPct,
+    margenBrutoPct,
+    gananciaNeta: waterfall.neto,
+    unidadesVendidas,
+    costoPromedioPorPedido,
+    customerEconomics,
+    cac,
+    cacBlended,
+    opexProrated,
+    ratioMargenBrutoCac,
+    ratioLtvCac,
+  }
+
   return (
     <div>
       <div className="mb-[22px] flex flex-wrap items-start justify-between gap-3">
@@ -344,6 +390,7 @@ export default async function OperationsSalesPage({
         checkoutError={checkoutError}
         abandonedCheckouts={abandonedCheckouts}
         coupons={coupons}
+        unitEconomics={unitEconomics}
       />
     </div>
   )

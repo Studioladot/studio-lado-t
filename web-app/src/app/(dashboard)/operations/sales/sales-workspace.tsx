@@ -9,6 +9,7 @@ import { Sparkline } from './sparkline'
 import { SalesTabs, type SalesTab } from './sales-tabs'
 import { TiendaConnectionCard } from './tienda-connection-card'
 import { ProductCards } from './product-cards'
+import { UnitEconomicsGrid, type UnitEconomics } from './unit-economics-grid'
 import type { ManualSale } from '@/lib/tiendanube/sales'
 import type { FinConfig, ProfitWaterfall } from '@/lib/tiendanube/finance'
 import type { TiendaNubeSalesSummary, DailySalesPoint, ProductRanking, OrderLedgerEntry } from '@/lib/tiendanube/orders'
@@ -173,6 +174,7 @@ export function SalesWorkspace({
   checkoutError,
   abandonedCheckouts,
   coupons,
+  unitEconomics,
 }: {
   activePreset: number | null
   customFrom: string | null
@@ -223,6 +225,7 @@ export function SalesWorkspace({
   checkoutError: string | null
   abandonedCheckouts: TiendaNubeCheckout[]
   coupons: TiendaNubeCoupon[]
+  unitEconomics: UnitEconomics
 }) {
   const [channel, setChannel] = useState<Channel>('tn')
   const [tab, setTab] = useState<SalesTab>('resumen')
@@ -472,6 +475,8 @@ export function SalesWorkspace({
           />
         </div>
       </div>
+
+      <UnitEconomicsGrid data={unitEconomics} hasOrders={summary.ordenes > 0} />
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <WaterfallChart waterfall={waterfall} />
