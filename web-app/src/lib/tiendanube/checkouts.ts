@@ -69,36 +69,61 @@ export async function getTiendaNubeCheckouts(
   const sinceISO = since.toISOString()
   const untilISO = until.toISOString()
 
+  // Mismo fix de performance que getTiendaNubeOrders (orders.ts,
+  // 2026-08-21) — de a BATCH_SIZE páginas en paralelo en vez de una por
+  // una, mismo criterio de corte (página corta/vacía/404 = no hay más).
+  const MAX_PAGES = 20
+  const BATCH_SIZE = 5
+
   try {
     let allCheckouts: RawCheckout[] = []
     let page = 1
     let hasMore = true
 
-    while (hasMore && page <= 20) {
-      const res = await fetch(
-        `https://api.tiendanube.com/v1/${storeId}/checkouts?created_at_min=${sinceISO}&created_at_max=${untilISO}&per_page=200&page=${page}`,
-        {
-          headers: {
-            Authentication: `bearer ${accessToken}`,
-            'User-Agent': USER_AGENT,
-          },
-        }
+    while (hasMore && page <= MAX_PAGES) {
+      const pagesToFetch: number[] = []
+      for (let i = 0; i < BATCH_SIZE && page + i <= MAX_PAGES; i++) {
+        pagesToFetch.push(page + i)
+      }
+
+      const responses = await Promise.all(
+        pagesToFetch.map((p) =>
+          fetch(
+            `https://api.tiendanube.com/v1/${storeId}/checkouts?created_at_min=${sinceISO}&created_at_max=${untilISO}&per_page=200&page=${p}`,
+            {
+              headers: {
+                Authentication: `bearer ${accessToken}`,
+                'User-Agent': USER_AGENT,
+              },
+            }
+          )
+        )
       )
 
-      if (!res.ok) {
-        if (res.status === 404) break
-        const errBody = await res.text()
-        return { ok: false, error: `Tienda Nube respondió con error ${res.status}: ${errBody}` }
+      for (const res of responses) {
+        if (!res.ok) {
+          if (res.status === 404) {
+            hasMore = false
+            break
+          }
+          const errBody = await res.text()
+          return { ok: false, error: `Tienda Nube respondió con error ${res.status}: ${errBody}` }
+        }
+
+        const checkouts: RawCheckout[] = await res.json()
+        if (!Array.isArray(checkouts) || checkouts.length === 0) {
+          hasMore = false
+          break
+        }
+
+        allCheckouts = allCheckouts.concat(checkouts)
+        if (checkouts.length < 200) {
+          hasMore = false
+          break
+        }
       }
 
-      const checkouts: RawCheckout[] = await res.json()
-      if (!Array.isArray(checkouts) || checkouts.length === 0) {
-        hasMore = false
-      } else {
-        allCheckouts = allCheckouts.concat(checkouts)
-        page += 1
-        if (checkouts.length < 200) hasMore = false
-      }
+      page += pagesToFetch.length
     }
 
     const checkouts: TiendaNubeCheckout[] = allCheckouts.map((c) => ({

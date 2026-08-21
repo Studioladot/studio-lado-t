@@ -37,35 +37,65 @@ function firstLocalized(value: Record<string, string> | undefined, fallback: str
   return value.es ?? Object.values(value)[0] ?? fallback
 }
 
-/** Trae el catálogo completo (nombre + imagen por producto, aplanado a nivel variante). Catálogos son chicos frente al volumen de órdenes — 10 páginas alcanzan de sobra. */
+/**
+ * Trae el catálogo completo (nombre + imagen por producto, aplanado a nivel
+ * variante). Catálogos son chicos frente al volumen de órdenes — 10 páginas
+ * alcanzan de sobra.
+ *
+ * Mismo fix de performance que getTiendaNubeOrders (orders.ts, 2026-08-21) —
+ * de a BATCH_SIZE páginas en paralelo en vez de una por una, mismo criterio
+ * de corte (página corta/vacía/404 = no hay más).
+ */
 export async function getTiendaNubeProducts(accessToken: string, storeId: string): Promise<TiendaNubeProductsResult> {
+  const MAX_PAGES = 10
+  const BATCH_SIZE = 5
+
   try {
     let allProducts: RawProduct[] = []
     let page = 1
     let hasMore = true
 
-    while (hasMore && page <= 10) {
-      const res = await fetch(`https://api.tiendanube.com/v1/${storeId}/products?per_page=200&page=${page}`, {
-        headers: {
-          Authentication: `bearer ${accessToken}`,
-          'User-Agent': USER_AGENT,
-        },
-      })
-
-      if (!res.ok) {
-        if (res.status === 404) break
-        const errBody = await res.text()
-        return { ok: false, error: `Tienda Nube respondió con error ${res.status}: ${errBody}` }
+    while (hasMore && page <= MAX_PAGES) {
+      const pagesToFetch: number[] = []
+      for (let i = 0; i < BATCH_SIZE && page + i <= MAX_PAGES; i++) {
+        pagesToFetch.push(page + i)
       }
 
-      const products: RawProduct[] = await res.json()
-      if (!Array.isArray(products) || products.length === 0) {
-        hasMore = false
-      } else {
+      const responses = await Promise.all(
+        pagesToFetch.map((p) =>
+          fetch(`https://api.tiendanube.com/v1/${storeId}/products?per_page=200&page=${p}`, {
+            headers: {
+              Authentication: `bearer ${accessToken}`,
+              'User-Agent': USER_AGENT,
+            },
+          })
+        )
+      )
+
+      for (const res of responses) {
+        if (!res.ok) {
+          if (res.status === 404) {
+            hasMore = false
+            break
+          }
+          const errBody = await res.text()
+          return { ok: false, error: `Tienda Nube respondió con error ${res.status}: ${errBody}` }
+        }
+
+        const products: RawProduct[] = await res.json()
+        if (!Array.isArray(products) || products.length === 0) {
+          hasMore = false
+          break
+        }
+
         allProducts = allProducts.concat(products)
-        page += 1
-        if (products.length < 200) hasMore = false
+        if (products.length < 200) {
+          hasMore = false
+          break
+        }
       }
+
+      page += pagesToFetch.length
     }
 
     const variants: TiendaNubeProductVariant[] = []

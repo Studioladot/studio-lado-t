@@ -163,8 +163,13 @@ export default async function DashboardPage({
     : false
   const accountCurrency: Currency = metaConnection?.account_currency === 'ARS' ? 'ARS' : 'USD'
 
-  const ordersSince = new Date()
-  ordersSince.setDate(ordersSince.getDate() - 30)
+  // Bug de performance real (2026-08-21): esto pedía 30 días completos de
+  // órdenes (hasta 20 páginas secuenciales contra la API de Tienda Nube,
+  // ver getTiendaNubeOrders) solo para filtrar en memoria y quedarse con
+  // las de HOY — el Dashboard es la pantalla más visitada de toda la app,
+  // así que este sobre-fetch pegaba en cada login/navegación. Ahora se
+  // pide directamente el rango de hoy — normalmente una sola página.
+  const ordersSince = new Date(startOfTodayISO)
   const ordersUntil = new Date()
 
   const [metaInsights, tiendaNubeOrdersResult] = await Promise.all([
@@ -176,13 +181,7 @@ export default async function DashboardPage({
       : Promise.resolve(null),
   ])
 
-  // Ventas del día — mismo fetch de 30 días que ya se necesitaba para el
-  // resto del negocio, filtrado en memoria (evita un segundo llamado a la
-  // API de Tienda Nube solo para achicar el rango).
-  const todaySummary =
-    tiendaNubeOrdersResult && tiendaNubeOrdersResult.ok
-      ? summarizeOrders(tiendaNubeOrdersResult.orders.filter((o) => o.createdAt >= startOfTodayISO))
-      : null
+  const todaySummary = tiendaNubeOrdersResult && tiendaNubeOrdersResult.ok ? summarizeOrders(tiendaNubeOrdersResult.orders) : null
   const tiendaNubeError = tiendaNubeOrdersResult && !tiendaNubeOrdersResult.ok ? tiendaNubeOrdersResult.error : null
   const aovToday = todaySummary && todaySummary.ordenes > 0 ? Math.round(todaySummary.bruto / todaySummary.ordenes) : 0
 

@@ -93,36 +93,68 @@ export async function getTiendaNubeOrders(
   const sinceISO = since.toISOString()
   const untilISO = until.toISOString()
 
+  const MAX_PAGES = 20
+  // Antes: 1 página a la vez, hasta 20 llamados SECUENCIALES a la API de
+  // Tienda Nube — una tienda con volumen alto de órdenes podía tardar
+  // varios segundos solo en este fetch (bug de performance real,
+  // 2026-08-21: el Dashboard y Ventas y Operaciones sentían lentos por
+  // esto). Ahora se piden de a BATCH_SIZE en paralelo, con el mismo
+  // criterio de corte de siempre (página corta/vacía/404 = no hay más).
+  // BATCH_SIZE=5 es un límite conservador — no se pudo confirmar contra
+  // documentación en vivo en esta sesión si Tienda Nube aplica rate-limit
+  // a requests concurrentes; si lo hiciera, un 429 cae en la misma rama de
+  // error de abajo que cualquier otro status no-ok, nunca se ignora.
+  const BATCH_SIZE = 5
+
   try {
     let allOrders: RawOrder[] = []
     let page = 1
     let hasMore = true
 
-    while (hasMore && page <= 20) {
-      const res = await fetch(
-        `https://api.tiendanube.com/v1/${storeId}/orders?created_at_min=${sinceISO}&created_at_max=${untilISO}&per_page=200&page=${page}`,
-        {
-          headers: {
-            Authentication: `bearer ${accessToken}`,
-            'User-Agent': USER_AGENT,
-          },
-        }
+    while (hasMore && page <= MAX_PAGES) {
+      const pagesToFetch: number[] = []
+      for (let i = 0; i < BATCH_SIZE && page + i <= MAX_PAGES; i++) {
+        pagesToFetch.push(page + i)
+      }
+
+      const responses = await Promise.all(
+        pagesToFetch.map((p) =>
+          fetch(
+            `https://api.tiendanube.com/v1/${storeId}/orders?created_at_min=${sinceISO}&created_at_max=${untilISO}&per_page=200&page=${p}`,
+            {
+              headers: {
+                Authentication: `bearer ${accessToken}`,
+                'User-Agent': USER_AGENT,
+              },
+            }
+          )
+        )
       )
 
-      if (!res.ok) {
-        if (res.status === 404) break
-        const errBody = await res.text()
-        return { ok: false, error: `Tienda Nube respondió con error ${res.status}: ${errBody}` }
+      for (const res of responses) {
+        if (!res.ok) {
+          if (res.status === 404) {
+            hasMore = false
+            break
+          }
+          const errBody = await res.text()
+          return { ok: false, error: `Tienda Nube respondió con error ${res.status}: ${errBody}` }
+        }
+
+        const orders: RawOrder[] = await res.json()
+        if (!Array.isArray(orders) || orders.length === 0) {
+          hasMore = false
+          break
+        }
+
+        allOrders = allOrders.concat(orders)
+        if (orders.length < 200) {
+          hasMore = false
+          break
+        }
       }
 
-      const orders: RawOrder[] = await res.json()
-      if (!Array.isArray(orders) || orders.length === 0) {
-        hasMore = false
-      } else {
-        allOrders = allOrders.concat(orders)
-        page += 1
-        if (orders.length < 200) hasMore = false
-      }
+      page += pagesToFetch.length
     }
 
     const paidOrders = allOrders.filter(
