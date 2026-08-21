@@ -30,3 +30,21 @@ export function getSubscriptionStatus(org: { plan: string; trial_ends_at: string
 export function trialEndsAtFromNow(): string {
   return new Date(Date.now() + TRIAL_DAYS * 86400000).toISOString()
 }
+
+/**
+ * Gate de seguridad (auditoría 2026-08-21): el Muro de Pago solo bloqueaba
+ * la NAVEGACIÓN (redirect en (dashboard)/layout.tsx) — una Server Action
+ * llamada directo (ej. con un tab viejo abierto, o una petición armada a
+ * mano) no pasa por ese layout, así que una organización con el trial
+ * vencido podía seguir creando/editando datos indefinidamente. Cualquier
+ * Server Action que escribe datos de negocio (posts, campañas, notas,
+ * guiones, etc.) debe llamar esto después de `getDashboardContext()` y
+ * cortar si `ok` es false — mismo mensaje/redirect que ya ve el usuario en
+ * el resto de la app, ahora también aplicado del lado del servidor real.
+ */
+export function assertActiveSubscription(status: SubscriptionStatus | null): { ok: true } | { ok: false; error: string } {
+  if (status?.kind === 'trial_expired') {
+    return { ok: false, error: 'Tu período de prueba terminó — elegí un plan en Configuración › Facturación para seguir usando Gotix.' }
+  }
+  return { ok: true }
+}

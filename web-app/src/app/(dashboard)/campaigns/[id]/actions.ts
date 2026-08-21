@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { getDashboardContext } from '@/lib/organization/dashboard-context'
+import { assertActiveSubscription } from '@/lib/billing/subscription'
 import { clamp, TITLE_MAX_LENGTH, TEXT_MAX_LENGTH } from '@/lib/text-limits'
 import { CAMPAIGN_COLORS } from '../campaign-colors'
 
@@ -69,11 +70,13 @@ export async function updateCampaignDetailsAction(
     return { error: 'La campaña necesita un nombre.', success: false }
   }
 
-  const { activeOrganizationId } = await getDashboardContext()
+  const { activeOrganizationId, subscriptionStatus } = await getDashboardContext()
 
   if (!activeOrganizationId) {
     return { error: 'No encontramos tu organización activa.', success: false }
   }
+  const subCheck = assertActiveSubscription(subscriptionStatus)
+  if (!subCheck.ok) return { error: subCheck.error, success: false }
 
   const supabase = await createClient()
 
@@ -138,10 +141,30 @@ export async function createPieceAction(
     redirect('/login')
   }
 
-  const { activeOrganizationId } = await getDashboardContext()
+  const { activeOrganizationId, subscriptionStatus } = await getDashboardContext()
 
   if (!activeOrganizationId) {
     return { error: 'No encontramos tu organización activa.', success: false }
+  }
+  const subCheck = assertActiveSubscription(subscriptionStatus)
+  if (!subCheck.ok) return { error: subCheck.error, success: false }
+
+  // Fix de seguridad (auditoría 2026-08-21): campaignId viaja en un input
+  // hidden del formulario — sin este chequeo, alguien podía editar ese
+  // campo desde el inspector y crear una pieza cuyo campaign_id apunta a
+  // una campaña de OTRA organización (el organization_id de la fila
+  // insertada seguía siendo el propio, pero el FK quedaba cruzado). Se
+  // verifica acá que la campaña realmente pertenezca a la org activa antes
+  // de insertar, mismo criterio que ya usa updateCampaignDetailsAction.
+  const { data: ownedCampaign } = await supabase
+    .from('content_campaigns')
+    .select('id')
+    .eq('id', campaignId)
+    .eq('organization_id', activeOrganizationId)
+    .maybeSingle()
+
+  if (!ownedCampaign) {
+    return { error: 'No encontramos esa campaña.', success: false }
   }
 
   // Referencias — multi-archivo, moodboard/tomas crudas para planificación.
@@ -212,11 +235,13 @@ export async function addPieceMediaAction(
     redirect('/login')
   }
 
-  const { activeOrganizationId } = await getDashboardContext()
+  const { activeOrganizationId, subscriptionStatus } = await getDashboardContext()
 
   if (!activeOrganizationId) {
     return { error: 'No encontramos tu organización activa.' }
   }
+  const subCheck = assertActiveSubscription(subscriptionStatus)
+  if (!subCheck.ok) return { error: subCheck.error }
 
   const { data: existingPiece } = await supabase
     .from('content_piezas')
@@ -287,11 +312,13 @@ export async function updatePieceAction(
     return { error: 'La pieza necesita un título.', success: false }
   }
 
-  const { activeOrganizationId } = await getDashboardContext()
+  const { activeOrganizationId, subscriptionStatus } = await getDashboardContext()
 
   if (!activeOrganizationId) {
     return { error: 'No encontramos tu organización activa.', success: false }
   }
+  const subCheck = assertActiveSubscription(subscriptionStatus)
+  if (!subCheck.ok) return { error: subCheck.error, success: false }
 
   const supabase = await createClient()
 

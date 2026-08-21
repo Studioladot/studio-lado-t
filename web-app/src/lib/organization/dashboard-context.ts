@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import { headers } from 'next/headers'
 import { createClient } from '@/lib/supabase/server'
 import { getActiveOrganizationId } from './active-organization'
+import { getSubscriptionStatus, type SubscriptionStatus } from '@/lib/billing/subscription'
 import type { Organization } from '@/lib/context/organization-context'
 
 /**
@@ -58,5 +59,11 @@ export const getDashboardContext = cache(async () => {
 
   const activeOrganizationId = await getActiveOrganizationId(organizations.map((org) => org.id))
 
-  return { userId, organizations, activeOrganizationId }
+  // Expuesto acá (no solo en el layout) para que las Server Actions que
+  // escriben datos de negocio puedan cortar con assertActiveSubscription()
+  // sin pegarle a la DB de nuevo — ver comentario en subscription.ts.
+  const activeOrg = organizations.find((org) => org.id === activeOrganizationId) ?? null
+  const subscriptionStatus: SubscriptionStatus | null = activeOrg ? getSubscriptionStatus(activeOrg) : null
+
+  return { userId, organizations, activeOrganizationId, subscriptionStatus }
 })

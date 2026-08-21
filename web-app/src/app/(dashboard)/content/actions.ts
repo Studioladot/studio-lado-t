@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { getDashboardContext } from '@/lib/organization/dashboard-context'
+import { assertActiveSubscription } from '@/lib/billing/subscription'
 import { clamp, TITLE_MAX_LENGTH, TEXT_MAX_LENGTH } from '@/lib/text-limits'
 import { askAI } from '@/lib/ia/client'
 import { checkIaUsage, incrementIaUsage, checkIdeaGenDailyUsage, incrementIdeaGenDailyUsage } from '@/lib/ia/usage'
@@ -106,10 +107,12 @@ export async function createPostAction(_prevState: PostState, formData: FormData
   const built = await buildPostRecord(formData)
   if (!built.ok) return { error: built.error, success: false }
 
-  const { userId, activeOrganizationId } = await getDashboardContext()
+  const { userId, activeOrganizationId, subscriptionStatus } = await getDashboardContext()
   if (!activeOrganizationId) {
     return { error: 'No encontramos tu organización activa.', success: false }
   }
+  const subCheck = assertActiveSubscription(subscriptionStatus)
+  if (!subCheck.ok) return { error: subCheck.error, success: false }
 
   const supabase = await createClient()
 
@@ -141,10 +144,12 @@ export async function updatePostAction(
   const built = await buildPostRecord(formData)
   if (!built.ok) return { error: built.error, success: false }
 
-  const { activeOrganizationId } = await getDashboardContext()
+  const { activeOrganizationId, subscriptionStatus } = await getDashboardContext()
   if (!activeOrganizationId) {
     return { error: 'No encontramos tu organización activa.', success: false }
   }
+  const subCheck = assertActiveSubscription(subscriptionStatus)
+  if (!subCheck.ok) return { error: subCheck.error, success: false }
 
   const supabase = await createClient()
 
@@ -181,8 +186,9 @@ export async function updatePostAction(
  * suelta.
  */
 export async function rescheduleItemDateAction(sourceTable: 'content_piezas' | 'content_posts', id: string, newDate: string) {
-  const { activeOrganizationId } = await getDashboardContext()
+  const { activeOrganizationId, subscriptionStatus } = await getDashboardContext()
   if (!activeOrganizationId) return
+  if (!assertActiveSubscription(subscriptionStatus).ok) return
 
   const supabase = await createClient()
 

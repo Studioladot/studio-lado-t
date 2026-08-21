@@ -637,6 +637,23 @@ export async function upsertCustomRule(
     createdBy: string | null
   }
 ): Promise<boolean> {
+  // Fix de seguridad (auditoría 2026-08-21): params.id viene del cliente al
+  // editar una regla existente. Sin este chequeo, un upsert sin
+  // `onConflict` resuelve el conflicto por la primary key (id) — si ese id
+  // coincidía con una regla de OTRA organización, el upsert la sobrescribía
+  // por completo (organization_id incluido), secuestrándola. Se verifica
+  // acá que la regla exista y sea de esta organización antes de tocarla,
+  // mismo criterio que ya usa deleteCustomRule.
+  if (params.id) {
+    const { data: owned } = await supabase
+      .from('autopilot_custom_rules')
+      .select('id')
+      .eq('id', params.id)
+      .eq('organization_id', params.organizationId)
+      .maybeSingle()
+    if (!owned) return false
+  }
+
   const { error } = await supabase.from('autopilot_custom_rules').upsert({
     ...(params.id ? { id: params.id } : {}),
     organization_id: params.organizationId,
