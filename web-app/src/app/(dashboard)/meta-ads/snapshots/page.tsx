@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { getDashboardContext } from '@/lib/organization/dashboard-context'
-import { getMetaCampaignNames, getMetaCampaignEntityNames, getMetaEntityDailyInsights } from '@/lib/meta/campaigns'
+import { getMetaCampaignNames } from '@/lib/meta/campaigns'
 import Link from 'next/link'
 import { SnapshotsWorkspace } from './snapshots-workspace'
 
@@ -12,11 +12,16 @@ import { SnapshotsWorkspace } from './snapshots-workspace'
 // a que se acumule historial: el primer día que se abre esta pantalla ya
 // hay datos reales de los últimos N días.
 //
-// Primera campaña/entidad se resuelven acá (Server Component), no en un
-// useEffect del lado del cliente — mismo criterio ya establecido en el
-// resto de la app (evitar setState-en-effect para data fetching; los
-// cambios de selección después sí son imperativos, vía las server actions
-// de actions.ts, disparados directo desde cada onChange).
+// Fix de performance (2026-08-21): esta pantalla encadenaba 3 llamadas
+// secuenciales a la Graph API (campañas → entidades de la primera campaña
+// → historial diario de la primera entidad) ANTES del primer render — la
+// pantalla quedaba en blanco hasta que las 3 resolvían, siendo la más
+// lenta de todo el dashboard. Ahora el Server Component solo resuelve las
+// campañas (1 llamada); entidades e historial de la primera campaña se
+// piden client-side apenas monta SnapshotsWorkspace, reusando las mismas
+// server actions que ya disparaba cada cambio de selección (actions.ts) —
+// el usuario ve el selector de campaña usable de inmediato, con "Cargando…"
+// en la zona de resultados en vez de una pantalla en blanco.
 const DEFAULT_DAYS = 14
 
 function toDateInputValue(d: Date): string {
@@ -48,20 +53,10 @@ export default async function MetaAdsSnapshotsPage() {
   const campaigns = campaignsResult?.ok ? campaignsResult.entities : []
   const firstCampaignId = campaigns[0]?.id ?? null
 
-  const initialEntitiesResult =
-    metaUsable && firstCampaignId ? await getMetaCampaignEntityNames(metaConnection.token, firstCampaignId, 'ad') : null
-  const initialEntities = initialEntitiesResult?.ok ? initialEntitiesResult.entities : []
-  const firstEntityId = initialEntities[0]?.id ?? null
-
   const untilDate = new Date()
   const sinceDate = new Date(untilDate.getTime() - DEFAULT_DAYS * 86400000)
   const initialSince = toDateInputValue(sinceDate)
   const initialUntil = toDateInputValue(untilDate)
-
-  const initialSnapshot =
-    metaUsable && firstEntityId
-      ? await getMetaEntityDailyInsights(metaConnection.token, firstEntityId, { since: sinceDate, until: untilDate })
-      : null
 
   return (
     <div>
@@ -100,12 +95,8 @@ export default async function MetaAdsSnapshotsPage() {
           campaigns={campaigns}
           accountCurrency={metaConnection.account_currency === 'ARS' ? 'ARS' : 'USD'}
           initialCampaignId={firstCampaignId}
-          initialEntities={initialEntities}
-          initialEntitiesError={initialEntitiesResult && !initialEntitiesResult.ok ? initialEntitiesResult.error : null}
-          initialEntityId={firstEntityId}
           initialSince={initialSince}
           initialUntil={initialUntil}
-          initialSnapshot={initialSnapshot}
         />
       )}
     </div>

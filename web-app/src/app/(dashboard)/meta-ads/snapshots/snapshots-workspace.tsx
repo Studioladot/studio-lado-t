@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Select, TextInput } from '@/components/features/form-field'
 import { formatMoney, type Currency } from '@/lib/currency'
 import { listSnapshotEntitiesAction, getEntitySnapshotAction, type SnapshotEntityOption } from './actions'
@@ -138,32 +138,26 @@ export function SnapshotsWorkspace({
   campaigns,
   accountCurrency,
   initialCampaignId,
-  initialEntities,
-  initialEntitiesError,
-  initialEntityId,
   initialSince,
   initialUntil,
-  initialSnapshot,
 }: {
   campaigns: Campaign[]
   accountCurrency: Currency
   initialCampaignId: string | null
-  initialEntities: SnapshotEntityOption[]
-  initialEntitiesError: string | null
-  initialEntityId: string | null
   initialSince: string
   initialUntil: string
-  initialSnapshot: MetaEntityDailyInsightsResult | null
 }) {
   const [campaignId, setCampaignId] = useState(initialCampaignId ?? campaigns[0]?.id ?? '')
   const [level, setLevel] = useState<Level>('ad')
-  const [entities, setEntities] = useState<SnapshotEntityOption[]>(initialEntities)
-  const [entitiesError, setEntitiesError] = useState<string | null>(initialEntitiesError)
-  const [entitiesLoading, setEntitiesLoading] = useState(false)
-  const [entityId, setEntityId] = useState(initialEntityId ?? '')
+  const [entities, setEntities] = useState<SnapshotEntityOption[]>([])
+  const [entitiesError, setEntitiesError] = useState<string | null>(null)
+  // Arranca en true cuando hay campaña para no mostrar "esta campaña no
+  // tiene anuncios" por un instante antes de que dispare el efecto de abajo.
+  const [entitiesLoading, setEntitiesLoading] = useState(Boolean(initialCampaignId))
+  const [entityId, setEntityId] = useState('')
   const [sinceInput, setSinceInput] = useState(initialSince)
   const [untilInput, setUntilInput] = useState(initialUntil)
-  const [snapshot, setSnapshot] = useState<MetaEntityDailyInsightsResult | null>(initialSnapshot)
+  const [snapshot, setSnapshot] = useState<MetaEntityDailyInsightsResult | null>(null)
   const [snapshotLoading, setSnapshotLoading] = useState(false)
   const [dateRangeError, setDateRangeError] = useState<string | null>(null)
 
@@ -208,6 +202,16 @@ export function SnapshotsWorkspace({
     setEntityId(nextEntityId)
     if (nextEntityId) await loadSnapshot(nextEntityId, sinceInput, untilInput)
   }
+
+  // Fix de performance (2026-08-21, ver comentario en page.tsx): entidades +
+  // historial de la primera campaña se piden acá, client-side apenas monta,
+  // en vez de bloquear el Server Component con 2 llamadas más a la Graph
+  // API antes del primer render.
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- carga inicial intencional, mismo patrón que adsets-workspace.tsx.
+    if (initialCampaignId) loadEntities(initialCampaignId, 'ad')
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   async function handleCampaignChange(nextCampaignId: string) {
     setCampaignId(nextCampaignId)

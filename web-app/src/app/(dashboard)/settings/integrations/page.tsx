@@ -58,33 +58,51 @@ export default async function IntegrationsPage({
   }
 
   const supabase = await createClient()
-  const [{ data: metaConnection }, { data: igConnection }, { data: tiktokConnection }, { data: tnConnection }] =
-    await Promise.all([
-      supabase
-        .from('meta_connections')
-        .select('account_id, account_name, expires_at, token, created_at')
-        .eq('organization_id', activeOrganizationId)
-        .maybeSingle(),
-      supabase
-        .from('instagram_connections')
-        .select('ig_username, page_name, profile_picture_url, connected_at')
-        .eq('organization_id', activeOrganizationId)
-        .maybeSingle(),
-      supabase
-        .from('tiktok_connections')
-        .select('tiktok_username, avatar_url, connected_at')
-        .eq('organization_id', activeOrganizationId)
-        .maybeSingle(),
-      supabase
-        .from('tiendanube_connections')
-        .select('store_id, store_name, store_url, connected_at')
-        .eq('organization_id', activeOrganizationId)
-        .maybeSingle(),
-    ])
+
+  // Fix de performance (2026-08-21) — antes se esperaba a las 4 consultas
+  // de Supabase EN Promise.all y recién ahí se disparaba getMetaAdsInsights
+  // (llamada real a la Graph API) de forma secuencial. metaConnectionPromise
+  // se materializa a una Promise real de una sola vez (un solo fetch, ver
+  // PostgrestBuilder.then en postgrest-js — cada `.then()`/`await` sobre el
+  // builder original dispara un fetch nuevo, por eso no se puede "leer dos
+  // veces" sin este paso) para poder encadenarle metaHealthPromise y que la
+  // llamada a Meta arranque apenas resuelve metaConnection, en paralelo con
+  // lo que quede pendiente de instagram/tiktok/tiendanube — no después de
+  // las 4.
+  const metaConnectionPromise = supabase
+    .from('meta_connections')
+    .select('account_id, account_name, expires_at, token, created_at')
+    .eq('organization_id', activeOrganizationId)
+    .maybeSingle()
+    .then((r) => r)
+
+  const igConnectionQuery = supabase
+    .from('instagram_connections')
+    .select('ig_username, page_name, profile_picture_url, connected_at')
+    .eq('organization_id', activeOrganizationId)
+    .maybeSingle()
+
+  const tiktokConnectionQuery = supabase
+    .from('tiktok_connections')
+    .select('tiktok_username, avatar_url, connected_at')
+    .eq('organization_id', activeOrganizationId)
+    .maybeSingle()
+
+  const tnConnectionQuery = supabase
+    .from('tiendanube_connections')
+    .select('store_id, store_name, store_url, connected_at')
+    .eq('organization_id', activeOrganizationId)
+    .maybeSingle()
+
+  const metaHealthPromise = metaConnectionPromise.then(({ data: metaConnection }) => {
+    const tokenExpired = metaConnection?.expires_at ? new Date(metaConnection.expires_at) < new Date() : false
+    return metaConnection && !tokenExpired ? getMetaAdsInsights(metaConnection.token, metaConnection.account_id) : null
+  })
+
+  const [{ data: metaConnection }, { data: igConnection }, { data: tiktokConnection }, { data: tnConnection }, metaHealth] =
+    await Promise.all([metaConnectionPromise, igConnectionQuery, tiktokConnectionQuery, tnConnectionQuery, metaHealthPromise])
 
   const metaTokenExpired = metaConnection?.expires_at ? new Date(metaConnection.expires_at) < new Date() : false
-  const metaHealth =
-    metaConnection && !metaTokenExpired ? await getMetaAdsInsights(metaConnection.token, metaConnection.account_id) : null
 
   // Un solo banner por vez — los 3 flujos de OAuth (Meta, TikTok, Tienda
   // Nube) devuelven acá con su propio par de query params, mismo criterio
