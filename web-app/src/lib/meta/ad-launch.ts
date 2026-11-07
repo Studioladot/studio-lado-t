@@ -35,6 +35,24 @@ export async function getMetaPages(token: string): Promise<MetaPagesResult> {
   return { ok: true, pages: (result.data.data ?? []).map((p) => ({ id: p.id, name: p.name ?? `Página ${p.id}` })) }
 }
 
+/**
+ * El usuario de Meta administra páginas de varios clientes (y personales):
+ * la primera de la lista casi nunca es la correcta. Se pone primero la
+ * Página vinculada al Instagram del cliente y, si no hay, la que coincide
+ * con el nombre de la organización — así el valor por defecto del selector
+ * es la marca del cliente activo.
+ */
+export function orderPagesForOrganization(pages: MetaPage[], preferredPageId: string | null | undefined, organizationName: string | null | undefined): MetaPage[] {
+  const normalize = (v: string) => v.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+  const orgWords = organizationName ? normalize(organizationName).split(/\s+/).filter((w) => w.length > 3) : []
+  const score = (p: MetaPage) => {
+    if (preferredPageId && p.id === preferredPageId) return 2
+    const name = normalize(p.name)
+    return orgWords.length > 0 && orgWords.every((w) => name.includes(w)) ? 1 : 0
+  }
+  return [...pages].sort((a, b) => score(b) - score(a))
+}
+
 export type MetaAudience = { id: string; name: string; type: 'lookalike' | 'saved' }
 export type MetaAudiencesResult = { ok: true; audiences: MetaAudience[] } | { ok: false; error: string }
 

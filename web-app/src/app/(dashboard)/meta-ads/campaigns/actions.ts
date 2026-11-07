@@ -35,6 +35,7 @@ import {
   type AudienceSpec,
   type MetaPage,
   type MetaExistingPost,
+  orderPagesForOrganization,
 } from '@/lib/meta/ad-launch'
 import { getLibraryCreativeById, markLibraryCreativeDeployed, getLibraryCreatives, type LibraryCreative } from '@/lib/meta/library'
 import { insertLaunchActivityLog } from '@/lib/meta/history'
@@ -1115,7 +1116,7 @@ type InstagramPostRow = Database['public']['Tables']['instagram_media_catalog'][
 
 /** Mismos datos que el wizard completo necesita para AdEditor, sin lo que ya no hace falta (pixels, audiencias, campañas existentes) — el conjunto y su targeting ya están fijados por la duplicación. */
 export async function getAddAdModalDataAction(): Promise<AddAdModalData> {
-  const { activeOrganizationId } = await getDashboardContext()
+  const { activeOrganizationId, organizations } = await getDashboardContext()
   if (!activeOrganizationId) return { ok: false, error: 'No encontramos tu organización activa.' }
 
   const connection = await getMetaConnectionInfo(activeOrganizationId)
@@ -1131,7 +1132,7 @@ export async function getAddAdModalDataAction(): Promise<AddAdModalData> {
       .eq('organization_id', activeOrganizationId)
       .order('updated_at', { ascending: false }),
     getLibraryCreatives(supabase, activeOrganizationId),
-    supabase.from('instagram_connections').select('ig_user_id').eq('organization_id', activeOrganizationId).maybeSingle(),
+    supabase.from('instagram_connections').select('ig_user_id, page_id').eq('organization_id', activeOrganizationId).maybeSingle(),
     supabase
       .from('instagram_media_catalog')
       .select('*')
@@ -1144,7 +1145,11 @@ export async function getAddAdModalDataAction(): Promise<AddAdModalData> {
 
   return {
     ok: true,
-    pages: pagesResult.pages,
+    pages: orderPagesForOrganization(
+      pagesResult.pages,
+      instagramConnectionResult.data?.page_id,
+      organizations.find((o) => o.id === activeOrganizationId)?.name
+    ),
     existingPosts: existingPostsResult.ok ? existingPostsResult.posts : [],
     scripts: scriptsResult.data ?? [],
     instagramPosts: (instagramPostsResult.data ?? []).filter((p) => p.media_url && p.media_type !== 'CAROUSEL_ALBUM'),

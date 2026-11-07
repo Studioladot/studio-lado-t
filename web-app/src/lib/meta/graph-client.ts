@@ -1,6 +1,21 @@
 import { META_GRAPH_URL } from './oauth'
 
-export type GraphErrorBody = { error?: { message?: string } }
+export type GraphErrorBody = {
+  error?: { message?: string; error_user_title?: string; error_user_msg?: string; error_subcode?: number }
+}
+
+/**
+ * Meta manda dos mensajes: `message` es técnico y genérico ("Invalid
+ * parameter"); `error_user_msg` es el texto pensado para el usuario final,
+ * en su idioma. Se muestra ese cuando existe y el técnico queda en el log.
+ */
+function readableGraphError(error: NonNullable<GraphErrorBody['error']>, fallback: string): string {
+  if (error.error_user_msg || error.error_user_title) {
+    console.error('[meta] graph error', error.message, error.error_subcode)
+    return error.error_user_msg ?? error.error_user_title ?? fallback
+  }
+  return error.message ?? fallback
+}
 export type MetaMutationResult = { ok: true } | { ok: false; error: string }
 export type MetaCreateResult = { ok: true; id: string } | { ok: false; error: string }
 
@@ -23,7 +38,7 @@ export async function metaGraphGet<T>(
     })
     const data = (await res.json()) as T & GraphErrorBody
     if (data.error) {
-      return { ok: false, error: data.error.message ?? 'Error desconocido de Meta.' }
+      return { ok: false, error: readableGraphError(data.error, 'Error desconocido de Meta.') }
     }
     return { ok: true, data: data as T }
   } catch (err) {
@@ -53,7 +68,7 @@ export async function metaGraphPostRaw(
     })
     const data = (await res.json()) as GraphErrorBody & { id?: string }
     if (data.error) {
-      return { ok: false, error: data.error.message ?? 'Meta rechazó el cambio.' }
+      return { ok: false, error: readableGraphError(data.error, 'Meta rechazó el cambio.') }
     }
     return { ok: true, id: data.id ?? '' }
   } catch (err) {

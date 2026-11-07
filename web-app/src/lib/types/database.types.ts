@@ -1655,6 +1655,7 @@ export type Database = {
           body: string | null
           copy_feed: string | null
           cpa: number | null
+          created_at: string | null
           cta: string | null
           data: Json
           hook: string | null
@@ -1679,6 +1680,7 @@ export type Database = {
           body?: string | null
           copy_feed?: string | null
           cpa?: number | null
+          created_at?: string | null
           cta?: string | null
           data?: Json
           hook?: string | null
@@ -1703,6 +1705,7 @@ export type Database = {
           body?: string | null
           copy_feed?: string | null
           cpa?: number | null
+          created_at?: string | null
           cta?: string | null
           data?: Json
           hook?: string | null

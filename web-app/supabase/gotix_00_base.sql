@@ -222,6 +222,7 @@ create table if not exists public.scripts (
   p25             numeric,
   p75             numeric,
   p100            numeric,
+  created_at      timestamptz default now(),
   updated_at      timestamptz default now()
 );
 

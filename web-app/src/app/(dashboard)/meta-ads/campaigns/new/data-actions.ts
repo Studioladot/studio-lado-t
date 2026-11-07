@@ -2,7 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { getDashboardContext } from '@/lib/organization/dashboard-context'
-import { getMetaPixels, getMetaPages, getMetaAudiences, getMetaExistingPosts } from '@/lib/meta/ad-launch'
+import { getMetaPixels, getMetaPages, getMetaAudiences, getMetaExistingPosts, orderPagesForOrganization } from '@/lib/meta/ad-launch'
 import { getMetaCampaigns } from '@/lib/meta/campaigns'
 import { getLibraryCreatives, type LibraryCreative } from '@/lib/meta/library'
 import { getContentPillars, type ContentPillar } from '@/lib/pillars'
@@ -43,7 +43,7 @@ export type LaunchWizardData =
  * llama recién cuando el usuario lo abre, no en cada carga de la lista.
  */
 export async function getLaunchWizardDataAction(): Promise<LaunchWizardData> {
-  const { activeOrganizationId } = await getDashboardContext()
+  const { activeOrganizationId, organizations } = await getDashboardContext()
   if (!activeOrganizationId) return { status: 'no_org' }
 
   const supabase = await createClient()
@@ -81,7 +81,7 @@ export async function getLaunchWizardDataAction(): Promise<LaunchWizardData> {
       .eq('organization_id', activeOrganizationId)
       .order('updated_at', { ascending: false }),
     getLibraryCreatives(supabase, activeOrganizationId),
-    supabase.from('instagram_connections').select('ig_user_id').eq('organization_id', activeOrganizationId).maybeSingle(),
+    supabase.from('instagram_connections').select('ig_user_id, page_id').eq('organization_id', activeOrganizationId).maybeSingle(),
     // Últimos 30, ordenados por fecha — alcanza para elegir "un posteo
     // reciente que rindió bien" sin traer el historial completo a un
     // wizard que se abre en un modal.
@@ -95,7 +95,13 @@ export async function getLaunchWizardDataAction(): Promise<LaunchWizardData> {
   ])
 
   const pixels = pixelsResult.ok ? pixelsResult.pixels : []
-  const pages = pagesResult.ok ? pagesResult.pages : []
+  const pages = pagesResult.ok
+    ? orderPagesForOrganization(
+        pagesResult.pages,
+        instagramConnectionResult.data?.page_id,
+        organizations.find((o) => o.id === activeOrganizationId)?.name
+      )
+    : []
   const audiences = audiencesResult.ok ? audiencesResult.audiences : []
   const existingPosts = existingPostsResult.ok ? existingPostsResult.posts : []
   const existingCampaigns = campaignsResult.ok

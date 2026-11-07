@@ -31,6 +31,13 @@ function getServerSnapshot() {
   return DEFAULT_META
 }
 
+// "Hoy" depende de la zona horaria: el servidor renderiza en UTC y el
+// navegador en hora de Argentina (de 21 a 24 h ya son días distintos).
+// Todo lo que depende de hoy se calcula solo en el navegador.
+const noopSubscribe = () => () => {}
+const getClientToday = () => toDateStr(new Date())
+const getServerToday = () => null
+
 function toDateStr(d: Date) {
   return d.toISOString().split('T')[0]
 }
@@ -134,6 +141,7 @@ export function ControlPanel({
   onGoToPerformance: () => void
 }) {
   const meta = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot)
+  const todayKey = useSyncExternalStore(noopSubscribe, getClientToday, getServerToday)
   const [viewingDay, setViewingDay] = useState<string | null>(null)
 
   const setMeta = useCallback((value: number) => {
@@ -157,7 +165,7 @@ export function ControlPanel({
   const stats = useMemo(() => {
     const publicadas = items.filter((i) => i.status === 'publicado' && i.date)
 
-    const hoy = new Date()
+    const hoy = todayKey ? new Date(`${todayKey}T12:00:00`) : new Date(0)
     const lunes = startOfWeek(hoy)
     const domingo = new Date(lunes)
     domingo.setDate(lunes.getDate() + 6)
@@ -166,7 +174,7 @@ export function ControlPanel({
     const postsSem = semana.length
     const pct = Math.min(100, Math.round((postsSem / meta) * 100))
 
-    const mesActual = hoy.toISOString().substring(0, 7)
+    const mesActual = toDateStr(hoy).substring(0, 7)
     const mesPosts = publicadas.filter((p) => (p.date ?? '').startsWith(mesActual))
 
     const fechasPub = [...new Set(publicadas.map((p) => p.date!))].sort((a, b) => b.localeCompare(a))
@@ -238,11 +246,15 @@ export function ControlPanel({
     const semanaLabel = `${lunes.toLocaleDateString('es-AR', { day: 'numeric', month: 'short' })} – ${domingo.toLocaleDateString('es-AR', { day: 'numeric', month: 'short' })}`
 
     return { postsSem, pct, mesPosts, racha, healthScore, lastWeekPct, topFmt, topPlat, sortedFmt, maxF, dias7, semanaLabel }
-  }, [items, meta])
+  }, [items, meta, todayKey])
 
   const tier = healthTier(stats.healthScore)
   const pastWeek = pastWeekVerdict(stats.lastWeekPct)
   const weeklyWinner = useMemo(() => computeWeeklyWinner(instagramCatalog), [instagramCatalog])
+
+  if (!todayKey) {
+    return <div className="content-health-hero mb-4 h-[180px] animate-pulse rounded-card" aria-busy="true" />
+  }
 
   return (
     <div>
@@ -337,7 +349,7 @@ export function ControlPanel({
             <div className="grid grid-cols-7 gap-1.5">
               {stats.dias7.map(({ date: d, count }) => {
                 const fd = toDateStr(d)
-                const esHoy = fd === toDateStr(new Date())
+                const esHoy = fd === todayKey
                 return (
                   <button
                     key={fd}

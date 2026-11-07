@@ -659,6 +659,12 @@ export async function createMetaCampaign(
     if (params.bidAmount && params.bidStrategy && params.bidStrategy !== 'LOWEST_COST_WITHOUT_CAP') {
       body.bid_amount = String(Math.round(params.bidAmount * 100))
     }
+  } else {
+    // ABO: sin presupuesto de campaña, Meta exige decir explícitamente si
+    // los conjuntos pueden compartir hasta 20% de su presupuesto (subcode
+    // 4834011). En false cada conjunto gasta lo suyo — la comparación del
+    // testeo queda limpia.
+    body.is_adset_budget_sharing_enabled = 'false'
   }
   if (params.startTime) {
     body.start_time = params.startTime
