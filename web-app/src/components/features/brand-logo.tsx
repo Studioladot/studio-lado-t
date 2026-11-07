@@ -15,7 +15,8 @@ type Brand = 'meta' | 'tiendanube'
 // Mientras el archivo no esté, cae al ícono genérico anterior (onError) en
 // vez de mostrar un ícono roto.
 const LOGO_SRC: Record<Brand, string> = {
-  meta: '/meta.svg',
+  // Recorte del isotipo: meta.svg trae mucho margen vacío y se veía diminuto.
+  meta: '/meta-mark.svg',
   tiendanube: '/tiendanube.png',
 }
 
@@ -53,6 +54,8 @@ export function BrandLogo({ brand, size = 18 }: { brand: Brand; size?: number })
       alt={BRAND_LABEL[brand]}
       height={size}
       style={{ height: size, width: 'auto', objectFit: 'contain' }}
+      // tiendanube.png es blanco: en modo claro se oscurece por CSS (globals.css).
+      className={brand === 'tiendanube' ? 'brand-logo-tiendanube' : undefined}
       onError={() => setFailed(true)}
     />
   )

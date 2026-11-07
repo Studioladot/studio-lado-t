@@ -120,6 +120,14 @@
   display: block;
 }
 
+/* El isotipo de Tienda Nube viene en blanco: en modo claro se pasa a negro. */
+.brand-logo-tiendanube {
+  filter: brightness(0);
+}
+:root[data-theme="dark"] .brand-logo-tiendanube {
+  filter: none;
+}
+
 body {
   background: var(--bg);
   color: var(--text);

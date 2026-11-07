@@ -111,6 +111,15 @@ function isItemActive(pathname: string, href: string) {
   return pathname === href || pathname.startsWith(`${href}/`)
 }
 
+// Si otro ítem del menú es una ruta más específica que coincide (ej.
+// /settings/integrations), el ítem padre (/settings) no se marca activo.
+const ALL_HREFS: string[] = GROUPS.flatMap((g) => g.items.filter(isNavItem).map((i) => i.href))
+
+function isItemActiveExclusive(pathname: string, href: string) {
+  if (!isItemActive(pathname, href)) return false
+  return !ALL_HREFS.some((other) => other !== href && other.startsWith(`${href}/`) && isItemActive(pathname, other))
+}
+
 function groupHasActiveItem(group: NavGroup, pathname: string) {
   return group.items.some((entry) => isNavItem(entry) && isItemActive(pathname, entry.href))
 }
@@ -233,7 +242,7 @@ export function SidebarNav({
             return (
               <div key={group.key} className={groupIndex > 0 ? 'mt-3' : ''}>
                 {group.items.filter(isNavItem).map((item) => (
-                  <NavLink key={item.href} item={item} active={isItemActive(pathname, item.href)} collapsed />
+                  <NavLink key={item.href} item={item} active={isItemActiveExclusive(pathname, item.href)} collapsed />
                 ))}
               </div>
             )
@@ -276,7 +285,7 @@ export function SidebarNav({
                       <NavLink
                         key={entry.href}
                         item={entry}
-                        active={isItemActive(pathname, entry.href)}
+                        active={isItemActiveExclusive(pathname, entry.href)}
                         collapsed={false}
                         indented
                       />

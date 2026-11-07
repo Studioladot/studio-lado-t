@@ -5,6 +5,20 @@ import { sendStrategyMessageAction, clearStrategyChatAction } from './actions'
 
 type Message = { id: string; role: 'user' | 'assistant'; content: string }
 
+// La IA responde con **negritas** de markdown; sin esto se veían los
+// asteriscos sueltos. Solo negrita: el resto del texto queda tal cual.
+function renderBold(text: string) {
+  return text.split(/(\*\*[^*]+\*\*)/g).map((part, i) =>
+    part.startsWith('**') && part.endsWith('**') && part.length > 4 ? (
+      <strong key={i} className="font-semibold">
+        {part.slice(2, -2)}
+      </strong>
+    ) : (
+      part
+    )
+  )
+}
+
 export function StrategyChat({ initialMessages }: { initialMessages: Message[] }) {
   const [messages, setMessages] = useState(initialMessages)
   const [input, setInput] = useState('')
@@ -71,7 +85,7 @@ export function StrategyChat({ initialMessages }: { initialMessages: Message[] }
                     m.role === 'user' ? 'bg-primary text-white' : 'border border-border bg-surface-2/60 text-text'
                   }`}
                 >
-                  {m.content}
+                  {renderBold(m.content)}
                 </div>
               </div>
             ))}
