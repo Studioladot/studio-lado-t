@@ -219,7 +219,7 @@ export function InstagramMediaDetailModal({
         <div className="flex flex-col gap-4 p-5">
           {publishedWithGotix && (
             <span className="w-fit rounded-full bg-accent/[0.12] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-accent">
-              Publicado con Gotix
+              Publicado con GOTIX x LADO T
             </span>
           )}
           <p className="text-sm leading-relaxed text-text">{item.caption || 'Sin descripción'}</p>

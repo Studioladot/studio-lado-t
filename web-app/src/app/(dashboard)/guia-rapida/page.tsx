@@ -35,7 +35,7 @@ export default function GuiaRapidaPage() {
     <div className="mx-auto max-w-[640px]">
       <div className="mb-8">
         <h1 className="text-[22px] font-bold tracking-[-0.03em] text-text">Guía rápida</h1>
-        <p className="mt-0.5 text-[13px] text-text-2">La metodología de uso de Gotix, en 6 pasos.</p>
+        <p className="mt-0.5 text-[13px] text-text-2">La metodología de uso de GOTIX x LADO T, en 6 pasos.</p>
       </div>
 
       <div className="flex flex-col gap-6">

@@ -55,7 +55,7 @@ export function InviteMemberForm() {
       {state.success && <p className="text-xs text-green">Miembro agregado correctamente.</p>}
 
       <p className="text-[11px] text-text-3">
-        La persona ya tiene que tener una cuenta creada en Gotix con ese email.
+        La persona ya tiene que tener una cuenta creada en GOTIX x LADO T con ese email.
       </p>
     </form>
   )

@@ -10,8 +10,8 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Gotix - Sistema Operativo de Negocios",
-  description: "Gotix",
+  title: "GOTIX x LADO T — Sistema Operativo de Negocios",
+  description: "GOTIX x LADO T — panel de agencia: Meta Ads, Tienda Nube, contenido y rentabilidad.",
 };
 
 export default function RootLayout({

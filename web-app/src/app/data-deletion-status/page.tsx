@@ -24,7 +24,7 @@ export default async function DataDeletionStatusPage({
 
   return (
     <div className="mx-auto flex min-h-screen max-w-[520px] flex-col items-center justify-center px-6 py-16 text-center">
-      <p className="text-[11px] font-bold uppercase tracking-wide text-text-3">Gotix</p>
+      <p className="text-[11px] font-bold uppercase tracking-wide text-text-3">GOTIX x LADO T</p>
       <h1 className="mt-1 text-2xl font-bold tracking-[-0.03em] text-text">Solicitud de borrado de datos</h1>
 
       {!deletionRequest ? (

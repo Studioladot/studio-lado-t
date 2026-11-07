@@ -1,34 +1,44 @@
 @import "tailwindcss";
 
 /*
- * Paleta real de Gotix, extraída de app.html (raíz del repo). Ver
- * frontend-taste.md para la tabla completa y el porqué de cada valor —
- * no agregar/editar colores acá sin actualizar ese documento primero.
+ * Paleta GOTIX x LADO T (rebrand 2026-11-07). Colores de marca:
+ *   #b03311 ladrillo · #c1543f terracota · #f9e8d2 crema · #a6c5bb salvia
+ *   #ffffff · #f6f6f6 · #000000
+ * Criterio: el rojo de marca es la acción (botones, activo, links); el rojo
+ * de error (--red) es más carmesí para no confundirse con la marca; lo
+ * positivo (--green) sale de la salvia. Crema solo como calidez de fondo.
  *
  * --radius-control (8px) y --radius-card (14px) son el --r/--rl legacy,
  * renombrados para no chocar con las utilidades direccionales nativas de
  * Tailwind (rounded-r, rounded-l, etc.).
  */
 :root {
-  --bg: #f5f5f3;
-  --surface: #fcfcfb;
-  --surface-2: #ebebe8;
-  --border: rgba(26, 26, 24, 0.08);
-  --border-2: rgba(26, 26, 24, 0.14);
+  --bg: #f6f6f6;
+  --surface: #ffffff;
+  --surface-2: #efedea;
+  --border: rgba(0, 0, 0, 0.08);
+  --border-2: rgba(0, 0, 0, 0.14);
   /* Sin fuente en app.html — pedido explícito del usuario para las líneas
      divisorias de tablas densas (Campañas), un escalón más sutil que
      --border. Ver frontend-taste.md. */
-  --divider: rgba(26, 26, 24, 0.05);
-  --text: #101828;
-  --text-2: #344054;
-  --text-3: #667085;
-  --primary: #2d5b8a;
-  --primary-hover: #234a70;
-  --primary-glow: rgba(45, 91, 138, 0.3);
-  --accent: #2d5b8a;
-  --red: #ad342b;
-  --green: #297353;
-  --amber: #a3690f;
+  --divider: rgba(0, 0, 0, 0.05);
+  --text: #111111;
+  --text-2: #3d3a37;
+  --text-3: #6f6a65;
+  --primary: #b03311;
+  --primary-hover: #94290c;
+  --primary-glow: rgba(176, 51, 17, 0.26);
+  --accent: #b03311;
+  --red: #c4232f;
+  --green: #2f7360;
+  --amber: #a8650a;
+  /* Crema de marca — calidez de fondo (héroes, estados seleccionados). */
+  --cream: #f9e8d2;
+  --sage: #a6c5bb;
+  /* El menú lateral es negro en los dos modos: su acento es la terracota,
+     que se lee sobre negro (el ladrillo quedaría apagado). */
+  --sidebar-bg: #0a0a0a;
+  --sidebar-accent: #d8745f;
   /* Sin fuente en app.html/frontend-taste.md — agregado en la limpieza de
      cierre de Fase 1 (2026-08-06) para reemplazar un #8b5cf6 hardcodeado
      (turno "Noche" en campaigns/[id]/pieces-list.tsx) que no reaccionaba a
@@ -56,6 +66,10 @@
   --color-green: var(--green);
   --color-amber: var(--amber);
   --color-violet: var(--violet);
+  --color-cream: var(--cream);
+  --color-sage: var(--sage);
+  --color-sidebar-bg: var(--sidebar-bg);
+  --color-sidebar-accent: var(--sidebar-accent);
   --radius-control: var(--radius-control);
   --radius-card: var(--radius-card);
   --font-sans: var(--font-inter);
@@ -69,23 +83,36 @@
  * layout.tsx) para no parpadear entre modos en la carga inicial.
  */
 :root[data-theme="dark"] {
-  --bg: #12151c;
-  --surface: #181c25;
-  --surface-2: #232833;
+  --bg: #0b0b0b;
+  --surface: #151515;
+  --surface-2: #1f1e1d;
   --border: rgba(255, 255, 255, 0.08);
-  --border-2: rgba(255, 255, 255, 0.16);
+  --border-2: rgba(255, 255, 255, 0.15);
   --divider: rgba(255, 255, 255, 0.05);
-  --text: #f5f5f3;
-  --text-2: #c0c5ce;
-  --text-3: #8b93a3;
-  --primary: #5b8fcc;
-  --primary-hover: #8fb4e0;
-  --primary-glow: rgba(91, 143, 204, 0.35);
-  --accent: #5b8fcc;
-  --red: #e5645a;
-  --green: #3eba85;
-  --amber: #e0a030;
+  --text: #f6f6f6;
+  --text-2: #cdc8c2;
+  --text-3: #918b85;
+  --primary: #c1543f;
+  --primary-hover: #cf6a55;
+  --primary-glow: rgba(193, 84, 63, 0.35);
+  --accent: #d16a55;
+  --red: #f0646a;
+  --green: #a6c5bb;
+  --amber: #e3a857;
   --violet: #a78bfa;
+  --cream: #2a221b;
+  --sidebar-bg: #000000;
+}
+
+/* Logo según el modo (las dos versiones viven en public/brand/). */
+.logo-for-dark {
+  display: none;
+}
+:root[data-theme="dark"] .logo-for-light {
+  display: none;
+}
+:root[data-theme="dark"] .logo-for-dark {
+  display: block;
 }
 
 body {
@@ -107,9 +134,9 @@ body {
   position: relative;
   overflow: hidden;
   background:
-    linear-gradient(135deg, rgba(45, 91, 138, 0.07) 0%, rgba(0, 0, 0, 0) 55%),
-    rgba(26, 26, 24, 0.025);
-  border: 1px solid rgba(26, 26, 24, 0.07);
+    linear-gradient(135deg, rgba(249, 232, 210, 0.75) 0%, rgba(249, 232, 210, 0) 60%),
+    #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.07);
   box-shadow: 0 4px 40px rgba(0, 0, 0, 0.08);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
@@ -121,7 +148,7 @@ body {
   left: -60px;
   width: 340px;
   height: 340px;
-  background: radial-gradient(circle, rgba(45, 91, 138, 0.13) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(176, 51, 17, 0.1) 0%, transparent 70%);
   pointer-events: none;
   z-index: 0;
 }
@@ -131,8 +158,8 @@ body {
 }
 :root[data-theme="dark"] .dash-hero {
   background:
-    linear-gradient(135deg, rgba(91, 143, 204, 0.09) 0%, rgba(0, 0, 0, 0) 55%),
-    rgba(255, 255, 255, 0.02);
+    linear-gradient(135deg, rgba(193, 84, 63, 0.12) 0%, rgba(0, 0, 0, 0) 55%),
+    #151515;
   border-color: rgba(255, 255, 255, 0.09);
 }
 
@@ -146,14 +173,14 @@ body {
 .metric-card {
   position: relative;
   overflow: hidden;
-  background: linear-gradient(180deg, rgba(26, 26, 24, 0.03), rgba(26, 26, 24, 0.01));
-  border: 1px solid rgba(26, 26, 24, 0.06);
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.07);
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
   transition: border-color 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 .metric-card:hover {
-  border-color: rgba(26, 26, 24, 0.12);
+  border-color: rgba(0, 0, 0, 0.14);
 }
 :root[data-theme="dark"] .metric-card {
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.015));
@@ -175,11 +202,11 @@ body {
 .content-health-hero {
   position: relative;
   overflow: hidden;
-  background: linear-gradient(135deg, #262a33 0%, #14161c 100%);
+  background: linear-gradient(135deg, #1c1a19 0%, #000000 100%);
   border: 1px solid rgba(255, 255, 255, 0.06);
   box-shadow: 0 8px 24px -8px rgba(0, 0, 0, 0.35);
 }
 :root[data-theme="dark"] .content-health-hero {
-  background: linear-gradient(135deg, #1c1f26 0%, #0c0d10 100%);
+  background: linear-gradient(135deg, #1a1918 0%, #050505 100%);
   border-color: rgba(255, 255, 255, 0.08);
 }

@@ -9,37 +9,37 @@
 
 const SECTIONS: { title: string; body: string[] }[] = [
   {
-    title: '1. Qué es Gotix',
+    title: '1. Qué es GOTIX x LADO T',
     body: [
-      'Gotix es un software como servicio (SaaS) B2B: comercios, marcas y agencias lo usan para administrar sus ventas, publicidad y contenido en redes sociales desde un solo lugar. Esta política aplica a todas las organizaciones que usan Gotix.',
+      'GOTIX x LADO T es un software como servicio (SaaS) B2B: comercios, marcas y agencias lo usan para administrar sus ventas, publicidad y contenido en redes sociales desde un solo lugar. Esta política aplica a todas las organizaciones que usan Gotix.',
     ],
   },
   {
     title: '2. Qué datos pedimos y para qué',
     body: [
       'Cuando conectás tu cuenta de Meta (Facebook/Instagram), pedimos permiso para leer información básica de tu perfil de negocio, la lista de Páginas y cuentas publicitarias que administrás, y la cuenta de Instagram Business o Creator vinculada a esas Páginas.',
-      'Con tu autorización explícita, usamos esos permisos para: mostrar métricas de tus campañas y publicaciones, publicar contenido en tu nombre cuando vos lo programás desde Gotix, y sincronizar analítica orgánica (alcance, reproducciones, seguidores).',
-      'Nunca publicamos ni modificamos nada sin una acción explícita tuya (programar una publicación, lanzar un anuncio) — Gotix no actúa por su cuenta sobre tus cuentas conectadas fuera de lo que vos configuraste.',
+      'Con tu autorización explícita, usamos esos permisos para: mostrar métricas de tus campañas y publicaciones, publicar contenido en tu nombre cuando vos lo programás desde GOTIX x LADO T, y sincronizar analítica orgánica (alcance, reproducciones, seguidores).',
+      'Nunca publicamos ni modificamos nada sin una acción explícita tuya (programar una publicación, lanzar un anuncio) — GOTIX x LADO T no actúa por su cuenta sobre tus cuentas conectadas fuera de lo que vos configuraste.',
     ],
   },
   {
     title: '3. Cómo guardamos tus credenciales',
     body: [
-      'Los tokens de acceso que Meta nos entrega se guardan cifrados en nuestra base de datos, aislados por organización — ninguna otra organización que use Gotix puede leer, ver ni cruzar tus datos ni tus tokens bajo ninguna circunstancia.',
-      'Los tokens se usan exclusivamente para llamar a la API de Meta en tu nombre, en respuesta a acciones que vos iniciaste dentro de Gotix (ver o publicar contenido, sincronizar métricas).',
+      'Los tokens de acceso que Meta nos entrega se guardan cifrados en nuestra base de datos, aislados por organización — ninguna otra organización que use GOTIX x LADO T puede leer, ver ni cruzar tus datos ni tus tokens bajo ninguna circunstancia.',
+      'Los tokens se usan exclusivamente para llamar a la API de Meta en tu nombre, en respuesta a acciones que vos iniciaste dentro de GOTIX x LADO T (ver o publicar contenido, sincronizar métricas).',
     ],
   },
   {
     title: '4. Cuánto tiempo guardamos los datos',
     body: [
-      'Guardamos tus datos de conexión mientras la conexión esté activa. Si desconectás tu cuenta de Meta/Instagram desde Gotix, o eliminás tu cuenta de Gotix, tus tokens y datos de conexión se borran.',
-      'Las métricas históricas (reproducciones, alcance, seguidores) se guardan como referencia de tendencia mientras tu organización exista en Gotix, y se borran junto con el resto de tus datos al eliminar tu cuenta.',
+      'Guardamos tus datos de conexión mientras la conexión esté activa. Si desconectás tu cuenta de Meta/Instagram desde GOTIX x LADO T, o eliminás tu cuenta de GOTIX x LADO T, tus tokens y datos de conexión se borran.',
+      'Las métricas históricas (reproducciones, alcance, seguidores) se guardan como referencia de tendencia mientras tu organización exista en GOTIX x LADO T, y se borran junto con el resto de tus datos al eliminar tu cuenta.',
     ],
   },
   {
     title: '5. Cómo pedir el borrado de tus datos',
     body: [
-      'Podés desconectar tu cuenta de Meta/Instagram en cualquier momento desde Gotix — eso borra inmediatamente el token y los datos de conexión asociados.',
+      'Podés desconectar tu cuenta de Meta/Instagram en cualquier momento desde GOTIX x LADO T — eso borra inmediatamente el token y los datos de conexión asociados.',
       'Si preferís pedirlo directamente a través de Meta (Configuración de Facebook → Aplicaciones y sitios web → Eliminar), Meta nos notifica automáticamente y procesamos el borrado desde nuestro extremo — podés revisar el estado de esa solicitud en la URL de confirmación que Meta te muestra.',
     ],
   },
@@ -54,7 +54,7 @@ const SECTIONS: { title: string; body: string[] }[] = [
 export default function PrivacyPolicyPage() {
   return (
     <div className="mx-auto min-h-screen max-w-[720px] px-6 py-16">
-      <p className="text-[11px] font-bold uppercase tracking-wide text-text-3">Gotix</p>
+      <p className="text-[11px] font-bold uppercase tracking-wide text-text-3">GOTIX x LADO T</p>
       <h1 className="mt-1 text-[28px] font-bold tracking-[-0.03em] text-text">Política de Privacidad</h1>
       <p className="mt-2 text-sm text-text-2">Última actualización: 30 de julio de 2026.</p>
 

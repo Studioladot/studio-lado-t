@@ -20,7 +20,7 @@ export async function authAction(_prevState: AuthState, formData: FormData): Pro
   }
 
   if (!tieneAcceso(email)) {
-    return { error: 'Esta cuenta no tiene acceso a Gotix.', info: null }
+    return { error: 'Esta cuenta no tiene acceso a GOTIX x LADO T.', info: null }
   }
 
   const supabase = await createClient()

@@ -130,17 +130,17 @@ function NavLink({
     <Link
       href={item.href}
       title={collapsed ? item.label : undefined}
-      className={`group mx-2 my-0.5 flex items-center gap-2.5 rounded-md py-2.5 text-[13px] font-medium outline-none transition-colors duration-200 ease-out focus-visible:bg-white/[0.06] focus-visible:text-white focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-accent/50 ${
+      className={`group mx-2 my-0.5 flex items-center gap-2.5 rounded-md py-2.5 text-[13px] font-medium outline-none transition-colors duration-200 ease-out focus-visible:bg-white/[0.06] focus-visible:text-white focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-sidebar-accent/50 ${
         collapsed ? 'justify-center px-0' : indented ? 'pl-7 pr-3' : 'px-3'
       } ${
         active
-          ? 'bg-accent/[0.16] font-semibold text-white shadow-[0_2px_14px_-3px_var(--primary-glow)]'
-          : 'text-[#A8ADBB] hover:bg-white/[0.06] hover:text-white'
+          ? 'bg-sidebar-accent/[0.16] font-semibold text-white shadow-[inset_2px_0_0_var(--sidebar-accent)]'
+          : 'text-white/60 hover:bg-white/[0.06] hover:text-white'
       }`}
     >
       <span
         className={`flex shrink-0 items-center justify-center transition-opacity duration-200 ease-out ${
-          active ? 'opacity-100 text-accent' : 'opacity-70 group-hover:opacity-100'
+          active ? 'opacity-100 text-sidebar-accent' : 'opacity-70 group-hover:opacity-100'
         }`}
       >
         {item.icon}
@@ -193,14 +193,23 @@ export function SidebarNav({
 
   return (
     <aside
-      className={`fixed inset-y-0 left-0 z-40 flex flex-col border-r border-white/[0.06] bg-[#14161D] shadow-[4px_0_32px_rgba(0,0,0,0.25)] transition-[width] duration-200 ease-out ${
+      className={`fixed inset-y-0 left-0 z-40 flex flex-col border-r border-white/[0.06] bg-sidebar-bg shadow-[4px_0_32px_rgba(0,0,0,0.25)] transition-[width] duration-200 ease-out ${
         collapsed ? 'w-[64px]' : 'w-[228px]'
       }`}
     >
-      <div className="flex items-center gap-2 overflow-hidden border-b border-white/[0.08] px-5 py-[18px]">
-        <span className="shrink-0 text-[20px] font-extrabold tracking-[-0.04em] text-accent">G</span>
-        {!collapsed && <span className="text-[15px] font-extrabold tracking-[-0.04em] text-white">otix</span>}
-      </div>
+      <Link
+        href="/dashboard"
+        aria-label="GOTIX x LADO T — ir al Dashboard"
+        className={`flex h-[66px] items-center overflow-hidden border-b border-white/[0.08] ${collapsed ? 'justify-center px-0' : 'px-5'}`}
+      >
+        {collapsed ? (
+          // eslint-disable-next-line @next/next/no-img-element -- PNG local chico, sin optimización necesaria.
+          <img src="/brand/mark-dark.png" alt="GOTIX x LADO T" width={30} height={30} className="h-[30px] w-[30px]" />
+        ) : (
+          // eslint-disable-next-line @next/next/no-img-element -- PNG local chico, sin optimización necesaria.
+          <img src="/brand/logo-dark.png" alt="GOTIX x LADO T" width={176} height={33} className="h-auto w-[176px]" />
+        )}
+      </Link>
 
       <nav className="flex-1 overflow-y-auto px-0 py-3">
         <div className="mb-3">
@@ -208,7 +217,7 @@ export function SidebarNav({
           <Link
             href="/guia-rapida"
             title={collapsed ? 'Guía rápida' : undefined}
-            className={`mx-2 my-0.5 flex items-center rounded-md py-2 text-[12px] font-medium text-white/45 outline-none transition-colors duration-200 ease-out hover:bg-white/[0.04] hover:text-white/80 focus-visible:bg-white/[0.06] focus-visible:text-white focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-accent/50 ${
+            className={`mx-2 my-0.5 flex items-center rounded-md py-2 text-[12px] font-medium text-white/45 outline-none transition-colors duration-200 ease-out hover:bg-white/[0.04] hover:text-white/80 focus-visible:bg-white/[0.06] focus-visible:text-white focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-sidebar-accent/50 ${
               collapsed ? 'justify-center px-0' : 'px-3'
             } ${isItemActive(pathname, '/guia-rapida') ? 'text-white/80' : ''}`}
           >
@@ -236,7 +245,7 @@ export function SidebarNav({
                 type="button"
                 onClick={() => toggleGroup(group.key)}
                 aria-expanded={open}
-                className={`mx-2 flex w-[calc(100%-16px)] items-center justify-between gap-2 rounded-md px-3 py-2 text-left outline-none transition-colors duration-200 ease-out hover:bg-white/[0.04] focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-accent/50 ${
+                className={`mx-2 flex w-[calc(100%-16px)] items-center justify-between gap-2 rounded-md px-3 py-2 text-left outline-none transition-colors duration-200 ease-out hover:bg-white/[0.04] focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-sidebar-accent/50 ${
                   hasActive ? 'text-white/75' : 'text-white/45 hover:text-white/70'
                 }`}
               >
@@ -296,7 +305,7 @@ export function SidebarNav({
         type="button"
         onClick={onToggle}
         aria-label={collapsed ? 'Expandir menú' : 'Colapsar menú'}
-        className="flex items-center justify-center gap-2 px-4 py-3 text-white/50 outline-none transition-colors duration-200 ease-out hover:bg-white/[0.05] hover:text-white focus-visible:bg-white/[0.05] focus-visible:text-white focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-accent/50"
+        className="flex items-center justify-center gap-2 px-4 py-3 text-white/50 outline-none transition-colors duration-200 ease-out hover:bg-white/[0.05] hover:text-white focus-visible:bg-white/[0.05] focus-visible:text-white focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-sidebar-accent/50"
       >
         <svg
           width="14"

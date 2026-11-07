@@ -126,7 +126,7 @@ export default async function IntegrationsPage({
     <div className="mx-auto max-w-[1040px]">
       <div className="mb-[22px]">
         <h1 className="text-[22px] font-bold tracking-[-0.03em] text-text">Integraciones</h1>
-        <p className="mt-0.5 text-[13px] text-text-2">Conectá las plataformas que alimentan a Gotix con datos reales.</p>
+        <p className="mt-0.5 text-[13px] text-text-2">Conectá las plataformas que alimentan a GOTIX x LADO T con datos reales.</p>
       </div>
 
       {banner && (

@@ -49,7 +49,7 @@ export async function inviteMemberAction(
 
   if (!result.ok) {
     if (result.error === 'no_account') {
-      return { error: 'Ese email todavía no tiene una cuenta en Gotix.', success: false }
+      return { error: 'Ese email todavía no tiene una cuenta en GOTIX x LADO T.', success: false }
     }
     if (result.error === 'already_member') {
       return { error: 'Ya es parte de esta organización.', success: false }
