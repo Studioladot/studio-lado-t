@@ -212,7 +212,7 @@ function truncateWords(text: string, maxWords: number): string {
 }
 
 function formatPostedDate(iso: string): string {
-  return new Date(iso).toLocaleDateString('es-AR', { day: 'numeric', month: 'short' })
+  return new Date(iso).toLocaleDateString('es-AR', { timeZone: 'America/Argentina/Buenos_Aires',  day: 'numeric', month: 'short' })
 }
 
 // Mini gráfico de evolución — puerto reducido del mismo trazo que

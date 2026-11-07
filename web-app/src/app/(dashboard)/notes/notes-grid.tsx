@@ -80,7 +80,7 @@ export function NotesGrid({ notes, campaignId, pillars }: { notes: Note[]; campa
 
             const accent = NOTE_COLOR_ACCENT[note.color ?? ''] ?? '#c8c6c0'
             const fecha = note.created_at
-              ? new Date(note.created_at).toLocaleDateString('es-AR', {
+              ? new Date(note.created_at).toLocaleDateString('es-AR', { timeZone: 'America/Argentina/Buenos_Aires',
                   day: 'numeric',
                   month: 'short',
                   hour: '2-digit',

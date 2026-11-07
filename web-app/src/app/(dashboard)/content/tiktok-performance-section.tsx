@@ -129,7 +129,7 @@ function truncateWords(text: string, maxWords: number): string {
 }
 
 function formatPostedDate(iso: string): string {
-  return new Date(iso).toLocaleDateString('es-AR', { day: 'numeric', month: 'short' })
+  return new Date(iso).toLocaleDateString('es-AR', { timeZone: 'America/Argentina/Buenos_Aires',  day: 'numeric', month: 'short' })
 }
 
 // Mismo trazo que EvolutionSparkline de Instagram (operations/sales/sparkline.tsx en origen).

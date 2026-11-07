@@ -7,7 +7,7 @@ import { createServiceRoleClient } from '@/lib/supabase/service-role'
 // nada de las conexiones borradas).
 
 function formatDate(value: string) {
-  return new Date(value).toLocaleString('es-AR', { dateStyle: 'long', timeStyle: 'short' })
+  return new Date(value).toLocaleString('es-AR', { timeZone: 'America/Argentina/Buenos_Aires',  dateStyle: 'long', timeStyle: 'short' })
 }
 
 export default async function DataDeletionStatusPage({

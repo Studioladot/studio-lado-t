@@ -223,3 +223,14 @@ body {
   background: linear-gradient(135deg, #1a1918 0%, #050505 100%);
   border-color: rgba(255, 255, 255, 0.08);
 }
+
+/* Autocompletado del navegador: sin esto Chrome pinta los campos de celeste
+   y rompe la paleta (muy visible en el login en modo oscuro). */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0 1000px var(--surface-2) inset;
+  -webkit-text-fill-color: var(--text);
+  caret-color: var(--text);
+  transition: background-color 9999s ease-out 0s;
+}

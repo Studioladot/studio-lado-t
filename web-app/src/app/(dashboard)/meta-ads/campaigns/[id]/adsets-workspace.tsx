@@ -379,7 +379,7 @@ export function AdSetsWorkspace({
                       )}
                     </td>
                     <td className="whitespace-nowrap px-5 py-1.5 text-center text-sm text-text-2">
-                      {adSet.createdAt ? new Date(adSet.createdAt).toLocaleDateString('es-AR') : '—'}
+                      {adSet.createdAt ? new Date(adSet.createdAt).toLocaleDateString('es-AR', { timeZone: 'America/Argentina/Buenos_Aires' }) : '—'}
                     </td>
                     {visibleColumns.map((column) => (
                       <td key={column.id} className={METRIC_CELL_CLASS[column.tier]}>

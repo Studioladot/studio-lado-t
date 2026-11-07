@@ -81,7 +81,7 @@ export function HistoryList({ entries }: { entries: LaunchActivityEntry[] }) {
                 >
                   <div className="min-w-0">
                     <p className="truncate text-sm font-semibold text-text">{entry.campaignName}</p>
-                    <p className="mt-0.5 text-[11px] text-text-3">{new Date(entry.createdAt).toLocaleString('es-AR')}</p>
+                    <p className="mt-0.5 text-[11px] text-text-3">{new Date(entry.createdAt).toLocaleString('es-AR', { timeZone: 'America/Argentina/Buenos_Aires' })}</p>
                   </div>
                   <div className="flex shrink-0 items-center gap-2.5">
                     <span className={`rounded-full border px-2.5 py-1 text-[10px] font-medium ${STATUS_BADGE[entry.status]}`}>

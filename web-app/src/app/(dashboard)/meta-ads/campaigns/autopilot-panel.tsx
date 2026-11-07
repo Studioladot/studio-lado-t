@@ -440,7 +440,7 @@ export function AutopilotPanel({
                             }`}
                           >
                             <p className={`text-xs leading-relaxed ${entry.action === 'error' ? 'text-red' : 'text-text-2'}`}>{entry.message}</p>
-                            <p className="mt-1 text-[10px] text-text-3">{new Date(entry.createdAt).toLocaleString('es-AR')}</p>
+                            <p className="mt-1 text-[10px] text-text-3">{new Date(entry.createdAt).toLocaleString('es-AR', { timeZone: 'America/Argentina/Buenos_Aires' })}</p>
                           </li>
                         ))}
                       </ul>

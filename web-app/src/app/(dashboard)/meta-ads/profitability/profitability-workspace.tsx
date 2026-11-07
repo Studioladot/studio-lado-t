@@ -119,7 +119,7 @@ function AccountActivityCard({ entries }: { entries: OrgRunLogEntry[] }) {
             >
               {entry.campaignName && <p className="text-[10px] font-semibold text-text-3">{entry.campaignName}</p>}
               <p className={`mt-0.5 text-xs leading-relaxed ${entry.action === 'error' ? 'text-red' : 'text-text-2'}`}>{entry.message}</p>
-              <p className="mt-1 text-[10px] text-text-3">{new Date(entry.createdAt).toLocaleString('es-AR')}</p>
+              <p className="mt-1 text-[10px] text-text-3">{new Date(entry.createdAt).toLocaleString('es-AR', { timeZone: 'America/Argentina/Buenos_Aires' })}</p>
             </li>
           ))}
         </ul>

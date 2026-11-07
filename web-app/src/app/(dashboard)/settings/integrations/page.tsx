@@ -28,7 +28,7 @@ const SCOPE_LABEL: Record<string, string> = {
 }
 
 function formatDate(value: string) {
-  return new Date(value).toLocaleDateString('es-AR', { day: '2-digit', month: 'short', year: 'numeric' })
+  return new Date(value).toLocaleDateString('es-AR', { timeZone: 'America/Argentina/Buenos_Aires',  day: '2-digit', month: 'short', year: 'numeric' })
 }
 
 const PRIMARY_BUTTON =

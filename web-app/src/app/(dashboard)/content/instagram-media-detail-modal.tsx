@@ -251,7 +251,7 @@ export function InstagramMediaDetailModal({
             </div>
             <div className="bg-surface px-3 py-2.5">
               <p className="text-[10px] font-bold uppercase tracking-wide text-text-3">Publicado</p>
-              <p className="mt-0.5 text-sm text-text">{item.posted_at ? new Date(item.posted_at).toLocaleDateString('es-AR') : '—'}</p>
+              <p className="mt-0.5 text-sm text-text">{item.posted_at ? new Date(item.posted_at).toLocaleDateString('es-AR', { timeZone: 'America/Argentina/Buenos_Aires' }) : '—'}</p>
             </div>
           </div>
 

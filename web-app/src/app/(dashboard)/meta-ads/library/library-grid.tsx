@@ -114,7 +114,7 @@ export function LibraryGrid({ creatives }: { creatives: LibraryCreative[] }) {
 
                 {creative.status === 'in_use' && creative.deployedAt && (
                   <p className="text-[10px] text-text-3">
-                    En uso desde {new Date(creative.deployedAt).toLocaleDateString('es-AR')}
+                    En uso desde {new Date(creative.deployedAt).toLocaleDateString('es-AR', { timeZone: 'America/Argentina/Buenos_Aires' })}
                     {creative.deployedAdId ? ` — anuncio ${creative.deployedAdId}` : ''}
                   </p>
                 )}
