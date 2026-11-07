@@ -250,15 +250,6 @@ export function TeamIcon({ size = 16 }: IconProps) {
   )
 }
 
-export function BillingIcon({ size = 16 }: IconProps) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="1.5" y="4" width="15" height="10" rx="1.5" />
-      <path d="M1.5 7.5h15" />
-    </svg>
-  )
-}
-
 // Hub de Integraciones (2026-08-05) — reemplaza los links sueltos de Meta
 // Ads/Tienda Nube que vivían en este clúster de Ajustes: un solo enchufe
 // genérico, no el logo de ninguna plataforma en particular (para eso están
