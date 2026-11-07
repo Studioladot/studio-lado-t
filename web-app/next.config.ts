@@ -11,6 +11,18 @@ const nextConfig: NextConfig = {
       bodySizeLimit: "200mb",
     },
   },
+  async redirects() {
+    return [
+      // La app en Tienda Nube Partners tiene registrada la URL de vuelta de
+      // la versión vieja (monolito). Se redirige a la ruta actual; el code y
+      // el state viajan intactos porque Next pasa el query string.
+      {
+        source: "/api/tiendanube-callback",
+        destination: "/api/tiendanube/callback",
+        permanent: false,
+      },
+    ];
+  },
 };
 
 export default nextConfig;
