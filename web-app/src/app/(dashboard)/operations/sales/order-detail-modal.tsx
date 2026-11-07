@@ -38,8 +38,8 @@ export function OrderDetailModal({ entry, onClose }: { entry: OrderLedgerEntry |
         <div className="flex items-start justify-between gap-3 border-b border-border px-6 py-5">
           <div>
             <p className="text-[10px] font-bold uppercase tracking-wide text-text-3">Radiografía de la Orden</p>
-            <h2 className="mt-0.5 text-[17px] font-bold tracking-[-0.02em] text-text">Orden #{entry.orderId}</h2>
-            <p className="mt-0.5 text-xs text-text-3">{entry.createdAt.split('T')[0]}</p>
+            <h2 className="mt-0.5 text-[17px] font-bold tracking-[-0.02em] text-text">Orden #{entry.orderNumber ?? entry.orderId}</h2>
+            <p className="mt-0.5 text-xs text-text-3">{entry.day}</p>
           </div>
           <button
             type="button"

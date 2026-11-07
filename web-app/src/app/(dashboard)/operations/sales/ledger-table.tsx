@@ -59,12 +59,12 @@ export function LedgerTable({ ledger }: { ledger: OrderLedgerEntry[] }) {
               <tbody>
                 {rows.map((e) => (
                   <tr key={e.orderId} className="border-t border-border">
-                    <td className="px-3 py-2 font-medium text-text">#{e.orderId}</td>
+                    <td className="px-3 py-2 font-medium text-text">#{e.orderNumber ?? e.orderId}</td>
                     <td className="px-3 py-2">
                       <span className="rounded-full bg-accent/10 px-2 py-0.5 text-[10px] font-semibold text-accent">Tienda Online</span>
                     </td>
                     <td className="px-3 py-2 text-text-2">{STATUS_LABELS[e.status ?? ''] ?? e.status ?? 'Pagada'}</td>
-                    <td className="px-3 py-2 text-text-3">{e.createdAt.split('T')[0]}</td>
+                    <td className="px-3 py-2 text-text-3">{e.day}</td>
                     <td className="px-3 py-2 text-right tabular-nums text-text">{money(e.bruto)}</td>
                     <td className={`px-3 py-2 text-right tabular-nums font-semibold ${e.neto >= 0 ? 'text-green' : 'text-red'}`}>
                       {money(e.neto)}

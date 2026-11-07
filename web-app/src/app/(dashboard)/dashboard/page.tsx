@@ -8,6 +8,7 @@ import {
 } from '../actions'
 import { getMetaAdsInsights } from '@/lib/meta/insights'
 import { getTiendaNubeOrders, summarizeOrders } from '@/lib/tiendanube/orders'
+import { arDateKey, startOfTodayArgentina } from '@/lib/argentina-time'
 import { getOrganizationRunLog, type OrgRunLogEntry } from '@/lib/meta/autopilot'
 import { formatMoney, type Currency } from '@/lib/currency'
 import { ConfirmSubmitButton } from '@/components/features/confirm-submit-button'
@@ -106,8 +107,9 @@ export default async function DashboardPage({
   const supabase = await createClient()
 
   const now = new Date()
-  const startOfMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`
-  const startOfTodayISO = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString()
+  // Hora argentina: el servidor corre en UTC, y sin esto "hoy" arrancaba a
+  // las 21 h del día anterior (y el mes cambiaba 3 horas antes).
+  const startOfMonth = `${arDateKey(now).slice(0, 7)}-01`
 
   const [
     { count: activeCampaigns },
@@ -169,7 +171,7 @@ export default async function DashboardPage({
   // las de HOY — el Dashboard es la pantalla más visitada de toda la app,
   // así que este sobre-fetch pegaba en cada login/navegación. Ahora se
   // pide directamente el rango de hoy — normalmente una sola página.
-  const ordersSince = new Date(startOfTodayISO)
+  const ordersSince = startOfTodayArgentina(now)
   const ordersUntil = new Date()
 
   const [metaInsights, tiendaNubeOrdersResult] = await Promise.all([

@@ -8,6 +8,8 @@ import {
   buildOrderLedger,
   sumUnitsSold,
   computeCustomerEconomics,
+  sumShippingCost,
+  sumGatewayGross,
 } from '@/lib/tiendanube/orders'
 import { getTiendaNubeProducts } from '@/lib/tiendanube/products'
 import { getTiendaNubeCheckouts, summarizeCheckouts, getRecentAbandonedCheckouts } from '@/lib/tiendanube/checkouts'
@@ -151,13 +153,12 @@ export default async function OperationsSalesPage({
   const allCheckouts = checkoutsResult?.ok ? checkoutsResult.checkouts : []
   const currentCheckouts = allCheckouts.filter((c) => c.createdAt >= periodStartISO)
   const previousCheckouts = allCheckouts.filter((c) => c.createdAt < periodStartISO)
-  const checkoutFunnel = summarizeCheckouts(currentCheckouts)
-  const previousCheckoutFunnel = summarizeCheckouts(previousCheckouts)
-  const abandonedCheckouts = getRecentAbandonedCheckouts(currentCheckouts, 10)
-  const coupons = couponsResult?.ok ? couponsResult.coupons : []
-
   const summary = summarizeOrders(currentOrders)
   const previousSummary = summarizeOrders(previousOrders)
+  const checkoutFunnel = summarizeCheckouts(currentCheckouts, summary.ordenes)
+  const previousCheckoutFunnel = summarizeCheckouts(previousCheckouts, previousSummary.ordenes)
+  const abandonedCheckouts = getRecentAbandonedCheckouts(currentCheckouts, 10)
+  const coupons = couponsResult?.ok ? couponsResult.coupons : []
   const dailyData = groupOrdersByDay(currentOrders)
   const ranking = rankProducts(currentOrders, costsMap, catalog)
   const previousRanking = rankProducts(previousOrders, costsMap, catalog)
@@ -190,7 +191,8 @@ export default async function OperationsSalesPage({
       impuestosPct: finConfig.impuestosPct ?? 0,
     },
     metaSpendArs,
-    opexProrated
+    opexProrated,
+    finConfig.costoEnvioPromedio ?? null
   )
 
   // `shipping_cost_customer` (summary.envio) es lo que el CLIENTE pagó de
@@ -201,10 +203,21 @@ export default async function OperationsSalesPage({
   // tienda carga a mano (Tienda Nube no expone el costo de correo real por
   // ninguna API) — si está cargado, es la fuente correcta; si no, se usa
   // summary.envio como aproximación y se avisa en la UI (fin_config).
-  const envioReal = finConfig.costoEnvioPromedio ? Math.round(finConfig.costoEnvioPromedio * summary.ordenes) : summary.envio
+  //
+  // Corrección 2026-11-06: Tienda Nube SÍ informa el costo del envío para la
+  // tienda (`shipping_cost_owner`) — en El Palacio era $2,17M contra $1,43M
+  // cobrados al cliente (envío gratis/bonificado). Se usa ese costo real
+  // cuando no hay un promedio cargado a mano.
+  const envioReal = finConfig.costoEnvioPromedio ? Math.round(finConfig.costoEnvioPromedio * summary.ordenes) : sumShippingCost(currentOrders)
   const envioRealPrevious = finConfig.costoEnvioPromedio
     ? Math.round(finConfig.costoEnvioPromedio * previousSummary.ordenes)
-    : previousSummary.envio
+    : sumShippingCost(previousOrders)
+
+  // La comisión de pasarela solo la pagan las órdenes cobradas por pasarela
+  // (Pago Nube, Mercado Pago, tarjeta) — las transferencias no. Antes se
+  // aplicaba el % sobre toda la facturación.
+  const gatewayGross = sumGatewayGross(currentOrders)
+  const gatewayGrossPrevious = sumGatewayGross(previousOrders)
 
   const waterfall = computeProfitWaterfall({
     bruto: summary.bruto,
@@ -212,7 +225,7 @@ export default async function OperationsSalesPage({
     metaSpend: metaSpendArs,
     envio: envioReal,
     comisionTn: finConfig.comisionTnPct ? Math.round((summary.bruto * finConfig.comisionTnPct) / 100) : 0,
-    comisionPasarela: finConfig.pasarelaPct ? Math.round((summary.bruto * finConfig.pasarelaPct) / 100) : 0,
+    comisionPasarela: finConfig.pasarelaPct ? Math.round((gatewayGross * finConfig.pasarelaPct) / 100) : 0,
     impuestos: finConfig.impuestosPct ? Math.round((summary.bruto * finConfig.impuestosPct) / 100) : 0,
     opex: opexProrated,
   })
@@ -226,7 +239,7 @@ export default async function OperationsSalesPage({
     metaSpend: metaSpendPreviousArs,
     envio: envioRealPrevious,
     comisionTn: finConfig.comisionTnPct ? Math.round((previousSummary.bruto * finConfig.comisionTnPct) / 100) : 0,
-    comisionPasarela: finConfig.pasarelaPct ? Math.round((previousSummary.bruto * finConfig.pasarelaPct) / 100) : 0,
+    comisionPasarela: finConfig.pasarelaPct ? Math.round((gatewayGrossPrevious * finConfig.pasarelaPct) / 100) : 0,
     impuestos: finConfig.impuestosPct ? Math.round((previousSummary.bruto * finConfig.impuestosPct) / 100) : 0,
     opex: opexProrated,
   })
@@ -305,6 +318,28 @@ export default async function OperationsSalesPage({
       ]
     : []
 
+  // Cobertura de costos: qué parte de lo vendido tiene costo de producto
+  // cargado. Sin esto, Margen Neto/Ganancia/ROAS Real salen inflados (el
+  // costo de producto cuenta como $0) y la pantalla no lo decía.
+  let unitsWithCost = 0
+  let totalUnits = 0
+  const variantsWithoutCost = new Set<number>()
+  for (const order of currentOrders) {
+    for (const item of order.lineItems) {
+      totalUnits += item.quantity
+      const cost = item.variantId !== null ? costsMap.get(item.variantId)?.cost ?? 0 : 0
+      if (cost > 0) unitsWithCost += item.quantity
+      else if (item.variantId !== null) variantsWithoutCost.add(item.variantId)
+    }
+  }
+  const missingSetup = {
+    costCoveragePct: totalUnits > 0 ? (unitsWithCost / totalUnits) * 100 : 100,
+    variantsWithoutCost: variantsWithoutCost.size,
+    noCommissions: finConfig.comisionTnPct === null && finConfig.pasarelaPct === null,
+    noTaxes: finConfig.impuestosPct === null,
+  }
+  const gatewaySharePct = summary.bruto > 0 ? (gatewayGross / summary.bruto) * 100 : 0
+
   const manualTotal = manualSales.reduce((sum, s) => sum + (s.monto ?? 0), 0)
 
   // Economía Unitaria (2026-08-12) — CAC/LTV/Recompra/Frecuencia, en la
@@ -333,7 +368,8 @@ export default async function OperationsSalesPage({
 
   const unitEconomics = {
     impuestosPct: finConfig.impuestosPct,
-    margenBrutoPct,
+    // Sin ningún costo cargado el margen bruto daría 100% — se muestra vacío.
+    margenBrutoPct: unitsWithCost > 0 ? margenBrutoPct : null,
     gananciaNeta: waterfall.neto,
     unidadesVendidas,
     costoPromedioPorPedido,
@@ -341,7 +377,7 @@ export default async function OperationsSalesPage({
     cac,
     cacBlended,
     opexProrated,
-    ratioMargenBrutoCac,
+    ratioMargenBrutoCac: unitsWithCost > 0 ? ratioMargenBrutoCac : null,
     ratioLtvCac,
   }
 
@@ -391,6 +427,9 @@ export default async function OperationsSalesPage({
         abandonedCheckouts={abandonedCheckouts}
         coupons={coupons}
         unitEconomics={unitEconomics}
+        missingSetup={missingSetup}
+        gatewaySharePct={gatewaySharePct}
+        usdArsRate={accountCurrency === 'USD' && metaUsable ? usdArsRate : null}
       />
     </div>
   )

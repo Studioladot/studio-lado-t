@@ -18,7 +18,8 @@ import type { CustomerEconomics } from '@/lib/tiendanube/orders'
 
 export type UnitEconomics = {
   impuestosPct: number | null
-  margenBrutoPct: number
+  /** null = no hay ningún costo de producto cargado (daría un 100% falso). */
+  margenBrutoPct: number | null
   gananciaNeta: number
   unidadesVendidas: number
   costoPromedioPorPedido: number
@@ -84,7 +85,7 @@ export function UnitEconomicsGrid({ data, hasOrders }: { data: UnitEconomics; ha
         />
         <MetricCard
           label="Margen de Ganancia Bruto"
-          value={`${data.margenBrutoPct.toFixed(1)}%`}
+          value={data.margenBrutoPct !== null ? `${data.margenBrutoPct.toFixed(1)}%` : 'Faltan costos'}
           tooltip="Facturación Bruta menos Costo de Producto, como % de la facturación — antes de restar envío, comisiones, impuestos, Meta Ads y Costos Fijos."
         />
         <MetricCard

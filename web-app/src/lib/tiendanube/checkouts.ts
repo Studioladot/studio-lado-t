@@ -157,10 +157,18 @@ export type CheckoutFunnelSummary = {
   tasaConversion: number
 }
 
-export function summarizeCheckouts(checkouts: TiendaNubeCheckout[]): CheckoutFunnelSummary {
-  const carritosCreados = checkouts.length
-  const ventasCerradas = checkouts.filter((c) => c.completedAt !== null).length
-  const abandonados = carritosCreados - ventasCerradas
+/**
+ * `GET /checkouts` de Tienda Nube devuelve SOLO carritos abandonados: cuando
+ * un carrito se convierte en venta pasa a ser una orden y deja de aparecer
+ * acá (verificado contra la tienda real, 2026-11-06: 200 de 200 con
+ * completed_at vacío). Antes se tomaba esta lista como "todos los carritos"
+ * y la conversión daba siempre 0%. Ahora carritos creados = abandonados +
+ * órdenes del mismo período.
+ */
+export function summarizeCheckouts(checkouts: TiendaNubeCheckout[], ordersInPeriod: number): CheckoutFunnelSummary {
+  const abandonados = checkouts.filter((c) => c.completedAt === null).length
+  const ventasCerradas = ordersInPeriod
+  const carritosCreados = abandonados + ventasCerradas
   const tasaConversion = carritosCreados > 0 ? (ventasCerradas / carritosCreados) * 100 : 0
   return { carritosCreados, ventasCerradas, abandonados, tasaConversion }
 }

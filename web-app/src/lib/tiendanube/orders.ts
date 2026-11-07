@@ -1,3 +1,5 @@
+import { arDateKey } from '@/lib/argentina-time'
+
 const USER_AGENT = 'GOTIX (contacto@gotix.app)'
 
 // Dashboard de Rentabilidad Neta (2026-07-25) — antes esta función colapsaba
@@ -17,12 +19,22 @@ export type TiendaNubeOrderLineItem = {
 
 export type TiendaNubeOrderDetail = {
   id: number
+  /** Número visible de la orden en Tienda Nube (el que ve la tienda y el cliente), distinto del id interno. */
+  number: number | null
   createdAt: string
   status: string | null
   paymentStatus: string | null
   subtotal: number
   discount: number
   shippingCost: number
+  /**
+   * Lo que el envío le cuesta a la tienda (`shipping_cost_owner`). Con envío
+   * gratis o bonificado es mayor que lo que pagó el cliente — antes se usaba
+   * lo cobrado al cliente como costo y el envío quedaba subestimado.
+   */
+  shippingCostOwner: number
+  /** Medio de pago: `offline` = transferencia/efectivo (sin comisión de pasarela). */
+  gateway: string | null
   lineItems: TiendaNubeOrderLineItem[]
   /**
    * Identificador de cliente para agrupar órdenes de la misma persona
@@ -56,6 +68,9 @@ type RawLineItem = {
 
 type RawOrder = {
   id: number
+  number?: number | string
+  gateway?: string | null
+  shipping_cost_owner?: string | null
   status?: string
   payment_status?: string
   created_at?: string
@@ -163,12 +178,15 @@ export async function getTiendaNubeOrders(
 
     const orders: TiendaNubeOrderDetail[] = paidOrders.map((order) => ({
       id: order.id,
+      number: order.number !== undefined && order.number !== null ? Number(order.number) : null,
       createdAt: order.created_at ?? new Date().toISOString(),
       status: order.status ?? null,
       paymentStatus: order.payment_status ?? null,
       subtotal: parseFloat(order.subtotal || '0'),
       discount: parseFloat(order.discount || '0'),
       shippingCost: parseFloat(order.shipping_cost_customer || '0'),
+      shippingCostOwner: parseFloat(order.shipping_cost_owner || '0'),
+      gateway: order.gateway ?? null,
       lineItems: (order.products ?? []).map((p) => ({
         variantId: p.variant_id ?? null,
         productId: p.product_id ?? null,
@@ -206,13 +224,37 @@ export function summarizeOrders(orders: TiendaNubeOrderDetail[]): TiendaNubeSale
   return { bruto: Math.round(bruto), envio: Math.round(envio), neto: Math.round(bruto - envio), ordenes: orders.length }
 }
 
+/** Costo real de envío de una orden para la tienda — lo que cobra el correo; si Tienda Nube no lo informa, lo cobrado al cliente. */
+export function orderShippingCost(order: TiendaNubeOrderDetail): number {
+  return order.shippingCostOwner > 0 ? order.shippingCostOwner : order.shippingCost
+}
+
+/** true si la orden se cobró por una pasarela con comisión (Pago Nube, Mercado Pago, tarjeta) — no transferencia ni efectivo. */
+export function orderPaidThroughGateway(order: TiendaNubeOrderDetail): boolean {
+  return !!order.gateway && order.gateway !== 'offline'
+}
+
+export function orderGross(order: TiendaNubeOrderDetail): number {
+  return order.subtotal - order.discount + order.shippingCost
+}
+
+/** Costo de envío real total del período (ver orderShippingCost). */
+export function sumShippingCost(orders: TiendaNubeOrderDetail[]): number {
+  return Math.round(orders.reduce((sum, o) => sum + orderShippingCost(o), 0))
+}
+
+/** Facturación cobrada por pasarela — base correcta para la comisión de pasarela (las transferencias no la pagan). */
+export function sumGatewayGross(orders: TiendaNubeOrderDetail[]): number {
+  return Math.round(orders.reduce((sum, o) => sum + (orderPaidThroughGateway(o) ? orderGross(o) : 0), 0))
+}
+
 export type DailySalesPoint = { date: string; bruto: number; neto: number; ordenes: number }
 
 /** Serie diaria para el gráfico de Facturación Diaria — un punto por cada día que tuvo al menos una orden paga. */
 export function groupOrdersByDay(orders: TiendaNubeOrderDetail[]): DailySalesPoint[] {
   const byDay = new Map<string, { bruto: number; envio: number; ordenes: number }>()
   for (const order of orders) {
-    const day = order.createdAt.split('T')[0]
+    const day = arDateKey(order.createdAt)
     const bucket = byDay.get(day) ?? { bruto: 0, envio: 0, ordenes: 0 }
     bucket.bruto += order.subtotal - order.discount + order.shippingCost
     bucket.envio += order.shippingCost
@@ -344,6 +386,10 @@ export function rankProducts(
 
 export type OrderLedgerEntry = {
   orderId: number
+  /** Número visible de la orden en Tienda Nube. */
+  orderNumber: number | null
+  /** Día de la venta en hora argentina (YYYY-MM-DD). */
+  day: string
   createdAt: string
   status: string | null
   bruto: number
@@ -370,7 +416,9 @@ export function buildOrderLedger(
   costsByVariant: Map<number, { cost: number; name: string | null }>,
   rates: { comisionTnPct: number; comisionPasarelaPct: number; impuestosPct: number },
   metaSpendTotal: number,
-  opexTotal: number
+  opexTotal: number,
+  /** Costo de envío fijo por orden cargado a mano en Ajustes — si viene, reemplaza el costo informado por Tienda Nube. */
+  shippingCostPerOrder: number | null = null
 ): OrderLedgerEntry[] {
   const adsProrated = orders.length > 0 ? metaSpendTotal / orders.length : 0
   const opexProrated = orders.length > 0 ? opexTotal / orders.length : 0
@@ -383,14 +431,17 @@ export function buildOrderLedger(
         const unitCost = costsByVariant.get(item.variantId)?.cost ?? 0
         return sum + unitCost * item.quantity
       }, 0)
-      const envio = order.shippingCost
+      const envio = shippingCostPerOrder ?? orderShippingCost(order)
       const comisionTn = rates.comisionTnPct ? (bruto * rates.comisionTnPct) / 100 : 0
-      const comisionPasarela = rates.comisionPasarelaPct ? (bruto * rates.comisionPasarelaPct) / 100 : 0
+      const comisionPasarela =
+        rates.comisionPasarelaPct && orderPaidThroughGateway(order) ? (bruto * rates.comisionPasarelaPct) / 100 : 0
       const impuestos = rates.impuestosPct ? (bruto * rates.impuestosPct) / 100 : 0
       const neto = bruto - cogs - envio - comisionTn - comisionPasarela - impuestos - adsProrated - opexProrated
 
       return {
         orderId: order.id,
+        orderNumber: order.number,
+        day: arDateKey(order.createdAt),
         createdAt: order.createdAt,
         status: order.status,
         bruto: Math.round(bruto),

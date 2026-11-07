@@ -175,6 +175,9 @@ export function SalesWorkspace({
   abandonedCheckouts,
   coupons,
   unitEconomics,
+  missingSetup,
+  gatewaySharePct,
+  usdArsRate,
 }: {
   activePreset: number | null
   customFrom: string | null
@@ -226,6 +229,12 @@ export function SalesWorkspace({
   abandonedCheckouts: TiendaNubeCheckout[]
   coupons: TiendaNubeCoupon[]
   unitEconomics: UnitEconomics
+  /** Qué falta cargar para que el resultado neto sea real y no una estimación optimista. */
+  missingSetup: { costCoveragePct: number; variantsWithoutCost: number; noCommissions: boolean; noTaxes: boolean }
+  /** % de la facturación cobrada por pasarela (el resto fue transferencia/efectivo). */
+  gatewaySharePct: number
+  /** Cotización usada para pasar el gasto de Meta de dólares a pesos — null si la cuenta ya está en pesos. */
+  usdArsRate: number | null
 }) {
   const [channel, setChannel] = useState<Channel>('tn')
   const [tab, setTab] = useState<SalesTab>('resumen')
@@ -246,6 +255,17 @@ export function SalesWorkspace({
 
   const brutoDisplay = channel === 'tn' ? summary.bruto : summary.bruto + manualTotal
   const metaMetricsAvailable = metaConnected && hasMetaSpend
+  const costsIncomplete = missingSetup.costCoveragePct < 99.5
+  const pendingItems = [
+    costsIncomplete
+      ? missingSetup.costCoveragePct < 0.5
+        ? 'el costo de los productos'
+        : `el costo de ${missingSetup.variantsWithoutCost} ${missingSetup.variantsWithoutCost === 1 ? 'producto vendido' : 'productos vendidos'}`
+      : null,
+    missingSetup.noCommissions ? 'las comisiones de Tienda Nube y del medio de pago' : null,
+    missingSetup.noTaxes ? 'los impuestos (IIBB, IVA)' : null,
+  ].filter((item): item is string => item !== null)
+  const resultIsEstimate = pendingItems.length > 0
 
   return (
     <div className="flex flex-col gap-6">
@@ -305,6 +325,21 @@ export function SalesWorkspace({
       {!metaConnected && tnConnected && (
         <div className="rounded-control border border-amber/30 bg-amber/[6%] px-4 py-3 text-xs text-amber">
           Conectá Meta Ads para ver ROAS Real, CPA Real y MER — sin eso, la Cascada solo resta costo de producto, envíos y pasarelas.
+        </div>
+      )}
+      {tnConnected && summary.ordenes > 0 && resultIsEstimate && (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-control border border-amber/30 bg-amber/[6%] px-4 py-3">
+          <p className="text-xs text-amber">
+            Margen, Ganancia Neta y ROAS Real son una estimación optimista: falta cargar {pendingItems.join(', ').replace(/, ([^,]*)$/, ' y $1')}.
+            {costsIncomplete && ` Hoy el ${Math.round(missingSetup.costCoveragePct)}% de las unidades vendidas tiene costo cargado.`}
+          </p>
+          <button
+            type="button"
+            onClick={() => goToTab('costos')}
+            className="shrink-0 text-xs font-semibold text-accent transition-colors duration-200 ease-out hover:text-accent/80"
+          >
+            Cargar costos →
+          </button>
         </div>
       )}
       {currencyMismatchNoRate && (
@@ -438,7 +473,12 @@ export function SalesWorkspace({
       <div className="rounded-card border border-border bg-surface p-6">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
-            <p className="text-[11px] font-bold uppercase tracking-wide text-text-3">Margen Neto</p>
+            <div className="flex items-center gap-2">
+              <p className="text-[11px] font-bold uppercase tracking-wide text-text-3">Margen Neto</p>
+              {resultIsEstimate && summary.bruto > 0 && (
+                <span className="rounded-full border border-amber/30 px-2 py-0.5 text-[10px] font-semibold text-amber">Estimado</span>
+              )}
+            </div>
             <div className="mt-2 flex flex-wrap items-baseline gap-2">
               <p className="text-[40px] font-extrabold leading-none tracking-tight tabular-nums text-text">
                 {summary.bruto > 0 ? `${kpis.margenPct.toFixed(1)}%` : '—'}
@@ -451,6 +491,18 @@ export function SalesWorkspace({
             </div>
             <p className="mt-1.5 text-xs text-text-3">Resultado Neto Real sobre Facturación Bruta</p>
           </div>
+          {summary.bruto > 0 && (
+            <div className="text-right">
+              <p className="text-[11px] font-bold uppercase tracking-wide text-text-3">Ganancia del período</p>
+              <p className={`mt-2 text-2xl font-extrabold tabular-nums ${waterfall.neto >= 0 ? 'text-text' : 'text-red'}`}>{money(waterfall.neto)}</p>
+              <p className="mt-1 text-[11px] text-text-3">
+                {Math.round(gatewaySharePct)}% cobrado con pasarela · {Math.round(100 - gatewaySharePct)}% transferencia/efectivo
+              </p>
+              {usdArsRate !== null && (
+                <p className="mt-0.5 text-[11px] text-text-3">Gasto de Meta pasado a pesos a ${Math.round(usdArsRate).toLocaleString('es-AR')} por dólar</p>
+              )}
+            </div>
+          )}
         </div>
 
         <div className="mt-5 grid grid-cols-1 gap-4 border-t border-divider pt-4 sm:grid-cols-3">
