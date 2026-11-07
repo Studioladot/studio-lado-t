@@ -3,7 +3,6 @@
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { getDashboardContext } from '@/lib/organization/dashboard-context'
-import { assertActiveSubscription } from '@/lib/billing/subscription'
 import { validateMediaFile } from '@/lib/media/validate-upload'
 import { clamp, TITLE_MAX_LENGTH, TEXT_MAX_LENGTH } from '@/lib/text-limits'
 import { NOTE_COLORS, NOTE_CATEGORY_VALUES } from './note-constants'
@@ -60,13 +59,11 @@ export async function createNoteAction(
     return { error: 'Escribí algo en la nota.', success: false }
   }
 
-  const { userId, activeOrganizationId, subscriptionStatus } = await getDashboardContext()
+  const { userId, activeOrganizationId } = await getDashboardContext()
 
   if (!activeOrganizationId) {
     return { error: 'No encontramos tu organización activa.', success: false }
   }
-  const subCheck = assertActiveSubscription(subscriptionStatus)
-  if (!subCheck.ok) return { error: subCheck.error, success: false }
 
   const titulo = clamp(String(formData.get('titulo') ?? '').trim(), TITLE_MAX_LENGTH)
   const categoria = NOTE_CATEGORY_VALUES.includes(String(formData.get('categoria')))
@@ -144,13 +141,11 @@ export async function updateNoteAction(
     return { error: 'Escribí algo en la nota.', success: false }
   }
 
-  const { userId, activeOrganizationId, subscriptionStatus } = await getDashboardContext()
+  const { userId, activeOrganizationId } = await getDashboardContext()
 
   if (!activeOrganizationId) {
     return { error: 'No encontramos tu organización activa.', success: false }
   }
-  const subCheck = assertActiveSubscription(subscriptionStatus)
-  if (!subCheck.ok) return { error: subCheck.error, success: false }
 
   const titulo = clamp(String(formData.get('titulo') ?? '').trim(), TITLE_MAX_LENGTH)
   const categoria = NOTE_CATEGORY_VALUES.includes(String(formData.get('categoria')))

@@ -21,12 +21,10 @@ import {
   StrategyIcon,
   SettingsProfileIcon,
   TeamIcon,
-  BillingIcon,
   IntegrationsIcon,
 } from './nav-icons'
 import { ThemeToggle } from './theme-toggle'
 import { CurrencyToggle } from './currency-toggle'
-import { TrialBanner } from './trial-banner'
 
 type NavItem = { href: string; label: string; icon: ReactNode }
 // Sub-encabezado puramente visual dentro de un grupo ya desplegable (ej. "Integraciones"
@@ -104,7 +102,6 @@ const GROUPS: NavGroup[] = [
     items: [
       { href: '/settings', label: 'Perfil de negocio', icon: <SettingsProfileIcon /> },
       { href: '/team', label: 'Equipo', icon: <TeamIcon /> },
-      { href: '/settings/billing', label: 'Facturación', icon: <BillingIcon /> },
       { href: '/settings/integrations', label: 'Integraciones', icon: <IntegrationsIcon /> },
     ],
   },
@@ -206,8 +203,6 @@ export function SidebarNav({
       </div>
 
       <nav className="flex-1 overflow-y-auto px-0 py-3">
-        <TrialBanner collapsed={collapsed} />
-
         <div className="mb-3">
           <NavLink item={DASHBOARD_ITEM} active={isItemActive(pathname, DASHBOARD_ITEM.href)} collapsed={collapsed} />
           <Link

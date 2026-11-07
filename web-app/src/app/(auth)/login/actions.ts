@@ -3,6 +3,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { getRequestOrigin } from '@/lib/http/request-origin'
+import { tieneAcceso } from '@/lib/auth/allowlist'
 
 export type AuthState = {
   error: string | null
@@ -16,6 +17,10 @@ export async function authAction(_prevState: AuthState, formData: FormData): Pro
 
   if (typeof email !== 'string' || !email || typeof password !== 'string' || !password) {
     return { error: 'Completá tu email y contraseña.', info: null }
+  }
+
+  if (!tieneAcceso(email)) {
+    return { error: 'Esta cuenta no tiene acceso a Gotix.', info: null }
   }
 
   const supabase = await createClient()

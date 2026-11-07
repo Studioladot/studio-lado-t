@@ -4,7 +4,6 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { getDashboardContext } from '@/lib/organization/dashboard-context'
-import { assertActiveSubscription } from '@/lib/billing/subscription'
 import { clamp, TITLE_MAX_LENGTH, TEXT_MAX_LENGTH } from '@/lib/text-limits'
 import { CAMPAIGN_COLORS } from '../campaign-colors'
 
@@ -70,13 +69,11 @@ export async function updateCampaignDetailsAction(
     return { error: 'La campaña necesita un nombre.', success: false }
   }
 
-  const { activeOrganizationId, subscriptionStatus } = await getDashboardContext()
+  const { activeOrganizationId } = await getDashboardContext()
 
   if (!activeOrganizationId) {
     return { error: 'No encontramos tu organización activa.', success: false }
   }
-  const subCheck = assertActiveSubscription(subscriptionStatus)
-  if (!subCheck.ok) return { error: subCheck.error, success: false }
 
   const supabase = await createClient()
 
@@ -141,13 +138,11 @@ export async function createPieceAction(
     redirect('/login')
   }
 
-  const { activeOrganizationId, subscriptionStatus } = await getDashboardContext()
+  const { activeOrganizationId } = await getDashboardContext()
 
   if (!activeOrganizationId) {
     return { error: 'No encontramos tu organización activa.', success: false }
   }
-  const subCheck = assertActiveSubscription(subscriptionStatus)
-  if (!subCheck.ok) return { error: subCheck.error, success: false }
 
   // Fix de seguridad (auditoría 2026-08-21): campaignId viaja en un input
   // hidden del formulario — sin este chequeo, alguien podía editar ese
@@ -235,13 +230,11 @@ export async function addPieceMediaAction(
     redirect('/login')
   }
 
-  const { activeOrganizationId, subscriptionStatus } = await getDashboardContext()
+  const { activeOrganizationId } = await getDashboardContext()
 
   if (!activeOrganizationId) {
     return { error: 'No encontramos tu organización activa.' }
   }
-  const subCheck = assertActiveSubscription(subscriptionStatus)
-  if (!subCheck.ok) return { error: subCheck.error }
 
   const { data: existingPiece } = await supabase
     .from('content_piezas')
@@ -312,13 +305,11 @@ export async function updatePieceAction(
     return { error: 'La pieza necesita un título.', success: false }
   }
 
-  const { activeOrganizationId, subscriptionStatus } = await getDashboardContext()
+  const { activeOrganizationId } = await getDashboardContext()
 
   if (!activeOrganizationId) {
     return { error: 'No encontramos tu organización activa.', success: false }
   }
-  const subCheck = assertActiveSubscription(subscriptionStatus)
-  if (!subCheck.ok) return { error: subCheck.error, success: false }
 
   const supabase = await createClient()
 

@@ -1,5 +1,6 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
+import { tieneAcceso } from '@/lib/auth/allowlist'
 
 // /auth/callback recibe el redirect de Supabase durante el login con Google,
 // antes de que exista sesión — tiene que quedar público o el proxy lo
@@ -17,11 +18,6 @@ import { NextResponse, type NextRequest } from 'next/server'
 // como googleaa655e68170c8d27.html (verificación de dominio de Google
 // Search Console, en public/) igual pasa por acá y necesita su propia
 // entrada, o el proxy lo manda a /login antes de que Google pueda leerlo.
-// /api/mercadopago/webhook: mismo motivo que /api/meta/data-deletion —
-// Mercado Pago llama esta ruta server-to-server, sin cookie de sesión de
-// Gotix. La autenticación real de esa ruta es el re-consultado del pago
-// contra la API de MP con nuestro propio access token (ver
-// src/lib/billing/mercadopago.ts), no una sesión.
 const PUBLIC_PATHS = [
   '/login',
   '/auth',
@@ -29,7 +25,6 @@ const PUBLIC_PATHS = [
   '/terms',
   '/data-deletion-status',
   '/api/meta/data-deletion',
-  '/api/mercadopago/webhook',
   '/googleaa655e68170c8d27.html',
 ]
 
@@ -72,6 +67,18 @@ export async function proxy(request: NextRequest) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
     return NextResponse.redirect(url)
+  }
+
+  // Uso interno: una cuenta válida pero fuera del allowlist (ej. alguien
+  // que entró con Google) se desloguea y vuelve al login con un aviso.
+  if (user && !isPublicPath(pathname) && !tieneAcceso(user.email)) {
+    await supabase.auth.signOut()
+    const url = request.nextUrl.clone()
+    url.pathname = '/login'
+    url.search = '?error=sin_acceso'
+    const redirectResponse = NextResponse.redirect(url)
+    response.cookies.getAll().forEach((cookie) => redirectResponse.cookies.set(cookie))
+    return redirectResponse
   }
 
   if (user) {
