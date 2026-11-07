@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { arDateKey } from '@/lib/argentina-time'
 import { getDashboardContext } from '@/lib/organization/dashboard-context'
 import { getMetaCampaignNames } from '@/lib/meta/campaigns'
 import Link from 'next/link'
@@ -24,8 +25,9 @@ import { SnapshotsWorkspace } from './snapshots-workspace'
 // en la zona de resultados en vez de una pantalla en blanco.
 const DEFAULT_DAYS = 14
 
+// Hora argentina: el servidor corre en UTC y el rango terminaba un día antes o después.
 function toDateInputValue(d: Date): string {
-  return d.toISOString().split('T')[0]
+  return arDateKey(d)
 }
 
 export default async function MetaAdsSnapshotsPage() {

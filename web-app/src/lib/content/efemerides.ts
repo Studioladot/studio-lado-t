@@ -44,15 +44,18 @@ export function getFechasComercialesAR(year: number): FechaComercial[] {
   const diaNino = nthWeekdayOfMonth(year, 8, 0, 3)
   const diaMadre = nthWeekdayOfMonth(year, 10, 0, 3)
   const blackFriday = lastWeekdayOfMonth(year, 11, 5)
-  const cyberMonday = new Date(blackFriday)
-  cyberMonday.setDate(blackFriday.getDate() + 3)
+  // El CyberMonday y el Hot Sale argentinos (CACE) no siguen la fecha de
+  // EE.UU.: arrancan el primer lunes de noviembre y el segundo lunes de mayo.
+  const cyberMonday = nthWeekdayOfMonth(year, 11, 1, 1)
+  const hotSale = nthWeekdayOfMonth(year, 5, 1, 2)
 
   const moviles: FechaComercial[] = [
     { date: fechaISO(diaPadre), nombre: 'Día del Padre' },
     { date: fechaISO(diaNino), nombre: 'Día del Niño' },
     { date: fechaISO(diaMadre), nombre: 'Día de la Madre' },
     { date: fechaISO(blackFriday), nombre: 'Black Friday' },
-    { date: fechaISO(cyberMonday), nombre: 'Cyber Monday' },
+    { date: fechaISO(hotSale), nombre: 'Hot Sale' },
+    { date: fechaISO(cyberMonday), nombre: 'CyberMonday' },
   ]
 
   return [...fijas, ...moviles].sort((a, b) => a.date.localeCompare(b.date))

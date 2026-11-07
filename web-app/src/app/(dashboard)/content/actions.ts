@@ -242,7 +242,7 @@ export async function togglePostStatusAction(postId: string, nextStatus: string)
 // para pedir una sola idea corta).
 const IDEA_GENERATOR_SYSTEM_PROMPT = `Sos un estratega de marketing de contenidos experto en e-commerce, especializado en Instagram y TikTok orgánico.
 
-Cuando te piden una idea de contenido, das UNA sola — nunca una lista, nunca un párrafo largo. Siempre incluye tres cosas concretas: el formato (Reel, Carrusel, Historia, etc.), el ángulo o gancho del video, y el llamado a la acción. Directo al grano, en 2-3 frases como máximo, en español rioplatense. Nada de texto genérico ni robótico — pensalo específico a la marca y su rubro cuando te los den.`
+Cuando te piden una idea de contenido, das UNA sola — nunca una lista, nunca un párrafo largo. Siempre incluye tres cosas concretas: el formato (Reel, Carrusel, Historia, etc.), el ángulo o gancho del video, y el llamado a la acción. Directo al grano, en 2-3 frases como máximo, en español rioplatense. Nada de texto genérico ni robótico — pensalo específico a la marca y su rubro cuando te los den. Nunca pidas más datos ni respondas con preguntas: si falta el rubro, proponé igual una idea concreta y útil con lo que sepas.`
 
 export type IdeaGenState =
   | { ok: true; idea: string; remaining: number; savedToNotes: boolean }
@@ -278,15 +278,16 @@ export async function generateContentIdeaAction(): Promise<IdeaGenState> {
     }
   }
 
-  const { data: profile } = await supabase
-    .from('business_profile')
-    .select('brand_name, rubro')
-    .eq('organization_id', activeOrganizationId)
-    .maybeSingle()
+  const [{ data: profile }, { data: organization }] = await Promise.all([
+    supabase.from('business_profile').select('brand_name, rubro').eq('organization_id', activeOrganizationId).maybeSingle(),
+    supabase.from('organizations').select('name').eq('id', activeOrganizationId).maybeSingle(),
+  ])
 
-  const contextLine = profile?.brand_name
-    ? `La marca es "${profile.brand_name}"${profile.rubro ? ` (rubro: ${profile.rubro})` : ''}. `
-    : ''
+  // Sin perfil de marca cargado la IA respondía "pasame la marca y el rubro"
+  // y eso gastaba el cupo del día y se guardaba como nota. El nombre de la
+  // organización siempre existe, así que al menos tiene la marca.
+  const brandName = profile?.brand_name || organization?.name || null
+  const contextLine = brandName ? `La marca es "${brandName}"${profile?.rubro ? ` (rubro: ${profile.rubro})` : ''}. ` : ''
 
   const result = await askAI(IDEA_GENERATOR_SYSTEM_PROMPT, [
     { role: 'user', content: `${contextLine}Dame una idea de contenido para esta semana.` },

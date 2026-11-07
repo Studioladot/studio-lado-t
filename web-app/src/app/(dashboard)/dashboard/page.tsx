@@ -284,7 +284,7 @@ export default async function DashboardPage({
       </div>
 
       <div className="mb-3.5 grid grid-cols-1 gap-px overflow-hidden rounded-card border border-border bg-border sm:grid-cols-3">
-        <KpiCard label="Campañas activas" value={String(activeCampaigns ?? 0)} sub={`de ${totalCampaigns ?? 0} totales`} />
+        <KpiCard label="Campañas de contenido activas" value={String(activeCampaigns ?? 0)} sub={`de ${totalCampaigns ?? 0} creadas en Contenido`} />
         <KpiCard label="Publicado este mes" value={String(publishedThisMonth ?? 0)} sub="posts" />
         <KpiCard label="Por publicar" value={String(pendingPosts ?? 0)} sub="pendientes" />
       </div>

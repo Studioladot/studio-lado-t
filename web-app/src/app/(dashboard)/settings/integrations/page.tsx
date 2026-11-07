@@ -221,7 +221,7 @@ export default async function IntegrationsPage({
         <IntegrationCard
           icon={<InstagramIcon gradient size={18} />}
           name="Instagram"
-          description="Publicación automática y métricas de tu Instagram Business o Creator."
+          description="Métricas de tu Instagram Business o Creator: seguidores, alcance y rendimiento de cada publicación."
           connected={!!igConnection}
           connectSlot={
             <form action={connectMetaAction}>
@@ -264,7 +264,7 @@ export default async function IntegrationsPage({
         <IntegrationCard
           icon={<TiktokIcon size={18} />}
           name="TikTok"
-          description="Publicación y métricas de tu cuenta de TikTok Business."
+          description="Métricas de tu cuenta de TikTok Business."
           connected={!!tiktokConnection}
           connectSlot={
             <form action={connectTiktokAction}>
@@ -287,7 +287,6 @@ export default async function IntegrationsPage({
                   </span>
                   <p className="text-sm font-semibold text-text">@{tiktokConnection.tiktok_username}</p>
                 </div>
-                <p className="text-xs text-text-2">La publicación automática todavía es Fase 2.</p>
                 <div className="border-t border-border pt-3">
                   <form action={disconnectTiktokAction}>
                     <ConfirmSubmitButton

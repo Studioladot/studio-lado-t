@@ -254,7 +254,8 @@ export function SnapshotsWorkspace({
     (dayBId && dayPoints.some((d) => d.date === dayBId) ? dayBId : dayPoints[dayPoints.length - 1]?.date) ?? ''
   const dayA = dayPoints.find((d) => d.date === effectiveDayAId) ?? null
   const dayB = dayPoints.find((d) => d.date === effectiveDayBId) ?? null
-  const money = (n: number) => formatMoney(n, accountCurrency)
+  // En dólares los costos chicos (CPC, CPA) se veían como US$0 sin decimales.
+  const money = (n: number) => formatMoney(n, accountCurrency, accountCurrency === 'USD' && Math.abs(n) < 1000 ? 2 : 0)
 
   return (
     <div className="flex flex-col gap-4">

@@ -467,12 +467,16 @@ export type MetaEntityNamesResult = { ok: true; entities: MetaEntityName[] } | {
 
 export async function getMetaCampaignNames(token: string, accountId: string): Promise<MetaEntityNamesResult> {
   const cleanAccountId = accountId.replace(/^act_/, '')
-  const result = await metaGraphGet<{ data?: Array<{ id: string; name?: string }> }>(
-    `/act_${cleanAccountId}/campaigns?fields=id,name&limit=200`,
+  const result = await metaGraphGet<{ data?: Array<{ id: string; name?: string; effective_status?: string }> }>(
+    `/act_${cleanAccountId}/campaigns?fields=id,name,effective_status&limit=200`,
     token
   )
   if (!result.ok) return result
-  return { ok: true, entities: (result.data.data ?? []).map((c) => ({ id: c.id, name: c.name ?? 'Sin nombre' })) }
+  // Activas primero: Snapshots abre la primera de la lista, y antes podía
+  // ser una campaña vieja apagada sin datos.
+  const rows = result.data.data ?? []
+  const sorted = [...rows.filter((c) => c.effective_status === 'ACTIVE'), ...rows.filter((c) => c.effective_status !== 'ACTIVE')]
+  return { ok: true, entities: sorted.map((c) => ({ id: c.id, name: c.name ?? 'Sin nombre' })) }
 }
 
 export async function getMetaCampaignEntityNames(

@@ -51,6 +51,7 @@ export default async function IntelligenceBrandJournalPage() {
               roas?: number
               activeCampaigns?: number
               autopilotActions?: number
+              currency?: string
             }
             const monthLabel = new Date(`${entry.month}T00:00:00`).toLocaleDateString('es-AR', {
               month: 'long',
@@ -63,7 +64,10 @@ export default async function IntelligenceBrandJournalPage() {
                 <div className="mt-4 grid grid-cols-2 gap-2 border-t border-border pt-3 sm:grid-cols-4">
                   <div>
                     <p className="text-[9px] font-bold uppercase tracking-wide text-text-3">Gasto</p>
-                    <p className="tabular-nums text-xs font-semibold text-text">${stats.spend ?? 0}</p>
+                    <p className="tabular-nums text-xs font-semibold text-text">
+                      {stats.currency === 'ARS' ? '$' : 'US$'}
+                      {(stats.spend ?? 0).toLocaleString('es-AR')}
+                    </p>
                   </div>
                   <div>
                     <p className="text-[9px] font-bold uppercase tracking-wide text-text-3">ROAS</p>

@@ -22,13 +22,13 @@ export async function sendStrategyMessageAction(message: string): Promise<{ ok: 
   if (!usage.allowed) {
     return {
       ok: false,
-      error: `Llegaste al límite de ${usage.limit} consultas de IA este mes en tu plan actual. Subí a Plan Pro para consultas ilimitadas.`,
+      error: `Llegaste al límite de ${usage.limit} consultas de IA este mes en tu plan actual.`,
     }
   }
 
   const { data: connection } = await supabase
     .from('meta_connections')
-    .select('token, account_id')
+    .select('token, account_id, account_currency')
     .eq('organization_id', activeOrganizationId)
     .maybeSingle()
 
@@ -42,7 +42,7 @@ export async function sendStrategyMessageAction(message: string): Promise<{ ok: 
   const systemPrompt = await buildSystemPrompt(
     supabase,
     activeOrganizationId,
-    connection ? { token: connection.token, accountId: connection.account_id } : null
+    connection ? { token: connection.token, accountId: connection.account_id, currency: connection.account_currency } : null
   )
 
   const messages: ChatMessage[] = [

@@ -17,10 +17,19 @@ import { getAllCampaignTargets } from '@/lib/meta/autopilot'
 // prompt cacheado automáticamente del lado de OpenAI en askAI — cuanto más
 // chico y estable, mejor pega el caché entre consultas de la misma sesión.
 
+const OBJECTIVE_LABELS: Record<string, string> = {
+  OUTCOME_SALES: 'Ventas',
+  OUTCOME_TRAFFIC: 'Tráfico',
+  OUTCOME_ENGAGEMENT: 'Interacción/Mensajes',
+  OUTCOME_LEADS: 'Clientes potenciales',
+  OUTCOME_AWARENESS: 'Reconocimiento',
+  OUTCOME_APP_PROMOTION: 'Promoción de app',
+}
+
 export async function buildSystemPrompt(
   supabase: SupabaseClient,
   organizationId: string,
-  meta: { token: string; accountId: string } | null
+  meta: { token: string; accountId: string; currency?: string | null } | null
 ): Promise<string> {
   const { data: profile } = await supabase
     .from('business_profile')
@@ -31,8 +40,10 @@ export async function buildSystemPrompt(
   const nombreMarca = profile?.brand_name || 'tu marca'
   const rubro = profile?.rubro || 'e-commerce'
   const tono = profile?.tono || 'directo, sin vueltas'
-  const breakeven = profile?.breakeven_roas ?? 2
-  const margen = profile?.margen_bruto_objetivo ?? 48
+  // Antes se inventaban 2x y 48% cuando no estaban cargados, y la IA los
+  // tomaba como datos reales del negocio.
+  const breakevenLine = profile?.breakeven_roas ? `Breakeven ROAS de referencia: ${profile.breakeven_roas}x. ` : ''
+  const margenLine = profile?.margen_bruto_objetivo ? `Margen bruto objetivo: ${profile.margen_bruto_objetivo}%. ` : ''
 
   let expertos = ''
   if (profile?.experto1_nombre || profile?.experto2_nombre) {
@@ -43,9 +54,9 @@ export async function buildSystemPrompt(
 
   const ctx = await buildBusinessContext(supabase, organizationId, meta)
 
-  return `Sos el asistente estratégico de ${nombreMarca} (rubro: ${rubro}). Breakeven ROAS de referencia: ${breakeven}x. Margen bruto objetivo: ${margen}%. Tono de comunicación: ${tono}.
+  return `Sos el asistente estratégico de ${nombreMarca} (rubro: ${rubro}). ${breakevenLine}${margenLine}Tono de comunicación: ${tono}.
 ${expertos}
-Respondé en español rioplatense, sin preámbulo. Si los datos de abajo no alcanzan para responder con precisión, decilo y pedí el dato exacto en vez de generalizar.
+Respondé en español rioplatense, sin preámbulo. Si los datos de abajo no alcanzan para responder con precisión, decilo y pedí el dato exacto en vez de generalizar. Evaluá cada campaña según su objetivo: una de Tráfico se mide por CPC y CTR, una de Interacción o Mensajes por costo por resultado, y solo las de Ventas por ROAS y CPA.
 
 ${ctx}`
 }
@@ -53,7 +64,7 @@ ${ctx}`
 async function buildBusinessContext(
   supabase: SupabaseClient,
   organizationId: string,
-  meta: { token: string; accountId: string } | null
+  meta: { token: string; accountId: string; currency?: string | null } | null
 ): Promise<string> {
   const parts: string[] = []
 
@@ -64,7 +75,14 @@ async function buildBusinessContext(
       if (activas.length) {
         parts.push(
           'Campañas activas (últimos 14 días): ' +
-            activas.map((c) => `${c.name} (gasto $${Math.round(c.spend)}, ROAS ${c.roas.toFixed(2)}x)`).join(', ') +
+            activas
+              .map((c) => {
+                const money = (n: number) => `${meta.currency === 'ARS' ? '$' : 'US$'}${n.toFixed(2)}`
+                const objetivo = OBJECTIVE_LABELS[c.objective] ?? c.objective
+                const ventas = c.purchases > 0 ? `, ${c.purchases} compras, CPA ${money(c.cpa)}, ROAS ${c.roas.toFixed(2)}x` : ', sin compras'
+                return `${c.name} [objetivo: ${objetivo}] (gasto ${money(c.spend)}${ventas}, CTR ${c.ctr.toFixed(2)}%, CPC ${money(c.cpc)})`
+              })
+              .join('; ') +
             '.'
         )
       }
