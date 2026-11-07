@@ -17,7 +17,7 @@ select cron.schedule(
   '*/5 * * * *',
   $$
   select net.http_post(
-    url := 'https://vluoynizpvckjqomojxx.supabase.co/functions/v1/instagram-publish-run',
+    url := 'https://adwqvuuwyduqjxgjxbfh.supabase.co/functions/v1/instagram-publish-run',
     headers := jsonb_build_object(
       'Content-Type', 'application/json',
       'Authorization', 'Bearer ' || (select decrypted_secret from vault.decrypted_secrets where name = 'service_role_key')
@@ -32,7 +32,7 @@ select cron.schedule(
   '0 6 * * *',
   $$
   select net.http_post(
-    url := 'https://vluoynizpvckjqomojxx.supabase.co/functions/v1/instagram-metrics-sync',
+    url := 'https://adwqvuuwyduqjxgjxbfh.supabase.co/functions/v1/instagram-metrics-sync',
     headers := jsonb_build_object(
       'Content-Type', 'application/json',
       'Authorization', 'Bearer ' || (select decrypted_secret from vault.decrypted_secrets where name = 'service_role_key')
