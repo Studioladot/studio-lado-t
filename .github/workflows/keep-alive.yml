@@ -1,14 +1,22 @@
 name: keep-alive
+# Supabase Free pausa el proyecto tras 7 días sin actividad: cada 3 días
+# se hace una consulta mínima a la base. La URL y la anon key son públicas
+# por diseño (viajan en el bundle del navegador); RLS protege los datos.
 on:
   schedule:
     - cron: '0 9 */3 * *'
   workflow_dispatch:
+env:
+  SUPABASE_URL: https://adwqvuuwyduqjxgjxbfh.supabase.co
+  SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFkd3F2dXV3eWR1cWp4Z2p4YmZoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQwMDk0MjQsImV4cCI6MjEwOTU4NTQyNH0.JVEgFKK05dv65ueAGwB6roBNEePG-C97hgYQw50GrNI
 jobs:
   ping:
     runs-on: ubuntu-latest
     steps:
       - run: |
-          curl -sS -o /dev/null -w "%{http_code}\n" \
-            "${{ secrets.SUPABASE_URL }}/rest/v1/organizations?select=id&limit=1" \
-            -H "apikey: ${{ secrets.SUPABASE_ANON_KEY }}" \
-            -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}"
+          code=$(curl -sS -o /dev/null -w "%{http_code}" \
+            "$SUPABASE_URL/rest/v1/organizations?select=id&limit=1" \
+            -H "apikey: $SUPABASE_ANON_KEY" \
+            -H "Authorization: Bearer $SUPABASE_ANON_KEY")
+          echo "HTTP $code"
+          test "$code" = "200"
