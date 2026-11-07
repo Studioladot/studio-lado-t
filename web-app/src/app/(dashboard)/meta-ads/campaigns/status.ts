@@ -63,14 +63,14 @@ export function formatBudget(dailyBudget: number | null, lifetimeBudget: number 
 }
 
 // Umbrales de color reales de app.html — no inventados. `--blue` del legado
-// (la franja "bueno, no excelente") se mapea a `text-accent`, que es el mismo
-// azul primario ya usado en el resto de esta app (ver frontend-taste.md: en
-// la paleta original `--blue` ya era alias de `--primary-green`).
+// (la franja "bueno, no excelente") se mapea a `text-good` (salvia suave; con
+// el rebrand GOTIX x LADO T el acento pasó a rojo y no puede significar "bueno").
+//
 
 /** roasColor(), app.html:10591 — sin cambios. */
 export function roasColor(roas: number) {
   if (roas >= 4) return 'text-green'
-  if (roas >= 2) return 'text-accent'
+  if (roas >= 2) return 'text-good'
   if (roas >= 1.5) return 'text-amber'
   return 'text-red'
 }
@@ -78,7 +78,7 @@ export function roasColor(roas: number) {
 /** Umbral "CTR (link)" de la tabla de Benchmarks, app.html:2064. */
 export function ctrColor(ctr: number) {
   if (ctr > 2) return 'text-green'
-  if (ctr >= 1.5) return 'text-accent'
+  if (ctr >= 1.5) return 'text-good'
   if (ctr >= 1) return 'text-amber'
   return 'text-red'
 }
@@ -87,7 +87,7 @@ export function ctrColor(ctr: number) {
 export function cpmColor(cpm: number) {
   if (cpm <= 0) return 'text-text-2'
   if (cpm < 0.8) return 'text-green'
-  if (cpm <= 1.5) return 'text-accent'
+  if (cpm <= 1.5) return 'text-good'
   if (cpm <= 3) return 'text-amber'
   return 'text-red'
 }
@@ -100,7 +100,7 @@ export function cpmColor(cpm: number) {
  */
 export function hookRateColor(hookRate: number) {
   if (hookRate >= 15) return 'text-green'
-  if (hookRate >= 8) return 'text-accent'
+  if (hookRate >= 8) return 'text-good'
   return 'text-amber'
 }
 
@@ -113,7 +113,7 @@ export function hookRateColor(hookRate: number) {
 export function cpcColor(cpc: number) {
   if (cpc <= 0) return 'text-text-2'
   if (cpc < 0.05) return 'text-green'
-  if (cpc <= 0.1) return 'text-accent'
+  if (cpc <= 0.1) return 'text-good'
   if (cpc <= 0.2) return 'text-amber'
   return 'text-red'
 }
@@ -122,7 +122,7 @@ export function cpcColor(cpc: number) {
 export function frequencyColor(frequency: number) {
   if (frequency <= 0) return 'text-text-2'
   if (frequency <= 1.5) return 'text-green'
-  if (frequency <= 2.5) return 'text-accent'
+  if (frequency <= 2.5) return 'text-good'
   if (frequency <= 4) return 'text-amber'
   return 'text-red'
 }

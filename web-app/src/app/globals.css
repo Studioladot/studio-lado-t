@@ -31,6 +31,9 @@
   --accent: #b03311;
   --red: #c4232f;
   --green: #2f7360;
+  /* "Bueno, no excelente" en métricas: salvia más suave que --green. Antes
+     usaba --accent (azul); con el rebrand el acento es rojo y se leía mal. */
+  --good: #5f8f82;
   --amber: #a8650a;
   /* Crema de marca — calidez de fondo (héroes, estados seleccionados). */
   --cream: #f9e8d2;
@@ -64,6 +67,7 @@
   --color-accent: var(--accent);
   --color-red: var(--red);
   --color-green: var(--green);
+  --color-good: var(--good);
   --color-amber: var(--amber);
   --color-violet: var(--violet);
   --color-cream: var(--cream);
@@ -98,6 +102,7 @@
   --accent: #d16a55;
   --red: #f0646a;
   --green: #a6c5bb;
+  --good: #7e9f95;
   --amber: #e3a857;
   --violet: #a78bfa;
   --cream: #2a221b;

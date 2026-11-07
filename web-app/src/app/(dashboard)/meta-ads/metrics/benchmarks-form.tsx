@@ -12,7 +12,7 @@ import type { MetricBenchmarks } from '@/lib/meta/benchmarks'
 
 const TIER_CLASS: Record<'excelente' | 'bueno' | 'revisar' | 'critico', string> = {
   excelente: 'border-green/40 bg-green/[8%] text-green',
-  bueno: 'border-accent/40 bg-accent/[8%] text-accent',
+  bueno: 'border-good/40 bg-good/[8%] text-good',
   revisar: 'border-amber/40 bg-amber/[8%] text-amber',
   critico: 'border-red/40 bg-red/[8%] text-red',
 }
