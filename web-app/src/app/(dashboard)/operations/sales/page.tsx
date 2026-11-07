@@ -127,7 +127,7 @@ export default async function OperationsSalesPage({
     // partido en dos) — necesario para poder mostrar el delta de Carritos
     // Creados/Abandonados/% Conversión vs. período anterior en la grilla de
     // Inteligencia de Tienda, igual criterio que summary/previousSummary.
-    tnConnection ? getTiendaNubeCheckouts(tnConnection.access_token, tnConnection.store_id, previousStart, periodEnd) : Promise.resolve(null),
+    tnConnection ? getTiendaNubeCheckouts(tnConnection.access_token, tnConnection.store_id, periodStart, periodEnd) : Promise.resolve(null),
     tnConnection ? getTiendaNubeCoupons(tnConnection.access_token, tnConnection.store_id) : Promise.resolve(null),
     getUsdArsRate(),
     metaUsable ? getMetaAccountSpendForRange(metaConnection.token, metaConnection.account_id, periodStart, periodEnd) : Promise.resolve(null),
@@ -152,11 +152,9 @@ export default async function OperationsSalesPage({
   const checkoutsTruncated = checkoutsResult?.ok ? checkoutsResult.truncated : false
   const allCheckouts = checkoutsResult?.ok ? checkoutsResult.checkouts : []
   const currentCheckouts = allCheckouts.filter((c) => c.createdAt >= periodStartISO)
-  const previousCheckouts = allCheckouts.filter((c) => c.createdAt < periodStartISO)
   const summary = summarizeOrders(currentOrders)
   const previousSummary = summarizeOrders(previousOrders)
   const checkoutFunnel = summarizeCheckouts(currentCheckouts, summary.ordenes)
-  const previousCheckoutFunnel = summarizeCheckouts(previousCheckouts, previousSummary.ordenes)
   const abandonedCheckouts = getRecentAbandonedCheckouts(currentCheckouts, 10)
   const coupons = couponsResult?.ok ? couponsResult.coupons : []
   const dailyData = groupOrdersByDay(currentOrders)
@@ -281,9 +279,12 @@ export default async function OperationsSalesPage({
     cpa: pctDelta(cpaReal, cpaPrevious),
     aov: pctDelta(aov, aovPrevious),
     ordenes: pctDelta(summary.ordenes, previousSummary.ordenes || null),
-    carritosCreados: pctDelta(checkoutFunnel.carritosCreados, previousCheckoutFunnel.carritosCreados || null),
-    abandonados: pctDelta(checkoutFunnel.abandonados, previousCheckoutFunnel.abandonados || null),
-    conversion: pctDelta(checkoutFunnel.tasaConversion, previousCheckoutFunnel.tasaConversion || null),
+    // Tienda Nube no conserva los carritos abandonados viejos, así que el
+    // período anterior siempre trae menos y la comparación daba saltos
+    // falsos (+207%). Sin base confiable, no se muestra tendencia.
+    carritosCreados: null,
+    abandonados: null,
+    conversion: null,
   }
 
   // Series diarias para las sparklines — solo Tienda Nube (Bruto/Neto/Órdenes/

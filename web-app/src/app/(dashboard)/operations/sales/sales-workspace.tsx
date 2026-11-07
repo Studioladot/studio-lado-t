@@ -263,7 +263,7 @@ export function SalesWorkspace({
         : `el costo de ${missingSetup.variantsWithoutCost} ${missingSetup.variantsWithoutCost === 1 ? 'producto vendido' : 'productos vendidos'}`
       : null,
     missingSetup.noCommissions ? 'las comisiones de Tienda Nube y del medio de pago' : null,
-    missingSetup.noTaxes ? 'los impuestos (IIBB, IVA)' : null,
+    missingSetup.noTaxes ? 'los impuestos (IIBB/IVA)' : null,
   ].filter((item): item is string => item !== null)
   const resultIsEstimate = pendingItems.length > 0
 
