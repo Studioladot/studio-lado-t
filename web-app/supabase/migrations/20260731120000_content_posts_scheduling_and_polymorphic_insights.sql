@@ -32,8 +32,8 @@ alter table instagram_media_insights
 -- El unique(piece_id, captured_at) original ya no alcanza (piece_id ahora
 -- puede ser null) — se reemplaza por dos índices únicos parciales, uno por
 -- fuente. Es el patrón estándar de Postgres para FKs polimórficas nullable.
-drop index if exists instagram_media_insights_piece_id_captured_at_key;
 alter table instagram_media_insights drop constraint if exists instagram_media_insights_piece_id_captured_at_key;
+drop index if exists instagram_media_insights_piece_id_captured_at_key;
 
 create unique index if not exists media_insights_piece_captured_idx
   on instagram_media_insights (piece_id, captured_at)
