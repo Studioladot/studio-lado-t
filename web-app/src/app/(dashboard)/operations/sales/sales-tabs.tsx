@@ -19,6 +19,8 @@ import type { TiendaNubeProductVariant } from '@/lib/tiendanube/products'
 import type { FinConfig } from '@/lib/tiendanube/finance'
 import type { ManualSale } from '@/lib/tiendanube/sales'
 import type { OperatingCost } from '@/lib/tiendanube/operating-costs'
+import type { PaymentSettings } from '@/lib/tiendanube/payment-fees'
+import { PaymentSettingsCard } from './payment-settings-card'
 
 // Pestañas de /operations/sales (2026-07-27) — antes todo esto vivía apilado
 // en sales-workspace.tsx, 11 bloques heterogéneos compitiendo por atención.
@@ -120,20 +122,29 @@ function FinConfigCard({ initial }: { initial: FinConfig }) {
     }
   }
 
-  const fields: { key: keyof FinConfig; label: string; placeholder: string }[] = [
-    { key: 'comisionTnPct', label: 'Comisión Tienda Nube (%)', placeholder: '5' },
-    { key: 'pasarelaPct', label: 'Comisión Pasarela (%)', placeholder: '6.5' },
-    { key: 'impuestosPct', label: 'Impuestos (%)', placeholder: '3' },
-    { key: 'costoEnvioPromedio', label: 'Costo real de envío por orden', placeholder: '2500' },
-    { key: 'margenBruto', label: 'Margen bruto (%)', placeholder: '48' },
-    { key: 'objetivoGananciaPct', label: 'Objetivo de ganancia (%)', placeholder: '15' },
-    { key: 'presupuestoAdsMensual', label: 'Presupuesto de ads mensual', placeholder: '300000' },
+  // Las comisiones ya no se cargan acá: se calculan solas por medio de pago
+  // (ver payment-settings-card.tsx). Margen bruto se calcula con los costos
+  // de producto; objetivo y presupuesto no alimentaban ningún número y solo
+  // confundían — se sacaron del formulario (los valores guardados se conservan).
+  const fields: { key: keyof FinConfig; label: string; placeholder: string; help: string }[] = [
+    {
+      key: 'impuestosPct',
+      label: 'Impuestos sobre lo que vendés (%)',
+      placeholder: '3',
+      help: 'Ingresos Brutos y otros impuestos que pagás sobre la facturación. Si lo dejás vacío, se usan las retenciones de Ingresos Brutos de Cómo cobrás.',
+    },
+    {
+      key: 'costoEnvioPromedio',
+      label: 'Costo de envío propio por orden (opcional)',
+      placeholder: '—',
+      help: 'Gotix ya toma de Tienda Nube lo que te cobra el correo en cada orden, incluidos los envíos gratis. Completalo solo si pagás los envíos por fuera (moto, flete propio).',
+    },
   ]
 
   return (
     <div className="rounded-card border border-border bg-surface p-5">
       <div className="mb-3 flex items-center justify-between">
-        <p className="text-[10px] font-bold uppercase tracking-wide text-text-3">Configuración financiera</p>
+        <p className="text-[10px] font-bold uppercase tracking-wide text-text-3">Impuestos y envíos</p>
         <button
           type="button"
           disabled={saving}
@@ -143,10 +154,11 @@ function FinConfigCard({ initial }: { initial: FinConfig }) {
           {saving ? 'Guardando…' : 'Guardar'}
         </button>
       </div>
-      <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+      <div className="flex flex-col gap-4">
         {fields.map((f) => (
-          <label key={f.key} className="flex items-center justify-between gap-3">
-            <span className="text-xs font-medium text-text-2">{f.label}</span>
+          <label key={f.key} className="flex flex-col gap-1.5">
+            <span className="flex items-center justify-between gap-3">
+            <span className="text-xs font-semibold text-text">{f.label}</span>
             <input
               type="number"
               step="any"
@@ -155,19 +167,12 @@ function FinConfigCard({ initial }: { initial: FinConfig }) {
               placeholder={f.placeholder}
               className="w-28 rounded-control border border-border bg-surface-2/60 px-2.5 py-1.5 text-right text-xs text-text outline-none transition-all duration-200 ease-out focus:border-accent focus:ring-2 focus:ring-accent"
             />
+            </span>
+            <span className="text-[11px] leading-relaxed text-text-3">{f.help}</span>
           </label>
         ))}
       </div>
-      <p className="mt-2.5 text-[11px] leading-relaxed text-text-3">
-        Tienda Nube no expone el costo real de envío por ninguna API — sin este número, la Cascada usa el envío cobrado al cliente como
-        aproximación (puede quedar corto si tenés envío gratis o subsidiado).
-      </p>
-      {saved && (
-        <p className="mt-1.5 text-[11px] text-text-2">
-          Guardado. Estos porcentajes ya se usan como Comisión Tienda Nube, Comisión Pasarela e Impuestos en la Cascada de Rentabilidad y en la
-          Radiografía de cada orden del Ledger Neto.
-        </p>
-      )}
+      {saved && <p className="mt-3 text-[11px] text-green">Guardado. Ya se aplica a la cascada y a cada orden.</p>}
     </div>
   )
 }
@@ -195,6 +200,10 @@ export function SalesTabs({
   catalog,
   operatingCosts,
   finConfig,
+  paymentSettings,
+  installmentsSeen,
+  installmentsWithoutCost,
+  hasOtherGateways,
   manualSales,
   manualTotal,
 }: {
@@ -211,6 +220,10 @@ export function SalesTabs({
   catalog: TiendaNubeProductVariant[]
   operatingCosts: OperatingCost[]
   finConfig: FinConfig
+  paymentSettings: PaymentSettings
+  installmentsSeen: number[]
+  installmentsWithoutCost: number[]
+  hasOtherGateways: boolean
   manualSales: ManualSale[]
   manualTotal: number
 }) {
@@ -243,8 +256,14 @@ export function SalesTabs({
         <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
           <ProductCostsManager costs={costsList} catalog={catalog} />
           <div className="flex flex-col gap-3">
-            <OperatingCostsCard costs={operatingCosts} />
+            <PaymentSettingsCard
+              initial={paymentSettings}
+              installmentsSeen={installmentsSeen}
+              installmentsWithoutCost={installmentsWithoutCost}
+              hasOtherGateways={hasOtherGateways}
+            />
             <FinConfigCard initial={finConfig} />
+            <OperatingCostsCard costs={operatingCosts} />
           </div>
         </div>
       )}

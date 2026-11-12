@@ -9,6 +9,7 @@ import { upsertProductCost, deleteProductCost, bulkUpsertProductCosts } from '@/
 import { applyCheckoutCoupon } from '@/lib/tiendanube/checkouts'
 import { insertOperatingCost, deleteOperatingCost } from '@/lib/tiendanube/operating-costs'
 import { clamp, TITLE_MAX_LENGTH } from '@/lib/text-limits'
+import { upsertPaymentSettings, type PaymentSettings } from '@/lib/tiendanube/payment-fees'
 
 export async function addManualSaleAction(params: {
   fecha: string
@@ -164,4 +165,39 @@ export async function applyCheckoutCouponAction(
 
   revalidatePath('/operations/sales')
   return { ok: true }
+}
+
+const PLANS = ['inicial', 'esencial', 'impulso', 'escala']
+const RELEASE_DAYS = [1, 7, 14, 30]
+const TAX_CONDITIONS = ['responsable_inscripto', 'monotributo', 'no_inscripto']
+
+function pctOrNull(value: unknown): number | null {
+  if (value === null || value === undefined || value === '') return null
+  const n = Number(value)
+  return Number.isFinite(n) && n >= 0 && n <= 100 ? n : null
+}
+
+export async function savePaymentSettingsAction(values: PaymentSettings): Promise<{ ok: boolean }> {
+  const { userId, activeOrganizationId } = await getDashboardContext()
+  if (!activeOrganizationId) return { ok: false }
+
+  // Se valida todo de nuevo en el servidor — el cliente no es confiable.
+  const installmentCosts: Record<string, number> = {}
+  for (const [k, v] of Object.entries(values.installmentCosts ?? {})) {
+    const n = pctOrNull(v)
+    if (/^\d{1,2}$/.test(k) && n !== null && n > 0) installmentCosts[k] = n
+  }
+  const clean: PaymentSettings = {
+    tnPlan: values.tnPlan && PLANS.includes(values.tnPlan) ? values.tnPlan : null,
+    releaseDays: values.releaseDays && RELEASE_DAYS.includes(values.releaseDays) ? values.releaseDays : null,
+    taxCondition: values.taxCondition && TAX_CONDITIONS.includes(values.taxCondition) ? values.taxCondition : null,
+    installmentCosts,
+    retencionesPct: pctOrNull(values.retencionesPct),
+    otherGatewayPct: pctOrNull(values.otherGatewayPct),
+  }
+
+  const supabase = await createClient()
+  const ok = await upsertPaymentSettings(supabase, activeOrganizationId, userId, clean)
+  revalidatePath('/operations/sales')
+  return { ok }
 }

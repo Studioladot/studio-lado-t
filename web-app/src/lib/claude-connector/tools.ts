@@ -206,7 +206,16 @@ function buildWarnings(r: SalesReport): string[] {
       `Solo el ${dec1(r.missingSetup.costCoveragePct)}% de las unidades vendidas tiene costo de producto cargado (${r.missingSetup.variantsWithoutCost} variantes vendidas sin costo). Esas cuentan como costo $0, así que la ganancia y el margen salen más altos que la realidad.`
     )
   }
-  if (r.missingSetup.noCommissions) avisos.push('No hay comisiones de Tienda Nube ni de pasarela cargadas: no se descuentan de la ganancia.')
+  if (r.missingSetup.noCommissions) {
+    avisos.push('Falta confirmar en Gotix el plan de Tienda Nube (Ventas > Costos > Cómo cobrás): sin eso no se pueden calcular las comisiones de cobro.')
+  } else if (r.paymentFaltantes.length > 0) {
+    avisos.push(`Para que las comisiones de cobro sean exactas falta confirmar ${r.paymentFaltantes.join(', ')} en Ventas > Costos > Cómo cobrás.`)
+  }
+  if (r.installmentsWithoutCost.length > 0) {
+    avisos.push(
+      `Hubo ventas con Pago Nube en ${r.installmentsWithoutCost.join(', ')} cuotas sin costo de cuotas cargado. Si esas cuotas son sin interés, la tienda absorbe un costo extra que todavía no se está descontando.`
+    )
+  }
   if (r.missingSetup.noTaxes) avisos.push('No hay % de impuestos cargado: no se descuentan de la ganancia.')
   if (r.metaTokenExpired) avisos.push('La conexión con Meta está vencida: el gasto en publicidad figura en 0 hasta reconectar en Integraciones.')
   else if (!r.metaConnected) avisos.push('La cuenta no tiene Meta Ads conectado: el gasto en publicidad figura en 0.')
@@ -221,9 +230,11 @@ const GLOSARIO_RESUMEN = {
   costo_de_producto: 'Unidades vendidas × costo cargado en Gotix para cada variante. Variante sin costo cargado = $0 (ver avisos).',
   meta_ads: 'Gasto de la cuenta publicitaria en el período. Si factura en dólares se pasa a pesos con el dólar cripto del día.',
   envios: 'Lo que el envío le cuesta a la tienda según Tienda Nube (incluye envíos gratis o bonificados). Si hay un costo de envío promedio cargado a mano en Gotix, se usa ese × cantidad de órdenes.',
-  comision_tienda_nube: '% de comisión de Tienda Nube cargado en Gotix × facturación bruta.',
-  comision_pasarela: '% de pasarela cargado en Gotix × facturación cobrada por pasarela (Pago Nube, Mercado Pago, tarjeta). Transferencias y efectivo no pagan.',
-  impuestos: '% de impuestos cargado en Gotix × facturación bruta.',
+  tienda_nube_por_venta: 'Costo por transacción de Tienda Nube según el plan (Esencial 2%, Impulso 1%, Escala 0,7%) sobre el total de cada venta que NO se cobró con Pago Nube (transferencias, efectivo, Mercado Pago). Con Pago Nube es 0%.',
+  comisiones_de_cobro: 'Calculadas orden por orden según cómo se pagó: comisión de Pago Nube por plan y plazo de liberación (tarjeta) o la de transferencia de Pago Nube, más el costo de cuotas sin interés que absorbe la tienda, más 21% de IVA sobre eso. Tasas oficiales de Tienda Nube. Se calculan sobre el total con envío.',
+  retenciones: 'Retenciones de Ingresos Brutos (SIRTAC/AGIP) que Pago Nube descuenta de cada pago. No son una comisión: son a cuenta del impuesto.',
+  te_depositan: 'Total cobrado − comisiones de cobro − Tienda Nube por venta − retenciones: lo que llega a la cuenta, antes de envío, productos y publicidad.',
+  impuestos: 'Si la tienda cargó su % de impuestos: ese % × facturación bruta. Si no, se usan las retenciones de Ingresos Brutos (nunca las dos cosas, para no contar dos veces el mismo impuesto).',
   costos_fijos: 'Total mensual de costos fijos cargados en Gotix, prorrateado a los días del período (mensual × días ÷ 30).',
   resultado_neto_real: 'Facturación bruta menos todos los costos anteriores. Es lo que de verdad quedó.',
   margen_neto_pct: 'Resultado neto real ÷ facturación bruta.',
@@ -313,9 +324,23 @@ async function resumenVentas(ctx: Ctx, args: Args) {
       abandonados: r.checkoutFunnel.abandonados,
       conversion_pct: dec1(r.checkoutFunnel.tasaConversion),
     },
+    cobros_por_medio_de_pago: r.channels.map((c) => ({
+      medio: c.label,
+      ordenes: c.ordenes,
+      cobrado: c.facturacion,
+      comisiones: c.comisiones,
+      comisiones_pct: dec1(c.comisionPct),
+      retenciones: c.retenciones,
+      te_depositan: c.teDepositan,
+      te_queda_pct: dec1(c.quedaPct),
+    })),
     configuracion_usada: {
-      comision_tienda_nube_pct: r.finConfig.comisionTnPct,
-      comision_pasarela_pct: r.finConfig.pasarelaPct,
+      plan_tienda_nube: r.paymentSettings.tnPlan,
+      pago_nube_libera_en_dias: r.paymentSettings.releaseDays,
+      situacion_arca: r.paymentSettings.taxCondition,
+      costo_cuotas_sin_interes_pct: r.paymentSettings.installmentCosts,
+      retenciones_iibb_pct: r.paymentSettings.retencionesPct,
+      tasas_aplicadas: r.paymentRates,
       parte_cobrada_por_pasarela_pct: dec1(r.gatewaySharePct),
       impuestos_pct: r.finConfig.impuestosPct,
       costo_envio_promedio_cargado: r.finConfig.costoEnvioPromedio,
@@ -647,16 +672,22 @@ async function detalleOrdenes(ctx: Ctx, args: Args) {
     ordenes_en_el_periodo: ledger.length,
     ordenes: ledger.slice(0, limite).map((e) => {
       const order = ordersById.get(e.orderId)
+      const fees = r.feesByOrder.get(e.orderId)
       return {
         numero: e.orderNumber,
         dia: e.day,
-        medio_de_pago: order?.gateway === 'offline' ? 'transferencia / efectivo' : order?.gateway ?? null,
+        como_pago: e.medio,
         productos: order?.lineItems.map((li) => `${li.quantity} × ${li.name}`) ?? [],
-        facturacion: money(e.bruto),
+        cobrado: money(e.bruto),
+        comisiones_de_cobro: money(e.comisionPasarela),
+        tasas_aplicadas: fees
+          ? { pasarela_pct: fees.tasas.pasarelaPct, cuotas_pct: fees.tasas.cuotasPct, iva_pct: fees.tasas.ivaPct, tienda_nube_pct: fees.tasas.tnPct }
+          : null,
+        tienda_nube_por_venta: money(e.comisionTn),
+        retenciones: money(e.retenciones),
+        te_depositan: money(e.bruto - e.comisionPasarela - e.comisionTn - e.retenciones),
         costo_de_producto: money(e.cogs),
         envio: money(e.envio),
-        comision_tienda_nube: money(e.comisionTn),
-        comision_pasarela: money(e.comisionPasarela),
         impuestos: money(e.impuestos),
         publicidad_prorrateada: money(e.adsProrated),
         costos_fijos_prorrateados: money(e.opexProrated),
@@ -668,7 +699,8 @@ async function detalleOrdenes(ctx: Ctx, args: Args) {
     como_se_calcula: {
       publicidad_prorrateada: 'Gasto en Meta del período ÷ cantidad de órdenes, repartido igual en cada una. No es lo que costó traer esa venta puntual (eso Tienda Nube no lo informa).',
       costos_fijos_prorrateados: 'Costos fijos del período ÷ cantidad de órdenes, repartidos igual.',
-      resultado_neto: 'Facturación de la orden menos todos sus costos.',
+      te_depositan: 'Cobrado − comisiones de cobro − Tienda Nube por venta − retenciones.',
+      resultado_neto: 'Lo cobrado menos todos sus costos (comisiones, envío, productos, impuestos, publicidad y fijos repartidos).',
     },
   }
 }

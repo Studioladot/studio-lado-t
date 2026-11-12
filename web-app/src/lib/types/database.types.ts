@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      payment_fee_settings: {
+        Row: {
+          installment_costs: Json
+          organization_id: string
+          other_gateway_pct: number | null
+          pago_nube_release_days: number | null
+          retenciones_pct: number | null
+          tax_condition: string | null
+          tn_plan: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          installment_costs?: Json
+          organization_id: string
+          other_gateway_pct?: number | null
+          pago_nube_release_days?: number | null
+          retenciones_pct?: number | null
+          tax_condition?: string | null
+          tn_plan?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          installment_costs?: Json
+          organization_id?: string
+          other_gateway_pct?: number | null
+          pago_nube_release_days?: number | null
+          retenciones_pct?: number | null
+          tax_condition?: string | null
+          tn_plan?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       claude_access_tokens: {
         Row: {
           created_at: string

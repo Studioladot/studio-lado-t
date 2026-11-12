@@ -4,6 +4,8 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { PeriodSelector } from './period-selector'
 import { WaterfallChart } from './waterfall-chart'
+import { ChannelBreakdown } from './channel-breakdown'
+import type { ChannelSummary, PaymentSettings } from '@/lib/tiendanube/payment-fees'
 import { DailyRevenueChart } from './daily-revenue-chart'
 import { Sparkline } from './sparkline'
 import { SalesTabs, type SalesTab } from './sales-tabs'
@@ -167,6 +169,12 @@ export function SalesWorkspace({
   manualSales,
   manualTotal,
   finConfig,
+  paymentSettings,
+  installmentsSeen,
+  installmentsWithoutCost,
+  hasOtherGateways,
+  channels,
+  paymentFaltantes,
   costsList,
   catalog,
   operatingCosts,
@@ -221,6 +229,12 @@ export function SalesWorkspace({
   manualSales: ManualSale[]
   manualTotal: number
   finConfig: FinConfig
+  paymentSettings: PaymentSettings
+  installmentsSeen: number[]
+  installmentsWithoutCost: number[]
+  hasOtherGateways: boolean
+  channels: ChannelSummary[]
+  paymentFaltantes: string[]
   costsList: ProductCost[]
   catalog: TiendaNubeProductVariant[]
   operatingCosts: OperatingCost[]
@@ -262,7 +276,7 @@ export function SalesWorkspace({
         ? 'el costo de los productos'
         : `el costo de ${missingSetup.variantsWithoutCost} ${missingSetup.variantsWithoutCost === 1 ? 'producto vendido' : 'productos vendidos'}`
       : null,
-    missingSetup.noCommissions ? 'las comisiones de Tienda Nube y del medio de pago' : null,
+    missingSetup.noCommissions ? 'cómo cobrás (plan de Tienda Nube y plazo de Pago Nube)' : null,
     missingSetup.noTaxes ? 'los impuestos (IIBB/IVA)' : null,
   ].filter((item): item is string => item !== null)
   const resultIsEstimate = pendingItems.length > 0
@@ -535,6 +549,8 @@ export function SalesWorkspace({
         <DailyRevenueChart data={dailyData} />
       </div>
 
+      {tnConnected && <ChannelBreakdown channels={channels} faltantes={paymentFaltantes} onConfigure={() => goToTab('costos')} />}
+
       <div id="sales-tabs-section">
         <SalesTabs
           activeTab={tab}
@@ -550,6 +566,10 @@ export function SalesWorkspace({
           catalog={catalog}
           operatingCosts={operatingCosts}
           finConfig={finConfig}
+          paymentSettings={paymentSettings}
+          installmentsSeen={installmentsSeen}
+          installmentsWithoutCost={installmentsWithoutCost}
+          hasOtherGateways={hasOtherGateways}
           manualSales={manualSales}
           manualTotal={manualTotal}
         />

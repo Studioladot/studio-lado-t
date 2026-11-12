@@ -127,9 +127,9 @@ export function computeProfitWaterfall(params: {
     ['Costo de Producto', -cogs],
     ['Meta Ads', -metaSpend],
     ['Envíos', -envio],
-    ['Comisión Tienda Nube', -comisionTn],
-    ['Comisión Pasarela', -comisionPasarela],
-    ['Impuestos', -impuestos],
+    ['Tienda Nube (por venta)', -comisionTn],
+    ['Comisiones de cobro', -comisionPasarela],
+    ['Impuestos y retenciones', -impuestos],
     ['Costos Fijos (OpEx)', -opex],
   ]
   for (const [label, value] of deductions) {

@@ -20,6 +20,7 @@ import { getOperatingCosts } from '@/lib/tiendanube/operating-costs'
 import { getMetaAccountSpendForRange } from '@/lib/meta/campaigns'
 import { getUsdArsRate, convertAmount, type Currency } from '@/lib/currency'
 import { generateInsights } from '@/lib/tiendanube/insights'
+import { getPaymentSettings, computeOrderFees, summarizeByChannel, describeRates } from '@/lib/tiendanube/payment-fees'
 
 // Rentabilidad Neta de una organización en un período — única fuente de los
 // números de /operations/sales y de la conexión de Claude (api/mcp). Si una
@@ -52,7 +53,7 @@ export function resolvePeriod(daysParam: string | undefined, fromParam: string |
 }
 
 export async function buildSalesReport(supabase: SupabaseClient, organizationId: string, periodStart: Date, periodEnd: Date) {
-  const [{ data: tnConnection }, { data: metaConnection }, manualSales, finConfigResult, productCostsResult, costsList, operatingCostsResult] =
+  const [{ data: tnConnection }, { data: metaConnection }, manualSales, finConfigResult, productCostsResult, costsList, operatingCostsResult, paymentSettings] =
     await Promise.all([
       supabase
         .from('tiendanube_connections')
@@ -69,6 +70,7 @@ export async function buildSalesReport(supabase: SupabaseClient, organizationId:
       getProductCostsMap(supabase, organizationId),
       listProductCosts(supabase, organizationId),
       getOperatingCosts(supabase, organizationId),
+      getPaymentSettings(supabase, organizationId),
     ])
 
   const finConfig = finConfigResult.config
@@ -146,16 +148,45 @@ export async function buildSalesReport(supabase: SupabaseClient, organizationId:
   const hasMetaSpend = metaSpendArs > 0
   const metaError = metaCurrentResult && !metaCurrentResult.ok ? metaCurrentResult.error : null
 
+  // Comisiones de cobro calculadas orden por orden según cómo se pagó cada
+  // una (transferencia, Pago Nube con tarjeta, cuotas…) — payment-fees.ts.
+  const legacyRates = { comisionTnPct: finConfig.comisionTnPct, pasarelaPct: finConfig.pasarelaPct }
+  const feesCurrent = currentOrders.map((o) => computeOrderFees(o, paymentSettings, legacyRates))
+  const feesPrevious = previousOrders.map((o) => computeOrderFees(o, paymentSettings, legacyRates))
+  const feesByOrder = new Map(currentOrders.map((o, i) => [o.id, feesCurrent[i]]))
+  const sumFees = (list: typeof feesCurrent) => ({
+    tn: Math.round(list.reduce((s, f) => s + f.costoTransaccionTn, 0)),
+    cobro: Math.round(list.reduce((s, f) => s + f.comisionPasarela + f.costoCuotas + f.ivaComisiones, 0)),
+    retenciones: Math.round(list.reduce((s, f) => s + f.retenciones, 0)),
+    teDepositan: Math.round(list.reduce((s, f) => s + f.teDepositan, 0)),
+  })
+  const feeTotals = sumFees(feesCurrent)
+  const feeTotalsPrevious = sumFees(feesPrevious)
+  const channels = summarizeByChannel(feesCurrent)
+  const installmentsSeen = Array.from(new Set(feesCurrent.filter((f) => f.installments > 1).map((f) => f.installments))).sort((x, y) => x - y)
+  const hasOtherGateways = feesCurrent.some((f) => f.channel === 'mercado_pago' || f.channel === 'otra_pasarela')
+  const paymentFaltantes = Array.from(new Set(feesCurrent.flatMap((f) => f.faltantes)))
+  // Cuotas sin costo cargado: puede que las pague el cliente (con interés)
+  // o que falte cargarlo — se avisa para que la tienda lo confirme.
+  const installmentsWithoutCost = Array.from(
+    new Set(
+      feesCurrent
+        .filter((f) => f.channel === 'pago_nube_tarjeta' && f.installments > 1 && f.tasas.cuotasPct === 0)
+        .map((f) => f.installments)
+    )
+  ).sort((a, b) => a - b)
+  // Impuestos: el % cargado por la tienda; si no hay, las retenciones de
+  // Ingresos Brutos (son a cuenta del mismo impuesto — nunca las dos).
+  const impuestosFor = (bruto: number, retenciones: number) =>
+    finConfig.impuestosPct ? Math.round((bruto * finConfig.impuestosPct) / 100) : retenciones
+
   // Radiografía de la Orden: "CPA prorrateado" = gasto de Meta del período /
   // órdenes del período, repartido igual en cada fila.
   const ledger = buildOrderLedger(
     currentOrders,
     costsMap,
-    {
-      comisionTnPct: finConfig.comisionTnPct ?? 0,
-      comisionPasarelaPct: finConfig.pasarelaPct ?? 0,
-      impuestosPct: finConfig.impuestosPct ?? 0,
-    },
+    feesByOrder,
+    finConfig.impuestosPct,
     metaSpendArs,
     opexProrated,
     finConfig.costoEnvioPromedio ?? null
@@ -172,16 +203,15 @@ export async function buildSalesReport(supabase: SupabaseClient, organizationId:
   // La comisión de pasarela solo la pagan las órdenes cobradas por pasarela
   // (Pago Nube, Mercado Pago, tarjeta) — las transferencias no.
   const gatewayGross = sumGatewayGross(currentOrders)
-  const gatewayGrossPrevious = sumGatewayGross(previousOrders)
 
   const waterfall = computeProfitWaterfall({
     bruto: summary.bruto,
     cogs: ranking.totalCogs,
     metaSpend: metaSpendArs,
     envio: envioReal,
-    comisionTn: finConfig.comisionTnPct ? Math.round((summary.bruto * finConfig.comisionTnPct) / 100) : 0,
-    comisionPasarela: finConfig.pasarelaPct ? Math.round((gatewayGross * finConfig.pasarelaPct) / 100) : 0,
-    impuestos: finConfig.impuestosPct ? Math.round((summary.bruto * finConfig.impuestosPct) / 100) : 0,
+    comisionTn: feeTotals.tn,
+    comisionPasarela: feeTotals.cobro,
+    impuestos: impuestosFor(summary.bruto, feeTotals.retenciones),
     opex: opexProrated,
   })
 
@@ -190,9 +220,9 @@ export async function buildSalesReport(supabase: SupabaseClient, organizationId:
     cogs: previousRanking.totalCogs,
     metaSpend: metaSpendPreviousArs,
     envio: envioRealPrevious,
-    comisionTn: finConfig.comisionTnPct ? Math.round((previousSummary.bruto * finConfig.comisionTnPct) / 100) : 0,
-    comisionPasarela: finConfig.pasarelaPct ? Math.round((gatewayGrossPrevious * finConfig.pasarelaPct) / 100) : 0,
-    impuestos: finConfig.impuestosPct ? Math.round((previousSummary.bruto * finConfig.impuestosPct) / 100) : 0,
+    comisionTn: feeTotalsPrevious.tn,
+    comisionPasarela: feeTotalsPrevious.cobro,
+    impuestos: impuestosFor(previousSummary.bruto, feeTotalsPrevious.retenciones),
     opex: opexProrated,
   })
 
@@ -280,8 +310,8 @@ export async function buildSalesReport(supabase: SupabaseClient, organizationId:
   const missingSetup = {
     costCoveragePct: totalUnits > 0 ? (unitsWithCost / totalUnits) * 100 : 100,
     variantsWithoutCost: variantsWithoutCost.size,
-    noCommissions: finConfig.comisionTnPct === null && finConfig.pasarelaPct === null,
-    noTaxes: finConfig.impuestosPct === null,
+    noCommissions: !paymentSettings.tnPlan && finConfig.comisionTnPct === null && finConfig.pasarelaPct === null,
+    noTaxes: finConfig.impuestosPct === null && !paymentSettings.retencionesPct,
   }
   const gatewaySharePct = summary.bruto > 0 ? (gatewayGross / summary.bruto) * 100 : 0
 
@@ -354,6 +384,15 @@ export async function buildSalesReport(supabase: SupabaseClient, organizationId:
     manualSales,
     manualTotal,
     finConfig,
+    paymentSettings,
+    paymentRates: describeRates(paymentSettings),
+    paymentFaltantes,
+    installmentsWithoutCost,
+    installmentsSeen,
+    hasOtherGateways,
+    channels,
+    feeTotals,
+    feesByOrder,
     costsMap,
     costsList,
     catalog,

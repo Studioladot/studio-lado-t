@@ -1,4 +1,5 @@
 import { arDateKey } from '@/lib/argentina-time'
+import type { OrderFees } from './payment-fees'
 
 const USER_AGENT = 'GOTIX (contacto@gotix.app)'
 
@@ -35,6 +36,16 @@ export type TiendaNubeOrderDetail = {
   shippingCostOwner: number
   /** Medio de pago: `offline` = transferencia/efectivo (sin comisión de pasarela). */
   gateway: string | null
+  /** Nombre visible del medio de pago ("Transferencia", "Pago Nube"). */
+  gatewayName: string | null
+  /** `payment_details.method`: credit_card, debit_card, custom (offline)… */
+  paymentMethod: string | null
+  /** Cantidad de cuotas (1 = un pago). */
+  installments: number
+  /** Marca de la tarjeta (visa, mastercard…), si aplica. */
+  cardBrand: string | null
+  /** Total cobrado al cliente, con envío — base de las comisiones de cobro. */
+  total: number
   lineItems: TiendaNubeOrderLineItem[]
   /**
    * Identificador de cliente para agrupar órdenes de la misma persona
@@ -70,6 +81,9 @@ type RawOrder = {
   id: number
   number?: number | string
   gateway?: string | null
+  gateway_name?: string | null
+  total?: string
+  payment_details?: { method?: string | null; credit_card_company?: string | null; installments?: number | string | null } | null
   shipping_cost_owner?: string | null
   status?: string
   payment_status?: string
@@ -187,6 +201,13 @@ export async function getTiendaNubeOrders(
       shippingCost: parseFloat(order.shipping_cost_customer || '0'),
       shippingCostOwner: parseFloat(order.shipping_cost_owner || '0'),
       gateway: order.gateway ?? null,
+      gatewayName: order.gateway_name ?? null,
+      paymentMethod: order.payment_details?.method ?? null,
+      installments: Math.max(1, Number(order.payment_details?.installments ?? 1) || 1),
+      cardBrand: order.payment_details?.credit_card_company ?? null,
+      total: order.total !== undefined
+        ? parseFloat(order.total || '0')
+        : parseFloat(order.subtotal || '0') - parseFloat(order.discount || '0') + parseFloat(order.shipping_cost_customer || '0'),
       lineItems: (order.products ?? []).map((p) => ({
         variantId: p.variant_id ?? null,
         productId: p.product_id ?? null,
@@ -392,11 +413,19 @@ export type OrderLedgerEntry = {
   day: string
   createdAt: string
   status: string | null
+  /** Cómo se cobró: "Pago Nube · Visa crédito · 6 cuotas". */
+  medio: string
   bruto: number
   cogs: number
   envio: number
+  /** Costo por transacción de Tienda Nube. */
   comisionTn: number
+  /** Comisión de la pasarela + costo de cuotas + IVA. */
   comisionPasarela: number
+  /** Retenciones de Ingresos Brutos que se descuentan del cobro. */
+  retenciones: number
+  /** Lo que llega a la cuenta: total − comisiones − retenciones. */
+  teDepositan: number
   impuestos: number
   adsProrated: number
   opexProrated: number
@@ -404,17 +433,18 @@ export type OrderLedgerEntry = {
 }
 
 /**
- * Los `*Pct` vienen en puntos porcentuales (5 = 5%), mismo criterio que
- * finance.ts. `metaSpendTotal` es el spend de Meta del mismo período que
- * `orders`, ya convertido a la moneda de visualización. `opexTotal` es el
- * total de Costos Fijos (OpEx) ya prorrateado al período (ver page.tsx) —
- * se reparte por orden con el mismo criterio de "prorrateado, no atribuido"
- * que `adsProrated`.
+ * Radiografía de cada orden. Las comisiones de cobro vienen calculadas por
+ * orden (payment-fees.ts: según cómo se pagó cada una). `impuestosPct` en
+ * puntos porcentuales (5 = 5%); si no está cargado se usan las retenciones
+ * de Ingresos Brutos como impuesto (nunca las dos cosas, para no contar dos
+ * veces el mismo impuesto). `metaSpendTotal` y `opexTotal` se reparten igual
+ * entre todas las órdenes ("prorrateado, no atribuido").
  */
 export function buildOrderLedger(
   orders: TiendaNubeOrderDetail[],
   costsByVariant: Map<number, { cost: number; name: string | null }>,
-  rates: { comisionTnPct: number; comisionPasarelaPct: number; impuestosPct: number },
+  feesByOrder: Map<number, OrderFees>,
+  impuestosPct: number | null,
   metaSpendTotal: number,
   opexTotal: number,
   /** Costo de envío fijo por orden cargado a mano en Ajustes — si viene, reemplaza el costo informado por Tienda Nube. */
@@ -432,10 +462,11 @@ export function buildOrderLedger(
         return sum + unitCost * item.quantity
       }, 0)
       const envio = shippingCostPerOrder ?? orderShippingCost(order)
-      const comisionTn = rates.comisionTnPct ? (bruto * rates.comisionTnPct) / 100 : 0
-      const comisionPasarela =
-        rates.comisionPasarelaPct && orderPaidThroughGateway(order) ? (bruto * rates.comisionPasarelaPct) / 100 : 0
-      const impuestos = rates.impuestosPct ? (bruto * rates.impuestosPct) / 100 : 0
+      const fees = feesByOrder.get(order.id)
+      const comisionTn = fees?.costoTransaccionTn ?? 0
+      const comisionPasarela = fees ? fees.comisionPasarela + fees.costoCuotas + fees.ivaComisiones : 0
+      const retenciones = fees?.retenciones ?? 0
+      const impuestos = impuestosPct ? (bruto * impuestosPct) / 100 : retenciones
       const neto = bruto - cogs - envio - comisionTn - comisionPasarela - impuestos - adsProrated - opexProrated
 
       return {
@@ -444,11 +475,14 @@ export function buildOrderLedger(
         day: arDateKey(order.createdAt),
         createdAt: order.createdAt,
         status: order.status,
+        medio: fees?.medio ?? (order.gatewayName || 'Sin dato'),
         bruto: Math.round(bruto),
         cogs: Math.round(cogs),
         envio: Math.round(envio),
         comisionTn: Math.round(comisionTn),
         comisionPasarela: Math.round(comisionPasarela),
+        retenciones: Math.round(retenciones),
+        teDepositan: Math.round(fees?.teDepositan ?? bruto),
         impuestos: Math.round(impuestos),
         adsProrated: Math.round(adsProrated),
         opexProrated: Math.round(opexProrated),
