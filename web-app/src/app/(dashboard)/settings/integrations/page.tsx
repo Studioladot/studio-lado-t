@@ -16,6 +16,7 @@ import { ConfirmSubmitButton } from '@/components/features/confirm-submit-button
 import { InstagramIcon, TiktokIcon, ShopifyIcon, GoogleAnalyticsIcon } from '@/components/features/nav-icons'
 import { BrandLogo } from '@/components/features/brand-logo'
 import { IntegrationCard } from './integration-card'
+import { ClaudeConnectorPanel } from './claude-connector-panel'
 
 const SCOPE_LABEL: Record<string, string> = {
   ads_read: 'Leer métricas de campañas y anuncios',
@@ -47,7 +48,7 @@ export default async function IntegrationsPage({
   }>
 }) {
   const { meta_connected, meta_error, tiktok_connected, tiktok_error, tn_connected, tn_error } = await searchParams
-  const { activeOrganizationId } = await getDashboardContext()
+  const { activeOrganizationId, userId, organizations } = await getDashboardContext()
 
   if (!activeOrganizationId) {
     return (
@@ -94,13 +95,22 @@ export default async function IntegrationsPage({
     .eq('organization_id', activeOrganizationId)
     .maybeSingle()
 
+  const claudeAccessQuery = supabase
+    .from('claude_access_tokens')
+    .select('created_at, last_used_at, token_hint')
+    .eq('user_id', userId)
+    .is('revoked_at', null)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
   const metaHealthPromise = metaConnectionPromise.then(({ data: metaConnection }) => {
     const tokenExpired = metaConnection?.expires_at ? new Date(metaConnection.expires_at) < new Date() : false
     return metaConnection && !tokenExpired ? getMetaAdsInsights(metaConnection.token, metaConnection.account_id) : null
   })
 
-  const [{ data: metaConnection }, { data: igConnection }, { data: tiktokConnection }, { data: tnConnection }, metaHealth] =
-    await Promise.all([metaConnectionPromise, igConnectionQuery, tiktokConnectionQuery, tnConnectionQuery, metaHealthPromise])
+  const [{ data: metaConnection }, { data: igConnection }, { data: tiktokConnection }, { data: tnConnection }, metaHealth, { data: claudeAccess }] =
+    await Promise.all([metaConnectionPromise, igConnectionQuery, tiktokConnectionQuery, tnConnectionQuery, metaHealthPromise, claudeAccessQuery])
 
   const metaTokenExpired = metaConnection?.expires_at ? new Date(metaConnection.expires_at) < new Date() : false
 
@@ -362,6 +372,11 @@ export default async function IntegrationsPage({
           disabledReason="Todavía no tiene una app de developer configurada."
         />
       </div>
+
+      <ClaudeConnectorPanel
+        active={claudeAccess ? { createdAt: claudeAccess.created_at, lastUsedAt: claudeAccess.last_used_at, hint: claudeAccess.token_hint } : null}
+        organizationNames={organizations.map((o) => o.name).sort((a, b) => a.localeCompare(b, 'es'))}
+      />
     </div>
   )
 }

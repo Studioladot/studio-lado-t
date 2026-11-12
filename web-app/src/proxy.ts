@@ -25,6 +25,12 @@ const PUBLIC_PATHS = [
   '/terms',
   '/data-deletion-status',
   '/api/meta/data-deletion',
+  // Conexión de Claude: la clave de la dirección es la autenticación (ver
+  // src/app/api/mcp/[token]/route.ts). /.well-known queda público para que
+  // los clientes MCP que buscan ahí datos de login reciban un 404 limpio en
+  // vez de un redirect al login.
+  '/api/mcp',
+  '/.well-known',
   '/googleaa655e68170c8d27.html',
 ]
 
