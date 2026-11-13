@@ -89,6 +89,14 @@ export default async function IntegrationsPage({
     .eq('organization_id', activeOrganizationId)
     .maybeSingle()
 
+  // ¿Hay otra cuenta con Tienda Nube conectada? Entonces el navegador
+  // probablemente tenga abierta la sesión de ESA tienda — se avisa cómo
+  // cambiar antes de tocar Conectar.
+  const otherTnQuery = supabase
+    .from('tiendanube_connections')
+    .select('organization_id', { count: 'exact', head: true })
+    .neq('organization_id', activeOrganizationId)
+
   const tnConnectionQuery = supabase
     .from('tiendanube_connections')
     .select('store_id, store_name, store_url, connected_at')
@@ -109,8 +117,9 @@ export default async function IntegrationsPage({
     return metaConnection && !tokenExpired ? getMetaAdsInsights(metaConnection.token, metaConnection.account_id) : null
   })
 
-  const [{ data: metaConnection }, { data: igConnection }, { data: tiktokConnection }, { data: tnConnection }, metaHealth, { data: claudeAccess }] =
-    await Promise.all([metaConnectionPromise, igConnectionQuery, tiktokConnectionQuery, tnConnectionQuery, metaHealthPromise, claudeAccessQuery])
+  const [{ data: metaConnection }, { data: igConnection }, { data: tiktokConnection }, { data: tnConnection }, metaHealth, { data: claudeAccess }, { count: otherTnCount }] =
+    await Promise.all([metaConnectionPromise, igConnectionQuery, tiktokConnectionQuery, tnConnectionQuery, metaHealthPromise, claudeAccessQuery, otherTnQuery])
+  const otherOrgsHaveTn = (otherTnCount ?? 0) > 0
 
   const metaTokenExpired = metaConnection?.expires_at ? new Date(metaConnection.expires_at) < new Date() : false
 
@@ -319,11 +328,30 @@ export default async function IntegrationsPage({
           description="Ventas reales sincronizadas para Rentabilidad Neta y Operaciones."
           connected={!!tnConnection}
           connectSlot={
-            <form action={connectTiendaNubeAction}>
-              <button type="submit" className={PRIMARY_BUTTON}>
-                Conectar
-              </button>
-            </form>
+            <div className="flex flex-col gap-2.5">
+              <form action={connectTiendaNubeAction}>
+                <button type="submit" className={PRIMARY_BUTTON}>
+                  Conectar
+                </button>
+              </form>
+              <p className="text-[11px] leading-relaxed text-text-3">
+                Se conecta la tienda con la que tengas la sesión abierta en Tienda Nube.{' '}
+                {otherOrgsHaveTn && (
+                  <>
+                    Si es otra tienda, primero{' '}
+                    <a
+                      href="https://www.tiendanube.com/login"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-semibold text-accent hover:text-accent/80"
+                    >
+                      abrí Tienda Nube
+                    </a>
+                    , cerrá sesión (menú de tu perfil, Salir), entrá con la tienda de esta cuenta y después tocá Conectar.
+                  </>
+                )}
+              </p>
+            </div>
           }
           manageSlot={
             tnConnection && (

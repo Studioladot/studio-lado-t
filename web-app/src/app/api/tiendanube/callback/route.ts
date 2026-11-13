@@ -86,6 +86,28 @@ export async function GET(request: Request) {
       // No es crítico — igual guardamos la conexión sin el nombre de tienda.
     }
 
+    // Tienda Nube autoriza la tienda con la que el navegador tiene la sesión
+    // abierta. Si esa tienda ya está conectada a OTRA cuenta de Gotix (ej:
+    // conectar Alamia estando logueado en El Palacio), no se duplica: se
+    // renueva el token de esa cuenta (reautorizar puede invalidar el viejo)
+    // y se avisa cómo conectar la tienda correcta.
+    const { data: existing } = await supabase
+      .from('tiendanube_connections')
+      .select('organization_id')
+      .eq('store_id', storeId)
+      .neq('organization_id', activeOrganizationId)
+      .limit(1)
+      .maybeSingle()
+
+    if (existing) {
+      await supabase.from('tiendanube_connections').update({ access_token: accessToken }).eq('store_id', storeId)
+      const { data: otherOrg } = await supabase.from('organizations').select('name').eq('id', existing.organization_id ?? '').maybeSingle()
+      const tienda = storeName ?? 'Esa tienda'
+      return redirectWithError(
+        `${tienda} ya está conectada a la cuenta ${otherOrg?.name ?? 'otra cuenta'}. Tienda Nube conecta la tienda con la que tenés la sesión abierta: cerrá sesión en Tienda Nube, entrá con la tienda de esta cuenta y volvé a tocar Conectar.`
+      )
+    }
+
     await supabase.from('tiendanube_connections').delete().eq('organization_id', activeOrganizationId)
 
     const { error: insertError } = await supabase.from('tiendanube_connections').insert({
