@@ -128,6 +128,87 @@ export async function upsertPaymentSettings(
 }
 
 // ---------------------------------------------------------------------------
+// Automático para todas las cuentas (2026-11-13)
+// ---------------------------------------------------------------------------
+// Lo que la tienda deja vacío en "Cómo cobrás" se completa solo:
+// - Plan: se lee de Tienda Nube (GET /store → plan_name). Así cada cuenta
+//   conectada usa las tasas de SU plan sin que nadie cargue nada.
+// - Plazo de Pago Nube y situación ante ARCA: Tienda Nube no los informa
+//   (Pago Nube no tiene API pública de comisiones), así que se usa el valor
+//   estándar. Si la tienda lo cambia en Pago Nube, lo corrige en Cómo cobrás.
+
+/** Códigos de plan que devuelve Tienda Nube. Verificado: AR-plan-B = Impulso (El Palacio, 2026-11-12). El resto sigue el mismo orden de la grilla de planes. */
+const TN_PLAN_CODES: Record<string, TnPlan> = {
+  'ar-plan-free': 'inicial',
+  'ar-plan-0': 'inicial',
+  'ar-plan-inicial': 'inicial',
+  'ar-plan-a': 'esencial',
+  'ar-plan-esencial': 'esencial',
+  'ar-plan-b': 'impulso',
+  'ar-plan-impulso': 'impulso',
+  'ar-plan-c': 'escala',
+  'ar-plan-escala': 'escala',
+}
+
+export function planFromTiendaNube(planName: string | null | undefined): TnPlan | null {
+  if (!planName) return null
+  const key = planName.trim().toLowerCase()
+  if (TN_PLAN_CODES[key]) return TN_PLAN_CODES[key]
+  for (const plan of ['inicial', 'esencial', 'impulso', 'escala'] as TnPlan[]) if (key.includes(plan)) return plan
+  return null
+}
+
+/** Plan de la tienda según Tienda Nube. null si no se pudo leer. */
+export async function getTiendaNubePlan(accessToken: string, storeId: string | number): Promise<TnPlan | null> {
+  try {
+    const res = await fetch(`https://api.tiendanube.com/v1/${storeId}/store?fields=plan_name`, {
+      headers: { Authentication: `bearer ${accessToken}`, 'User-Agent': 'GOTIX (contacto@gotix.app)' },
+      next: { revalidate: 21600 },
+    })
+    if (!res.ok) return null
+    const store = (await res.json()) as { plan_name?: string }
+    return planFromTiendaNube(store.plan_name)
+  } catch (err) {
+    console.error('[payment-fees] no se pudo leer el plan de Tienda Nube', err)
+    return null
+  }
+}
+
+export const DEFAULT_RELEASE_DAYS: ReleaseDays = 14
+export const DEFAULT_TAX_CONDITION: TaxCondition = 'responsable_inscripto'
+
+export type SettingSource = 'tienda' | 'tiendanube' | 'estandar' | 'falta'
+
+export type AutoPaymentSettings = {
+  /** Lo que se usa para calcular: lo guardado por la tienda, o lo automático. */
+  effective: PaymentSettings
+  /** De dónde salió cada dato, para mostrarlo en Cómo cobrás. */
+  sources: { tnPlan: SettingSource; releaseDays: SettingSource; taxCondition: SettingSource }
+  detectedPlan: TnPlan | null
+}
+
+/** Lo que necesita la tarjeta Cómo cobrás: lo guardado + de dónde sale cada valor automático. */
+export type PaymentSettingsView = { saved: PaymentSettings; sources: AutoPaymentSettings['sources']; detectedPlan: TnPlan | null }
+
+export function resolvePaymentSettings(saved: PaymentSettings, detectedPlan: TnPlan | null): AutoPaymentSettings {
+  const tnPlan = saved.tnPlan ?? detectedPlan
+  return {
+    effective: {
+      ...saved,
+      tnPlan,
+      releaseDays: saved.releaseDays ?? DEFAULT_RELEASE_DAYS,
+      taxCondition: saved.taxCondition ?? DEFAULT_TAX_CONDITION,
+    },
+    sources: {
+      tnPlan: saved.tnPlan ? 'tienda' : detectedPlan ? 'tiendanube' : 'falta',
+      releaseDays: saved.releaseDays ? 'tienda' : 'estandar',
+      taxCondition: saved.taxCondition ? 'tienda' : 'estandar',
+    },
+    detectedPlan,
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Clasificación del cobro
 // ---------------------------------------------------------------------------
 

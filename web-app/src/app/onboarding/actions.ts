@@ -44,5 +44,5 @@ export async function createOrganizationAction(
 
   await setActiveOrganizationCookie(organizationId)
 
-  redirect('/dashboard')
+  redirect('/settings/integrations')
 }

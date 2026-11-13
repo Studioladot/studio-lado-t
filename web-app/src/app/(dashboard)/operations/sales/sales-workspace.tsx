@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { PeriodSelector } from './period-selector'
 import { WaterfallChart } from './waterfall-chart'
 import { ChannelBreakdown } from './channel-breakdown'
-import type { ChannelSummary, PaymentSettings } from '@/lib/tiendanube/payment-fees'
+import type { ChannelSummary, PaymentSettingsView } from '@/lib/tiendanube/payment-fees'
 import { DailyRevenueChart } from './daily-revenue-chart'
 import { Sparkline } from './sparkline'
 import { SalesTabs, type SalesTab } from './sales-tabs'
@@ -229,7 +229,7 @@ export function SalesWorkspace({
   manualSales: ManualSale[]
   manualTotal: number
   finConfig: FinConfig
-  paymentSettings: PaymentSettings
+  paymentSettings: PaymentSettingsView
   installmentsSeen: number[]
   installmentsWithoutCost: number[]
   hasOtherGateways: boolean

@@ -19,7 +19,7 @@ import type { TiendaNubeProductVariant } from '@/lib/tiendanube/products'
 import type { FinConfig } from '@/lib/tiendanube/finance'
 import type { ManualSale } from '@/lib/tiendanube/sales'
 import type { OperatingCost } from '@/lib/tiendanube/operating-costs'
-import type { PaymentSettings } from '@/lib/tiendanube/payment-fees'
+import type { PaymentSettingsView } from '@/lib/tiendanube/payment-fees'
 import { PaymentSettingsCard } from './payment-settings-card'
 
 // Pestañas de /operations/sales (2026-07-27) — antes todo esto vivía apilado
@@ -220,7 +220,7 @@ export function SalesTabs({
   catalog: TiendaNubeProductVariant[]
   operatingCosts: OperatingCost[]
   finConfig: FinConfig
-  paymentSettings: PaymentSettings
+  paymentSettings: PaymentSettingsView
   installmentsSeen: number[]
   installmentsWithoutCost: number[]
   hasOtherGateways: boolean

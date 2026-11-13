@@ -20,7 +20,7 @@ import { getOperatingCosts } from '@/lib/tiendanube/operating-costs'
 import { getMetaAccountSpendForRange } from '@/lib/meta/campaigns'
 import { getUsdArsRate, convertAmount, type Currency } from '@/lib/currency'
 import { generateInsights } from '@/lib/tiendanube/insights'
-import { getPaymentSettings, computeOrderFees, summarizeByChannel, describeRates } from '@/lib/tiendanube/payment-fees'
+import { getPaymentSettings, getTiendaNubePlan, resolvePaymentSettings, computeOrderFees, summarizeByChannel, describeRates } from '@/lib/tiendanube/payment-fees'
 
 // Rentabilidad Neta de una organización en un período — única fuente de los
 // números de /operations/sales y de la conexión de Claude (api/mcp). Si una
@@ -53,7 +53,7 @@ export function resolvePeriod(daysParam: string | undefined, fromParam: string |
 }
 
 export async function buildSalesReport(supabase: SupabaseClient, organizationId: string, periodStart: Date, periodEnd: Date) {
-  const [{ data: tnConnection }, { data: metaConnection }, manualSales, finConfigResult, productCostsResult, costsList, operatingCostsResult, paymentSettings] =
+  const [{ data: tnConnection }, { data: metaConnection }, manualSales, finConfigResult, productCostsResult, costsList, operatingCostsResult, savedPaymentSettings] =
     await Promise.all([
       supabase
         .from('tiendanube_connections')
@@ -97,7 +97,7 @@ export async function buildSalesReport(supabase: SupabaseClient, organizationId:
   const periodLengthDays = periodLengthMs / 86400000
   const opexProrated = Math.round(opexMonthlyTotal * (periodLengthDays / 30))
 
-  const [ordersResult, catalogResult, checkoutsResult, couponsResult, usdArsRate, metaCurrentResult, metaPreviousResult] = await Promise.all([
+  const [ordersResult, catalogResult, checkoutsResult, couponsResult, usdArsRate, metaCurrentResult, metaPreviousResult, detectedPlan] = await Promise.all([
     tnConnection ? getTiendaNubeOrders(tnConnection.access_token, tnConnection.store_id, previousStart, periodEnd) : Promise.resolve(null),
     tnConnection ? getTiendaNubeProducts(tnConnection.access_token, tnConnection.store_id) : Promise.resolve(null),
     tnConnection ? getTiendaNubeCheckouts(tnConnection.access_token, tnConnection.store_id, periodStart, periodEnd) : Promise.resolve(null),
@@ -107,7 +107,13 @@ export async function buildSalesReport(supabase: SupabaseClient, organizationId:
     metaUsable
       ? getMetaAccountSpendForRange(metaConnection.token, metaConnection.account_id, previousStart, periodStart)
       : Promise.resolve(null),
+    // Plan de la tienda leído de Tienda Nube: con eso cada cuenta usa las
+    // tasas de su plan sin cargar nada (lo guardado en Cómo cobrás manda).
+    tnConnection && !savedPaymentSettings.tnPlan ? getTiendaNubePlan(tnConnection.access_token, tnConnection.store_id) : Promise.resolve(null),
   ])
+
+  const autoPayment = resolvePaymentSettings(savedPaymentSettings, detectedPlan)
+  const paymentSettings = autoPayment.effective
 
   const tnConnected = !!tnConnection
   const tnError = ordersResult && !ordersResult.ok ? ordersResult.error : null
@@ -385,6 +391,9 @@ export async function buildSalesReport(supabase: SupabaseClient, organizationId:
     manualTotal,
     finConfig,
     paymentSettings,
+    savedPaymentSettings,
+    paymentSources: autoPayment.sources,
+    detectedPlan: autoPayment.detectedPlan,
     paymentRates: describeRates(paymentSettings),
     paymentFaltantes,
     installmentsWithoutCost,

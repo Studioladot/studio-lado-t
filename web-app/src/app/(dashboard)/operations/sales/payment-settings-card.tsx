@@ -4,6 +4,10 @@ import { useState } from 'react'
 import { savePaymentSettingsAction } from './actions'
 import {
   describeRates,
+  resolvePaymentSettings,
+  DEFAULT_RELEASE_DAYS,
+  DEFAULT_TAX_CONDITION,
+  type PaymentSettingsView,
   TN_PLAN_LABEL,
   TAX_CONDITION_LABEL,
   type PaymentSettings,
@@ -24,10 +28,13 @@ const INPUT_CLASS =
 
 const INSTALLMENT_OPTIONS = [2, 3, 6, 9, 12, 18]
 
-function Field({ label, help, children }: { label: string; help: string; children: React.ReactNode }) {
+function Field({ label, help, auto, children }: { label: string; help: string; auto?: string | null; children: React.ReactNode }) {
   return (
     <div className="flex flex-col gap-1.5">
-      <span className="text-xs font-semibold text-text">{label}</span>
+      <span className="flex flex-wrap items-center gap-2 text-xs font-semibold text-text">
+        {label}
+        {auto && <span className="rounded-full bg-accent/[0.08] px-2 py-0.5 text-[10px] font-semibold text-accent">{auto}</span>}
+      </span>
       {children}
       <span className="text-[11px] leading-relaxed text-text-3">{help}</span>
     </div>
@@ -46,20 +53,24 @@ export function PaymentSettingsCard({
   installmentsWithoutCost,
   hasOtherGateways,
 }: {
-  initial: PaymentSettings
+  initial: PaymentSettingsView
   /** Cantidades de cuotas que aparecieron en las órdenes del período. */
   installmentsSeen: number[]
   installmentsWithoutCost: number[]
   hasOtherGateways: boolean
 }) {
-  const [values, setValues] = useState(initial)
+  // `values` es lo que guarda la tienda: vacío = automático (plan leído de
+  // Tienda Nube, plazo y situación estándar). Cada cuenta nueva calcula sola.
+  const [values, setValues] = useState<PaymentSettings>(initial.saved)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState<null | 'ok' | 'error'>(null)
 
   const cuotas = Array.from(new Set([...INSTALLMENT_OPTIONS, ...installmentsSeen, ...Object.keys(values.installmentCosts).map(Number)]))
     .filter((n) => n > 1)
     .sort((a, b) => a - b)
-  const rates = describeRates(values)
+  const auto = resolvePaymentSettings(values, initial.detectedPlan)
+  const rates = describeRates(auto.effective)
+  const planAuto = initial.detectedPlan ? `Automático: ${TN_PLAN_LABEL[initial.detectedPlan]}, según Tienda Nube` : null
 
   function setInstallment(n: number, raw: string) {
     setValues((prev) => {
@@ -94,21 +105,22 @@ export function PaymentSettingsCard({
         </button>
       </div>
       <p className="mb-4 text-[11px] leading-relaxed text-text-2">
-        Tienda Nube informa en cada venta cómo te pagaron (transferencia, Pago Nube, tarjeta, cuotas). Con estos datos de tu cuenta, Gotix
-        calcula sola lo que te descuenta cada una y cuánto te depositan.
+        Es automático: Tienda Nube informa en cada venta cómo te pagaron (transferencia, Pago Nube, tarjeta, cuotas) y el plan de tu
+        tienda, y Gotix calcula sola lo que te descuenta cada una. Cambiá algo solo si en tu cuenta es distinto.
       </p>
 
       <div className="flex flex-col gap-4">
         <Field
           label="Plan de Tienda Nube"
-          help="Lo ves en Tienda Nube > Mi cuenta > Plan. Define cuánto te cobra Tienda Nube por cada venta que no es con Pago Nube (transferencias, efectivo) y las tasas de Pago Nube."
+          help="Se lee solo de tu cuenta de Tienda Nube. Define cuánto te cobra Tienda Nube por cada venta que no es con Pago Nube (transferencias, efectivo) y las tasas de Pago Nube."
+          auto={!values.tnPlan ? planAuto : null}
         >
           <select
             className={SELECT_CLASS}
             value={values.tnPlan ?? ''}
             onChange={(e) => setValues((p) => ({ ...p, tnPlan: (e.target.value || null) as TnPlan | null }))}
           >
-            <option value="">Elegí tu plan</option>
+            <option value="">{initial.detectedPlan ? `Automático (${TN_PLAN_LABEL[initial.detectedPlan]})` : 'Elegí tu plan'}</option>
             {(Object.keys(TN_PLAN_LABEL) as TnPlan[]).map((plan) => (
               <option key={plan} value={plan}>
                 {TN_PLAN_LABEL[plan]}
@@ -119,14 +131,15 @@ export function PaymentSettingsCard({
 
         <Field
           label="¿En cuántos días te libera Pago Nube la plata?"
-          help="Está en Pago Nube > Configurar. Cobrar antes cuesta más: la comisión de tarjeta cambia según este plazo."
+          help="Está en Pago Nube > Configurar. Cobrar antes cuesta más: la comisión de tarjeta cambia según este plazo. Si no lo elegís, se usa el plazo estándar de Pago Nube."
+          auto={!values.releaseDays ? `Estándar: ${DEFAULT_RELEASE_DAYS} días` : null}
         >
           <select
             className={SELECT_CLASS}
             value={values.releaseDays ?? ''}
             onChange={(e) => setValues((p) => ({ ...p, releaseDays: (e.target.value ? Number(e.target.value) : null) as ReleaseDays | null }))}
           >
-            <option value="">Elegí el plazo</option>
+            <option value="">{`Estándar (${DEFAULT_RELEASE_DAYS} días)`}</option>
             <option value="1">1 día</option>
             <option value="7">7 días</option>
             <option value="14">14 días</option>
@@ -137,13 +150,14 @@ export function PaymentSettingsCard({
         <Field
           label="Situación ante ARCA"
           help="Responsable inscripto o monotributo: a las comisiones se les suma 21% de IVA. No inscripto: Pago Nube retiene 10,5% de cada venta."
+          auto={!values.taxCondition ? 'Estándar: IVA sobre las comisiones' : null}
         >
           <select
             className={SELECT_CLASS}
             value={values.taxCondition ?? ''}
             onChange={(e) => setValues((p) => ({ ...p, taxCondition: (e.target.value || null) as TaxCondition | null }))}
           >
-            <option value="">Elegí tu situación</option>
+            <option value="">{`Estándar (${TAX_CONDITION_LABEL[DEFAULT_TAX_CONDITION]} o monotributo)`}</option>
             {(Object.keys(TAX_CONDITION_LABEL) as TaxCondition[]).map((t) => (
               <option key={t} value={t}>
                 {TAX_CONDITION_LABEL[t]}

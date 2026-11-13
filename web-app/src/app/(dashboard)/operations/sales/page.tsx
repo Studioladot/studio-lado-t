@@ -67,7 +67,7 @@ export default async function OperationsSalesPage({
         manualSales={r.manualSales}
         manualTotal={r.manualTotal}
         finConfig={r.finConfig}
-        paymentSettings={r.paymentSettings}
+        paymentSettings={{ saved: r.savedPaymentSettings, sources: r.paymentSources, detectedPlan: r.detectedPlan }}
         installmentsSeen={r.installmentsSeen}
         installmentsWithoutCost={r.installmentsWithoutCost}
         hasOtherGateways={r.hasOtherGateways}
