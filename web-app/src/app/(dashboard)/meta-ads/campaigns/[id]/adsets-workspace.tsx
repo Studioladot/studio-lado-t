@@ -121,11 +121,13 @@ function DuplicateAdSetButton({
 }
 
 export function AdSetsWorkspace({
+  periodLabel,
   adSets,
   campaignId,
   returnTo,
   targets,
 }: {
+  periodLabel: string
   adSets: MetaAdSet[]
   campaignId: string
   returnTo: string
@@ -217,7 +219,7 @@ export function AdSetsWorkspace({
   return (
     <div>
       <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-        <p className="text-[11px] font-bold uppercase tracking-[.08em] text-text-3">Conjuntos de anuncios (30 días)</p>
+        <p className="text-[11px] font-bold uppercase tracking-[.08em] text-text-3">Conjuntos de anuncios ({periodLabel})</p>
         <div className="relative">
           <button
             type="button"

@@ -64,6 +64,7 @@ function AdStatusToggle({
 }
 
 export function AdsWorkspace({
+  periodLabel,
   ads,
   campaignId,
   campaignName,
@@ -71,6 +72,7 @@ export function AdsWorkspace({
   targets,
   originAdIds,
 }: {
+  periodLabel: string
   ads: MetaCampaignAd[]
   campaignId: string
   campaignName: string
@@ -163,7 +165,7 @@ export function AdsWorkspace({
   return (
     <div>
       <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-        <p className="text-[11px] font-bold uppercase tracking-[.08em] text-text-3">Anuncios (30 días)</p>
+        <p className="text-[11px] font-bold uppercase tracking-[.08em] text-text-3">Anuncios ({periodLabel})</p>
         <div className="relative">
           <button
             type="button"

@@ -13,6 +13,8 @@ import { AdSetsWorkspace } from './adsets-workspace'
 import { AdsWorkspace } from './ads-workspace'
 import { AutopilotPanel } from '../autopilot-panel'
 import { ConfirmSubmitButton } from '@/components/features/confirm-submit-button'
+import { PeriodSelector } from '../../../operations/sales/period-selector'
+import { resolvePeriod } from '@/lib/reports/sales-report'
 import { STATUS_LABEL, STATUS_COLOR, TOGGLEABLE, formatObjective } from '../status'
 
 export default async function MetaAdsCampaignDetailPage({
@@ -20,10 +22,16 @@ export default async function MetaAdsCampaignDetailPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>
-  searchParams: Promise<{ campaign_error?: string; campaign_success?: string }>
+  searchParams: Promise<{ campaign_error?: string; campaign_success?: string; days?: string; from?: string; to?: string }>
 }) {
   const { id } = await params
-  const { campaign_error: campaignError, campaign_success: campaignSuccess } = await searchParams
+  const { campaign_error: campaignError, campaign_success: campaignSuccess, days, from, to } = await searchParams
+  // Período de conjuntos y anuncios: presets o fechas exactas (?days= / ?from=&to=),
+  // mismo selector y misma interpretación que Ventas.
+  const period = resolvePeriod(days, from, to)
+  const insightsPeriod = period.activePreset ?? { since: period.periodStart, until: period.periodEnd }
+  const fmtDay = (d: string) => d.split('-').reverse().join('/')
+  const periodLabel = period.activePreset ? `${period.activePreset} días` : `${fmtDay(period.customFrom!)} al ${fmtDay(period.customTo!)}`
   const { activeOrganizationId } = await getDashboardContext()
 
   if (!activeOrganizationId) {
@@ -49,8 +57,8 @@ export default async function MetaAdsCampaignDetailPage({
 
   const [header, adSetsResult, adsResult, targets, pillars, currentPillar] = await Promise.all([
     getMetaCampaignHeader(connection.token, id),
-    getMetaCampaignAdSets(connection.token, id),
-    getMetaCampaignAds(connection.token, id),
+    getMetaCampaignAdSets(connection.token, id, insightsPeriod),
+    getMetaCampaignAds(connection.token, id, insightsPeriod),
     getCampaignTargets(supabase, activeOrganizationId, id),
     getContentPillars(supabase, activeOrganizationId),
     getCampaignPillar(supabase, activeOrganizationId, id),
@@ -151,11 +159,16 @@ export default async function MetaAdsCampaignDetailPage({
         </div>
       </div>
 
+      <div className="mb-3 flex flex-wrap items-center justify-end gap-2">
+        <span className="text-[11px] font-semibold text-text-3">Período de conjuntos y anuncios</span>
+        <PeriodSelector activePreset={period.activePreset} customFrom={period.customFrom} customTo={period.customTo} />
+      </div>
+
       <div className="mb-3.5">
         {!adSetsResult.ok ? (
           <>
             <p className="mb-2 text-[11px] font-bold uppercase tracking-[.08em] text-text-3">
-              Conjuntos de anuncios (30 días)
+              Conjuntos de anuncios ({periodLabel})
             </p>
             <div className="rounded-card border border-red/30 bg-red/[8%] px-4 py-3 text-sm text-red">
               {adSetsResult.error}
@@ -164,34 +177,35 @@ export default async function MetaAdsCampaignDetailPage({
         ) : adSetsResult.adSets.length === 0 ? (
           <>
             <p className="mb-2 text-[11px] font-bold uppercase tracking-[.08em] text-text-3">
-              Conjuntos de anuncios (30 días)
+              Conjuntos de anuncios ({periodLabel})
             </p>
             <div className="rounded-card border border-border bg-surface px-6 py-8 text-center text-sm text-text-2">
               Esta campaña no tiene conjuntos de anuncios.
             </div>
           </>
         ) : (
-          <AdSetsWorkspace adSets={adSetsResult.adSets} campaignId={id} returnTo={returnTo} targets={targets} />
+          <AdSetsWorkspace periodLabel={periodLabel} adSets={adSetsResult.adSets} campaignId={id} returnTo={returnTo} targets={targets} />
         )}
       </div>
 
       <div>
         {!adsResult.ok ? (
           <>
-            <p className="mb-2 text-[11px] font-bold uppercase tracking-[.08em] text-text-3">Anuncios (30 días)</p>
+            <p className="mb-2 text-[11px] font-bold uppercase tracking-[.08em] text-text-3">Anuncios ({periodLabel})</p>
             <div className="rounded-card border border-red/30 bg-red/[8%] px-4 py-3 text-sm text-red">
               {adsResult.error}
             </div>
           </>
         ) : adsResult.ads.length === 0 ? (
           <>
-            <p className="mb-2 text-[11px] font-bold uppercase tracking-[.08em] text-text-3">Anuncios (30 días)</p>
+            <p className="mb-2 text-[11px] font-bold uppercase tracking-[.08em] text-text-3">Anuncios ({periodLabel})</p>
             <div className="rounded-card border border-border bg-surface px-6 py-8 text-center text-sm text-text-2">
               Esta campaña no tiene anuncios.
             </div>
           </>
         ) : (
           <AdsWorkspace
+            periodLabel={periodLabel}
             ads={adsResult.ads}
             campaignId={id}
             campaignName={campaign.name}

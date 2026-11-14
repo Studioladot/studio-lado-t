@@ -34,6 +34,13 @@ function insightsWindow(days: number) {
   return `{"since":"${formatDate(since)}","until":"${formatDate(until)}"}`
 }
 
+/** Período de insights: últimos N días o un rango de fechas exacto (detalle de campaña). */
+export type InsightsPeriod = number | { since: Date; until: Date }
+
+function periodWindow(period: InsightsPeriod) {
+  return typeof period === 'number' ? insightsWindow(period) : rangeWindow(period.since, period.until)
+}
+
 function rangeWindow(since: Date, until: Date) {
   return `{"since":"${formatDate(since)}","until":"${formatDate(until)}"}`
 }
@@ -364,10 +371,10 @@ type GraphAdSet = {
   insights?: { data?: GraphInsight[] }
 }
 
-export async function getMetaCampaignAdSets(token: string, campaignId: string, days = 30): Promise<MetaAdSetsResult> {
+export async function getMetaCampaignAdSets(token: string, campaignId: string, period: InsightsPeriod = 30): Promise<MetaAdSetsResult> {
   // Mismo set de insights que getMetaCampaigns — necesario para que Conjuntos
   // tenga las mismas 17 métricas disponibles que Campañas (ver metric-defs.tsx).
-  const fields = `id,name,status,effective_status,daily_budget,lifetime_budget,created_time,insights.time_range(${insightsWindow(days)}){spend,impressions,ctr,cpm,cpc,frequency,inline_link_clicks,action_values,actions,video_play_actions}`
+  const fields = `id,name,status,effective_status,daily_budget,lifetime_budget,created_time,insights.time_range(${periodWindow(period)}){spend,impressions,ctr,cpm,cpc,frequency,inline_link_clicks,action_values,actions,video_play_actions}`
 
   const result = await metaGraphGet<{ data?: GraphAdSet[] }>(
     `/${campaignId}/adsets?fields=${encodeURIComponent(fields)}&limit=200`,
@@ -438,8 +445,8 @@ function mapGraphAd(a: GraphCampaignAd): MetaCampaignAd {
   }
 }
 
-export async function getMetaCampaignAds(token: string, campaignId: string, days = 30): Promise<MetaCampaignAdsResult> {
-  const fields = AD_FIELDS.replace('WINDOW', insightsWindow(days))
+export async function getMetaCampaignAds(token: string, campaignId: string, period: InsightsPeriod = 30): Promise<MetaCampaignAdsResult> {
+  const fields = AD_FIELDS.replace('WINDOW', periodWindow(period))
 
   const result = await metaGraphGet<{ data?: GraphCampaignAd[] }>(
     `/${campaignId}/ads?fields=${encodeURIComponent(fields)}&limit=200`,
