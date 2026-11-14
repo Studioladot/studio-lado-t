@@ -1,49 +1,86 @@
 import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
+import type { SupabaseClient } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/server'
+import { createServiceRoleClient } from '@/lib/supabase/service-role'
 import { getDashboardContext } from '@/lib/organization/dashboard-context'
-import { TIENDANUBE_OAUTH_STATE_COOKIE } from '@/lib/tiendanube/oauth'
+import { tieneAcceso } from '@/lib/auth/allowlist'
+import { TIENDANUBE_OAUTH_STATE_COOKIE, LINK_STATE_PREFIX, verifyTiendaNubeLinkState } from '@/lib/tiendanube/oauth'
+
+// Dos formas de llegar acá:
+// 1. "Conectar" desde Integraciones: state aleatorio en cookie, sesión de
+//    Gotix en este navegador, se conecta a la cuenta activa.
+// 2. Link de conexión (oauth.ts): state firmado con la cuenta de destino.
+//    Se abre en otro perfil de Chrome / incógnito o lo abre el dueño de la
+//    tienda, sin sesión de Gotix — por eso esta ruta es pública en proxy.ts
+//    y en ese caso se guarda con el cliente de servicio, verificando a mano
+//    que quien generó el link siga teniendo acceso a esa cuenta.
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url)
   const code = searchParams.get('code')
   const state = searchParams.get('state')
+  const isLink = !!state?.startsWith(LINK_STATE_PREFIX)
 
-  const redirectWithError = (message: string) =>
-    NextResponse.redirect(`${origin}/settings/integrations?tn_error=${encodeURIComponent(message)}`)
+  // El link termina en una página pública (no hay sesión para ver Integraciones).
+  const done = (params: Record<string, string>) =>
+    NextResponse.redirect(
+      isLink
+        ? `${origin}/tienda-conectada?${new URLSearchParams(params)}`
+        : `${origin}/settings/integrations?${new URLSearchParams(params.error ? { tn_error: params.error } : { tn_connected: '1' })}`
+    )
+  const redirectWithError = (message: string) => done({ error: message })
 
   if (!code || !state) {
     return redirectWithError('No pudimos completar la conexión con Tienda Nube. Probá de nuevo.')
   }
 
-  const cookieStore = await cookies()
-  const expectedState = cookieStore.get(TIENDANUBE_OAUTH_STATE_COOKIE)?.value
-  cookieStore.delete(TIENDANUBE_OAUTH_STATE_COOKIE)
-
-  if (!expectedState || expectedState !== state) {
-    return redirectWithError('No pudimos verificar la conexión con Tienda Nube — probá de nuevo.')
-  }
-
   const clientId = process.env.TIENDANUBE_CLIENT_ID
   const clientSecret = process.env.TIENDANUBE_CLIENT_SECRET
-
   if (!clientId || !clientSecret) {
     return redirectWithError('Tienda Nube no está configurado todavía.')
   }
 
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  let db: SupabaseClient
+  let organizationId: string
+  let userId: string
 
-  if (!user) {
-    return NextResponse.redirect(`${origin}/login`)
-  }
-
-  const { activeOrganizationId } = await getDashboardContext()
-
-  if (!activeOrganizationId) {
-    return redirectWithError('No encontramos tu organización activa.')
+  if (isLink) {
+    const link = verifyTiendaNubeLinkState(state)
+    if (!link) {
+      return redirectWithError('Este link de conexión venció o no es válido. Pedí uno nuevo desde Gotix.')
+    }
+    db = createServiceRoleClient() as unknown as SupabaseClient
+    const [{ data: member }, { data: authUser }] = await Promise.all([
+      db.from('organization_members').select('user_id').eq('organization_id', link.organizationId).eq('user_id', link.userId).maybeSingle(),
+      db.auth.admin.getUserById(link.userId).catch(() => ({ data: { user: null } })),
+    ])
+    if (!member || !tieneAcceso(authUser?.user?.email)) {
+      return redirectWithError('Este link de conexión ya no es válido. Pedí uno nuevo desde Gotix.')
+    }
+    organizationId = link.organizationId
+    userId = link.userId
+  } else {
+    const cookieStore = await cookies()
+    const expectedState = cookieStore.get(TIENDANUBE_OAUTH_STATE_COOKIE)?.value
+    cookieStore.delete(TIENDANUBE_OAUTH_STATE_COOKIE)
+    if (!expectedState || expectedState !== state) {
+      return redirectWithError('No pudimos verificar la conexión con Tienda Nube — probá de nuevo.')
+    }
+    const supabase = await createClient()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+    if (!user) {
+      return NextResponse.redirect(`${origin}/login`)
+    }
+    const { activeOrganizationId } = await getDashboardContext()
+    if (!activeOrganizationId) {
+      return redirectWithError('No encontramos tu organización activa.')
+    }
+    db = supabase as unknown as SupabaseClient
+    organizationId = activeOrganizationId
+    userId = user.id
   }
 
   try {
@@ -87,32 +124,33 @@ export async function GET(request: Request) {
     }
 
     // Tienda Nube autoriza la tienda con la que el navegador tiene la sesión
-    // abierta. Si esa tienda ya está conectada a OTRA cuenta de Gotix (ej:
-    // conectar Alamia estando logueado en El Palacio), no se duplica: se
-    // renueva el token de esa cuenta (reautorizar puede invalidar el viejo)
-    // y se avisa cómo conectar la tienda correcta.
-    const { data: existing } = await supabase
+    // abierta. Si esa tienda ya está conectada a OTRA cuenta de Gotix, no se
+    // duplica: se renueva el token de esa cuenta (reautorizar puede invalidar
+    // el viejo) y se avisa.
+    const { data: existing } = await db
       .from('tiendanube_connections')
       .select('organization_id')
       .eq('store_id', storeId)
-      .neq('organization_id', activeOrganizationId)
+      .neq('organization_id', organizationId)
       .limit(1)
       .maybeSingle()
 
     if (existing) {
-      await supabase.from('tiendanube_connections').update({ access_token: accessToken }).eq('store_id', storeId)
-      const { data: otherOrg } = await supabase.from('organizations').select('name').eq('id', existing.organization_id ?? '').maybeSingle()
+      await db.from('tiendanube_connections').update({ access_token: accessToken }).eq('store_id', storeId)
+      const { data: otherOrg } = await db.from('organizations').select('name').eq('id', existing.organization_id ?? '').maybeSingle()
       const tienda = storeName ?? 'Esa tienda'
       return redirectWithError(
-        `${tienda} ya está conectada a la cuenta ${otherOrg?.name ?? 'otra cuenta'}. Seguí los pasos de la tarjeta de Tienda Nube: primero cambiá de tienda y después tocá Conectar.`
+        isLink
+          ? `${tienda} ya está conectada a la cuenta ${otherOrg?.name ?? 'otra cuenta'}. Abrí este link en un perfil o ventana donde tengas abierta la tienda correcta.`
+          : `${tienda} ya está conectada a la cuenta ${otherOrg?.name ?? 'otra cuenta'}. Usá "Copiar link de conexión" y abrilo en otro perfil de Chrome o ventana de incógnito con la tienda de esta cuenta.`
       )
     }
 
-    await supabase.from('tiendanube_connections').delete().eq('organization_id', activeOrganizationId)
+    await db.from('tiendanube_connections').delete().eq('organization_id', organizationId)
 
-    const { error: insertError } = await supabase.from('tiendanube_connections').insert({
-      user_id: user.id,
-      organization_id: activeOrganizationId,
+    const { error: insertError } = await db.from('tiendanube_connections').insert({
+      user_id: userId,
+      organization_id: organizationId,
       store_id: storeId,
       access_token: accessToken,
       store_name: storeName,
@@ -124,7 +162,11 @@ export async function GET(request: Request) {
       return redirectWithError('No pudimos guardar la conexión. Probá de nuevo en unos minutos.')
     }
 
-    return NextResponse.redirect(`${origin}/settings/integrations?tn_connected=1`)
+    if (isLink) {
+      const { data: org } = await db.from('organizations').select('name').eq('id', organizationId).maybeSingle()
+      return done({ tienda: storeName ?? 'Tu tienda', cuenta: org?.name ?? '' })
+    }
+    return done({})
   } catch (err) {
     console.error('[tiendanube/callback] excepción inesperada:', err)
     return redirectWithError('No pudimos completar la conexión con Tienda Nube. Probá de nuevo en unos minutos.')

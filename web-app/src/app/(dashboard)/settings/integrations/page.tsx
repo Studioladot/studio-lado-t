@@ -16,6 +16,7 @@ import { ConfirmSubmitButton } from '@/components/features/confirm-submit-button
 import { InstagramIcon, TiktokIcon, ShopifyIcon, GoogleAnalyticsIcon } from '@/components/features/nav-icons'
 import { BrandLogo } from '@/components/features/brand-logo'
 import { IntegrationCard } from './integration-card'
+import { TiendaNubeLinkButton } from './tiendanube-link-button'
 import { ClaudeConnectorPanel } from './claude-connector-panel'
 
 const SCOPE_LABEL: Record<string, string> = {
@@ -49,6 +50,7 @@ export default async function IntegrationsPage({
 }) {
   const { meta_connected, meta_error, tiktok_connected, tiktok_error, tn_connected, tn_error } = await searchParams
   const { activeOrganizationId, userId, organizations } = await getDashboardContext()
+  const activeOrgName = organizations.find((o) => o.id === activeOrganizationId)?.name ?? null
 
   if (!activeOrganizationId) {
     return (
@@ -328,39 +330,17 @@ export default async function IntegrationsPage({
           description="Ventas reales sincronizadas para Rentabilidad Neta y Operaciones."
           connected={!!tnConnection}
           connectSlot={
-            otherOrgsHaveTn ? (
-              // Tienda Nube conecta la tienda con la sesión abierta en el
-              // navegador (normalmente la de otra cuenta ya conectada). Primero
-              // se cierra esa sesión (/logout lleva directo al login de Tienda
-              // Nube), se entra con la tienda de esta cuenta y recién ahí se conecta.
-              <div className="flex flex-col gap-3">
-                <p className="text-[11px] leading-relaxed text-text-2">
-                  Tienda Nube conecta la tienda con la que tengas la sesión abierta. Para conectar la de esta cuenta:
-                </p>
-                <a
-                  href="https://www.tiendanube.com/logout"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center justify-center rounded-control border border-border-2 px-3 py-2 text-xs font-semibold text-text transition-colors duration-200 ease-out hover:bg-surface-2"
-                >
-                  1. Cambiar de tienda en Tienda Nube
-                </a>
-                <p className="-mt-1 text-[11px] leading-relaxed text-text-3">
-                  Se abre en otra pestaña con tu sesión cerrada. Entrá con el mail y la contraseña de la tienda de esta cuenta y volvé acá.
-                </p>
-                <form action={connectTiendaNubeAction}>
-                  <button type="submit" className={PRIMARY_BUTTON}>
-                    2. Conectar
-                  </button>
-                </form>
-              </div>
-            ) : (
+            // "Conectar" usa la tienda con sesión abierta en este navegador.
+            // Para las demás cuentas (otra tienda), el link de conexión se
+            // abre en otro perfil/incógnito sin cerrar sesión acá.
+            <div className="flex flex-col gap-3">
               <form action={connectTiendaNubeAction}>
                 <button type="submit" className={PRIMARY_BUTTON}>
                   Conectar
                 </button>
               </form>
-            )
+              {otherOrgsHaveTn && <TiendaNubeLinkButton accountName={activeOrgName} />}
+            </div>
           }
           manageSlot={
             tnConnection && (

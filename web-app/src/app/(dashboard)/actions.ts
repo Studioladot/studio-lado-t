@@ -7,7 +7,7 @@ import { createClient } from '@/lib/supabase/server'
 import { getRequestOrigin } from '@/lib/http/request-origin'
 import { getDashboardContext } from '@/lib/organization/dashboard-context'
 import { META_OAUTH_STATE_COOKIE, META_OAUTH_SCOPE } from '@/lib/meta/oauth'
-import { TIENDANUBE_OAUTH_STATE_COOKIE } from '@/lib/tiendanube/oauth'
+import { TIENDANUBE_OAUTH_STATE_COOKIE, buildTiendaNubeConnectLink } from '@/lib/tiendanube/oauth'
 import { TIKTOK_OAUTH_STATE_COOKIE, TIKTOK_OAUTH_VERIFIER_COOKIE, TIKTOK_OAUTH_SCOPE, TIKTOK_AUTH_URL } from '@/lib/tiktok/oauth'
 import { generatePkcePair } from '@/lib/tiktok/pkce'
 
@@ -173,6 +173,13 @@ export async function disconnectInstagramAction() {
   await supabase.from('instagram_connections').delete().eq('organization_id', activeOrganizationId)
 
   redirect('/settings/integrations')
+}
+
+/** Link de conexión de Tienda Nube para la cuenta activa (vence en 48 h). */
+export async function createTiendaNubeLinkAction(): Promise<{ url: string | null }> {
+  const { userId, activeOrganizationId } = await getDashboardContext()
+  if (!activeOrganizationId) return { url: null }
+  return { url: buildTiendaNubeConnectLink(activeOrganizationId, userId) }
 }
 
 export async function disconnectTiendaNubeAction() {

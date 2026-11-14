@@ -31,6 +31,11 @@ const PUBLIC_PATHS = [
   // vez de un redirect al login.
   '/api/mcp',
   '/.well-known',
+  // Link de conexión de Tienda Nube: se abre en otro perfil/incógnito o lo
+  // abre el dueño de la tienda, sin sesión de Gotix. El state firmado es la
+  // autorización (ver lib/tiendanube/oauth.ts).
+  '/api/tiendanube/callback',
+  '/tienda-conectada',
   '/googleaa655e68170c8d27.html',
 ]
 
