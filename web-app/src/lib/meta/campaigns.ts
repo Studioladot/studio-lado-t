@@ -541,10 +541,10 @@ export async function getMetaAccountAds(token: string, accountId: string, days =
  * de Anuncios, que puede recibir IDs de distintos ad sets de una misma
  * campaña. Usa el endpoint de batch-by-id de la Graph API (`/?ids=...`).
  */
-export async function getMetaAdsByIds(token: string, adIds: string[], days = 30): Promise<MetaCampaignAdsResult> {
+export async function getMetaAdsByIds(token: string, adIds: string[], period: InsightsPeriod = 30): Promise<MetaCampaignAdsResult> {
   if (adIds.length === 0) return { ok: true, ads: [] }
 
-  const fields = AD_FIELDS.replace('WINDOW', insightsWindow(days))
+  const fields = AD_FIELDS.replace('WINDOW', periodWindow(period))
   const result = await metaGraphGet<Record<string, GraphCampaignAd>>(
     `/?ids=${adIds.map(encodeURIComponent).join(',')}&fields=${encodeURIComponent(fields)}`,
     token
@@ -559,10 +559,10 @@ export async function getMetaAdsByIds(token: string, adIds: string[], days = 30)
  * Trae conjuntos puntuales por ID (no por campaña) — usado por el Comparador
  * de Conjuntos, mismo patrón que getMetaAdsByIds.
  */
-export async function getMetaAdSetsByIds(token: string, adSetIds: string[], days = 30): Promise<MetaAdSetsResult> {
+export async function getMetaAdSetsByIds(token: string, adSetIds: string[], period: InsightsPeriod = 30): Promise<MetaAdSetsResult> {
   if (adSetIds.length === 0) return { ok: true, adSets: [] }
 
-  const fields = `id,name,status,effective_status,daily_budget,lifetime_budget,created_time,insights.time_range(${insightsWindow(days)}){spend,impressions,ctr,cpm,cpc,frequency,inline_link_clicks,action_values,actions,video_play_actions}`
+  const fields = `id,name,status,effective_status,daily_budget,lifetime_budget,created_time,insights.time_range(${periodWindow(period)}){spend,impressions,ctr,cpm,cpc,frequency,inline_link_clicks,action_values,actions,video_play_actions}`
   const result = await metaGraphGet<Record<string, GraphAdSet>>(
     `/?ids=${adSetIds.map(encodeURIComponent).join(',')}&fields=${encodeURIComponent(fields)}`,
     token

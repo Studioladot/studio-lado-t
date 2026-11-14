@@ -1,4 +1,6 @@
 import Link from 'next/link'
+import { PeriodSelector } from '../../../../operations/sales/period-selector'
+import { resolvePeriod } from '@/lib/reports/sales-report'
 import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { getDashboardContext } from '@/lib/organization/dashboard-context'
@@ -35,10 +37,16 @@ export default async function CompareAdSetsPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>
-  searchParams: Promise<{ adsets?: string }>
+  searchParams: Promise<{ adsets?: string; days?: string; from?: string; to?: string }>
 }) {
   const { id } = await params
-  const { adsets: adSetsParam = '' } = await searchParams
+  const { adsets: adSetsParam = '' , days, from, to } = await searchParams
+  // Mismo período que el detalle de campaña (?days= o ?from=&to=).
+  const period = resolvePeriod(days, from, to)
+  const insightsPeriod = period.activePreset ?? { since: period.periodStart, until: period.periodEnd }
+  const fmtDay = (d: string) => d.split('-').reverse().join('/')
+  const periodLabel = period.activePreset ? `últimos ${period.activePreset} días` : `${fmtDay(period.customFrom!)} al ${fmtDay(period.customTo!)}`
+  const periodQs = new URLSearchParams(Object.entries({ days, from, to }).filter((e): e is [string, string] => !!e[1])).toString()
   const adSetIds = adSetsParam
     .split(',')
     .map((s) => s.trim())
@@ -56,7 +64,7 @@ export default async function CompareAdSetsPage({
 
   const backLink = (
     <Link
-      href={`/meta-ads/campaigns/${id}`}
+      href={`/meta-ads/campaigns/${id}${periodQs ? `?${periodQs}` : ''}`}
       className="mb-3 inline-flex items-center gap-1.5 text-xs font-medium text-text-2 transition-colors duration-200 ease-out hover:text-text"
     >
       <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -89,7 +97,7 @@ export default async function CompareAdSetsPage({
     notFound()
   }
 
-  const result = await getMetaAdSetsByIds(connection.token, adSetIds)
+  const result = await getMetaAdSetsByIds(connection.token, adSetIds, insightsPeriod)
 
   if (!result.ok) {
     return (
@@ -112,9 +120,12 @@ export default async function CompareAdSetsPage({
     <div>
       {backLink}
 
-      <div className="mb-[22px]">
-        <h1 className="text-[22px] font-bold tracking-[-0.03em] text-text">Comparador de Conjuntos</h1>
-        <p className="mt-0.5 text-[13px] text-text-2">{adSets.length} conjuntos seleccionados — últimos 30 días</p>
+      <div className="mb-[22px] flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h1 className="text-[22px] font-bold tracking-[-0.03em] text-text">Comparador de Conjuntos</h1>
+          <p className="mt-0.5 text-[13px] text-text-2">{adSets.length} conjuntos seleccionados — {periodLabel}</p>
+        </div>
+        <PeriodSelector activePreset={period.activePreset} customFrom={period.customFrom} customTo={period.customTo} />
       </div>
 
       <div className="mb-5 grid gap-4" style={{ gridTemplateColumns: `repeat(${adSets.length}, minmax(0, 1fr))` }}>

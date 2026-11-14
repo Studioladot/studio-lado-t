@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import type { MetaAdSet } from '@/lib/meta/campaigns'
 import { bulkToggleAdSetStatusAction, toggleAdSetStatusAction, duplicateAdSetForCreativeTestAction } from '../actions'
 import { STATUS_LABEL, STATUS_COLOR, TOGGLEABLE, matchesStatusFilter, formatBudget } from '../status'
@@ -120,6 +120,17 @@ function DuplicateAdSetButton({
   )
 }
 
+/** Lleva el período elegido (?days= o ?from=&to=) a la pantalla de Comparar. */
+function periodQuery(params: URLSearchParams) {
+  const out = new URLSearchParams()
+  for (const k of ['days', 'from', 'to']) {
+    const v = params.get(k)
+    if (v) out.set(k, v)
+  }
+  const q = out.toString()
+  return q ? `&${q}` : ''
+}
+
 export function AdSetsWorkspace({
   periodLabel,
   adSets,
@@ -134,6 +145,7 @@ export function AdSetsWorkspace({
   targets: CampaignTargets
 }) {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [query, setQuery] = useState('')
   const [status, setStatus] = useState('')
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
@@ -290,7 +302,7 @@ export function AdSetsWorkspace({
               {selectedCount >= 2 && (
                 <button
                   type="button"
-                  onClick={() => router.push(`/meta-ads/campaigns/${campaignId}/compare-adsets?adsets=${[...selectedIds].join(',')}`)}
+                  onClick={() => router.push(`/meta-ads/campaigns/${campaignId}/compare-adsets?adsets=${[...selectedIds].join(',')}${periodQuery(searchParams)}`)}
                   className="rounded-control bg-primary px-3 py-1.5 text-xs font-bold text-white shadow-[0_0_12px_var(--primary-glow)] transition-all duration-200 ease-out hover:bg-primary-hover active:scale-[0.98]"
                 >
                   Comparar conjuntos

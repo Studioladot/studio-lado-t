@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import type { MetaCampaignAd } from '@/lib/meta/campaigns'
 import { bulkToggleAdStatusAction, toggleAdStatusAction } from '../actions'
 import { STATUS_LABEL, STATUS_COLOR, TOGGLEABLE, matchesStatusFilter } from '../status'
@@ -63,6 +63,17 @@ function AdStatusToggle({
   )
 }
 
+/** Lleva el período elegido (?days= o ?from=&to=) a la pantalla de Comparar. */
+function periodQuery(params: URLSearchParams) {
+  const out = new URLSearchParams()
+  for (const k of ['days', 'from', 'to']) {
+    const v = params.get(k)
+    if (v) out.set(k, v)
+  }
+  const q = out.toString()
+  return q ? `&${q}` : ''
+}
+
 export function AdsWorkspace({
   periodLabel,
   ads,
@@ -81,6 +92,7 @@ export function AdsWorkspace({
   originAdIds: string[]
 }) {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const originSet = useMemo(() => new Set(originAdIds), [originAdIds])
   const [query, setQuery] = useState('')
   const [status, setStatus] = useState('')
@@ -236,7 +248,7 @@ export function AdsWorkspace({
               {selectedCount >= 2 && (
                 <button
                   type="button"
-                  onClick={() => router.push(`/meta-ads/campaigns/${campaignId}/compare?ads=${[...selectedIds].join(',')}`)}
+                  onClick={() => router.push(`/meta-ads/campaigns/${campaignId}/compare?ads=${[...selectedIds].join(',')}${periodQuery(searchParams)}`)}
                   className="rounded-control bg-primary px-3 py-1.5 text-xs font-bold text-white shadow-[0_0_12px_var(--primary-glow)] transition-all duration-200 ease-out hover:bg-primary-hover active:scale-[0.98]"
                 >
                   Comparar anuncios
