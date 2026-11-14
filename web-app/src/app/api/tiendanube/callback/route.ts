@@ -104,7 +104,7 @@ export async function GET(request: Request) {
       const { data: otherOrg } = await supabase.from('organizations').select('name').eq('id', existing.organization_id ?? '').maybeSingle()
       const tienda = storeName ?? 'Esa tienda'
       return redirectWithError(
-        `${tienda} ya está conectada a la cuenta ${otherOrg?.name ?? 'otra cuenta'}. Tienda Nube conecta la tienda con la que tenés la sesión abierta: cerrá sesión en Tienda Nube, entrá con la tienda de esta cuenta y volvé a tocar Conectar.`
+        `${tienda} ya está conectada a la cuenta ${otherOrg?.name ?? 'otra cuenta'}. Seguí los pasos de la tarjeta de Tienda Nube: primero cambiá de tienda y después tocá Conectar.`
       )
     }
 
