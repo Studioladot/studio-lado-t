@@ -813,6 +813,7 @@ export function TestCampaignWizard({
                       <AdSetEditor
                         key={adSetId}
                         prefill={prefills[adSetId]}
+                        productUrl={productUrl}
                         index={adSetIndex}
                         setNumber={adSetIndex + 1}
                         audiences={audiences}

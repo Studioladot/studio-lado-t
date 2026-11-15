@@ -27,6 +27,7 @@ export function BulkLoader({ productUrl, onApply }: { productUrl: string; onAppl
   const [headline, setHeadline] = useState('')
   const [body, setBody] = useState('')
   const [link, setLink] = useState('')
+  const [autoCopy, setAutoCopy] = useState(false)
 
   function addFiles(list: FileList | null) {
     const picked = Array.from(list ?? []).filter((f) => f.type.startsWith('video/') || f.type.startsWith('image/'))
@@ -54,6 +55,7 @@ export function BulkLoader({ productUrl, onApply }: { productUrl: string; onAppl
           headline: headline.trim() || undefined,
           body: body.trim() || undefined,
           link: link.trim() || undefined,
+          autoCopy: autoCopy && !body.trim(),
         })),
       })
     }
@@ -190,6 +192,16 @@ export function BulkLoader({ productUrl, onApply }: { productUrl: string; onAppl
               />
             </div>
           </div>
+
+          <label className="flex items-start gap-2 text-xs text-text">
+            <input type="checkbox" checked={autoCopy} onChange={(e) => setAutoCopy(e.target.checked)} className="mt-0.5 h-4 w-4 shrink-0 accent-accent" />
+            <span>
+              <span className="font-semibold">Escribir el copy de cada anuncio con IA</span>
+              <span className="block text-[11px] text-text-3">
+                Escucha lo que dice cada video y lee lo que muestra. Si completás el texto principal de arriba, se usa ese en todos.
+              </span>
+            </span>
+          </label>
 
           <button
             type="button"

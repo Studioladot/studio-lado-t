@@ -9,12 +9,13 @@ import { fmtCompactCount } from '@/lib/format/number'
 import { fieldClass, labelClass, toggleBase } from './wizard-styles'
 import { FileDropzone } from './file-dropzone'
 import { uploadCreative, type CreativeUploadEvent } from './upload-creative'
+import { generateAdCopy, type AdCopyVariant } from './extract-media'
 import { TITLE_MAX_LENGTH, TEXT_MAX_LENGTH } from '@/lib/text-limits'
 
 type ScriptOption = { id: string; title: string | null; hook: string | null; body: string | null; copy_feed: string | null }
 
 /** Lo que precarga la Carga rápida: el archivo (empieza a subir solo) y el copy común. */
-export type AdPrefill = { file?: File; name?: string; headline?: string; body?: string; link?: string }
+export type AdPrefill = { file?: File; name?: string; headline?: string; body?: string; link?: string; autoCopy?: boolean }
 
 export function AdEditor({
   adSetIndex,
@@ -28,8 +29,10 @@ export function AdEditor({
   removable,
   onRemove,
   prefill,
+  productUrl,
 }: {
   prefill?: AdPrefill
+  productUrl?: string
   adSetIndex: number
   adIndex: number
   adNumber: number
@@ -74,13 +77,40 @@ export function AdEditor({
     })
   }
 
-  // Carga rápida: el archivo llega ya elegido y arranca a subir solo.
+  // Copy automático (2026-11-15): escucha y mira el video y escribe 3
+  // opciones; la primera se carga sola, las otras quedan para elegir.
+  const [copyState, setCopyState] = useState<{ status: 'idle' | 'working' | 'error'; error?: string }>({ status: 'idle' })
+  const [variants, setVariants] = useState<AdCopyVariant[]>([])
+  const [chosen, setChosen] = useState(0)
+
+  function applyVariant(v: AdCopyVariant, i: number) {
+    setChosen(i)
+    if (headlineRef.current) headlineRef.current.value = v.titulo
+    if (bodyRef.current) bodyRef.current.value = v.texto
+  }
+
+  async function writeCopy() {
+    const file = lastFileRef.current
+    if (!file) return
+    setCopyState({ status: 'working' })
+    const link = (document.getElementById(`ad_link_${adSetIndex}_${adIndex}`) as HTMLInputElement | null)?.value || productUrl || ''
+    const result = await generateAdCopy(file, link)
+    if (!result.ok) return setCopyState({ status: 'error', error: result.error })
+    setVariants(result.variantes)
+    applyVariant(result.variantes[0], 0)
+    setCopyState({ status: 'idle' })
+  }
+
+  // Carga rápida: el archivo llega ya elegido y arranca a subir solo
+  // (y, si se pidió, también se escribe el copy).
   const prefillStarted = useRef(false)
   useEffect(() => {
     if (prefill?.file && !prefillStarted.current) {
       prefillStarted.current = true
       startUpload(prefill.file)
+      if (prefill.autoCopy && !prefill.body) void writeCopy()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [prefill?.file])
 
   function applyScript(id: string) {
@@ -319,6 +349,14 @@ export function AdEditor({
                 Copy
               </label>
               <textarea id={`ad_body_${prefix}`} name={`ad_body_${prefix}`} ref={bodyRef} rows={3} required maxLength={TEXT_MAX_LENGTH} defaultValue={prefill?.body} className={fieldClass} />
+              <AiCopyBar
+                hasFile={!!fileName}
+                state={copyState}
+                variants={variants}
+                chosen={chosen}
+                onWrite={() => void writeCopy()}
+                onChoose={applyVariant}
+              />
             </div>
 
             <div>
@@ -388,5 +426,58 @@ export function UploadStatus({ upload, onRetry }: { upload: CreativeUploadEvent 
         </button>
       )}
     </p>
+  )
+}
+
+function AiCopyBar({
+  hasFile,
+  state,
+  variants,
+  chosen,
+  onWrite,
+  onChoose,
+}: {
+  hasFile: boolean
+  state: { status: 'idle' | 'working' | 'error'; error?: string }
+  variants: AdCopyVariant[]
+  chosen: number
+  onWrite: () => void
+  onChoose: (v: AdCopyVariant, i: number) => void
+}) {
+  const working = state.status === 'working'
+  return (
+    <div className="flex flex-col gap-1.5">
+      <div className="flex flex-wrap items-center gap-2">
+        <button
+          type="button"
+          disabled={!hasFile || working}
+          onClick={onWrite}
+          title={hasFile ? undefined : 'Elegí primero el video o la imagen'}
+          className="inline-flex items-center gap-1.5 rounded-control border border-accent/40 px-2.5 py-1 text-[11px] font-semibold text-accent transition-all duration-200 ease-out hover:bg-accent/[0.08] disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className={working ? 'animate-pulse' : ''}>
+            <path d="M12 3l1.8 4.6L18.5 9.5l-4.7 1.9L12 16l-1.8-4.6L5.5 9.5l4.7-1.9L12 3z" />
+            <path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8L19 15z" />
+          </svg>
+          {working ? 'Escuchando el video…' : variants.length ? 'Escribir otras opciones' : 'Escribir copy con IA'}
+        </button>
+        {!hasFile && <span className="text-[11px] text-text-3">Lee lo que dice y muestra el video.</span>}
+        {variants.length > 1 &&
+          variants.map((v, i) => (
+            <button
+              key={i}
+              type="button"
+              onClick={() => onChoose(v, i)}
+              aria-pressed={chosen === i}
+              className={`rounded-full border px-2.5 py-0.5 text-[11px] transition-colors duration-200 ease-out ${
+                chosen === i ? 'border-accent bg-accent/[0.08] font-semibold text-accent' : 'border-border text-text-2 hover:text-text'
+              }`}
+            >
+              Opción {i + 1}
+            </button>
+          ))}
+      </div>
+      {state.status === 'error' && <span className="text-[11px] text-red">{state.error}</span>}
+    </div>
   )
 }

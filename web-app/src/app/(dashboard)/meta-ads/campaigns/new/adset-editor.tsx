@@ -22,7 +22,9 @@ export function AdSetEditor({
   removable,
   onRemove,
   prefill,
+  productUrl,
 }: {
+  productUrl?: string
   /** Carga rápida: nombre del conjunto y anuncios precargados. */
   prefill?: { name: string; ads: AdPrefill[] }
   index: number
@@ -138,6 +140,7 @@ export function AdSetEditor({
               <AdEditor
                 key={adId}
                 prefill={prefill?.ads[adId]}
+                productUrl={productUrl}
                 adSetIndex={index}
                 adIndex={adIndex}
                 adNumber={adIndex + 1}
