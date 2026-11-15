@@ -780,6 +780,13 @@ export function TestCampaignWizard({
                   )}
                 </div>
 
+                {advAllOff && (
+                  <p className="-mt-2 text-[11px] leading-relaxed text-text-3">
+                    Meta no deja apagar desde afuera de su administrador la &ldquo;exploración de productos&rdquo; (Destinos personalizados) ni los
+                    complementos de navegador como WhatsApp. Si te importan, revisalos en el anuncio dentro de Meta después de lanzar.
+                  </p>
+                )}
+
                 <div className="border-t border-border pt-4">
                   <div className="mb-3 flex items-center justify-between">
                     <div>

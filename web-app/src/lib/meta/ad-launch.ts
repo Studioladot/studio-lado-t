@@ -200,11 +200,12 @@ export const ADV_CONTROLS = {
   call_to_action_enhancement: { label: 'Mejorar llamada a la acción', sub: 'CTA automático basado en comportamiento del usuario' },
   add_card: { label: 'Agregar tarjetas (carousel)', sub: 'Meta puede agregar tarjetas extra al carrusel' },
   // Control total (2026-11-15): lo que Meta prende sola en los anuncios nuevos.
-  site_products: { label: 'Productos y links de tu web', sub: 'Meta agrega productos o páginas de tu sitio debajo del anuncio' },
+  site_products: { label: 'Orígenes de anuncios: enlaces al sitio y productos', sub: 'Meta agrega productos del catálogo o páginas de tu web al anuncio' },
+  format_options: { label: 'Opciones de formato: colección, secuencia y presentación', sub: 'Meta convierte tu video en colección con productos, carrusel o presentación' },
   multi_advertiser: { label: 'Anuncios de otras marcas', sub: 'Meta muestra tu anuncio en una tira junto a anuncios de otras marcas' },
-  music_and_effects: { label: 'Música, animaciones y plantillas', sub: 'Meta agrega música, anima imágenes o le pone marcos y fondos' },
-  translation_and_extras: { label: 'Traducción, comentarios y perfil', sub: 'Meta traduce el texto, destaca comentarios o agrega tu perfil' },
-  auto_crop: { label: 'Recortes y adaptación por ubicación', sub: 'Meta recorta o reacomoda el creativo según dónde se muestra' },
+  music_and_effects: { label: 'Música, animaciones y revelar detalles', sub: 'Meta agrega música, anima imágenes, marcos, fondos o revela detalles con el tiempo' },
+  translation_and_extras: { label: 'Traducción y comentarios relevantes', sub: 'Meta traduce el texto, destaca comentarios o agrega tu perfil' },
+  auto_crop: { label: 'Adaptar formato y recortes', sub: 'Meta recorta, reacomoda o combina tus imágenes según dónde se muestra' },
 } as const
 
 export type AdvControlKey = keyof typeof ADV_CONTROLS
@@ -233,6 +234,8 @@ export function buildAdvantagePayload(controls: AdvControls): {
   coreSpec: { creative_features_spec: FeatureSpec } | null
   catalogOff: boolean
   multiAdsOff: boolean
+  /** Opciones de visualización de formato: solo tu archivo, sin colección/carrusel/presentación armados por Meta. */
+  formatSpec: Array<{ format: string; data_source: string[] }> | null
 } {
   const core: FeatureSpec = {}
   const off = (spec: FeatureSpec, keys: string[]) => keys.forEach((k) => (spec[k] = { enroll_status: 'OPT_OUT' }))
@@ -252,13 +255,24 @@ export function buildAdvantagePayload(controls: AdvControls): {
   if (!controls.site_products) off(full, ['product_extensions', 'site_extensions'])
   if (!controls.music_and_effects) off(full, ['audio', 'image_animation', 'image_templates', 'carousel_to_video', 'reveal_details_over_time'])
   if (!controls.translation_and_extras) off(full, ['text_translation', 'inline_comment', 'profile_card'])
-  if (!controls.auto_crop) off(full, ['adapt_to_placement', 'image_auto_crop', 'video_auto_crop', 'media_type_automation'])
+  if (!controls.auto_crop) off(full, ['adapt_to_placement', 'image_auto_crop', 'video_auto_crop', 'media_type_automation', 'multi_photo_to_video'])
 
   return {
     degreesOfFreedomSpec: Object.keys(full).length ? { creative_features_spec: full } : null,
     coreSpec: Object.keys(core).length ? { creative_features_spec: core } : null,
     catalogOff: !controls.advantage_plus_catalog,
     multiAdsOff: !controls.multi_advertiser,
+    // Formatos de la Marketing API (Format Automation): data_source "none" = apagado.
+    formatSpec: controls.format_options
+      ? null
+      : [
+          { format: 'single_media', data_source: ['manual_uploads'] },
+          { format: 'sa_collection', data_source: ['none'] },
+          { format: 'da_collection', data_source: ['none'] },
+          { format: 'carousel', data_source: ['none'] },
+          { format: 'video_slideshow', data_source: ['none'] },
+          { format: 'catalog_single_media', data_source: ['none'] },
+        ],
   }
 }
 
@@ -283,30 +297,40 @@ export async function findMetaFeaturesStillOn(token: string, creativeId: string,
   return stillOn
 }
 
-// Si Meta rechaza alguna función del set completo (no todas existen para
-// todos los formatos), se recuerda en este proceso y se usa el set original.
-let fullSpecRejected = false
+// Apagado por niveles: Meta acepta distintos campos según la versión de la
+// API y el tipo de creativo. Si un nivel es rechazado, se recuerda en este
+// proceso y se prueba el siguiente; el último es el set original de 6.
+//   0: todas las funciones + otras marcas + opciones de formato
+//   1: todas las funciones + otras marcas
+//   2: set original
+let startTier = 0
 
-/** Crea el creativo con el set completo de "Control total"; si Meta rechaza alguna función, reintenta con el set original. */
+/** Crea el creativo con "Control total"; si Meta rechaza algún campo, reintenta con un nivel menos. */
 async function createCreativeWithFallback(accountId: string, token: string, base: Record<string, string>, adv?: AdvPayload): Promise<MetaCreateResult> {
   const cleanAccountId = accountId.replace(/^act_/, '')
   const path = `/act_${cleanAccountId}/adcreatives`
   if (!adv) return metaGraphPostRaw(path, token, base)
 
-  const withSpec = (spec: AdvPayload['degreesOfFreedomSpec'], multi: boolean) => {
+  const bodyFor = (tier: number) => {
     const body = { ...base }
+    const spec = tier < 2 ? adv.degreesOfFreedomSpec : adv.coreSpec
     if (spec) body.degrees_of_freedom_spec = JSON.stringify(spec)
-    if (multi && adv.multiAdsOff) body.contextual_multi_ads = JSON.stringify({ enroll_status: 'OPT_OUT' })
+    if (tier < 2 && adv.multiAdsOff) body.contextual_multi_ads = JSON.stringify({ enroll_status: 'OPT_OUT' })
+    if (tier === 0 && adv.formatSpec) body.format_transformation_spec = JSON.stringify(adv.formatSpec)
     return body
   }
 
-  if (!fullSpecRejected) {
-    const first = await metaGraphPostRaw(path, token, withSpec(adv.degreesOfFreedomSpec, true))
-    if (first.ok) return first
-    console.error('[meta] creativo con Control total rechazado, reintento con el set original:', first.error)
-    if (/creative_features|degrees_of_freedom|contextual_multi|enroll|feature|par[aá]metro|parameter/i.test(first.error)) fullSpecRejected = true
+  let last: MetaCreateResult = { ok: false, error: 'Meta rechazó el creativo.' }
+  for (let tier = startTier; tier <= 2; tier++) {
+    last = await metaGraphPostRaw(path, token, bodyFor(tier))
+    if (last.ok) return last
+    if (tier === 2) break
+    console.error(`[meta] creativo rechazado en nivel ${tier} de Control total, pruebo el siguiente:`, last.error)
+    if (/creative_features|degrees_of_freedom|contextual_multi|format_transformation|enroll|feature|par[aá]metro|parameter|campo|field/i.test(last.error)) {
+      startTier = tier + 1
+    }
   }
-  return metaGraphPostRaw(path, token, withSpec(adv.coreSpec, false))
+  return last
 }
 
 export async function createTestAdSet(
