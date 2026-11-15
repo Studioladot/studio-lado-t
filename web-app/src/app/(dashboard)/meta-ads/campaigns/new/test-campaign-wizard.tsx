@@ -9,6 +9,7 @@ import type { LibraryCreative } from '@/lib/meta/library'
 import type { InstagramPostOption } from './data-actions'
 import { ADV_CONTROLS, ADV_CONTROLS_DEFAULT, type AdvControlKey, type AdvControls } from '@/lib/meta/ad-launch'
 import { AdSetEditor } from './adset-editor'
+import { BulkLoader, type BulkGroup } from './bulk-loader'
 import { PresetsMenu } from './presets-menu'
 import type { WizardPreset } from '@/lib/wizard-presets'
 import { STATUS_LABEL } from '../status'
@@ -108,6 +109,7 @@ export function TestCampaignWizard({
   const [pageId, setPageId] = useState(pages[0]?.id ?? '')
   const [adSetIds, setAdSetIds] = useState<number[]>([0])
   const [nextAdSetId, setNextAdSetId] = useState(1)
+  const [prefills, setPrefills] = useState<Record<number, BulkGroup>>({})
   const [attemptedSubmit, setAttemptedSubmit] = useState(false)
   const [advControls, setAdvControls] = useState<AdvControls>(ADV_CONTROLS_DEFAULT)
   const [advDetailOpen, setAdvDetailOpen] = useState(false)
@@ -175,6 +177,14 @@ export function TestCampaignWizard({
   function addAdSet() {
     setAdSetIds((prev) => [...prev, nextAdSetId])
     setNextAdSetId((n) => n + 1)
+  }
+
+  // Carga rápida: reemplaza los conjuntos por los armados con los archivos.
+  function applyBulk(groups: BulkGroup[]) {
+    const ids = groups.map((_, i) => nextAdSetId + i)
+    setAdSetIds(ids)
+    setPrefills(Object.fromEntries(ids.map((id, i) => [id, groups[i]])))
+    setNextAdSetId((n) => n + groups.length)
   }
 
   function removeAdSet(id: number) {
@@ -709,7 +719,11 @@ export function TestCampaignWizard({
                   >
                     <span>
                       <span className="block text-sm font-semibold text-text">Automatizaciones de Meta</span>
-                      <span className="block text-xs text-text-2">Qué puede tocar Meta de tu creativo automáticamente</span>
+                      <span className="block text-xs text-text-2">
+                        {advAllOff
+                          ? 'Todo apagado: el anuncio sale tal cual lo subiste, sin agregados de Meta'
+                          : 'Qué puede tocar Meta de tu creativo automáticamente'}
+                      </span>
                     </span>
                     <span className="flex shrink-0 items-center gap-2.5">
                       <span
@@ -717,7 +731,7 @@ export function TestCampaignWizard({
                           advOffCount === 0 ? 'bg-green/[0.12] text-green' : advAllOff ? 'bg-surface-2 text-text-3' : 'bg-amber/[0.12] text-amber'
                         }`}
                       >
-                        {advOffCount === 0 ? 'Todo permitido' : advAllOff ? 'Todo bloqueado' : `${advOffCount} desactivadas`}
+                        {advOffCount === 0 ? 'Todo permitido' : advAllOff ? 'Control total' : `${advOffCount} desactivadas`}
                       </span>
                       <svg
                         width="9"
@@ -783,10 +797,15 @@ export function TestCampaignWizard({
 
                   <input type="hidden" name="adset_count" value={adSetIds.length} />
 
+                  <div className="mb-3">
+                    <BulkLoader productUrl={productUrl} onApply={applyBulk} />
+                  </div>
+
                   <div className="flex flex-col gap-3">
                     {adSetIds.map((adSetId, adSetIndex) => (
                       <AdSetEditor
                         key={adSetId}
+                        prefill={prefills[adSetId]}
                         index={adSetIndex}
                         setNumber={adSetIndex + 1}
                         audiences={audiences}

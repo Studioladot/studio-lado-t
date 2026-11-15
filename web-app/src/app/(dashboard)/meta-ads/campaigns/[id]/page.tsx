@@ -17,6 +17,8 @@ import { PeriodSelector } from '../../../operations/sales/period-selector'
 import { resolvePeriod } from '@/lib/reports/sales-report'
 import { STATUS_LABEL, STATUS_COLOR, TOGGLEABLE, formatObjective } from '../status'
 
+export const maxDuration = 300
+
 export default async function MetaAdsCampaignDetailPage({
   params,
   searchParams,

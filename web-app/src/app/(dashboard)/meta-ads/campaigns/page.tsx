@@ -9,6 +9,10 @@ import { PAUSED_LIKE } from './status'
 import { CampaignsWorkspace } from './campaigns-workspace'
 import { CreativePatternBanner } from './creative-pattern-banner'
 
+// Lanzar testeo crea campaña, conjuntos y anuncios en una sola acción: con
+// muchos anuncios (y videos que Meta todavía procesa) necesita más tiempo.
+export const maxDuration = 300
+
 export default async function MetaAdsCampaignsPage({
   searchParams,
 }: {

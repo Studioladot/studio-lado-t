@@ -199,38 +199,114 @@ export const ADV_CONTROLS = {
   text_optimization: { label: 'Optimización de texto', sub: 'Meta puede reescribir o reordenar tu copy' },
   call_to_action_enhancement: { label: 'Mejorar llamada a la acción', sub: 'CTA automático basado en comportamiento del usuario' },
   add_card: { label: 'Agregar tarjetas (carousel)', sub: 'Meta puede agregar tarjetas extra al carrusel' },
+  // Control total (2026-11-15): lo que Meta prende sola en los anuncios nuevos.
+  site_products: { label: 'Productos y links de tu web', sub: 'Meta agrega productos o páginas de tu sitio debajo del anuncio' },
+  multi_advertiser: { label: 'Anuncios de otras marcas', sub: 'Meta muestra tu anuncio en una tira junto a anuncios de otras marcas' },
+  music_and_effects: { label: 'Música, animaciones y plantillas', sub: 'Meta agrega música, anima imágenes o le pone marcos y fondos' },
+  translation_and_extras: { label: 'Traducción, comentarios y perfil', sub: 'Meta traduce el texto, destaca comentarios o agrega tu perfil' },
+  auto_crop: { label: 'Recortes y adaptación por ubicación', sub: 'Meta recorta o reacomoda el creativo según dónde se muestra' },
 } as const
 
 export type AdvControlKey = keyof typeof ADV_CONTROLS
 export type AdvControls = Record<AdvControlKey, boolean>
 
+/** Por default todo apagado ("Control total"): el anuncio sale tal cual lo subiste. */
 export const ADV_CONTROLS_DEFAULT: AdvControls = Object.fromEntries(
-  (Object.keys(ADV_CONTROLS) as AdvControlKey[]).map((key) => [key, true])
+  (Object.keys(ADV_CONTROLS) as AdvControlKey[]).map((key) => [key, false])
 ) as AdvControls
+
+type FeatureSpec = Record<string, { enroll_status: 'OPT_OUT' }>
 
 /**
  * `advantage_plus_catalog` se maneja aparte porque no es un "degree of
  * freedom" del creativo — se desactiva a nivel ad set (`catalog_based_optimization`).
- * El resto arma `degrees_of_freedom_spec.creative_features_spec`, que solo
- * hay que mandar si hay algo para desactivar (si todo sigue en ON, se omite
- * el campo entero en vez de mandar un objeto vacío).
+ * "Anuncios de otras marcas" tampoco: es `contextual_multi_ads` del creativo.
+ * El resto arma `degrees_of_freedom_spec.creative_features_spec`.
+ *
+ * `degreesOfFreedomSpec` lleva el set completo de funciones que Meta prende
+ * sola (nombres de la Marketing API, 2026). `coreSpec` es el set original
+ * de 6 que ya se usaba y Meta acepta siempre: si Meta rechaza alguna función
+ * nueva para un tipo de creativo, se reintenta con este (ver createCreativeWithFallback).
  */
 export function buildAdvantagePayload(controls: AdvControls): {
-  degreesOfFreedomSpec: { creative_features_spec: Record<string, { enroll_status: 'OPT_OUT' }> } | null
+  degreesOfFreedomSpec: { creative_features_spec: FeatureSpec } | null
+  coreSpec: { creative_features_spec: FeatureSpec } | null
   catalogOff: boolean
+  multiAdsOff: boolean
 } {
-  const creativeFeaturesSpec: Record<string, { enroll_status: 'OPT_OUT' }> = {}
-  if (!controls.advantage_plus_creative) creativeFeaturesSpec.standard_enhancements = { enroll_status: 'OPT_OUT' }
-  if (!controls.image_enhancement) creativeFeaturesSpec.image_enhancement = { enroll_status: 'OPT_OUT' }
-  if (!controls.video_enhancement) creativeFeaturesSpec.video_enhancement = { enroll_status: 'OPT_OUT' }
-  if (!controls.text_optimization) creativeFeaturesSpec.text_optimization = { enroll_status: 'OPT_OUT' }
-  if (!controls.call_to_action_enhancement) creativeFeaturesSpec.call_to_action_enhancement = { enroll_status: 'OPT_OUT' }
-  if (!controls.add_card) creativeFeaturesSpec.add_card = { enroll_status: 'OPT_OUT' }
+  const core: FeatureSpec = {}
+  const off = (spec: FeatureSpec, keys: string[]) => keys.forEach((k) => (spec[k] = { enroll_status: 'OPT_OUT' }))
+  if (!controls.advantage_plus_creative) off(core, ['standard_enhancements'])
+  if (!controls.image_enhancement) off(core, ['image_enhancement'])
+  if (!controls.video_enhancement) off(core, ['video_enhancement'])
+  if (!controls.text_optimization) off(core, ['text_optimization'])
+  if (!controls.call_to_action_enhancement) off(core, ['call_to_action_enhancement'])
+  if (!controls.add_card) off(core, ['add_card'])
+
+  const full: FeatureSpec = { ...core }
+  if (!controls.advantage_plus_creative) off(full, ['advantage_plus_creative'])
+  if (!controls.image_enhancement) off(full, ['image_touchups', 'image_brightness_and_contrast', 'image_uncrop', 'image_background_gen'])
+  if (!controls.video_enhancement) off(full, ['video_filtering', 'video_highlight'])
+  if (!controls.text_optimization) off(full, ['text_optimizations', 'description_automation', 'add_text_overlay'])
+  if (!controls.call_to_action_enhancement) off(full, ['enhance_cta'])
+  if (!controls.site_products) off(full, ['product_extensions', 'site_extensions'])
+  if (!controls.music_and_effects) off(full, ['audio', 'image_animation', 'image_templates', 'carousel_to_video', 'reveal_details_over_time'])
+  if (!controls.translation_and_extras) off(full, ['text_translation', 'inline_comment', 'profile_card'])
+  if (!controls.auto_crop) off(full, ['adapt_to_placement', 'image_auto_crop', 'video_auto_crop', 'media_type_automation'])
 
   return {
-    degreesOfFreedomSpec: Object.keys(creativeFeaturesSpec).length ? { creative_features_spec: creativeFeaturesSpec } : null,
+    degreesOfFreedomSpec: Object.keys(full).length ? { creative_features_spec: full } : null,
+    coreSpec: Object.keys(core).length ? { creative_features_spec: core } : null,
     catalogOff: !controls.advantage_plus_catalog,
+    multiAdsOff: !controls.multi_advertiser,
   }
+}
+
+type AdvPayload = ReturnType<typeof buildAdvantagePayload>
+
+/**
+ * Control posterior: lee el creativo ya creado y devuelve las funciones que
+ * pedimos apagar y Meta igual dejó prendidas (vacío = todo en orden). Si la
+ * lectura falla no se reporta nada: no vale la pena frenar el lanzamiento.
+ */
+export async function findMetaFeaturesStillOn(token: string, creativeId: string, adv: AdvPayload): Promise<string[]> {
+  const requested = adv.degreesOfFreedomSpec?.creative_features_spec ?? {}
+  if (!creativeId || (Object.keys(requested).length === 0 && !adv.multiAdsOff)) return []
+  const res = await metaGraphGet<{
+    degrees_of_freedom_spec?: { creative_features_spec?: Record<string, { enroll_status?: string }> }
+    contextual_multi_ads?: { enroll_status?: string }
+  }>(`/${creativeId}?fields=degrees_of_freedom_spec,contextual_multi_ads`, token)
+  if (!res.ok) return []
+  const actual = res.data.degrees_of_freedom_spec?.creative_features_spec ?? {}
+  const stillOn = Object.keys(requested).filter((k) => actual[k]?.enroll_status === 'OPT_IN')
+  if (adv.multiAdsOff && res.data.contextual_multi_ads?.enroll_status === 'OPT_IN') stillOn.push('contextual_multi_ads')
+  return stillOn
+}
+
+// Si Meta rechaza alguna función del set completo (no todas existen para
+// todos los formatos), se recuerda en este proceso y se usa el set original.
+let fullSpecRejected = false
+
+/** Crea el creativo con el set completo de "Control total"; si Meta rechaza alguna función, reintenta con el set original. */
+async function createCreativeWithFallback(accountId: string, token: string, base: Record<string, string>, adv?: AdvPayload): Promise<MetaCreateResult> {
+  const cleanAccountId = accountId.replace(/^act_/, '')
+  const path = `/act_${cleanAccountId}/adcreatives`
+  if (!adv) return metaGraphPostRaw(path, token, base)
+
+  const withSpec = (spec: AdvPayload['degreesOfFreedomSpec'], multi: boolean) => {
+    const body = { ...base }
+    if (spec) body.degrees_of_freedom_spec = JSON.stringify(spec)
+    if (multi && adv.multiAdsOff) body.contextual_multi_ads = JSON.stringify({ enroll_status: 'OPT_OUT' })
+    return body
+  }
+
+  if (!fullSpecRejected) {
+    const first = await metaGraphPostRaw(path, token, withSpec(adv.degreesOfFreedomSpec, true))
+    if (first.ok) return first
+    console.error('[meta] creativo con Control total rechazado, reintento con el set original:', first.error)
+    if (/creative_features|degrees_of_freedom|contextual_multi|enroll|feature|par[aá]metro|parameter/i.test(first.error)) fullSpecRejected = true
+  }
+  return metaGraphPostRaw(path, token, withSpec(adv.coreSpec, false))
 }
 
 export async function createTestAdSet(
@@ -321,10 +397,9 @@ export async function createTestAdCreative(
     // sí conoce un CTA por creativo; el flujo de subida manual del wizard
     // sigue sin mandarlo, mismo comportamiento de siempre (Meta lo omite).
     cta?: string
-    degreesOfFreedomSpec?: ReturnType<typeof buildAdvantagePayload>['degreesOfFreedomSpec']
+    adv?: AdvPayload
   }
 ): Promise<MetaCreateResult> {
-  const cleanAccountId = accountId.replace(/^act_/, '')
   const objectStorySpec = {
     page_id: params.pageId,
     link_data: {
@@ -335,14 +410,7 @@ export async function createTestAdCreative(
       ...(params.cta ? { call_to_action: { type: params.cta } } : {}),
     },
   }
-  const creativeBody: Record<string, string> = {
-    name: params.name,
-    object_story_spec: JSON.stringify(objectStorySpec),
-  }
-  if (params.degreesOfFreedomSpec) {
-    creativeBody.degrees_of_freedom_spec = JSON.stringify(params.degreesOfFreedomSpec)
-  }
-  return metaGraphPostRaw(`/act_${cleanAccountId}/adcreatives`, token, creativeBody)
+  return createCreativeWithFallback(accountId, token, { name: params.name, object_story_spec: JSON.stringify(objectStorySpec) }, params.adv)
 }
 
 // ---------------------------------------------------------------------------
@@ -374,6 +442,37 @@ export async function uploadMetaAdVideo(token: string, accountId: string, buffer
   } catch (err) {
     return { ok: false, error: err instanceof Error ? err.message : 'Error de red subiendo el video.' }
   }
+}
+
+/**
+ * Subida por link (2026-11-15): el navegador sube el archivo directo al
+ * almacenamiento de Gotix y Meta lo descarga de ahí (`file_url`). El archivo
+ * no pasa por la función del servidor, así que no aplica el límite de 4,5 MB
+ * de Vercel y no hay que esperar el procesamiento de Meta en la misma request.
+ */
+export async function uploadMetaAdVideoFromUrl(token: string, accountId: string, fileUrl: string, name: string): Promise<MetaVideoUploadResult> {
+  const cleanAccountId = accountId.replace(/^act_/, '')
+  const result = await metaGraphPostRaw(`/act_${cleanAccountId}/advideos`, token, { file_url: fileUrl, name })
+  if (!result.ok) return result
+  if (!result.id) return { ok: false, error: 'Meta no devolvió un ID de video válido.' }
+  return { ok: true, videoId: result.id }
+}
+
+export type MetaVideoStatus = { ok: true; status: 'processing' | 'ready' | 'error'; thumbnailUrl: string | null } | { ok: false; error: string }
+
+/** Una sola consulta del estado del video (el navegador la repite cada pocos segundos). */
+export async function getMetaVideoStatus(token: string, videoId: string): Promise<MetaVideoStatus> {
+  const statusResult = await metaGraphGet<{ status?: { video_status?: string } }>(`/${videoId}?fields=status`, token)
+  if (!statusResult.ok) return statusResult
+  const videoStatus = statusResult.data.status?.video_status
+  if (videoStatus === 'error') return { ok: true, status: 'error', thumbnailUrl: null }
+  if (videoStatus !== 'ready') return { ok: true, status: 'processing', thumbnailUrl: null }
+  const thumbsResult = await metaGraphGet<{ data?: Array<{ uri?: string; is_preferred?: boolean }> }>(`/${videoId}/thumbnails`, token)
+  const thumbs = thumbsResult.ok ? (thumbsResult.data.data ?? []) : []
+  // Meta a veces marca "ready" antes de generar las miniaturas: se sigue esperando.
+  if (thumbs.length === 0) return { ok: true, status: 'processing', thumbnailUrl: null }
+  const preferred = thumbs.find((t) => t.is_preferred) ?? thumbs[0]
+  return { ok: true, status: 'ready', thumbnailUrl: preferred?.uri ?? null }
 }
 
 export type MetaVideoReadyResult = { ok: true; thumbnailUrl: string | null } | { ok: false; error: string }
@@ -422,10 +521,9 @@ export async function createTestAdCreativeVideo(
     headline: string
     body: string
     cta?: string
-    degreesOfFreedomSpec?: ReturnType<typeof buildAdvantagePayload>['degreesOfFreedomSpec']
+    adv?: AdvPayload
   }
 ): Promise<MetaCreateResult> {
-  const cleanAccountId = accountId.replace(/^act_/, '')
   const videoData: Record<string, unknown> = {
     video_id: params.videoId,
     title: params.headline,
@@ -437,14 +535,7 @@ export async function createTestAdCreativeVideo(
     videoData.image_url = params.thumbnailUrl
   }
   const objectStorySpec = { page_id: params.pageId, video_data: videoData }
-  const creativeBody: Record<string, string> = {
-    name: params.name,
-    object_story_spec: JSON.stringify(objectStorySpec),
-  }
-  if (params.degreesOfFreedomSpec) {
-    creativeBody.degrees_of_freedom_spec = JSON.stringify(params.degreesOfFreedomSpec)
-  }
-  return metaGraphPostRaw(`/act_${cleanAccountId}/adcreatives`, token, creativeBody)
+  return createCreativeWithFallback(accountId, token, { name: params.name, object_story_spec: JSON.stringify(objectStorySpec) }, params.adv)
 }
 
 // ---------------------------------------------------------------------------

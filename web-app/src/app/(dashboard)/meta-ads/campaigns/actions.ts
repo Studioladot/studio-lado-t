@@ -17,7 +17,7 @@ import { computeFatigueSignal, type FatigueSignal } from '@/lib/meta/fatigue'
 import {
   createTestAdSet,
   uploadMetaAdImage,
-  uploadMetaAdVideo,
+  uploadMetaAdVideoFromUrl,
   waitForMetaVideoReady,
   createTestAdCreative,
   createTestAd,
@@ -26,6 +26,7 @@ import {
   createTestAdCreativeFromExisting,
   createTestAdCreativeFromInstagramPost,
   buildAdvantagePayload,
+  findMetaFeaturesStillOn,
   ADV_CONTROLS,
   ADV_CONTROLS_DEFAULT,
   getMetaPages,
@@ -325,6 +326,8 @@ type AdInput = {
   body: string
   mediaType: 'image' | 'video'
   image: File | null
+  /** Imagen ya subida a Meta desde el navegador (ver new/upload-creative.ts). */
+  imageHash?: string
   videoId?: string
   videoThumbnailUrl?: string
   existingPostObjectStoryId?: string
@@ -397,6 +400,7 @@ function parseAdSets(formData: FormData, campaignName: string, productUrl: strin
         body: String(formData.get(`ad_body_${i}_${j}`) ?? '').trim(),
         mediaType,
         image: formData.get(`ad_image_${i}_${j}`) as File | null,
+        imageHash: String(formData.get(`ad_image_hash_${i}_${j}`) ?? '').trim() || undefined,
         videoId: String(formData.get(`ad_video_id_${i}_${j}`) ?? '').trim() || undefined,
         videoThumbnailUrl: String(formData.get(`ad_video_thumbnail_${i}_${j}`) ?? '').trim() || undefined,
         existingPostObjectStoryId: String(formData.get(`ad_existing_post_${i}_${j}`) ?? '').trim() || undefined,
@@ -480,7 +484,7 @@ export async function createSingleAd(params: {
         headline,
         body,
         cta: asset.cta,
-        degreesOfFreedomSpec: advPayload.degreesOfFreedomSpec,
+        adv: advPayload,
       })
       if (!creativeResult.ok) {
         steps.push({ label: `Creativo de Biblioteca — ${adLabel}`, ok: false, detail: creativeResult.error })
@@ -491,19 +495,14 @@ export async function createSingleAd(params: {
       let videoId = asset.metaVideoId
       let thumbnailUrl: string | null = null
       if (!videoId) {
-        const fileRes = await fetch(asset.fileUrl)
-        if (!fileRes.ok) {
-          steps.push({ label: `Video de Biblioteca — ${adLabel}`, ok: false, detail: 'No pudimos descargar el creativo de la Biblioteca.' })
-          return { ok: false, steps }
-        }
-        const buffer = Buffer.from(await fileRes.arrayBuffer())
-        const uploaded = await uploadMetaAdVideo(token, accountId, buffer, asset.name)
+        // Meta lo descarga directo del almacenamiento (más rápido que bajarlo y re-subirlo).
+        const uploaded = await uploadMetaAdVideoFromUrl(token, accountId, asset.fileUrl, asset.name)
         if (!uploaded.ok) {
           steps.push({ label: `Video de Biblioteca — ${adLabel}`, ok: false, detail: uploaded.error })
           return { ok: false, steps }
         }
         videoId = uploaded.videoId
-        const ready = await waitForMetaVideoReady(token, videoId)
+        const ready = await waitForMetaVideoReady(token, videoId, 120000)
         if (!ready.ok) {
           steps.push({ label: `Video de Biblioteca — ${adLabel}`, ok: false, detail: ready.error })
           return { ok: false, steps }
@@ -519,7 +518,7 @@ export async function createSingleAd(params: {
         headline,
         body,
         cta: asset.cta,
-        degreesOfFreedomSpec: advPayload.degreesOfFreedomSpec,
+        adv: advPayload,
       })
       if (!creativeResult.ok) {
         steps.push({ label: `Creativo de Biblioteca — ${adLabel}`, ok: false, detail: creativeResult.error })
@@ -559,37 +558,51 @@ export async function createSingleAd(params: {
   } else if (ad.mediaType === 'video') {
     // El video ya se subió y procesó antes de este submit (ver
     // /api/meta/upload-video) — el caller ya validó que ad.videoId está presente.
+    // Sin miniatura = el navegador no llegó a ver el video listo: se espera acá.
+    let thumbnailUrl = ad.videoThumbnailUrl ?? null
+    if (!thumbnailUrl) {
+      const ready = await waitForMetaVideoReady(token, ad.videoId as string, 60000)
+      if (!ready.ok) {
+        steps.push({ label: `Video — ${adLabel}`, ok: false, detail: ready.error })
+        return { ok: false, steps }
+      }
+      thumbnailUrl = ready.thumbnailUrl
+    }
     creativeResult = await createTestAdCreativeVideo(token, accountId, {
       name: `${adLabel} — Creativo`,
       pageId,
       videoId: ad.videoId as string,
-      thumbnailUrl: ad.videoThumbnailUrl ?? null,
+      thumbnailUrl,
       link: ad.link,
       headline: ad.headline,
       body: ad.body,
-      degreesOfFreedomSpec: advPayload.degreesOfFreedomSpec,
+      adv: advPayload,
     })
     if (!creativeResult.ok) {
       steps.push({ label: `Creativo de video — ${adLabel}`, ok: false, detail: creativeResult.error })
       return { ok: false, steps }
     }
   } else {
-    // El caller ya validó que ad.image existe y tiene contenido.
-    const buffer = Buffer.from(await (ad.image as File).arrayBuffer())
-    const imageResult = await uploadMetaAdImage(token, accountId, buffer.toString('base64'))
-    if (!imageResult.ok) {
-      steps.push({ label: `Imagen — ${adLabel}`, ok: false, detail: imageResult.error })
-      return { ok: false, steps }
+    // Imagen ya subida a Meta desde el navegador; si no, el archivo del formulario.
+    let imageHash = ad.imageHash
+    if (!imageHash) {
+      const buffer = Buffer.from(await (ad.image as File).arrayBuffer())
+      const imageResult = await uploadMetaAdImage(token, accountId, buffer.toString('base64'))
+      if (!imageResult.ok) {
+        steps.push({ label: `Imagen — ${adLabel}`, ok: false, detail: imageResult.error })
+        return { ok: false, steps }
+      }
+      imageHash = imageResult.hash
     }
 
     creativeResult = await createTestAdCreative(token, accountId, {
       name: `${adLabel} — Creativo`,
       pageId,
-      imageHash: imageResult.hash,
+      imageHash,
       link: ad.link,
       headline: ad.headline,
       body: ad.body,
-      degreesOfFreedomSpec: advPayload.degreesOfFreedomSpec,
+      adv: advPayload,
     })
     if (!creativeResult.ok) {
       steps.push({ label: `Creativo — ${adLabel}`, ok: false, detail: creativeResult.error })
@@ -604,6 +617,16 @@ export async function createSingleAd(params: {
     status,
   })
   steps.push({ label: `Anuncio — ${adLabel}`, ok: adResult.ok, detail: adResult.ok ? undefined : adResult.error })
+  if (adResult.ok && creativeResult.ok) {
+    const stillOn = await findMetaFeaturesStillOn(token, creativeResult.id, advPayload)
+    if (stillOn.length > 0) {
+      steps.push({
+        label: `Revisar en Meta — ${adLabel}`,
+        ok: false,
+        detail: `Meta dejó prendidas ${stillOn.length} mejora${stillOn.length === 1 ? '' : 's'} automática${stillOn.length === 1 ? '' : 's'} que pediste apagar. Revisalo en el anuncio dentro de Meta.`,
+      })
+    }
+  }
   if (adResult.ok && libraryDeploy) {
     await markLibraryCreativeDeployed(supabase, activeOrganizationId, libraryDeploy.assetId, {
       deployedAdId: adResult.id,
@@ -626,6 +649,20 @@ export async function createSingleAd(params: {
       .insert({ organization_id: activeOrganizationId, ad_id: adResult.id, ig_media_id: ad.igMediaId })
   }
   return { ok: adResult.ok, steps, adId: adResult.ok ? adResult.id : undefined }
+}
+
+/** Como Promise.all pero con un máximo de tareas a la vez; respeta el orden. */
+async function mapLimit<T, R>(items: T[], limit: number, fn: (item: T) => Promise<R>): Promise<R[]> {
+  const results = new Array<R>(items.length)
+  let next = 0
+  async function worker() {
+    while (next < items.length) {
+      const i = next++
+      results[i] = await fn(items[i])
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(limit, items.length) }, worker))
+  return results
 }
 
 export async function launchTestCampaignAction(
@@ -704,12 +741,12 @@ export async function launchTestCampaignAction(
       }
       if (!ad.body) return { error: `Falta el copy de un anuncio en "${adSet.name}".`, steps: empty, campaignId: null }
       if (!ad.link) return { error: `Falta el link de destino de un anuncio en "${adSet.name}".`, steps: empty, campaignId: null }
-      if (ad.mediaType === 'image' && (!ad.image || ad.image.size === 0)) {
-        return { error: `Falta la imagen de un anuncio en "${adSet.name}".`, steps: empty, campaignId: null }
+      if (ad.mediaType === 'image' && !ad.imageHash && (!ad.image || ad.image.size === 0)) {
+        return { error: `Falta terminar de subir la imagen de un anuncio en "${adSet.name}" — esperá a que diga "Listo en Meta".`, steps: empty, campaignId: null }
       }
       if (ad.mediaType === 'video' && !ad.videoId) {
         return {
-          error: `Falta terminar de subir el video de un anuncio en "${adSet.name}" — esperá a que quede en verde antes de generar el testeo.`,
+          error: `Falta terminar de subir el video de un anuncio en "${adSet.name}" — esperá a que diga "Listo en Meta".`,
           steps: empty,
           campaignId: null,
         }
@@ -791,47 +828,60 @@ export async function launchTestCampaignAction(
   // vez de abortar y dejar a medio armar lo que sí venía bien.
   let anyFailure = false
 
-  for (const adSetInput of adSetInputs) {
-    for (let copyIndex = 1; copyIndex <= adSetInput.duplicateCount; copyIndex++) {
-      const adSetLabel = adSetInput.duplicateCount > 1 ? `${adSetInput.name} (copia ${copyIndex})` : adSetInput.name
+  // En paralelo (2026-11-15): todos los conjuntos a la vez y, dentro de cada
+  // uno, sus anuncios a la vez (con un tope para no chocar con los límites de
+  // Meta). Antes era uno por uno: 3 conjuntos × 3 anuncios tardaba minutos.
+  // Los pasos se reportan en el mismo orden que antes.
+  const jobs = adSetInputs.flatMap((adSetInput) =>
+    Array.from({ length: adSetInput.duplicateCount }, (_, k) => ({
+      adSetInput,
+      adSetLabel: adSetInput.duplicateCount > 1 ? `${adSetInput.name} (copia ${k + 1})` : adSetInput.name,
+    }))
+  )
 
-      const adSetResult = await createTestAdSet(token, accountId, campaignId, {
-        name: adSetLabel,
+  const jobResults = await mapLimit(jobs, 4, async ({ adSetInput, adSetLabel }) => {
+    const jobSteps: LaunchStep[] = []
+    let failed = false
+    const adSetResult = await createTestAdSet(token, accountId, campaignId, {
+      name: adSetLabel,
+      status,
+      objective,
+      dailyBudget: perAdSetBudget,
+      bidStrategy,
+      bidAmount,
+      pixelId,
+      audience: adSetInput.audience,
+      placements,
+      catalogOff: advPayload.catalogOff,
+    })
+    jobSteps.push({ label: `Conjunto — ${adSetLabel}`, ok: adSetResult.ok, detail: adSetResult.ok ? undefined : adSetResult.error })
+    if (!adSetResult.ok) return { steps: jobSteps, failed: true }
+
+    const adResults = await mapLimit(adSetInput.ads, 3, (ad) =>
+      createSingleAd({
+        token,
+        accountId,
+        pageId,
+        adSetId: adSetResult.id,
+        ad,
+        adLabel: ad.name || adSetLabel,
         status,
-        objective,
-        dailyBudget: perAdSetBudget,
-        bidStrategy,
-        bidAmount,
-        pixelId,
-        audience: adSetInput.audience,
-        placements,
-        catalogOff: advPayload.catalogOff,
+        advPayload,
+        supabase,
+        activeOrganizationId,
+        igActorId,
       })
-      steps.push({ label: `Conjunto — ${adSetLabel}`, ok: adSetResult.ok, detail: adSetResult.ok ? undefined : adSetResult.error })
-      if (!adSetResult.ok) {
-        anyFailure = true
-        continue
-      }
-
-      for (const ad of adSetInput.ads) {
-        const adLabel = ad.name || adSetLabel
-        const adResult = await createSingleAd({
-          token,
-          accountId,
-          pageId,
-          adSetId: adSetResult.id,
-          ad,
-          adLabel,
-          status,
-          advPayload,
-          supabase,
-          activeOrganizationId,
-          igActorId,
-        })
-        steps.push(...adResult.steps)
-        if (!adResult.ok) anyFailure = true
-      }
+    )
+    for (const r of adResults) {
+      jobSteps.push(...r.steps)
+      if (!r.ok) failed = true
     }
+    return { steps: jobSteps, failed }
+  })
+
+  for (const r of jobResults) {
+    steps.push(...r.steps)
+    if (r.failed) anyFailure = true
   }
 
   revalidatePath(`/meta-ads/campaigns/${campaignId}`)
@@ -1190,6 +1240,7 @@ export async function addAdToAdSetAction(
     body: String(formData.get('ad_body_0_0') ?? '').trim(),
     mediaType,
     image: formData.get('ad_image_0_0') as File | null,
+    imageHash: String(formData.get('ad_image_hash_0_0') ?? '').trim() || undefined,
     videoId: String(formData.get('ad_video_id_0_0') ?? '').trim() || undefined,
     videoThumbnailUrl: String(formData.get('ad_video_thumbnail_0_0') ?? '').trim() || undefined,
     existingPostObjectStoryId: String(formData.get('ad_existing_post_0_0') ?? '').trim() || undefined,
@@ -1206,11 +1257,11 @@ export async function addAdToAdSetAction(
   } else {
     if (!ad.body) return { error: 'Falta el copy del anuncio.', success: false }
     if (!ad.link) return { error: 'Falta el link de destino del anuncio.', success: false }
-    if (ad.mediaType === 'image' && (!ad.image || ad.image.size === 0)) {
-      return { error: 'Falta la imagen del anuncio.', success: false }
+    if (ad.mediaType === 'image' && !ad.imageHash && (!ad.image || ad.image.size === 0)) {
+      return { error: 'Esperá a que la imagen diga "Listo en Meta" antes de guardar.', success: false }
     }
     if (ad.mediaType === 'video' && !ad.videoId) {
-      return { error: 'Esperá a que el video termine de subirse (tiene que quedar en verde) antes de guardar.', success: false }
+      return { error: 'Esperá a que el video diga "Listo en Meta" antes de guardar.', success: false }
     }
   }
 

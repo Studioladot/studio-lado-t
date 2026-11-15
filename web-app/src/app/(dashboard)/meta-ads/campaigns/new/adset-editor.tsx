@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { AdEditor } from './ad-editor'
+import { AdEditor, type AdPrefill } from './ad-editor'
 import { AudienceSelector } from './audience-selector'
 import { fieldClass } from './wizard-styles'
 import type { MetaAudience, MetaExistingPost } from '@/lib/meta/ad-launch'
@@ -21,7 +21,10 @@ export function AdSetEditor({
   igActorId,
   removable,
   onRemove,
+  prefill,
 }: {
+  /** Carga rápida: nombre del conjunto y anuncios precargados. */
+  prefill?: { name: string; ads: AdPrefill[] }
   index: number
   setNumber: number
   audiences: MetaAudience[]
@@ -33,10 +36,11 @@ export function AdSetEditor({
   removable: boolean
   onRemove: () => void
 }) {
-  const [adIds, setAdIds] = useState<number[]>([0])
-  const [nextAdId, setNextAdId] = useState(1)
+  const initialAdCount = Math.max(1, prefill?.ads.length ?? 0)
+  const [adIds, setAdIds] = useState<number[]>(() => Array.from({ length: initialAdCount }, (_, i) => i))
+  const [nextAdId, setNextAdId] = useState(initialAdCount)
   const [collapsed, setCollapsed] = useState(false)
-  const [name, setName] = useState('')
+  const [name, setName] = useState(prefill?.name ?? '')
 
   function addAd() {
     setAdIds((prev) => [...prev, nextAdId])
@@ -133,6 +137,7 @@ export function AdSetEditor({
             {adIds.map((adId, adIndex) => (
               <AdEditor
                 key={adId}
+                prefill={prefill?.ads[adId]}
                 adSetIndex={index}
                 adIndex={adIndex}
                 adNumber={adIndex + 1}

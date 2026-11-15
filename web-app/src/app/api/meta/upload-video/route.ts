@@ -1,47 +1,24 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
-import { getDashboardContext } from '@/lib/organization/dashboard-context'
-import { uploadMetaAdVideo, waitForMetaVideoReady } from '@/lib/meta/ad-launch'
+import { uploadMetaAdVideoFromUrl } from '@/lib/meta/ad-launch'
+import { getLaunchUploadContext } from '@/lib/meta/launch-upload'
 
-// Subida de video separada del submit final del wizard: arranca apenas el
-// usuario elige el archivo (ver ad-editor.tsx), así el progreso que ve es el
-// de la subida real desde su navegador hacia nuestro servidor (vía XHR
-// upload.onprogress) — el tramo servidor→Meta y el procesamiento de Meta no
-// tienen progreso incremental real, así que el cliente los muestra como un
-// estado indeterminado ("Procesando en Meta...") mientras espera esta respuesta.
+// Subida de video (2026-11-15): el navegador ya subió el archivo directo al
+// almacenamiento (ver new/upload-creative.ts) y acá solo llega la ruta. Meta
+// lo descarga por link — antes el archivo pasaba por esta función y Vercel
+// cortaba todo lo que superaba 4,5 MB. El procesamiento de Meta se sigue
+// desde el navegador con /api/meta/video-status.
 export async function POST(request: Request) {
-  const { activeOrganizationId } = await getDashboardContext()
-  if (!activeOrganizationId) {
-    return NextResponse.json({ ok: false, error: 'No encontramos tu organización activa.' }, { status: 400 })
+  const ctx = await getLaunchUploadContext()
+  if (!ctx.ok) return NextResponse.json({ ok: false, error: ctx.error }, { status: ctx.status })
+
+  const body = (await request.json().catch(() => ({}))) as { path?: string; name?: string }
+  const fileUrl = body.path ? ctx.publicUrl(body.path) : null
+  if (!fileUrl) return NextResponse.json({ ok: false, error: 'Falta el archivo de video.' }, { status: 400 })
+
+  const result = await uploadMetaAdVideoFromUrl(ctx.token, ctx.accountId, fileUrl, body.name || 'Video Gotix')
+  if (!result.ok) {
+    console.error('[upload-video] Meta rechazó el video:', result.error)
+    return NextResponse.json({ ok: false, error: 'Meta no aceptó el video. Probá de nuevo o con otro archivo.' }, { status: 502 })
   }
-
-  const supabase = await createClient()
-  const { data: connection } = await supabase
-    .from('meta_connections')
-    .select('token, account_id, expires_at')
-    .eq('organization_id', activeOrganizationId)
-    .maybeSingle()
-
-  if (!connection || (connection.expires_at && new Date(connection.expires_at) < new Date())) {
-    return NextResponse.json({ ok: false, error: 'Meta Ads no está conectado.' }, { status: 400 })
-  }
-
-  const formData = await request.formData()
-  const video = formData.get('video')
-  if (!(video instanceof File) || video.size === 0) {
-    return NextResponse.json({ ok: false, error: 'Falta el archivo de video.' }, { status: 400 })
-  }
-
-  const buffer = Buffer.from(await video.arrayBuffer())
-  const uploadResult = await uploadMetaAdVideo(connection.token, connection.account_id, buffer, video.name)
-  if (!uploadResult.ok) {
-    return NextResponse.json({ ok: false, error: uploadResult.error }, { status: 502 })
-  }
-
-  const readyResult = await waitForMetaVideoReady(connection.token, uploadResult.videoId)
-  if (!readyResult.ok) {
-    return NextResponse.json({ ok: false, error: readyResult.error }, { status: 502 })
-  }
-
-  return NextResponse.json({ ok: true, videoId: uploadResult.videoId, thumbnailUrl: readyResult.thumbnailUrl })
+  return NextResponse.json({ ok: true, videoId: result.videoId })
 }
